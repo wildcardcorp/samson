@@ -1,0 +1,3 @@
+pycrypto
+
+#dnf install redhat-rpm-config python3-devel
