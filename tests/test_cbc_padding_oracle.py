@@ -8,8 +8,9 @@ import base64
 import struct
 import unittest
 
-key = gen_rand_key()
-iv = gen_rand_key()
+block_size = 16
+key = gen_rand_key(block_size)
+iv = gen_rand_key(block_size)
 
 plaintext_strings = [
     'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
@@ -24,16 +25,17 @@ plaintext_strings = [
     'MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93'
 ]
 
-chosen_plaintext = random.choice(plaintext_strings)
+#chosen_plaintext = random.choice(plaintext_strings)
+chosen_plaintext = plaintext_strings[0]
 
 
 def encrypt_data():
-    return encrypt_aes_cbc(key, iv, base64.b64decode(chosen_plaintext.encode()))
+    return encrypt_aes_cbc(key, iv, base64.b64decode(chosen_plaintext.encode()), block_size=block_size)
 
 
 def decrypt_data(data):
     try:
-        decrypt_aes_cbc(key, iv, data)
+        decrypt_aes_cbc(key, iv, data, block_size=block_size)
         return True
     except Exception as e:
         if 'Invalid padding' in str(e):
@@ -43,10 +45,11 @@ def decrypt_data(data):
 
 class CBCPaddingOracleTestCase(unittest.TestCase):
     def test_paddingattack(self):
+        print(base64.b64decode(chosen_plaintext.encode()))
         ciphertext = encrypt_data()
         assert decrypt_data(ciphertext) == True
 
-        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv)
+        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv, block_size=block_size)
         recovered_plaintext = attack.execute(ciphertext)
 
         print(recovered_plaintext)

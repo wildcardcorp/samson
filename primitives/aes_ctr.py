@@ -6,19 +6,19 @@ import struct
 import base64
 
 class AES_CTR:
-    def __init__(self, key, nonce):
+    def __init__(self, key, nonce, block_size=16):
         self.key = key
         self.nonce = nonce
         self.counter = 0
         self.encryptor = AES.new(key, AES.MODE_ECB)
-        self.block_size = 16
+        self.block_size = block_size
 
     def encrypt(self, plaintext):
         keystream = b''
         
         num_blocks = ceil(len(plaintext) / self.block_size)
-        for block in range(num_blocks):
-            keystream += self.encryptor.encrypt(self.nonce + struct.pack('Q', self.counter))
+        for _ in range(num_blocks):
+            keystream += self.encryptor.encrypt(self.nonce + self.counter.to_bytes(self.block_size // 2, 'little'))
             self.counter += 1
 
         return xor_buffs(keystream[:len(plaintext)], plaintext)

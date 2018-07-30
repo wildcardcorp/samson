@@ -8,7 +8,8 @@ import base64
 import struct
 import unittest
 
-key = gen_rand_key()
+block_size = 16
+key = gen_rand_key(block_size)
 
 def encrypt(secret):
     aes = AES_CTR(key, struct.pack('Q', 0))
@@ -19,7 +20,6 @@ class CTRTranspositionTestCase(unittest.TestCase):
         with open('tests/test_ctr_transposition.txt') as f:
             secrets = [base64.b64decode(line.strip().encode()) for line in f.readlines()]
 
-        block_size = 16
         ciphertexts = [encrypt(secret) for secret in secrets]
 
         analyzer = EnglishAnalyzer(decrypt)

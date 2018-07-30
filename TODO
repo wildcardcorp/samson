@@ -1,5 +1,9 @@
-X   Clean up oracles
-X   Ensure tests work with
-    X   Different inputs
-    X   Different key sizes
+OK  Clean up oracles (good for now)
+X   Ensure tests work with:
+    OK  Different inputs
+    OK  Different key sizes
     X   Different algorithms
+X   Implement zero-key attack on SRP
+X   Implement stateless block cipher detection
+X   Implement stateless block cipher shuffling
+X   Implement timing attack algorithm

@@ -23,13 +23,17 @@ from samson.utilities import *
 # of%20baconPPPPPP
 
 class XORBitflippingAttack(object):
-    def __init__(self, oracle):
+    # Expects an EncryptionOracle
+    def __init__(self, oracle, block_size=16):
         self.oracle = oracle
+        self.block_size = block_size
 
 
     def execute(self, desired_injection, index=16):
-        payload = 'a' * 16
-        ciphertext = self.oracle.request(payload)
+        payload = 'a' * self.block_size
+        ciphertext = self.oracle.encrypt(payload)
+
+        end_of_block = index + self.block_size
         edited_cipher = bytearray(ciphertext)
-        edited_cipher[index:index + 16] = xor_buffs(xor_buffs(edited_cipher[index:index + 16], desired_injection), payload.encode())
+        edited_cipher[index:end_of_block] = xor_buffs(xor_buffs(edited_cipher[index:end_of_block], desired_injection), payload.encode())
         return edited_cipher
