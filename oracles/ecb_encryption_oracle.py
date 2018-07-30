@@ -10,7 +10,3 @@ class ECBEncryptionOracle(object):
             curr_len = len(self.request(('A' * i).encode()))
             if  curr_len != baseline:
                 return curr_len - baseline
-
-
-    # def request(self, plaintext):
-    #     pass

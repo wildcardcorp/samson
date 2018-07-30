@@ -1,7 +1,7 @@
-from utilities import *
-from english_analyzer import EnglishAnalyzer
-from repeating_xor_transposer import RepeatingXORTransposer
-from xor import find_key_size
+from samson.utilities import *
+from samson.analyzers.english_analyzer import EnglishAnalyzer
+from samson.attacks.repeating_xor_transposer import RepeatingXORTransposer
+from samson.xor import find_key_size
 import base64
 
 
@@ -12,7 +12,7 @@ def attempt_key(key, in_bytes):
 
 
 
-with open('./test_repeating_xor.txt') as f:
+with open('tests/test_repeating_xor.txt') as f:
     ciphertext = f.read().replace('\n', "").replace('\r', "")
 
 decoded = base64.b64decode(ciphertext.encode())

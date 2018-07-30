@@ -1,5 +1,12 @@
 from math import ceil
 import struct
+from Crypto import Random
+
+rndfile = Random.new()
+
+def gen_rand_key(size=16):
+    return rndfile.read(size)
+    
 
 def byte_to_bitstring(input_bytes, fill=8):
     return ''.join(format(x, 'b').zfill(fill) for x in input_bytes)

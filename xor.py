@@ -1,4 +1,4 @@
-from utilities import hamming_distance
+from samson.utilities import hamming_distance
 import operator
 
 def find_key_size(cipherbytes, key_range, candidate_slice_size):

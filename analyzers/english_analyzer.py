@@ -1,4 +1,4 @@
-from analyzer import Analyzer
+from samson.analyzers.analyzer import Analyzer
 import string
 
 

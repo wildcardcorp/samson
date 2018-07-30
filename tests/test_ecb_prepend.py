@@ -15,8 +15,7 @@ def encrypt_aes_ecb(key, message):
     return AES.new(key, AES.MODE_ECB).encrypt(pkcs7_pad(message))
 
 
-# key = gen_rand_key()
-key = b'\x00' * 16
+key = gen_rand_key()
 unknown_string = base64.b64decode('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK'.encode())
 
 
