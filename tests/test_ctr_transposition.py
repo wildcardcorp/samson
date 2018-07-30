@@ -22,7 +22,8 @@ class CTRTranspositionTestCase(unittest.TestCase):
         block_size = 16
         ciphertexts = [encrypt(secret) for secret in secrets]
 
-        attack = CTRTranspositionAttack(EnglishAnalyzer(decrypt), decrypt, block_size)
+        analyzer = EnglishAnalyzer(decrypt)
+        attack = CTRTranspositionAttack(analyzer, decrypt, block_size)
         recovered_plaintexts = attack.execute(ciphertexts)
 
         self.assertEqual(recovered_plaintexts, secrets)

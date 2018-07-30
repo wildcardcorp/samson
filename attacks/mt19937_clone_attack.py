@@ -66,9 +66,6 @@ class MT19937CloneAttack(object):
                 outputs.extend(new_out)
             else:
                 outputs.append(new_out)
-            
-        # if len(outputs) < 624:
-        #     raise Exception("Must have at least 624 outputs to clone.")
 
         cloned = MT19937(0)
         cloned.state = [_untemper(output) for output in outputs][-624:]

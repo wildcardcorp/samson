@@ -1,0 +1,5 @@
+X   Clean up oracles
+X   Ensure tests work with
+    X   Different inputs
+    X   Different key sizes
+    X   Different algorithms

@@ -31,5 +31,3 @@ class CTRTranspositionAttack(object):
             transposed_plaintexts.append(sorted(all_chars.items(), key=lambda kv: kv[1][0], reverse=True)[0][1][1])
 
         return [bytearray(transposed) for transposed in zip(*transposed_plaintexts)]
-        # print([bytearray(transposed) for transposed in zip(*transposed_plaintexts)])
-
