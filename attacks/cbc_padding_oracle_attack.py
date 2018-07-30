@@ -1,5 +1,6 @@
 from samson.utilities import *
 
+# https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
 class CBCPaddingOracleAttack(object):
     def __init__(self, oracle, iv):
         self.oracle = oracle

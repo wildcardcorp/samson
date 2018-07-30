@@ -1,14 +1,12 @@
 #!/usr/bin/python3
 from Crypto.Random import random
-from samson.utilities import gen_rand_key
-from samson.aes_cbc import *
-from samson.utilities import get_blocks
-from samson.utilities import xor_buffs
-from samson.utilities import pkcs7_unpad
+from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
+from samson.utilities import get_blocks, xor_buffs, gen_rand_key, pkcs7_unpad
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
 import base64
 import struct
+import unittest
 
 key = gen_rand_key()
 iv = gen_rand_key()
@@ -43,13 +41,13 @@ def decrypt_data(data):
         raise e
 
 
-# https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
-if __name__ == '__main__':
-    ciphertext = encrypt_data()
-    assert decrypt_data(ciphertext) == True
+class CBCPaddingOracleTestCase(unittest.TestCase):
+    def test_paddingattack(self):
+        ciphertext = encrypt_data()
+        assert decrypt_data(ciphertext) == True
 
-    attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv)
-    recovered_plaintext = attack.execute(ciphertext)
+        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv)
+        recovered_plaintext = attack.execute(ciphertext)
 
-    print(recovered_plaintext)
-    assert base64.b64decode(chosen_plaintext.encode()) == recovered_plaintext
+        print(recovered_plaintext)
+        self.assertEqual(base64.b64decode(chosen_plaintext.encode()), recovered_plaintext)

@@ -1,5 +1,5 @@
 from samson.utilities import *
-from samson.xor import find_key_size
+from samson.primitives.xor import find_key_size
 import base64
 
 class RepeatingXORTransposer(object):

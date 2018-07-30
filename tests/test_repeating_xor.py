@@ -1,22 +1,19 @@
-from samson.utilities import *
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 from samson.attacks.repeating_xor_transposer import RepeatingXORTransposer
-from samson.xor import find_key_size
+from samson.primitives.xor import find_key_size, decrypt
 import base64
+import unittest
 
 
-def attempt_key(key, in_bytes):
-    plaintext = xor_buffs(in_bytes, stretch_key(key, len(in_bytes)))
-    #, is_readable_ascii(plaintext)
-    return plaintext
+class RepeatingXORTranspositionTestCase(unittest.TestCase):
+    def test_prepend_attack(self):
+        with open('tests/test_repeating_xor.txt') as f:
+            ciphertext = f.read().replace('\n', "").replace('\r', "")
 
+        decoded = base64.b64decode(ciphertext.encode())
 
+        analyzer = EnglishAnalyzer(decrypt)
+        attack = RepeatingXORTransposer(analyzer, decrypt)
 
-with open('tests/test_repeating_xor.txt') as f:
-    ciphertext = f.read().replace('\n', "").replace('\r', "")
-
-decoded = base64.b64decode(ciphertext.encode())
-
-analyzer = EnglishAnalyzer(attempt_key)
-attack = RepeatingXORTransposer(analyzer, attempt_key)
-print(attack.execute(decoded))
+        recovered_plaintext = attack.execute(decoded)
+        print(recovered_plaintext)

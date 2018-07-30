@@ -1,5 +1,10 @@
-from samson.utilities import hamming_distance
+from samson.utilities import hamming_distance, xor_buffs, stretch_key
 import operator
+
+def decrypt(key, in_bytes):
+    plaintext = xor_buffs(in_bytes, stretch_key(key, len(in_bytes)))
+    return plaintext
+
 
 def find_key_size(cipherbytes, key_range, candidate_slice_size):
     key_distances = {}
