@@ -5,7 +5,6 @@ from samson.utilities import transpose
 from samson.xor import find_key_size
 from samson.utilities import get_blocks
 from samson.utilities import xor_buffs, stretch_key
-from samson.ch1_3 import build_candidates, frequency_analysis, num_ascii, num_alpha, num_common_chars, num_first_letters, num_capital_letters
 from samson.attacks.ctr_transposition_attack import CTRTranspositionAttack
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 import base64
