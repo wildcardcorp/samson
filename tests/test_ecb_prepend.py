@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import struct
 import base64
-from samson.utilities import gen_rand_key, pkcs7_pad, pkcs7_unpad
 from Crypto.Cipher import AES
+from samson.utilities import gen_rand_key, pkcs7_pad, pkcs7_unpad
 from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
 from samson.attacks.ecb_prepend_attack import ECBPrependAttack
 import unittest
