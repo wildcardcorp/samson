@@ -1,13 +1,21 @@
-from math import ceil, log
+from math import ceil, log, sqrt
 from scipy.stats import chisquare
+import scipy.special
 import struct
 from Crypto import Random
+from Crypto.Cipher import ARC4
+import os
 import zlib
+import json
 
-rndfile = Random.new()
+#rndfile = Random.new()
+URANDOM = open("/dev/urandom", "rb")
+
+RC4_BIAS_MAP = [163, 0, 131, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 240, 17, 18, 0, 20, 21, 22, 0, 24, 25, 26, 0, 28, 29, 0, 31, 224, 33, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 0, 0, 0]
 
 def gen_rand_key(size=16):
-    return rndfile.read(size)
+    return URANDOM.read(size)
+    #return rndfile.read(size)
     
 
 def byte_to_bitstring(input_bytes, fill=8):
@@ -196,3 +204,95 @@ def de_bruijn(k, n):
               db(t + 1, t)
   db(1, 1)
   return "".join(alphabet[i] for i in sequence)
+
+
+
+
+def birthday_attack(bits, probability):
+    return sqrt(2 * 2**bits * log(1/(1-float(probability))))
+
+
+def expected_collisions(bits, num_inputs):
+   return 2**(-bits)*scipy.special.comb(num_inputs, 2)
+
+
+def generate_rc4_bias_map(ciphertexts):
+    bias_map = [{} for i in range(256)]
+    for c in ciphertexts:
+        for i, byte in enumerate(c):
+            if byte in bias_map[i]:
+                bias_map[i][byte] = bias_map[i][byte] + 1
+            else:
+                bias_map[i][byte] = 1
+
+    for i,_ in enumerate(bias_map):
+        bias_map[i] = sorted(bias_map[i].items(), key=lambda kv: kv[1], reverse=True)
+
+    return bias_map
+
+
+
+def generate_random_rc4_bias_map(data=b'\x00' * 51, key_size=128, sample_size=2**20):
+    ciphertexts = []
+    for _ in range(sample_size):
+        key = os.urandom(key_size // 8)
+        cipher = ARC4.new(key)
+        ciphertexts.append(cipher.encrypt(data))
+
+
+    return generate_rc4_bias_map(ciphertexts)
+
+
+
+def incremental_rc4_bias_map_gen(filepath, start_idx=0, data=b'\x00' * 51, key_size=128, sample_size=2**30, chunk_size=2**24):
+    if sample_size % chunk_size > 0:
+        iteration_mod = 1
+    else:
+        iteration_mod = 0
+
+
+    iterations = sample_size // chunk_size + iteration_mod
+
+    for i in range(start_idx, iterations):
+        if i == iterations - 1 and iteration_mod == 1:
+            mod_sample_size = sample_size % chunk_size
+        else:
+            mod_sample_size = chunk_size
+        
+        bias_map = generate_random_rc4_bias_map(data, key_size, mod_sample_size)
+        
+
+        with open(filepath + ".{}".format(i), "w+") as f:
+            f.write(json.dumps(bias_map))
+
+        del bias_map
+
+
+
+def merge_rc4_bias_map_files(base_path, num):
+    bias_maps = []
+    for i in range(num):
+        with open("{}.{}".format(base_path, i)) as f:
+            content = f.read()
+        
+        bias_maps.append(json.loads(content))
+
+    return merge_rc4_bias_maps(bias_maps)
+
+
+
+def merge_rc4_bias_maps(bias_maps):
+    merged_map = [{} for i in range(256)]
+
+    for bias_map in bias_maps:
+        for i,_ in enumerate(bias_map):
+            for k,v in bias_map[i]:
+                if k in merged_map[i]:
+                    merged_map[i][k] += v
+                else:
+                    merged_map[i][k] = v
+
+    for i,_ in enumerate(merged_map):
+        merged_map[i] = sorted(merged_map[i].items(), key=lambda kv: kv[1], reverse=True)
+
+    return merged_map
