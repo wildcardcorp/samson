@@ -3,9 +3,9 @@ from samson.primitives.xor import find_key_size
 import base64
 
 class RepeatingXORTransposer(object):
-    def __init__(self, analyzer, decrypter):
+    def __init__(self, analyzer, decryptor):
         self.analyzer = analyzer
-        self.decrypter = decrypter
+        self.decryptor = decryptor
 
     def execute(self, ciphertexts):
         possible_key_sizes = find_key_size(ciphertexts, range(2, 40), 5)
@@ -25,6 +25,6 @@ class RepeatingXORTransposer(object):
                 top_candidates.append(key)
 
 
-        final_candidates = sorted(top_candidates, key=lambda x: self.analyzer.analyze(self.decrypter(ciphertexts, x)), reverse=True)[:3]
+        final_candidates = sorted(top_candidates, key=lambda x: self.analyzer.analyze(self.decryptor(ciphertexts, x)), reverse=True)[:3]
 
-        return final_candidates, self.decrypter(final_candidates[0], ciphertexts)
+        return final_candidates, self.decryptor(final_candidates[0], ciphertexts)

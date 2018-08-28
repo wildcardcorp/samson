@@ -11,12 +11,6 @@ class RSA(object):
             phi = lcm(p - 1, q - 1)
             self.n = p * q
 
-
-        # self.p = getPrime(bits // 2)
-        # self.q = getPrime(bits // 2)
-        # self.n = self.p * self.q
-        # self.e_t = (self.p - 1) * (self.q - 1)
-        # self.d = mod_inv(self.e, self.e_t)
         self.d = mod_inv(self.e, phi)
 
         self.pub = (self.e, self.n)
@@ -26,7 +20,6 @@ class RSA(object):
     def encrypt(self, message):
         m = int.from_bytes(message, byteorder='big')
         return pow(m, self.e, self.n)
-        #return modexp(m, *self.pub)
 
 
     def decrypt(self, message):

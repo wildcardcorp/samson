@@ -12,7 +12,7 @@ class RepeatingXORTranspositionTestCase(unittest.TestCase):
 
         decoded = base64.b64decode(ciphertext.encode())
 
-        analyzer = EnglishAnalyzer(decrypt)
+        analyzer = EnglishAnalyzer()
         attack = RepeatingXORTransposer(analyzer, decrypt)
 
         recovered_plaintext = attack.execute(decoded)
