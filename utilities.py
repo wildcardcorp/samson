@@ -31,8 +31,20 @@ def xor_buffs(buf1, buf2):
 
 
 
-def stretch_key(key, length):
-    return (key * ceil(length / len(key)))[:length]
+# Stretches a `key` into a stream of `length`. Key can be shifted by `offset`.
+
+# Examples
+# >>> stretch_key(b'abc', 5)
+# b'abcab'
+
+# >>> stretch_key(b'abc', 5, offset=1)
+# b'cabca'
+
+def stretch_key(key, length, offset=0):
+    offset_mod = offset % len(key)
+    key_stream = (key * ceil(length / len(key)))
+    complete_key = (key[-offset_mod:] + key_stream)[:length]
+    return complete_key
 
 
 
