@@ -1,7 +1,12 @@
 from samson.analyzers.analyzer import Analyzer
 import string
+import os
+import re
 
 ascii_range = [10, 13] + list(range(20, 127))
+
+with open(os.path.join(os.path.dirname(__file__), 'cracklib-small'), 'r') as f:
+    wordlist = {word.strip(): 0 for word in f.readlines()}
 
 first_letter_frequencies = {
     't': .15978,
@@ -219,7 +224,7 @@ class EnglishAnalyzer(Analyzer):
         except UnicodeDecodeError as _:
             return 0
 
-        words = as_str.split(' ')
+        words = [word for word in re.split('[?.,! ]', as_str) if word != '']
         word_freq = sum([1 for w in words if len(w) > 2 and len(w) < 8])
 
 
@@ -230,7 +235,9 @@ class EnglishAnalyzer(Analyzer):
         first_letter_freq = _num_common_first_letters(as_str.lower())
         bigrams = _num_bigrams(as_str.lower())
 
-        return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1)
+        found_words = sum([(len(word) - 1) ** 2 for word in words if word in wordlist])
+
+        return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1)
 
 
     

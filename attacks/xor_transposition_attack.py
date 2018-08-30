@@ -2,8 +2,9 @@ from samson.utilities import *
 import pandas as pd
 from copy import deepcopy
 import pickle
+import os
 
-with open('/home/donald/Git/samson/attacks/english_stat_model.bin', 'rb') as f:
+with open(os.path.join(os.path.dirname(__file__), 'english_stat_model.bin'), 'rb') as f:
     statistical_model = pickle.loads(f.read())
 
 class XORTranspositionAttack(object):

@@ -7,6 +7,7 @@ from Crypto.Cipher import ARC4
 import os
 import zlib
 import json
+import difflib
 
 #rndfile = Random.new()
 URANDOM = open("/dev/urandom", "rb")
@@ -45,6 +46,12 @@ def stretch_key(key, length, offset=0):
     key_stream = (key * ceil(length / len(key)))
     complete_key = (key[-offset_mod:] + key_stream)[:length]
     return complete_key
+
+
+def longest_substring(strA, strB):
+    seqMatch = difflib.SequenceMatcher(None, strA, strB)
+    match = seqMatch.find_longest_match(0, len(strA), 0, len(strB))
+    return strA[match.a: match.a + match.size]
 
 
 
