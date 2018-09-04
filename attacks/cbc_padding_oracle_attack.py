@@ -24,7 +24,8 @@ class CBCPaddingOracleAttack(object):
                 preceding_block = reversed_blocks[i + 1]
 
             for _ in range(len(block)):
-                working_chars = []
+                last_working_char = b'\x00'
+
                 for possible_char in range(256):
                     test_byte = struct.pack('B', possible_char)
                     payload = test_byte + plaintext
@@ -37,9 +38,9 @@ class CBCPaddingOracleAttack(object):
                     new_cipher = exploit_block + block
 
                     if self.oracle.check_padding(bytes(new_cipher)):
-                        working_chars.append(test_byte)
+                        last_working_char = test_byte
 
-                plaintext = working_chars[-1] + plaintext
+                plaintext = last_working_char + plaintext
 
             plaintexts.append(plaintext)
         return pkcs7_unpad(b''.join(plaintexts[::-1]), self.block_size)
