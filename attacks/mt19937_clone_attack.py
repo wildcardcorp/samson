@@ -55,18 +55,10 @@ def _untemper(y):
 
 
 class MT19937CloneAttack(object):
-    def __init__(self, oracle):
-        self.oracle = oracle
+    def __init__(self):
+        pass
 
-    def execute(self):
-        outputs = []
-        while len(outputs) < 624:
-            new_out = self.oracle.request()
-            if type(new_out) == list:
-                outputs.extend(new_out)
-            else:
-                outputs.append(new_out)
-
+    def execute(self, outputs):
         cloned = MT19937(0)
         cloned.state = [_untemper(output) for output in outputs][-624:]
 

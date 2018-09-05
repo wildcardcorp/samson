@@ -1,4 +1,5 @@
 from samson.utilities import *
+from samson.primitives.xor import decrypt
 import pandas as pd
 from copy import deepcopy
 import pickle
@@ -8,8 +9,7 @@ with open(os.path.join(os.path.dirname(__file__), 'english_stat_model.bin'), 'rb
     statistical_model = pickle.loads(f.read())
 
 class XORTranspositionAttack(object):
-    def __init__(self, analyzer, decryptor, block_size):
-        self.decryptor = decryptor
+    def __init__(self, analyzer, block_size):
         self.analyzer = analyzer
         self.block_size = block_size
 
@@ -27,7 +27,7 @@ class XORTranspositionAttack(object):
         for cipher in transposed_ciphers:
             all_chars = {}
             for char in range(256):
-                plaintext = self.decryptor(struct.pack('B', char), cipher)
+                plaintext = decrypt(struct.pack('B', char), cipher)
 
                 all_chars[char] = (self.analyzer.analyze(plaintext), plaintext)
 
@@ -50,7 +50,7 @@ class XORTranspositionAttack(object):
                 frames = []
                 for curr_cipher in first_pass_plaintexts:
                     cipher_copy = deepcopy(curr_cipher)
-                    cipher_copy[i] = ord(self.decryptor(struct.pack('B', char), struct.pack('B', curr_cipher[i])))
+                    cipher_copy[i] = ord(decrypt(struct.pack('B', char), struct.pack('B', curr_cipher[i])))
 
                     preprocessed_frame = self.analyzer.preprocess(cipher_copy)
                     frames.append(preprocessed_frame)

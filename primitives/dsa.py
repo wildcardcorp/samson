@@ -30,6 +30,7 @@ class DSA(object):
         return v == r
 
     
+    # Confirmed works on ECDSA as well
     def derive_k_from_sigs(self, msgA, sigA, msgB, sigB):
         (rA, sA) = sigA
         (rB, sB) = sigB
