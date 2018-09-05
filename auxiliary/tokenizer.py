@@ -1,6 +1,8 @@
 # Takes in a list of tokens
 # Generates a Markov Chain
 # Must work for delimited and non-delimited inputs
+# Must grab the longest string possible
+
 from samson.auxiliary.markov_state import MarkovState
 
 class Tokenizer(object):
@@ -18,19 +20,22 @@ class Tokenizer(object):
                     curr_dict[char] = {}
                 curr_dict = curr_dict[char]
 
+            # '$$' is the flag for end of string
+            curr_dict['$$'] = None
+
 
 
     def _add_to_chain(self, token, parsed_chain):
-        print(token)
         if token in parsed_chain.transitions:
-            print('Adding one to {}'.format(token))
             parsed_chain.transitions[token].probability += 1
         else:
             parsed_chain.transitions[token] = MarkovState(1, {})
 
 
+    # Recursively turn 'hit' counts into probabilities
     def _calculate_chain_probs(self, chain):
         total_count = sum([subchain.probability for token, subchain in chain.transitions.items()])
+
         for _token, subchain in chain.transitions.items():
             subchain.probability /= total_count
             self._calculate_chain_probs(subchain)
@@ -57,20 +62,29 @@ class Tokenizer(object):
 
                 while char_counter < len(part):
                     char = part[char_counter]
-                    print(char)
+                    last_largest_substring = ''
 
                     if char in curr_token_chain:
                         token += char
                         curr_token_chain = curr_token_chain[char]
 
-                        if curr_token_chain == {}:
+                        # This is a valid substring, and there's only an end-of-token flag left
+                        # OR
+                        # This is a valid substring, and we've reached the end of the part
+                        if curr_token_chain == {'$$': None} or ('$$' in curr_token_chain and char_counter + 1 == len(part)):
                             self._add_to_chain(token, curr_parsed_chain)
                             curr_parsed_chain = curr_parsed_chain.transitions[token]
 
                             token = ''
                             curr_token_chain = self.processed_tokens
 
-                    # It's not a valid token; we'll need to rollback
+                        # This is a valid substring, but it may not be the whole string.
+                        # We'll keep track of it in case it is.
+                        elif '$$' in curr_token_chain:
+                            last_largest_substring = token
+
+
+                    # It's not a valid token; we'll need to rollback.
                     # Example:
 
                     # tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya'])
@@ -78,31 +92,18 @@ class Tokenizer(object):
                     # For 'adabcadam', we'll get to 'ada', but 'b' will not be a valid state.
                     # We then must rollback to 'd'.
                     else:
-                        char_counter -= len(token) - 1
+                        # The entire thing isn't a valid token, but a substring is.
+                        if last_largest_substring != '':
+                            token = last_largest_substring
+                            self._add_to_chain(token, curr_parsed_chain)
+                            curr_parsed_chain = curr_parsed_chain.transitions[token]
+
+                        char_counter -= max(len(token) - 1, 0)
                         token = ''
                         curr_token_chain = self.processed_tokens
-                        
 
-                    # # End of current token; reset state
-                    # else:
-                    #     print('END OF TOKEN')
-                    #     print(token)
-                    #     if token != '':
-                    #         self._add_to_chain(token, curr_parsed_chain)
-                    #         curr_parsed_chain = curr_parsed_chain.transitions[token]
-
-                    #         # Need to stay on this character since this could be the beginning of the
-                    #         # next word
-                    #         char_counter -= 1
-
-                    #     token = ''
-                    #     curr_token_chain = self.processed_tokens
                     char_counter += 1
 
-                # # End of part; make sure we commit the last token
-                # if token != '':
-                #     self._add_to_chain(token, curr_parsed_chain)
-                #     curr_parsed_chain = curr_parsed_chain.transitions[token]
 
 
         ###########################
