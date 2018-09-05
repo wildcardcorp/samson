@@ -27,18 +27,9 @@ class Tokenizer(object):
 
     def _add_to_chain(self, token, parsed_chain):
         if token in parsed_chain.transitions:
-            parsed_chain.transitions[token].probability += 1
+            parsed_chain.transitions[token].count += 1
         else:
-            parsed_chain.transitions[token] = MarkovState(1, {})
-
-
-    # Recursively turn 'hit' counts into probabilities
-    def _calculate_chain_probs(self, chain):
-        total_count = sum([subchain.probability for token, subchain in chain.transitions.items()])
-
-        for _token, subchain in chain.transitions.items():
-            subchain.probability /= total_count
-            self._calculate_chain_probs(subchain)
+            parsed_chain.transitions[token] = MarkovState(count=1, probability=0, transitions={})
 
 
     def generate_chain(self, samples):
@@ -47,7 +38,7 @@ class Tokenizer(object):
         #    STEP 1    #
         # Create chain #
         ################
-        parsed_chain = MarkovState(1, {})
+        parsed_chain = MarkovState(count=1, probability=1, transitions={})
 
         for sample in samples:
             parts = sample.split(self.delimiter)
@@ -110,6 +101,6 @@ class Tokenizer(object):
         #         STEP 2          #
         # Calculate probabilities #
         ###########################
-        self._calculate_chain_probs(parsed_chain)
+        parsed_chain.calculate_chain_probs()
 
         return parsed_chain
