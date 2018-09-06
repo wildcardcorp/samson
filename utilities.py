@@ -136,7 +136,7 @@ def count_bytes(in_bytes):
 
 def int_to_bytes(n, byteorder='little'):
     """Converts the given int n to bytes and returns them."""
-    return n.to_bytes((n.bit_length() + 7) // 8, byteorder)
+    return n.to_bytes(max((n.bit_length() + 7) // 8, 1), byteorder)
 
 
 
