@@ -7,9 +7,11 @@ import struct
 import unittest
 
 
+hash_size = 2
+
 
 def compressor(message, state):
-    return encrypt_aes_ecb(stretch_key(state, 16), message)[:1]
+    return encrypt_aes_ecb(stretch_key(state, 16), message)[:hash_size]
 
 
 def padder(message):
@@ -17,15 +19,13 @@ def padder(message):
 
 
 def construction_func(iv, message):
-    return MerkleDamgardConstruction(iv, compressor, padder, output_size=8).yield_state(message)
+    return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
 
 
 class NostradamusAttackTestCase(unittest.TestCase):
     def test_nostradamus(self):
-        attack = NostradamusAttack(k=3, construction_func=construction_func)
-        del attack.hash_tree[b'S']
-        new_message = attack.execute(b'z')
+        attack = NostradamusAttack(k=3, construction_func=construction_func, output_size=hash_size)
+        new_message = attack.execute(b'!(')
 
-        # md = MerkleDamgardConstruction(b'z', compressor, padder, output_size=8)
-        hashed_message = [state for state in construction_func(b'z', new_message[1:])][-1]
+        hashed_message = MerkleDamgardConstruction(b'!(', compressor, padder, output_size=hash_size).hash(new_message[hash_size:])
         self.assertEqual(hashed_message, attack.crafted_hash)

@@ -11,7 +11,7 @@ class MerkleDamgardConstruction(object):
 
     def yield_state(self, message):
         state = self.initial_state
-        num_bytes = self.output_size // 8
+        num_bytes = self.output_size
 
         for block in get_blocks(self.pad_func(message), num_bytes):
             state = self.compression_func(block, state)[:num_bytes]
