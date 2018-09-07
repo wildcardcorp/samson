@@ -1,6 +1,9 @@
-
-from math import log, ceil
+import math
 from copy import deepcopy
+
+import logging
+log = logging.getLogger(__name__)
+
 
 class NostradamusAttack(object):
     # 'k' is the number of levels the tree will have
@@ -25,7 +28,7 @@ class NostradamusAttack(object):
 
     @staticmethod
     def initialize_with_known_prefixes(prefixes, iv, construction_func, output_size):
-        k = ceil(log(len(prefixes), 2))
+        k = math.ceil(math.log(len(prefixes), 2))
         prefixes = [(prefix + (b'\x00' * output_size))[:output_size] for prefix in prefixes]
         hashed_prefixes = [[state for state in construction_func(iv, prefix)][0] for prefix in prefixes]
 
@@ -34,11 +37,20 @@ class NostradamusAttack(object):
 
 
     def _generate_tree(self):
+        log.debug('Generating hash tree')
         tree = []
         for i in range(self.k):
             tree.append([])
 
-        tree[0] = [(self.prefixes[i], self.prefixes[i + 1]) for i in range(0, len(self.prefixes), 2)]
+
+        promoted_prefix = None
+
+        curr_prefix_list = self.prefixes
+        if len(self.prefixes) % 2 == 1:
+            promoted_prefix = self.prefixes[-1]
+            curr_prefix_list = self.prefixes[:-1]
+
+        tree[0] = [(curr_prefix_list[i], curr_prefix_list[i + 1]) for i in range(0, len(curr_prefix_list), 2)]
 
         solution_tree = []
         for i in range(self.k):
@@ -47,7 +59,6 @@ class NostradamusAttack(object):
 
         for i in range(self.k):
             for (p1, p2) in tree[i]:
-                # print(p1, p2)
                 input_for_p1 = b'\x00' * self.output_size
                 state_to_collide = [state for state in self.construction_func(p1, input_for_p1)][0]
 
@@ -63,7 +74,7 @@ class NostradamusAttack(object):
                         state_ctr += 1
 
                         if state == state_to_collide:
-                            # print('Found collision')
+                            log.debug('Found collision for ({}, {})'.format(p1, p2))
                             found_collision = True
                             solution_tree[i].append((p1, p2, input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide))
                             break
@@ -73,22 +84,38 @@ class NostradamusAttack(object):
 
             # Add solutions
             if i < (self.k - 1):
-                #print(solution_tree)
-                tree[i + 1] = [(solution_tree[i][sol][-1], solution_tree[i][sol + 1][-1]) for sol in range(0, 2 ** (self.k - i - 1), 2)]
 
+                # If there's an odd number of solutions at this level, then there's either a prefix
+                # in waiting, or we need to promote one.
+                next_level_states = solution_tree[i]
+                if len(solution_tree[i]) % 2 == 1:
+                    next_level_states = deepcopy(solution_tree[i])
+
+                    # Last level is a multiple of 2 but not a power of 2 (e.g. 6).
+                    if promoted_prefix == None:
+                        promoted_prefix = next_level_states[-1][-1]
+                        next_level_states = next_level_states[:-1]
+
+                    # We have a prefix in waiting. Use it immediately.
+                    else:
+                        next_level_states.append((promoted_prefix,))
+
+                tree[i + 1] = [(next_level_states[sol][-1], next_level_states[sol + 1][-1]) for sol in range(0, len(next_level_states), 2)]
 
         # We're done generating the tree; time to set the output fields
-        for layer in solution_tree[:-1]:
-            for sol, (p1_init, p2_init, p1_msg, p2_msg, result) in enumerate(layer):
+        for layer in solution_tree:
+            for p1_init, p2_init, p1_msg, p2_msg, result in layer:
                 self.hash_tree[p1_init] = (p1_init, p2_init, p1_msg, p2_msg, result)
                 self.hash_tree[p2_init] = (p1_init, p2_init, p1_msg, p2_msg, result)
-                #self.hash_tree[result] = solution_tree[l + 1][sol // 2]
         
         self.crafted_hash = solution_tree[-1][0][-1]
 
 
+
     def execute(self, message):
         suffix = b''
+
+        hashed = [state for state in self.construction_func()]
 
         while message in self.hash_tree:
             found_node = self.hash_tree[message]

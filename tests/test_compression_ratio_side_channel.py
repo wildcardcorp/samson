@@ -4,9 +4,16 @@ from samson.primitives.aes_ctr import AES_CTR
 from samson.primitives.aes_cbc import encrypt_aes_cbc
 from samson.utilities import gen_rand_key
 from samson.attacks.compression_ratio_side_channel_attack import CompressionRatioSideChannelAttack
+from samson.attacks.crime_attack import CRIMEAttack
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 block_size = 16
+secret = b"Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE="
 
 def aes_ctr_oracle(message):
     ciphertext = AES_CTR(gen_rand_key(block_size), gen_rand_key(block_size // 2)).encrypt(zlib.compress(message))
@@ -22,10 +29,10 @@ def format_req(message):
     return """
 POST / HTTP/1.1
 Host: hapless.com
-Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE=
+{}
 Content-Length: {}
 {}
-""".format(len(message), message).encode()
+""".format(secret.decode(), len(message), message).encode()
 
 
 class CompressionRatioSideChannelTestCase(unittest.TestCase):
@@ -43,11 +50,10 @@ class CompressionRatioSideChannelTestCase(unittest.TestCase):
 
 
     def _execute(self):
-        secret = b'Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE='
         known_plaintext = b'Cookie: '
-        self.request = lambda msg: aes_cbc_oracle(format_req(msg))
-        attack = CompressionRatioSideChannelAttack(self, block_size=block_size)
+        attack = CRIMEAttack(self)
 
-        recovered_plaintext = attack.execute(known_plaintext, len(secret))
+        recovered_plaintext = attack.execute(known_plaintext)
+
         print(recovered_plaintext)
         self.assertEqual(recovered_plaintext, secret)

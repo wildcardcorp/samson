@@ -1,11 +1,12 @@
-OK  Clean up oracles (good for now)
-X   Ensure tests work with:
-    OK  Different inputs
-    OK  Different key sizes
-    X   Different algorithms
-
 ?   Implement stateless block cipher shuffling
-OK  Implement PKCS1.5 padding oracle
-OK  Implement RC4 single-byte bias attack
 X   Implement timing attack algorithm
-OK  Implement zero-key attack on SRP
+
+X   Implement logging for all modules
+
+X   Nostradamus attack
+    OK  Works with prefixes
+    OK  Works with len(prefixes) not a power of 2
+    X   Works with MD5
+
+X   CRIME Attack
+    X   Work on less trivial problems
