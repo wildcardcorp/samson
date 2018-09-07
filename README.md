@@ -28,8 +28,11 @@ Includes:
 * Hash attacks
     * Merkle-Damgard Length Extension
     * Iterated-hash multicollision
+    * Nostradamus attack
 * PRNG Attacks
     * MT19937 cloning
+* Other side-channel attacks
+    * CRIME
 * Text analyzers
     * English
 * Optimization algorithms

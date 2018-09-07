@@ -45,6 +45,9 @@ class NostradamusAttack(object):
 
         promoted_prefix = None
 
+        # Determine if we need to "promote" a prefix. Basically, if we have an odd number of
+        # prefixes on this layer, we put the last prefix in waiting as there will eventually be
+        # another layer which has one less node than a power of two.
         curr_prefix_list = self.prefixes
         if len(self.prefixes) % 2 == 1:
             promoted_prefix = self.prefixes[-1]
@@ -92,6 +95,7 @@ class NostradamusAttack(object):
                     next_level_states = deepcopy(solution_tree[i])
 
                     # Last level is a multiple of 2 but not a power of 2 (e.g. 6).
+                    # Promote our last prefix.
                     if promoted_prefix == None:
                         promoted_prefix = next_level_states[-1][-1]
                         next_level_states = next_level_states[:-1]
@@ -114,8 +118,6 @@ class NostradamusAttack(object):
 
     def execute(self, message):
         suffix = b''
-
-        hashed = [state for state in self.construction_func()]
 
         while message in self.hash_tree:
             found_node = self.hash_tree[message]

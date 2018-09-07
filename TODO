@@ -6,6 +6,8 @@ X   Implement logging for all modules
 X   Nostradamus attack
     OK  Works with prefixes
     OK  Works with len(prefixes) not a power of 2
+    X   Implement less naively (?)
+        X   Maybe find collisions instead of second preimages
     X   Works with MD5
 
 X   CRIME Attack
