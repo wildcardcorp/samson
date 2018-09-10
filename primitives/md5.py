@@ -1,5 +1,5 @@
 from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
-from samson.utilities import int_to_bytes
+from samson.utilities import int_to_bytes, left_rotate
 import math
 
 # https://rosettacode.org/wiki/MD5/Implementation#Python
@@ -22,9 +22,7 @@ index_functions = 16*[lambda i: i] + \
                   16*[lambda i: (7*i)%16]
  
 
-def left_rotate(x, amount):
-    x &= 0xFFFFFFFF
-    return ((x<<amount) | (x>>(32-amount))) & 0xFFFFFFFF
+
 
 
 def state_to_bytes(state):

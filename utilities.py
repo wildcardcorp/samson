@@ -139,6 +139,43 @@ def int_to_bytes(n, byteorder='little'):
     return n.to_bytes(max((n.bit_length() + 7) // 8, 1), byteorder)
 
 
+# https://en.wikipedia.org/wiki/Non-adjacent_form
+# Takes in bytes/bytearray or int
+def to_NAF(input_arg):
+    if type(input_arg) is int:
+        E = input_arg
+    else:
+        E = int.from_bytes(input_arg, 'big')
+    #bitstring = byte_to_bitstring(byte_arr)
+    
+    z = []
+    
+    i = 0
+    while E > 0:
+        if E % 2 == 1:
+            z.append(int(2 - (E % 4)))
+            E -= z[-1]
+        else:
+            z.append(0)
+        
+        E /= 2
+        i += 1
+    return z[::-1]
+
+
+def from_NAF(naf):
+    total = 0
+    reversed_naf = naf[::-1]
+    for i in range(len(naf)):
+        total += 2 ** i * reversed_naf[i]
+    
+    return total
+
+
+def left_rotate(x, amount):
+    x &= 0xFFFFFFFF
+    return ((x<<amount) | (x>>(32-amount))) & 0xFFFFFFFF
+    
 
 def gcd(a, b):
     if b == 0:

@@ -2,11 +2,11 @@
 # source: https://github.com/ajalt/python-sha1/blob/master/sha1.py
 import io
 import struct
+from samson.utilities import left_rotate
 
-
-def _left_rotate(n, b):
-    """Left rotate a 32-bit integer n by b bits."""
-    return ((n << b) | (n >> (32 - b))) & 0xffffffff
+# def _left_rotate(n, b):
+#     """Left rotate a 32-bit integer n by b bits."""
+#     return ((n << b) | (n >> (32 - b))) & 0xffffffff
 
 def _process_chunk(chunk, h0, h1, h2, h3, h4):
     """Process a chunk of data and return the new digest variables."""
@@ -20,7 +20,7 @@ def _process_chunk(chunk, h0, h1, h2, h3, h4):
 
     # Extend the sixteen 4-byte words into eighty 4-byte words
     for i in range(16, 80):
-        w[i] = _left_rotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1)
+        w[i] = left_rotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1)
 
     # Initialize hash value for this chunk
     a = h0
@@ -44,8 +44,8 @@ def _process_chunk(chunk, h0, h1, h2, h3, h4):
             f = b ^ c ^ d
             k = 0xCA62C1D6
 
-        a, b, c, d, e = ((_left_rotate(a, 5) + f + e + k + w[i]) & 0xffffffff,
-                        a, _left_rotate(b, 30), c, d)
+        a, b, c, d, e = ((left_rotate(a, 5) + f + e + k + w[i]) & 0xffffffff,
+                        a, left_rotate(b, 30), c, d)
 
     # Add this chunk's hash to result so far
     h0 = (h0 + a) & 0xffffffff
