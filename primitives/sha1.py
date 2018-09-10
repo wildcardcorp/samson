@@ -2,13 +2,12 @@
 # source: https://github.com/ajalt/python-sha1/blob/master/sha1.py
 import io
 import struct
-from samson.utilities import left_rotate
+from samson.utilities import left_rotate, md_pad, int_to_bytes
+from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
 
-# def _left_rotate(n, b):
-#     """Left rotate a 32-bit integer n by b bits."""
-#     return ((n << b) | (n >> (32 - b))) & 0xffffffff
-
-def _process_chunk(chunk, h0, h1, h2, h3, h4):
+#h0, h1, h2, h3, h4
+#_process_chunk
+def compression_func(chunk, state):
     """Process a chunk of data and return the new digest variables."""
     assert len(chunk) == 64
 
@@ -23,6 +22,8 @@ def _process_chunk(chunk, h0, h1, h2, h3, h4):
         w[i] = left_rotate(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1)
 
     # Initialize hash value for this chunk
+    h0, h1, h2, h3, h4 = bytes_to_state(state)
+
     a = h0
     b = h1
     c = h2
@@ -54,111 +55,39 @@ def _process_chunk(chunk, h0, h1, h2, h3, h4):
     h3 = (h3 + d) & 0xffffffff
     h4 = (h4 + e) & 0xffffffff
 
-    return h0, h1, h2, h3, h4
+    state = [h0, h1, h2, h3, h4]
 
-
-def generate_padding(length):
-    # append the bit '1' to the message
-    padding = b'\x80'
-
-    # append 0 <= k < 512 bits '0', so that the resulting message length (in bytes)
-    # is congruent to 56 (mod 64)
-    padding += b'\x00' * ((56 - (length + 1) % 64) % 64)
-
-    # append length of message (before pre-processing), in bits, as 64-bit big-endian integer
-    message_bit_length = length * 8
-    padding += struct.pack(b'>Q', message_bit_length)
-    return padding
+    return state_to_bytes(state)
 
 
 
-class Sha1Hash(object):
-    """A class that mimics that hashlib api and implements the SHA-1 algorithm."""
-
-    name = 'python-sha1'
-    digest_size = 20
-    block_size = 64
-
-    initial_registers = (
-        0x67452301,
-        0xEFCDAB89,
-        0x98BADCFE,
-        0x10325476,
-        0xC3D2E1F0,
-    )
-
-    def __init__(self, registers = initial_registers):
-        # Initial digest variables
-        # self._h = (
-        #     0x67452301,
-        #     0xEFCDAB89,
-        #     0x98BADCFE,
-        #     0x10325476,
-        #     0xC3D2E1F0,
-        # )
-
-        self._h = registers
-
-        # bytes object with 0 <= len < 64 used to store the end of the message
-        # if the message length is not congruent to 64
-        self._unprocessed = b''
-        # Length in bytes of all data that has been processed so far
-        self._message_byte_length = 0
-
-    def update(self, arg):
-        """Update the current digest.
-        This may be called repeatedly, even after calling digest or hexdigest.
-
-        Arguments:
-            arg: bytes, bytearray, or BytesIO object to read from.
-        """
-        if isinstance(arg, (bytes, bytearray)):
-            arg = io.BytesIO(arg)
-
-        # Try to build a chunk out of the unprocessed data, if any
-        chunk = self._unprocessed + arg.read(64 - len(self._unprocessed))
-
-        # Read the rest of the data, 64 bytes at a time
-        while len(chunk) == 64:
-            self._h = _process_chunk(chunk, *self._h)
-            self._message_byte_length += 64
-            chunk = arg.read(64)
-
-        self._unprocessed = chunk
-        return self
+def state_to_bytes(state):
+    return int_to_bytes(sum(x<<(32*i) for i, x in enumerate(state[::-1])), 'big')
 
 
-    def digest(self, fakeLen=None):
-        """Produce the final hash value (big-endian) as a bytes object"""
-        return b''.join(struct.pack(b'>I', h) for h in self._produce_digest(fakeLen))
-
-    def hexdigest(self):
-        """Produce the final hash value (big-endian) as a hex string"""
-        return '%08x%08x%08x%08x%08x' % self._produce_digest()
+def bytes_to_state(state_bytes):
+    as_int = int.from_bytes(state_bytes, 'big')
+    return [(as_int>>(32*i)) & 0xffffffff for i in range(4, -1, -1)]
 
 
-    def _produce_digest(self, fakeLen=None):
-        """Return finalized digest variables for the data processed so far."""
-        # Pre-processing:
-        message = self._unprocessed
-        message_byte_length = self._message_byte_length + len(message)
-
-        message += generate_padding(message_byte_length if fakeLen is None else fakeLen)
-
-        # Process the final chunk
-        # At this point, the length of the message is either 64 or 128 bytes.
-        h = _process_chunk(message[:64], *self._h)
-        if len(message) == 64:
-            return h
-        return _process_chunk(message[64:], *h)
-
-def sha1(data):
-    return Sha1Hash().update(data).digest()
+    
+def padding_func(message):
+    return md_pad(message, None, 'big')
 
 
-assert(sha1(b"The quick brown fox jumps over the lazy dog") ==
+class SHA1(MerkleDamgardConstruction):
+    def __init__(self, initial_state=None):
+        self.initial_state = initial_state or state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])
+        self.compression_func = compression_func
+        self.pad_func = padding_func
+        self.block_size = 64
+
+
+sha1 = SHA1()
+
+assert(sha1.hash(b"The quick brown fox jumps over the lazy dog") ==
         bytes.fromhex("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"))
-assert(sha1(b"The quick brown fox jumps over the lazy cog") ==
+assert(sha1.hash(b"The quick brown fox jumps over the lazy cog") ==
         bytes.fromhex("de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"))
-assert(sha1(b"") ==
+assert(sha1.hash(b"") ==
         bytes.fromhex("da39a3ee5e6b4b0d3255bfef95601890afd80709"))

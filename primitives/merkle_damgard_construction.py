@@ -1,8 +1,7 @@
-from samson.primitives.sha1 import generate_padding
-from samson.utilities import get_blocks
+from samson.utilities import get_blocks, md_pad
 
 class MerkleDamgardConstruction(object):
-    def __init__(self, initial_state, compression_func, pad_func=lambda msg: msg + generate_padding(len(msg)), block_size=128):
+    def __init__(self, initial_state, compression_func, pad_func=lambda msg: md_pad(msg), block_size=64):
         self.pad_func = pad_func
         self.initial_state = initial_state
         self.compression_func = compression_func

@@ -1,5 +1,5 @@
 from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
-from samson.utilities import int_to_bytes, left_rotate
+from samson.utilities import int_to_bytes, left_rotate, md_pad
 import math
 
 # https://rosettacode.org/wiki/MD5/Implementation#Python
@@ -56,15 +56,18 @@ def compression_func(message, state):
     return state_to_bytes(new_state)
 
 
-def padding_func(message):
-    message = bytearray(message) #copy our input into a mutable buffer
-    orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
-    message.append(0x80)
-    while len(message)%64 != 56:
-        message.append(0)
-    message += orig_len_in_bits.to_bytes(8, byteorder='little')
+# def padding_func(message):
+#     message = bytearray(message) #copy our input into a mutable buffer
+#     orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
+#     message.append(0x80)
+#     while len(message)%64 != 56:
+#         message.append(0)
+#     message += orig_len_in_bits.to_bytes(8, byteorder='little')
 
-    return message
+#     return message
+
+def padding_func(message):
+    return md_pad(message, None, 'little')
 
 
 
@@ -73,4 +76,4 @@ class MD5(MerkleDamgardConstruction):
         self.initial_state = initial_state or state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])
         self.compression_func = compression_func
         self.pad_func = padding_func
-        self.output_size = 64
+        self.block_size = 64

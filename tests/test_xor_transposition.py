@@ -33,7 +33,7 @@ class XORTranspositionTestCase(unittest.TestCase):
             ciphertexts = [encryptor(secret) for secret in secrets]
 
             analyzer = EnglishAnalyzer()
-            attack = XORTranspositionAttack(analyzer, decrypt, block_size)
+            attack = XORTranspositionAttack(analyzer, block_size)
             recovered_plaintexts = attack.execute(ciphertexts)
 
             #print(recovered_plaintexts)
