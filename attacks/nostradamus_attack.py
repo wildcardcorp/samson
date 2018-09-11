@@ -122,7 +122,6 @@ class NostradamusAttack(object):
         while message in self.hash_tree:
             found_node = self.hash_tree[message]
 
-
             if found_node[0] == message:
                 next_suffix = found_node[2]
             else:

@@ -7,16 +7,14 @@ def _build_sha1_internal_state(hash_bytes):
 
 def _sha1_length_extension(original, message, append_bytes, secret_len):
     chunks = _build_sha1_internal_state(original)
-    glue = md_pad(message, len(message) + secret_len)[len(message):]
-    #glue = generate_padding(len(message) + secret_len)
+    glue = md_pad(message, len(message) + secret_len, 'big')[len(message):]
 
     fake_len = secret_len + len(message) + len(glue) + len(append_bytes)
-    hash_obj = SHA1(chunks)
-    hash_obj.pad_func = lambda msg: md_pad(message, fake_len, 'big')
-    # hash_obj.update(append_bytes)
-    # return message + glue + append_bytes, hash_obj.digest(fake_len)
-    return message + glue + append_bytes, hash_obj.hash(append_bytes)
 
+    new_hash = SHA1(chunks)
+    new_hash.pad_func = lambda msg: md_pad(msg, fake_len, 'big')
+
+    return message + glue + append_bytes, new_hash.hash(append_bytes)
 
 
 class HMACForgeryAttack(object):

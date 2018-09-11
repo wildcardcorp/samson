@@ -23,19 +23,37 @@ def encrypt_rc4(secret):
 
 
 class XORTranspositionTestCase(unittest.TestCase):
-    def test_transposition_attack(self):
-        self.maxDiff = None
-
+    def try_encryptor(self, encryptor):
         with open('tests/test_ctr_transposition.txt') as f:
             secrets = [base64.b64decode(line.strip().encode()) for line in f.readlines()]
 
-        for encryptor in [encrypt_rc4, encrypt_ctr]:
-            ciphertexts = [encryptor(secret) for secret in secrets]
+        ciphertexts = [encryptor(secret) for secret in secrets]
 
-            analyzer = EnglishAnalyzer()
-            attack = XORTranspositionAttack(analyzer, block_size)
-            recovered_plaintexts = attack.execute(ciphertexts)
+        analyzer = EnglishAnalyzer()
+        attack = XORTranspositionAttack(analyzer)
+        recovered_plaintexts = attack.execute(ciphertexts)
 
-            #print(recovered_plaintexts)
-            avg_distance = sum([levenshtein_distance(a,b) for a,b in zip(recovered_plaintexts, [bytearray(secret[:53]) for secret in secrets])]) / len(secrets)
-            self.assertLessEqual(avg_distance, 2)
+        print(recovered_plaintexts)
+        avg_distance = sum([levenshtein_distance(a,b) for a,b in zip(recovered_plaintexts, [bytearray(secret[:53]) for secret in secrets])]) / len(secrets)
+        self.assertLessEqual(avg_distance, 2)
+
+
+    def test_rc4_attack(self):
+        self.try_encryptor(encrypt_rc4)
+        # self.maxDiff = None
+
+
+        # for encryptor in [encrypt_rc4, encrypt_ctr]:
+        #     ciphertexts = [encryptor(secret) for secret in secrets]
+
+        #     analyzer = EnglishAnalyzer()
+        #     attack = XORTranspositionAttack(analyzer)
+        #     recovered_plaintexts = attack.execute(ciphertexts)
+
+        #     print(recovered_plaintexts)
+        #     avg_distance = sum([levenshtein_distance(a,b) for a,b in zip(recovered_plaintexts, [bytearray(secret[:53]) for secret in secrets])]) / len(secrets)
+        #     self.assertLessEqual(avg_distance, 2)
+
+    
+    def test_ctr_attack(self):
+        self.try_encryptor(encrypt_ctr)

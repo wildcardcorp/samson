@@ -40,5 +40,5 @@ class SRPClient(object):
 
 
     def craft_auth_bypass(self, salt):
-        cK = hashlib.sha256(b'\x00' * 0).digest()
+        cK = hashlib.sha256(b'\x00' * 1).digest()
         return hashlib.sha256(cK + salt).digest()

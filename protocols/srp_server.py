@@ -39,6 +39,7 @@ class SRPServer(object):
         A = request['A']
 
         hex_A = int_to_bytes(A)
+        print(hex_A)
         hex_B = int_to_bytes(request['B'])
 
         uH = int.from_bytes(hashlib.sha256(hex_A + hex_B).digest(), 'little')

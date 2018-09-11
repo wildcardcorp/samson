@@ -6,11 +6,9 @@ import unittest
 
 key = gen_rand_key()
 
+
 def insecure_hmac(key, data):
     return SHA1().hash(key + data)
-    # hash_obj = Sha1Hash()
-    # hash_obj.update(key + data)
-    # return hash_obj.digest()
 
 
 class HMACForgeryTestCase(unittest.TestCase):

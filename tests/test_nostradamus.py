@@ -19,13 +19,25 @@ def padder(message):
 
 
 def construction_func(iv, message):
-    return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
+    return MerkleDamgardConstruction(iv, compressor, padder, block_size=hash_size).yield_state(message)
 
 
 class NostradamusAttackTestCase(unittest.TestCase):
     def test_nostradamus(self):
-        attack = NostradamusAttack(k=3, construction_func=construction_func, output_size=hash_size)
-        new_message = attack.execute(b'!(')
+        attack = NostradamusAttack(k=2, construction_func=construction_func, output_size=hash_size)
+        attempt_hash = [item for item in attack.hash_tree.items()][0][0]
+        new_message = attack.execute(attempt_hash)
 
-        hashed_message = MerkleDamgardConstruction(b'!(', compressor, padder, output_size=hash_size).hash(new_message[hash_size:])
+        hashed_message = [state for state in construction_func( b'\x00' * 2, new_message)][-1]
         self.assertEqual(hashed_message, attack.crafted_hash)
+
+
+    def test_chosen_prefix(self):
+        prefixes = [b'Hiya', b'another', b'more']
+        attack = NostradamusAttack.initialize_with_known_prefixes(prefixes, b'\x00' * 2, construction_func, hash_size)
+
+        for prefix in prefixes:
+            orig_hash = [state for state in construction_func( b'\x00' * 2, prefix[:2])][-1]
+            new_message = attack.execute(orig_hash)
+            hashed_message = [state for state in construction_func( b'\x00' * 2, prefix[:2] + new_message)][-1]
+            self.assertEqual(hashed_message, attack.crafted_hash)
