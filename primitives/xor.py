@@ -1,4 +1,5 @@
-from samson.utilities import hamming_distance, xor_buffs, stretch_key
+from samson.utilities.analysis import hamming_distance
+from samson.utilities.manipulation import xor_buffs, stretch_key
 import operator
 
 def decrypt(key, in_bytes):

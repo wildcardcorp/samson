@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 from samson.primitives.aes_ecb import encrypt_aes_ecb, decrypt_aes_ecb
-from samson.utilities import gen_rand_key, get_blocks, pkcs7_pad
+from samson.utilities.general import rand_bytes
+from samson.utilities.manipulation import get_blocks
+from samson.utilities.padding import pkcs7_pad
 
-key = gen_rand_key()
+key = rand_bytes()
 
 def parse_user(user):
     # Prevent dictionary randomization

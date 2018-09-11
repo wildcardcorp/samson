@@ -1,10 +1,11 @@
 #!/usr/bin/python3
-from samson.utilities import gen_rand_key, pkcs7_pad
+from samson.utilities.padding import pkcs7_pad
+from samson.utilities.general import rand_bytes
 from samson.attacks.hmac_forgery_attack import HMACForgeryAttack
 from samson.primitives.sha1 import SHA1
 import unittest
 
-key = gen_rand_key()
+key = rand_bytes()
 
 
 def insecure_hmac(key, data):

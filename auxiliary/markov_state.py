@@ -1,4 +1,4 @@
-from samson.utilities import gen_rand_key
+from samson.utilities.general import rand_bytes
 
 class MarkovState(object):
     def __init__(self, count, probability, transitions):
@@ -20,7 +20,7 @@ class MarkovState(object):
     def random_walk(self, distance):
         result = []
         if distance > 0:
-            rand_num = int.from_bytes(gen_rand_key(1), 'big')
+            rand_num = int.from_bytes(rand_bytes(1), 'big')
             winning_probability = rand_num / 256
             
             prob_accumulator = 0.0

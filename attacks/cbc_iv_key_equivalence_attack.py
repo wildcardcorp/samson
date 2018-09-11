@@ -1,4 +1,4 @@
-from samson.utilities import *
+from samson.utilities.manipulation import get_blocks, xor_buffs
 from samson.primitives.aes_cbc import decrypt_aes_cbc
 
 class CBCIVKeyEquivalenceAttack(object):

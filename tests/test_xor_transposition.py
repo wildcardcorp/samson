@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 from samson.primitives.aes_ctr import AES_CTR
 from samson.primitives.xor import decrypt 
-from samson.utilities import gen_rand_key, levenshtein_distance
+from samson.utilities.general import rand_bytes
+from samson.utilities.analysis import levenshtein_distance
 from samson.attacks.xor_transposition_attack import XORTranspositionAttack
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 from Crypto.Cipher import ARC4
@@ -10,7 +11,7 @@ import struct
 import unittest
 
 block_size = 16
-key = gen_rand_key(block_size)
+key = rand_bytes(block_size)
 
 def encrypt_ctr(secret):
     aes = AES_CTR(key, struct.pack('Q', 0))

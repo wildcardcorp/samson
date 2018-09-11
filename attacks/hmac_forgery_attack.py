@@ -1,5 +1,6 @@
-from samson.utilities import *
+from samson.utilities.padding import md_pad
 from samson.primitives.sha1 import SHA1
+import struct
 
 def _build_sha1_internal_state(hash_bytes):
     return [struct.unpack('>I', hash_bytes[i * 4: (i + 1) * 4])[0] for i in range(len(hash_bytes) // 4)]

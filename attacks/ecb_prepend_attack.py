@@ -1,4 +1,6 @@
-from samson.utilities import *
+from samson.utilities.manipulation import get_blocks
+from samson.utilities.padding import pkcs7_unpad
+import struct
 
 class ECBPrependAttack(object):
     # Expects a StatelessBlockEncryptionOracle

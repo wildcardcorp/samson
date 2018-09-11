@@ -1,4 +1,4 @@
-from samson.utilities import pkcs7_pad, pkcs7_unpad
+from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from Crypto.Cipher import AES
 
 def encrypt_aes_ecb(key, message):

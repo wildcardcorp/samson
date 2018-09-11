@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from samson.utilities import xor_buffs
+from samson.utilities.manipulation import xor_buffs
 from Crypto.Cipher import AES
 from math import ceil
 import struct

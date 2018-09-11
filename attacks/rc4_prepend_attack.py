@@ -1,4 +1,4 @@
-from samson.utilities import generate_rc4_bias_map, RC4_BIAS_MAP
+from samson.utilities.analysis import generate_rc4_bias_map, RC4_BIAS_MAP
 import multiprocessing
 import itertools
 import struct

@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 from Crypto.Random import random
 from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
-from samson.utilities import get_blocks, xor_buffs, gen_rand_key, pkcs7_unpad
+from samson.utilities.manipulation import get_blocks, xor_buffs
+from samson.utilities.general import rand_bytes
+from samson.utilities.padding import pkcs7_unpad
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
 import base64
@@ -9,8 +11,8 @@ import struct
 import unittest
 
 block_size = 16
-key = gen_rand_key(block_size)
-iv = gen_rand_key(block_size)
+key = rand_bytes(block_size)
+iv = rand_bytes(block_size)
 
 plaintext_strings = [
     'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',

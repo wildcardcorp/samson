@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import urllib.parse
-from samson.utilities import gen_rand_key
+from samson.utilities.general import rand_bytes
 from samson.primitives.aes_ctr import AES_CTR
 from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
 from samson.attacks.xor_bitflipping_attack import XORBitflippingAttack
@@ -10,9 +10,9 @@ import time
 import unittest
 
 block_size = 16
-key = gen_rand_key(block_size)
-iv = gen_rand_key(block_size)
-nonce = gen_rand_key(block_size // 2)
+key = rand_bytes(block_size)
+iv = rand_bytes(block_size)
+nonce = rand_bytes(block_size // 2)
 
 def format_data(data):
     return ("comment1=cooking%20MCs;userdata=" + urllib.parse.quote(data) + ";comment2=%20like%20a%20pound%20of%20bacon").encode()

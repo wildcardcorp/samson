@@ -2,7 +2,9 @@
 # source: https://github.com/ajalt/python-sha1/blob/master/sha1.py
 import io
 import struct
-from samson.utilities import left_rotate, md_pad, int_to_bytes
+from samson.utilities.manipulation import left_rotate
+from samson.utilities.padding import md_pad
+from samson.utilities.encoding import int_to_bytes
 from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
 
 #h0, h1, h2, h3, h4

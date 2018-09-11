@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
-from samson.utilities import *
+from samson.utilities.manipulation import xor_buffs, get_blocks
+from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 
 def encrypt_aes_cbc(key, iv, message, pad=True, block_size=16):
     encryptor = AES.new(key, AES.MODE_ECB)

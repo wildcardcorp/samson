@@ -1,4 +1,6 @@
-from samson.utilities import *
+from samson.utilities.manipulation import get_blocks, xor_buffs
+from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
+import struct
 
 # https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
 class CBCPaddingOracleAttack(object):

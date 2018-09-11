@@ -1,4 +1,4 @@
-from samson.utilities import get_blocks, xor_buffs
+from samson.utilities.manipulation import get_blocks, xor_buffs
 
 class DaviesMeyerConstruction(object):
     def __init__(self, initial_state, encryptor, decryptor):

@@ -1,4 +1,5 @@
-from samson.utilities import get_blocks, md_pad
+from samson.utilities.manipulation import get_blocks
+from samson.utilities.padding import md_pad
 
 class MerkleDamgardConstruction(object):
     def __init__(self, initial_state, compression_func, pad_func=lambda msg: md_pad(msg), block_size=64):

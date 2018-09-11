@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-from samson.utilities import gen_rand_key, pkcs7_pad, pkcs7_unpad, get_blocks, xor_buffs
+from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
+from samson.utilities.general import rand_bytes
+from samson.utilities.manipulation import get_blocks, xor_buffs
 from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
 from samson.attacks.cbc_iv_key_equivalence_attack import CBCIVKeyEquivalenceAttack
 import base64
@@ -7,7 +9,7 @@ import struct
 import unittest
 
 block_size = 32
-key = gen_rand_key(block_size)
+key = rand_bytes(block_size)
 iv = key
 
 def sender_encrypt(data):

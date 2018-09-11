@@ -1,7 +1,8 @@
 from samson.attacks.nostradamus_attack import NostradamusAttack
 from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
 from Crypto.Cipher import AES
-from samson.utilities import gen_rand_key, stretch_key, int_to_bytes
+from samson.utilities.manipulation import stretch_key
+from samson.utilities.encoding import int_to_bytes
 from samson.primitives.aes_ecb import encrypt_aes_ecb
 import struct
 import unittest

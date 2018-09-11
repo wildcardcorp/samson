@@ -1,4 +1,4 @@
-from samson.utilities import *
+from samson.utilities.manipulation import xor_buffs
 
 # CTR will XOR the keystream with the ciphertext to decrypt the data. By injecting known plaintext,
 # we can recover that block's keystream and XOR in our own plaintext. While this may seem extraneous given

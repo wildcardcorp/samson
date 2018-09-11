@@ -1,5 +1,5 @@
-from samson.utilities import *
 import string
+import struct
 
 import logging
 log = logging.getLogger(__name__)

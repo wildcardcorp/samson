@@ -1,6 +1,7 @@
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.primitives.rsa import RSA
-from samson.utilities import pkcs15_pad, int_to_bytes
+from samson.utilities.padding import pkcs15_pad
+from samson.utilities.encoding import int_to_bytes
 from random import randint
 
 def _ceil(a, b):

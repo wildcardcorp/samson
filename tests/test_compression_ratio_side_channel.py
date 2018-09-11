@@ -2,7 +2,7 @@
 import zlib
 from samson.primitives.aes_ctr import AES_CTR
 from samson.primitives.aes_cbc import encrypt_aes_cbc
-from samson.utilities import gen_rand_key
+from samson.utilities.general import rand_bytes
 from samson.attacks.compression_ratio_side_channel_attack import CompressionRatioSideChannelAttack
 from samson.attacks.crime_attack import CRIMEAttack
 import unittest
@@ -16,12 +16,12 @@ block_size = 16
 secret = b"Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE="
 
 def aes_ctr_oracle(message):
-    ciphertext = AES_CTR(gen_rand_key(block_size), gen_rand_key(block_size // 2)).encrypt(zlib.compress(message))
+    ciphertext = AES_CTR(rand_bytes(block_size), rand_bytes(block_size // 2)).encrypt(zlib.compress(message))
     return len(ciphertext)
 
 
 def aes_cbc_oracle(message):
-    ciphertext = encrypt_aes_cbc(gen_rand_key(block_size), gen_rand_key(block_size), zlib.compress(message), block_size=block_size)
+    ciphertext = encrypt_aes_cbc(rand_bytes(block_size), rand_bytes(block_size), zlib.compress(message), block_size=block_size)
     return len(ciphertext)
 
 

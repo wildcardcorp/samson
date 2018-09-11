@@ -1,5 +1,6 @@
 from Crypto.Util.number import getPrime
-from samson.utilities import *
+from samson.utilities.math import gcd, lcm, mod_inv
+from samson.utilities.encoding import int_to_bytes
 
 class RSA(object):
     def __init__(self, bits, p=None, q=None, e=None):

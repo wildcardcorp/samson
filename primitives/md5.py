@@ -1,5 +1,7 @@
 from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
-from samson.utilities import int_to_bytes, left_rotate, md_pad
+from samson.utilities.manipulation import left_rotate
+from samson.utilities.padding import md_pad
+from samson.utilities.encoding import int_to_bytes
 import math
 
 # https://rosettacode.org/wiki/MD5/Implementation#Python

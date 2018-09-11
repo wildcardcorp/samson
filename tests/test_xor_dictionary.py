@@ -1,6 +1,7 @@
 from samson.attacks.xor_dictionary_attack import XORDictionaryAttack
 from samson.analyzers.english_analyzer import EnglishAnalyzer
-from samson.utilities import gen_rand_key, xor_buffs
+from samson.utilities.general import rand_bytes
+from samson.utilities.manipulation import xor_buffs
 import unittest
 
 
@@ -11,7 +12,7 @@ class XORDictionaryAttackTestCase(unittest.TestCase):
     def test_xor_dictionary_attack(self):
         # ciphertexts = [bytearray(b"\xedq`\xc81r1\x97\xee\'\x91\xd6{j2W"), bytearray(b'\xeapn\xd5xy7\x82\xe6,\xc5\x85|`*O')]
 
-        key = gen_rand_key(16)
+        key = rand_bytes(16)
         msgA = b'significant risk'
         msgB = b'this movie sucks'
 

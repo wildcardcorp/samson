@@ -1,6 +1,7 @@
-from samson.utilities import *
+from samson.utilities.manipulation import xor_buffs
 from samson.primitives.xor import decrypt
 from copy import deepcopy
+import struct
 import pickle
 import os
 
@@ -28,8 +29,6 @@ class XORTranspositionAttack(object):
 
             transposed_plaintexts.append(sorted(all_chars.items(), key=lambda kv: kv[1][0], reverse=True)[0][1][1])
 
-
-        #first_pass_plaintexts = [bytearray(transposed) for transposed in zip(*transposed_plaintexts)]
 
         retransposed_plaintexts = [bytearray(transposed) for transposed in zip(*transposed_plaintexts)]
 

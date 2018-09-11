@@ -1,6 +1,6 @@
 from samson.primitives.aes_ctr import AES_CTR
 from samson.primitives.xor import decrypt
-from samson.utilities import gen_rand_key
+from samson.utilities.general import rand_bytes
 from samson.analyzers.english_analyzer import *
 from samson.attacks.ctr_transposition_attack import CTRTranspositionAttack
 from sklearn.tree import DecisionTreeClassifier
@@ -14,7 +14,7 @@ import pickle
 
 
 block_size = 16
-key = gen_rand_key(block_size)
+key = rand_bytes(block_size)
 
 def encrypt(secret):
     aes = AES_CTR(key, struct.pack('Q', 0))
