@@ -2,6 +2,9 @@ from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_unpad
 import struct
 
+import logging
+log = logging.getLogger(__name__)
+
 class ECBPrependAttack(object):
     # Expects a StatelessBlockEncryptionOracle
     def __init__(self, oracle):
@@ -14,6 +17,8 @@ class ECBPrependAttack(object):
 
         plaintexts = []
         for curr_block in range(baseline // block_size):
+            log.debug("Starting iteration {}".format(curr_block))
+            
             plaintext = b''
             for curr_byte in range(block_size):
                 if curr_block == 0:

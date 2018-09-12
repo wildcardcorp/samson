@@ -4,6 +4,9 @@ from samson.utilities.padding import pkcs15_pad
 from samson.utilities.encoding import int_to_bytes
 from random import randint
 
+import logging
+log = logging.getLogger(__name__)
+
 def _ceil(a, b):
     return (a + b - 1) // b
 
@@ -37,19 +40,26 @@ class PKCS15PaddingOracleAttack(object):
         i = 1
 
         if not self.oracle.check_padding(c):
+            log.debug("Initial padding not correct; attempting blinding")
+
             # Step 1: Blinding
             while True:
                 s = randint(0, n - 1)
                 c_0 = (c * pow(s, e, n)) % n
 
                 if self.oracle.check_padding(c_0):
+                    log.debug("Padding is now correct; blinding complete")
                     break
 
         # Step 2
         while True:
+            log.debug("Starting iteration {}".format(i))
+            log.debug("Current intervals: {}".format(M))
             # Step 2.a
             if i == 1:
                 s = _ceil(n, 3*B)
+
+                log.debug("Starting search at {}".format(s))
 
                 while True:
                     c = c_0 * pow(s, e, n) % n
@@ -59,6 +69,7 @@ class PKCS15PaddingOracleAttack(object):
                     s += 1
             # Step 2.b
             elif len(M) >= 2:
+                log.debug("Intervals left: {}".format(M))
                 while True:
                     s += 1
                     c = c_0 * pow(s, e, n) % n
@@ -68,10 +79,11 @@ class PKCS15PaddingOracleAttack(object):
                         
             # Step 2.c
             elif len(M) == 1:
+                log.debug("Only one interval")
+
                 a, b = M[0]
 
                 if a == b:
-                    #b'\x00' + 
                     return b'\x00' + int_to_bytes(a, 'big')
 
                 r = _ceil(2 * (b*s - 2*B), n)

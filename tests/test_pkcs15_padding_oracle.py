@@ -4,6 +4,9 @@ from samson.utilities.padding import pkcs15_pad
 from samson.attacks.pkcs15_padding_oracle_attack import PKCS15PaddingOracleAttack, _ceil
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+
 key_length = 256
 rsa = RSA(key_length)
 

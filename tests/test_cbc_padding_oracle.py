@@ -10,6 +10,9 @@ import base64
 import struct
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+
 block_size = 16
 key = rand_bytes(block_size)
 iv = rand_bytes(block_size)

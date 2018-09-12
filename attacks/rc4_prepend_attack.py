@@ -3,6 +3,9 @@ import multiprocessing
 import itertools
 import struct
 
+import logging
+log = logging.getLogger(__name__)
+
 # The RC4PrependAttack uses an EncryptionOracle that prepends the payload and then encrypts the whole message with a randomly generated key.
 # The attack uses specific byte biases found in the RC4 keystream and feeds the plaintext into these locations. Using the law of large numbers,
 # the keystream bias will surface, and we can XOR it with the ciphertext to return the plaintext. This specific implementation uses several optmizations.
@@ -28,7 +31,11 @@ class RC4PrependAttack(object):
         cpu_count = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cpu_count)
 
+        log.debug("Running with {} cores".format(cpu_count))
+
         for i in range(ciphertext_length):
+            log.debug("Starting iteration {}/{}".format(i, ciphertext_length))
+
             if len(cracked_indices[i]) > 0:
                 continue
 
@@ -39,8 +46,11 @@ class RC4PrependAttack(object):
             payload = b'\x00' * padding_len
             chunk_size = sample_size // cpu_count
 
+            log.debug("Sampling {} ciphertexts".format(sample_size))
             random_ciphertexts = [pool.apply_async(self._encrypt_chunk, (payload, chunk_size)) for i in range(cpu_count)]
             flattened_list = [result for result_list in random_ciphertexts for result in result_list.get()]
+
+            log.debug("Generating bias map")
             bias_map = generate_rc4_bias_map(flattened_list)
 
             for bias_idx in active_biases:

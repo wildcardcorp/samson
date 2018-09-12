@@ -8,6 +8,10 @@ from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncry
 from samson.attacks.ecb_prepend_attack import ECBPrependAttack
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+
+
 block_size = 16
 
 def encrypt_aes_ecb(key, message):

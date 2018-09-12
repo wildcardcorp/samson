@@ -7,6 +7,9 @@ from samson.primitives.aes_ecb import encrypt_aes_ecb
 import struct
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+
 
 hash_size = 2
 

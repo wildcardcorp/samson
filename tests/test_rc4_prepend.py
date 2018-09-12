@@ -5,6 +5,9 @@ from Crypto.Cipher import ARC4
 import base64
 import unittest
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
+
 # For speed reasons
 #secret = base64.b64decode(b'QkUgU1VSRSBUTyBEUklOSyBZT1VSIE9WQUxUSU5F')
 secret = b'hey'

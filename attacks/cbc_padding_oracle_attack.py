@@ -2,6 +2,9 @@ from samson.utilities.manipulation import get_blocks, xor_buffs
 from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 import struct
 
+import logging
+log = logging.getLogger(__name__)
+
 # https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
 class CBCPaddingOracleAttack(object):
     # Expects a PaddingOracle
@@ -18,6 +21,7 @@ class CBCPaddingOracleAttack(object):
         plaintexts = []
 
         for i, block in enumerate(reversed_blocks):
+            log.debug("Starting iteration {}".format(i))
             plaintext = b''
 
             if i == len(reversed_blocks) - 1:
@@ -40,6 +44,7 @@ class CBCPaddingOracleAttack(object):
                     new_cipher = exploit_block + block
 
                     if self.oracle.check_padding(bytes(new_cipher)):
+                        log.debug("Found working byte: {}".format(test_byte))
                         last_working_char = test_byte
 
                 plaintext = last_working_char + plaintext

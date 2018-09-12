@@ -5,6 +5,9 @@ import struct
 import pickle
 import os
 
+import logging
+log = logging.getLogger(__name__)
+
 class XORTranspositionAttack(object):
     def __init__(self, analyzer):
         self.analyzer = analyzer
@@ -17,6 +20,7 @@ class XORTranspositionAttack(object):
         transposed_ciphers = [bytearray(transposed) for transposed in zip(*same_size_ciphers)]
         assert [bytearray(transposed) for transposed in zip(*transposed_ciphers)] == same_size_ciphers
 
+        log.debug("Starting initial transposition analysis")
 
         # Transposition analysis first (transposition)
         transposed_plaintexts = []
@@ -32,8 +36,11 @@ class XORTranspositionAttack(object):
 
         retransposed_plaintexts = [bytearray(transposed) for transposed in zip(*transposed_plaintexts)]
 
+        log.debug("Starting full-text analysis on retransposed text")
+
         # Clean up with a character-by-character, higher-context analysis (retransposed)
-        for _ in range(iterations):
+        for j in range(iterations):
+            log.debug("Starting iteration {}/{}".format(j, iterations))
             differential_mask = bytearray()
 
             for i in range(min_size):
