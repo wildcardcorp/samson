@@ -53,6 +53,7 @@ class NostradamusAttack(object):
         self._generate_tree()
 
 
+
     def _generate_tree(self):
         log.debug('Generating hash tree')
         tree = []

@@ -3,4 +3,5 @@ scipy
 sklearn
 pandas
 fastecdsa
+watchdog
 #dnf install redhat-rpm-config python3-devel
