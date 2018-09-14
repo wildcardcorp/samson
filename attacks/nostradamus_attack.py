@@ -5,6 +5,33 @@ import logging
 log = logging.getLogger(__name__)
 
 
+# def naive_collider(p1, p2):
+#     input_for_p1 = b'\x00' * self.output_size
+#     state_to_collide = [state for state in self.construction_func(p1, input_for_p1)][0]
+
+#     # Try a lot of values...
+#     for j in range(2**(self.output_size * 32)):
+#         attempt = int.to_bytes(j, self.output_size * 4, 'little')
+#         #found_collision = False
+
+#         # We'll need to keep a state counter since we may not get a collision on the first chunk
+#         state_ctr = 0
+
+#         for state in self.construction_func(p2, attempt):
+#             state_ctr += 1
+
+#             if state == state_to_collide:
+#                 log.debug('Found collision for ({}, {})'.format(p1, p2))
+#                 # found_collision = True
+#                 return input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide
+#                 # solution_tree[i].append((p1, p2, input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide))
+#                 # break
+
+#         # if found_collision:
+#         #     break
+
+
+
 class NostradamusAttack(object):
     # 'k' is the number of levels the tree will have
     # `construction_func` takes in a message and POSSIBLY an IV and outputs a generator that yields the intermediary state
@@ -13,27 +40,17 @@ class NostradamusAttack(object):
     # def construction_func(iv, message):
     #   return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
 
-    def __init__(self, k, construction_func, output_size, prefixes=None):
+    #construction_func,
+    def __init__(self, k, collision_func, output_size, prefixes=None):
         self.k = k
         self.prefixes = prefixes or [int.to_bytes(i, output_size, 'little') for i in range(2 ** k)]
-        self.construction_func = construction_func
-        self.output_size = output_size
+        self.collision_func = collision_func
 
         # Output fields
         self.hash_tree = {}
         self.crafted_hash = None
 
         self._generate_tree()
-
-
-    @staticmethod
-    def initialize_with_known_prefixes(prefixes, iv, construction_func, output_size):
-        k = math.ceil(math.log(len(prefixes), 2))
-        prefixes = [(prefix + (b'\x00' * output_size))[:output_size] for prefix in prefixes]
-        hashed_prefixes = [[state for state in construction_func(iv, prefix)][0] for prefix in prefixes]
-
-        return NostradamusAttack(k, construction_func, output_size, prefixes=hashed_prefixes)
-
 
 
     def _generate_tree(self):
@@ -62,28 +79,8 @@ class NostradamusAttack(object):
 
         for i in range(self.k):
             for (p1, p2) in tree[i]:
-                input_for_p1 = b'\x00' * self.output_size
-                state_to_collide = [state for state in self.construction_func(p1, input_for_p1)][0]
-
-                # Try a lot of values...
-                for j in range(2**(self.output_size * 32)):
-                    attempt = int.to_bytes(j, self.output_size * 4, 'little')
-                    found_collision = False
-
-                    # We'll need to keep a state counter since we may not get a collision on the first chunk
-                    state_ctr = 0
-
-                    for state in self.construction_func(p2, attempt):
-                        state_ctr += 1
-
-                        if state == state_to_collide:
-                            log.debug('Found collision for ({}, {})'.format(p1, p2))
-                            found_collision = True
-                            solution_tree[i].append((p1, p2, input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide))
-                            break
-
-                    if found_collision:
-                        break
+                p1_suffix, p2_suffix, intermediary_collision = self.collision_func(p1, p2)
+                solution_tree[i].append((p1, p2, p1_suffix, p2_suffix, intermediary_collision))
 
             # Add solutions
             if i < (self.k - 1):
