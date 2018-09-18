@@ -5,32 +5,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# def naive_collider(p1, p2):
-#     input_for_p1 = b'\x00' * self.output_size
-#     state_to_collide = [state for state in self.construction_func(p1, input_for_p1)][0]
-
-#     # Try a lot of values...
-#     for j in range(2**(self.output_size * 32)):
-#         attempt = int.to_bytes(j, self.output_size * 4, 'little')
-#         #found_collision = False
-
-#         # We'll need to keep a state counter since we may not get a collision on the first chunk
-#         state_ctr = 0
-
-#         for state in self.construction_func(p2, attempt):
-#             state_ctr += 1
-
-#             if state == state_to_collide:
-#                 log.debug('Found collision for ({}, {})'.format(p1, p2))
-#                 # found_collision = True
-#                 return input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide
-#                 # solution_tree[i].append((p1, p2, input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide))
-#                 # break
-
-#         # if found_collision:
-#         #     break
-
-
 
 class NostradamusAttack(object):
     # 'k' is the number of levels the tree will have

@@ -1,7 +1,4 @@
-# from watchdog.observers import Observer
-# from watchdog.events import FileSystemEventHandler
 from samson.primitives.md5 import MD5
-# from asyncio import Event
 import tempfile
 import subprocess
 
@@ -9,37 +6,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# class Handler(FileSystemEventHandler):
-#     def __init__(self, event):
-#         super(self)
-#         self.event = event
 
-
-#     @staticmethod
-#     def on_created(event):
-#         if event.is_directory:
-
-#             event.src_path
-
-
-# FileSystemEventHandler
 class HashClashCollider(object):
     def __init__(self, hash_clash_base_location):
         self.hash_clash_base_location = hash_clash_base_location
-        #self.observer = Observer()
-        self.results = []
-        #self.sync_primitive = Event()
         self.hasher = MD5()
         self.hasher.pad_func = lambda x: x
-
-
-    # # @staticmethod
-    # def on_created(self, event):
-    #     if not event.is_directory and 'coll' in event.src_path:
-    #         self.results.append(event.src_path)
-
-    #         if len(self.results) == 2:
-    #             self.sync_primitive.set()
 
 
     
@@ -47,9 +19,6 @@ class HashClashCollider(object):
         tmp_dir = tempfile.TemporaryDirectory()
 
         log.info('Creating new directory: {}'.format(tmp_dir))
-
-        # self.observer.schedule(self, tmp_dir, recursive=True)
-        # self.observer.start()
 
         p1_tmp = tempfile.NamedTemporaryFile(dir=tmp_dir.name)
         p2_tmp = tempfile.NamedTemporaryFile(dir=tmp_dir.name)
@@ -78,8 +47,3 @@ class HashClashCollider(object):
 
 
         return p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)
-
-        # self.sync_primitive.wait()
-        # self.sync_primitive = Event()
-
-        # self.observer.join()

@@ -34,7 +34,7 @@ class NostradamusAttackTestCase(unittest.TestCase):
         attempt_hash = [item for item in attack.hash_tree.items()][0][0]
         new_message = attack.execute(attempt_hash)
 
-        hashed_message = [state for state in construction_func( b'\x00' * 2, new_message)][-1]
+        hashed_message = list(construction_func( b'\x00' * 2, new_message))[-1]
         self.assertEqual(hashed_message, attack.crafted_hash)
 
 
@@ -47,5 +47,5 @@ class NostradamusAttackTestCase(unittest.TestCase):
         for i, prefix in enumerate(prefixes):
             orig_hash = hashed_prefixes[i]
             new_message = attack.execute(orig_hash)
-            hashed_message = [state for state in construction_func( b'\x00' * 2, prefix + new_message)][-1]
+            hashed_message = list(construction_func( b'\x00' * 2, prefix + new_message))[-1]
             self.assertEqual(hashed_message, attack.crafted_hash)

@@ -1,4 +1,4 @@
-
+from samson.utilities.manipulation import get_blocks
 
 # https://en.wikipedia.org/wiki/Non-adjacent_form
 # Takes in bytes/bytearray or int
@@ -7,7 +7,6 @@ def to_NAF(input_arg):
         E = input_arg
     else:
         E = int.from_bytes(input_arg, 'big')
-    #bitstring = byte_to_bitstring(byte_arr)
     
     z = []
     
@@ -41,6 +40,10 @@ def int_to_bytes(n, byteorder='little'):
 
 
 
-def byte_to_bitstring(input_bytes, fill=8):
+def bytes_to_bitstring(input_bytes, fill=8):
     return ''.join(format(x, 'b').zfill(fill) for x in input_bytes)
 
+
+# https://stackoverflow.com/questions/32675679/convert-binary-string-to-bytearray-in-python-3
+def bitstring_to_bytes(bistring, byteorder='big'):
+    return int(bistring, 2).to_bytes(len(bistring) // 8, byteorder=byteorder)

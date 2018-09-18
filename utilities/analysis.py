@@ -1,5 +1,5 @@
 from scipy.stats import chisquare
-from samson.utilities.encoding import byte_to_bitstring
+from samson.utilities.encoding import bytes_to_bitstring
 from math import ceil, log, sqrt
 from Crypto.Cipher import ARC4
 import json
@@ -19,8 +19,8 @@ def longest_substring(strA, strB):
 
 def hamming_distance(bytes1, bytes2):
     assert len(bytes1) == len(bytes2)
-    bitstring1 = byte_to_bitstring(bytes1)
-    bitstring2 = byte_to_bitstring(bytes2)
+    bitstring1 = bytes_to_bitstring(bytes1)
+    bitstring2 = bytes_to_bitstring(bytes2)
 
     distance = 0
     for bit1, bit2 in zip(bitstring1, bitstring2):

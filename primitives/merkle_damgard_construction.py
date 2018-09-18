@@ -18,5 +18,5 @@ class MerkleDamgardConstruction(object):
 
 
     def hash(self, message):
-        final_state = [_ for _ in self.yield_state(message)][-1]
+        final_state = list(self.yield_state(message))[-1]
         return final_state
