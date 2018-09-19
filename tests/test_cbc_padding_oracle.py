@@ -1,13 +1,11 @@
 #!/usr/bin/python3
 from Crypto.Random import random
-from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
-from samson.utilities.manipulation import get_blocks, xor_buffs
+from Crypto.Cipher import AES
+from samson.primitives.block_cipher_modes.cbc import CBC
 from samson.utilities.general import rand_bytes
-from samson.utilities.padding import pkcs7_unpad
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
 import base64
-import struct
 import unittest
 
 import logging
@@ -16,6 +14,9 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 block_size = 16
 key = rand_bytes(block_size)
 iv = rand_bytes(block_size)
+
+aes = AES.new(key, AES.MODE_ECB)
+cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
 
 plaintext_strings = [
     'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
@@ -30,17 +31,16 @@ plaintext_strings = [
     'MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93'
 ]
 
-#chosen_plaintext = random.choice(plaintext_strings)
-chosen_plaintext = plaintext_strings[0]
+chosen_plaintext = random.choice(plaintext_strings)
 
 
 def encrypt_data():
-    return encrypt_aes_cbc(key, iv, base64.b64decode(chosen_plaintext.encode()), block_size=block_size)
+    return cbc.encrypt(base64.b64decode(chosen_plaintext.encode()))
 
 
 def decrypt_data(data):
     try:
-        decrypt_aes_cbc(key, iv, data, block_size=block_size)
+        cbc.decrypt(bytes(data))
         return True
     except Exception as e:
         if 'Invalid padding' in str(e):
@@ -50,12 +50,11 @@ def decrypt_data(data):
 
 class CBCPaddingOracleTestCase(unittest.TestCase):
     def test_paddingattack(self):
-        print(base64.b64decode(chosen_plaintext.encode()))
         ciphertext = encrypt_data()
         assert decrypt_data(ciphertext) == True
 
         attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv, block_size=block_size)
-        recovered_plaintext = attack.execute(ciphertext)
+        recovered_plaintext = attack.execute(bytes(ciphertext))
 
         print(recovered_plaintext)
         self.assertEqual(base64.b64decode(chosen_plaintext.encode()), recovered_plaintext)

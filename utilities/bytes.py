@@ -1,5 +1,6 @@
-from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate
+from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks
 from samson.utilities.encoding import int_to_bytes
+from samson.utilities.general import rand_bytes
 
 class Bytes(bytearray):
 
@@ -9,6 +10,12 @@ class Bytes(bytearray):
             return bytes_like
         else:
             return Bytes(bytes_like)
+
+    
+    @staticmethod
+    def random(size=16):
+        return Bytes(rand_bytes(size))
+
 
     def __repr__(self):
         return '<Bytes: {}>'.format(str(bytes(self)))
@@ -52,7 +59,7 @@ class Bytes(bytearray):
 
 
     def __radd__(self, other):
-        return self.__add__(other)
+        return Bytes(bytearray(other).__add__(self))
 
 
 
@@ -73,3 +80,9 @@ class Bytes(bytearray):
             bits = len(self) * 8
         back_to_bytes = int_to_bytes(right_rotate(as_int, amount, bits), 'little')
         return Bytes(back_to_bytes)
+
+
+
+    def chunk(self, size, allow_partials=False):
+        for block in get_blocks(self, size, allow_partials):
+            yield block

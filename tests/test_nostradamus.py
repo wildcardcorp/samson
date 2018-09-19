@@ -3,9 +3,9 @@ from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruct
 from Crypto.Cipher import AES
 from samson.utilities.manipulation import stretch_key
 from samson.utilities.encoding import int_to_bytes
-from samson.primitives.aes_ecb import encrypt_aes_ecb
+from samson.primitives.block_cipher_modes.ecb import ECB
+
 from samson.auxiliary.naive_collider import NaiveMDCollider
-import struct
 import unittest
 
 import logging
@@ -13,10 +13,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 
 
 hash_size = 2
+block_size = 16
 
 
 def compressor(message, state):
-    return encrypt_aes_ecb(stretch_key(state, 16), message)[:hash_size]
+    return bytes(ECB(AES.new(bytes(stretch_key(state, 16)), AES.MODE_ECB).encrypt, None, block_size).encrypt(message)[:hash_size])
 
 
 def padder(message):

@@ -1,7 +1,6 @@
 pycrypto
 scipy
 sklearn
-pandas
 fastecdsa
-watchdog
+sympy
 #dnf install redhat-rpm-config python3-devel

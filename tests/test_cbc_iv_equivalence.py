@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from samson.utilities.general import rand_bytes
-from samson.utilities.manipulation import get_blocks, xor_buffs
-from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
+from Crypto.Cipher import AES
+from samson.primitives.block_cipher_modes.cbc import CBC
 from samson.attacks.cbc_iv_key_equivalence_attack import CBCIVKeyEquivalenceAttack
 import base64
-import struct
 import unittest
 
 import logging
@@ -15,12 +13,15 @@ block_size = 32
 key = rand_bytes(block_size)
 iv = key
 
+aes = AES.new(key, AES.MODE_ECB)
+cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+
 def sender_encrypt(data):
-    return encrypt_aes_cbc(key, iv, data, block_size=block_size)
+    return cbc.encrypt(data)
 
 
 def receiver_decrypt(ciphertext):
-    plaintext = decrypt_aes_cbc(key, iv, ciphertext, unpad=False, block_size=block_size)
+    plaintext = cbc.decrypt(ciphertext, unpad=False)
     if any(int(byte) > 127 for byte in plaintext):
         raise Exception('Bad characters in {}'.format(base64.b64encode(plaintext)))
 
@@ -32,9 +33,12 @@ class CBCIVEquivalenceTestCase(unittest.TestCase):
         ciphertext = sender_encrypt(plaintext)
 
         attack = CBCIVKeyEquivalenceAttack(self, block_size)
-        key_iv, recovered_plaintext = attack.execute(ciphertext)
+        key_iv = bytes(attack.execute(ciphertext))
 
         self.assertEqual(key_iv, key)
+        recovered_plaintext = CBC(None, AES.new(key_iv, AES.MODE_ECB).decrypt, key_iv, block_size).decrypt(bytes(ciphertext))
+        
+        print(recovered_plaintext)
         self.assertEqual(plaintext, recovered_plaintext)
 
 

@@ -1,10 +1,16 @@
 #!/usr/bin/python3
-from samson.primitives.aes_ecb import encrypt_aes_ecb, decrypt_aes_ecb
+from Crypto.Cipher import AES
+from samson.primitives.block_cipher_modes.ecb import ECB
+
 from samson.utilities.general import rand_bytes
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_pad
 
-key = rand_bytes()
+block_size = 16
+key = rand_bytes(block_size)
+
+aes = AES.new(rand_bytes(block_size), AES.MODE_ECB)
+ecb = ECB(aes.encrypt, aes.decrypt, block_size)
 
 def parse_user(user):
     # Prevent dictionary randomization
@@ -15,11 +21,11 @@ def parse_user(user):
 
 def profile_for(email):
     user = {'email' : email, 'uid' : '10', 'role': 'user'}
-    return encrypt_aes_ecb(key, parse_user(user).encode())
+    return ecb.encrypt(parse_user(user).encode())
 
 
 def login(cipherbytes):
-    plaintext = decrypt_aes_ecb(key, cipherbytes)
+    plaintext = ecb.decrypt(cipherbytes)
     user = {k: v for k,v in [(*keyval.split("="),) for keyval in plaintext.decode().split('&')]}
     print(user)
     return user['role'] == 'admin'

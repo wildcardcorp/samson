@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 import urllib.parse
 from samson.utilities.general import rand_bytes
-from samson.primitives.aes_ctr import AES_CTR
-from samson.primitives.aes_cbc import encrypt_aes_cbc, decrypt_aes_cbc
+from Crypto.Cipher import AES
+from samson.primitives.block_cipher_modes.cbc import CBC
+from samson.primitives.block_cipher_modes.ctr import CTR
+
 from samson.attacks.xor_bitflipping_attack import XORBitflippingAttack
 from samson.oracles.encryption_oracle import EncryptionOracle
-import struct
-import time
 import unittest
 
 block_size = 16
@@ -14,27 +14,30 @@ key = rand_bytes(block_size)
 iv = rand_bytes(block_size)
 nonce = rand_bytes(block_size // 2)
 
+aes = AES.new(key, AES.MODE_ECB)
+cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+
 def format_data(data):
     return ("comment1=cooking%20MCs;userdata=" + urllib.parse.quote(data) + ";comment2=%20like%20a%20pound%20of%20bacon").encode()
 
 
 # CBC Functions
 def encrypt_data_cbc(data):
-    return encrypt_aes_cbc(key, iv, format_data(data), block_size=block_size)
+    return cbc.encrypt(format_data(data))
 
 
 def login_cbc(ciphertext):
-    print(decrypt_aes_cbc(key, iv, ciphertext, block_size=block_size))
-    return b';admin=true;' in decrypt_aes_cbc(key, iv, ciphertext, block_size=block_size)
+    print(cbc.decrypt(ciphertext))
+    return b';admin=true;' in cbc.decrypt(ciphertext)
 
 
 # CTR Functions
 def encrypt_data_ctr(data):
-    return AES_CTR(key, nonce, block_size=block_size).encrypt(format_data(data))
+    return CTR(aes.encrypt, nonce, block_size).encrypt(format_data(data))
 
 
 def login_ctr(ciphertext):
-    return b';admin=true;' in AES_CTR(key, nonce, block_size=block_size).encrypt(ciphertext)
+    return b';admin=true;' in CTR(aes.encrypt, nonce, block_size).encrypt(ciphertext)
 
 
 class XORBitFlipTestCase(unittest.TestCase):

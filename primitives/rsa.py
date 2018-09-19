@@ -22,13 +22,22 @@ class RSA(object):
                 phi = lcm(p - 1, q - 1)
                 self.n = p * q
 
+        self.p = p
+        self.q = q
+
+        self.bits = bits
+
+        self.phi = phi
         self.d = mod_inv(self.e, phi)
+        self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
 
         self.pub = (self.e, self.n)
         self.priv = (self.d, self.n)
 
-        self.p = p
-        self.q = q
+
+
+    def __repr__(self):
+        return '<RSA: bits={}, p={}, q={}, e={}, n={}, phi={}, d={}, alt_d={}>'.format(self.bits, self.p, self.q, self.e, self.n, self.phi, self.d, self.alt_d)
 
 
     def encrypt(self, message):

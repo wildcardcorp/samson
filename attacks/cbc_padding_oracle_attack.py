@@ -1,5 +1,6 @@
 from samson.utilities.manipulation import get_blocks, xor_buffs
 from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
+from samson.utilities.bytes import Bytes
 import struct
 
 import logging
@@ -10,19 +11,19 @@ class CBCPaddingOracleAttack(object):
     # Expects a PaddingOracle
     def __init__(self, oracle, iv, block_size=16):
         self.oracle = oracle
-        self.iv = iv
+        self.iv = Bytes.wrap(iv)
         self.block_size = block_size
 
 
     def execute(self, ciphertext):
-        blocks = get_blocks(ciphertext, self.block_size)
+        blocks = list(Bytes.wrap(ciphertext).chunk(self.block_size))
         reversed_blocks = blocks[::-1]
 
         plaintexts = []
 
         for i, block in enumerate(reversed_blocks):
             log.debug("Starting iteration {}".format(i))
-            plaintext = b''
+            plaintext = Bytes(b'')
 
             if i == len(reversed_blocks) - 1:
                 preceding_block = self.iv
@@ -37,10 +38,10 @@ class CBCPaddingOracleAttack(object):
                     payload = test_byte + plaintext
                     prefix = b'\x00' * (self.block_size - len(payload))
 
-                    padding = xor_buffs(struct.pack('B', len(payload)) * (len(payload)), payload)
+                    padding = (struct.pack('B', len(payload)) * (len(payload))) ^ payload
 
                     fake_block = prefix + padding
-                    exploit_block = xor_buffs(fake_block, preceding_block)
+                    exploit_block = fake_block ^ preceding_block
                     new_cipher = exploit_block + block
 
                     if self.oracle.check_padding(bytes(new_cipher)):
