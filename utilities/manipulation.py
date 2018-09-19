@@ -44,3 +44,7 @@ def get_blocks(cipher, block_size=16, allow_partials=False):
 def left_rotate(x, amount):
     x &= 0xFFFFFFFF
     return ((x<<amount) | (x>>(32-amount))) & 0xFFFFFFFF
+
+
+def right_rotate(x, amount):
+    return ((x>>amount) | (x<<(32-amount))) & 0xFFFFFFFF
