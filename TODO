@@ -12,3 +12,11 @@ X   Nostradamus attack
 
 X   CRIME Attack
     X   Work on less trivial problems
+
+
+OK  DES
+X   Abstract block cipher modes
+    X   ECB
+    X   CBC
+    X   CTR
+    X   OFB

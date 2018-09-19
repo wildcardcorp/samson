@@ -1,7 +1,30 @@
 from samson.primitives.feistel_network import FeistelNetwork
 from samson.utilities.encoding import bytes_to_bitstring
+from samson.utilities.manipulation import left_rotate
 
 # https://en.wikipedia.org/wiki/Data_Encryption_Standard
+
+IP = [
+    58, 50, 42, 34, 26, 18, 10, 2,
+    60, 52, 44, 36, 28, 20, 12, 4,
+    62, 54, 46, 38, 30, 22, 14, 6,
+    64, 56, 48, 40, 32, 24, 16, 8,
+    57, 49, 41, 33, 25, 17, 9, 1,
+    59, 51, 43, 35, 27, 19, 11, 3,
+    61, 53, 45, 37, 29, 21, 13, 5,
+    63, 55, 47, 39, 31, 23, 15, 7
+]
+
+FP = [
+    40, 8, 48, 16, 56, 24, 64, 32,
+    39, 7, 47, 15, 55, 23, 63, 31,
+    38, 6, 46, 14, 54, 22, 62, 30,
+    37, 5, 45, 13, 53, 21, 61, 29,
+    36, 4, 44, 12, 52, 20, 60, 28,
+    35, 3, 43, 11, 51, 19, 59, 27,
+    34, 2, 42, 10, 50, 18, 58, 26,
+    33, 1, 41, 9, 49, 17, 57, 25
+]
 
 
 S1 = [
@@ -71,50 +94,108 @@ pbox = [
     19, 13, 30, 6, 22, 11, 4, 25
 ]
 
+PC_1_left = [
+    57, 49, 41, 33, 25, 17, 9,
+    1, 58, 50, 42, 34, 26, 18,
+    10, 2, 59, 51, 43, 35, 27,
+    19, 11, 3, 60, 52, 44, 36,
+]
+
+PC_1_right = [
+    63, 55, 47, 39, 31, 23, 15,
+    7, 62, 54, 46, 38, 30, 22,
+    14, 6, 61, 53, 45, 37, 29,
+    21, 13, 5, 28, 20, 12, 4,
+]
+
+PC_2 = [
+    14, 17, 11, 24, 1, 5,
+    3, 28, 15, 6, 21, 10,
+    23, 19, 12, 4, 26, 8,
+    16, 7, 27, 20, 13, 2,
+    41, 52, 31, 37, 47, 55,
+    30, 40, 51, 45, 33, 48,
+    44, 49, 39, 56, 34, 53,
+    46, 42, 50, 36, 29, 32,
+]
+
+rotation_round_map = [*[1] * 2, *[2] * 6, 1, *[2] * 6, 1]
+
+
+def key_schedule(key):
+    key_bits = bytes_to_bitstring(key)
+
+    left_key = ''.join([key_bits[PC_1_left[i] - 1] for i in range(28)])
+    right_key = ''.join([key_bits[PC_1_right[i] - 1] for i in range(28)])
+
+    for i in range(16):
+        # Rotate
+        rotation = rotation_round_map[i]
+
+        left_key = bin(left_rotate(int(left_key, 2), rotation, bits=28))[2:].zfill(28)
+        right_key = bin(left_rotate(int(right_key, 2), rotation, bits=28))[2:].zfill(28)
+
+        # Permutate
+        combined_keys = left_key + right_key
+        sub_key = int.to_bytes(int(''.join([combined_keys[PC_2[j] - 1] for j in range(48)]), 2), 7, 'big')
+
+        yield sub_key
+
+
+
+# http://styere.xyz/JS-DES.html
+def round_func(R_i, k_i):
+    # Need to pad with the first since the Feistel function requires 'adjacent' bits for the expanded blocks
+    R_i_bits = bytes_to_bitstring(R_i)
+    R_i_bits = R_i_bits[-1] + R_i_bits + R_i_bits[0]
+
+    # Expansion
+    expanded_pt = ''.join([R_i_bits[i*4:(i+1)*4 + 2] for i in range(8)])
+
+    # Key mixing
+    K_i_bits = bytes_to_bitstring(k_i)[8:]
+    mixed = [int(bitA) ^ int(bitB) for bitA, bitB in zip(expanded_pt, K_i_bits)]
+
+
+    # Substitution
+    blocks = [mixed[i*6:(i+1)*6] for i in range(8)]
+    substitutions = []
+    for i, block in enumerate(blocks):
+        row = (block[0]<<1) + block[-1]
+        column = sum([bit<<j for j,bit in enumerate(block[1:5][::-1])])
+
+        substitutions.append(sboxes[i][row][column])
+
+
+    # Permutation
+    full_sub_string = ''.join([bin(sub)[2:].zfill(4) for sub in substitutions])
+    permutations = ''.join([full_sub_string[pbox[i] - 1] for i in range(32)])
+    return int.to_bytes(int(permutations, 2), 4, 'big')
 
 
 class DES(FeistelNetwork):
     def __init__(self, key):
+        super().__init__(round_func, key_schedule)
         self.key = key
 
+    
+    def process_plaintext(self, plaintext):
+        plaintext_bitstring = bytes_to_bitstring(plaintext)
+        return int.to_bytes(int(''.join([plaintext_bitstring[IP[i] - 1] for i in range(64)]), 2), 8, 'big')
 
-    def key_schedule(self, key):
-        pass
+
+    def process_ciphertext(self, ciphertext):
+        ciphertext_bitstring = bytes_to_bitstring(ciphertext)
+        return int.to_bytes(int(''.join([ciphertext_bitstring[FP[i] - 1] for i in range(64)]), 2), 8, 'big')
+    
+
+    def encrypt(self, plaintext):
+        permuted_plaintext = self.process_plaintext(plaintext)
+        result = FeistelNetwork.encrypt(self, self.key, permuted_plaintext)
+        return self.process_ciphertext(result)
 
 
-    # http://styere.xyz/JS-DES.html
-    def round_func(self, R_i, k_i):
-        # Need to pad with the first since the Feistel function requires 'adjacent' bits for the expanded blocks
-        R_i_bits = bytes_to_bitstring(R_i)
-        #R_i_bits = '00000000 11111111 01100111 10110000'.replace(" ", "")
-        #print('R {}'.format(R_i_bits))
-        R_i_bits = R_i_bits[-1] + R_i_bits + R_i_bits[0]
-
-        # Expansion
-        expanded_pt = ''.join([R_i_bits[i*4:(i+1)*4 + 2] for i in range(8)])
-        #print('E {}'.format(expanded_pt))
-
-        # Key mixing
-        K_i_bits = bytes_to_bitstring(k_i)
-        #K_i_bits = '010111 000000 100001 001100 010101 011000 111101 001111'.replace(' ', "")
-        mixed = [int(bitA) ^ int(bitB) for bitA, bitB in zip(expanded_pt, K_i_bits)]
-
-        #print('MIX {}'.format(mixed))
-
-        # Substitution
-        blocks = [mixed[i*6:(i+1)*6] for i in range(8)]
-        substitutions = []
-        for i, block in enumerate(blocks):
-            row = (block[0]<<1) + block[-1]
-            column = sum([bit<<j for j,bit in enumerate(block[1:5][::-1])])
-
-            substitutions.append(sboxes[i][row][column])
-
-        #print('S {}'.format(substitutions))
-
-        # Permutation
-        full_sub_string = ''.join([bin(sub)[2:].zfill(4) for sub in substitutions])
-
-        permutations = ''.join([full_sub_string[pbox[i] - 1] for i in range(32)])
-        #print('P {}'.format(permutations))
-        return permutations
+    def decrypt(self, ciphertext):
+        permuted_ciphertext = self.process_plaintext(ciphertext)
+        result = FeistelNetwork.decrypt(self, self.key, permuted_ciphertext)
+        return self.process_ciphertext(result)
