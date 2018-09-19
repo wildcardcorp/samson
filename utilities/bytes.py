@@ -2,6 +2,14 @@ from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate
 from samson.utilities.encoding import int_to_bytes
 
 class Bytes(bytearray):
+
+    @staticmethod
+    def wrap(bytes_like):
+        if isinstance(bytes_like, Bytes):
+            return bytes_like
+        else:
+            return Bytes(bytes_like)
+
     def __repr__(self):
         return '<Bytes: {}>'.format(str(bytes(self)))
 
@@ -21,8 +29,6 @@ class Bytes(bytearray):
         else:
             return Bytes(result)
         
-
-
 
     def __and__(self, other):
         self_as_int = int.from_bytes(self, 'little')

@@ -58,16 +58,6 @@ def compression_func(message, state):
     return state_to_bytes(new_state)
 
 
-# def padding_func(message):
-#     message = bytearray(message) #copy our input into a mutable buffer
-#     orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
-#     message.append(0x80)
-#     while len(message)%64 != 56:
-#         message.append(0)
-#     message += orig_len_in_bits.to_bytes(8, byteorder='little')
-
-#     return message
-
 def padding_func(message):
     return md_pad(message, None, 'little')
 
