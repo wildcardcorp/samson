@@ -41,10 +41,12 @@ def get_blocks(cipher, block_size=16, allow_partials=False):
     return all_blocks
 
 
-def left_rotate(x, amount):
-    x &= 0xFFFFFFFF
-    return ((x<<amount) | (x>>(32-amount))) & 0xFFFFFFFF
+def left_rotate(x, amount, bits=32):
+    mask = 2 ** bits - 1
+    x &= mask
+    return ((x<<amount) | (x>>(bits-amount))) & mask
 
 
-def right_rotate(x, amount):
-    return ((x>>amount) | (x<<(32-amount))) & 0xFFFFFFFF
+def right_rotate(x, amount, bits=32):
+    mask = 2 ** bits - 1
+    return ((x>>amount) | (x<<(bits-amount))) & mask
