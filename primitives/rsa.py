@@ -1,6 +1,7 @@
 from Crypto.Util.number import getPrime
 from samson.utilities.math import gcd, lcm, mod_inv
 from samson.utilities.encoding import int_to_bytes
+import random
 
 class RSA(object):
     def __init__(self, bits, p=None, q=None, e=None):
@@ -68,4 +69,24 @@ class RSA(object):
         q = gcd(pow(faulty_sig, e, n) - message, n)
         p = n // q
 
+        return RSA(0, p=p, q=q, e=e)
+
+
+    @staticmethod
+    def factorize_from_d(d, e, n):
+        k = d*e - 1
+        p = None
+        q = None
+
+        while not p:
+            g = random.randint(2, n - 1)
+            t = k
+            while t % 2 == 0:
+                t = t // 2
+                x = pow(g, t, n)
+                if x > 1 and gcd(x - 1, n) > 1:
+                    p = gcd(x - 1, n)
+                    q = n // p
+                    break
+            
         return RSA(0, p=p, q=q, e=e)
