@@ -23,8 +23,8 @@ class SRPClient(object):
 
 
     def perform_challenge(self, salt, B):
-        hex_A = int_to_bytes(self.A)
-        hex_B = int_to_bytes(B)
+        hex_A = int_to_bytes(self.A, 'little')
+        hex_B = int_to_bytes(B, 'little')
 
         uH = int.from_bytes(hashlib.sha256(hex_A + hex_B).digest(), 'little')
         xH = int.from_bytes(hashlib.sha256(salt + self.password).digest(), 'little')
@@ -33,7 +33,7 @@ class SRPClient(object):
         p2 = (self.a + uH * xH)
         cS = modexp(p1, p2, self.N)
 
-        cK = hashlib.sha256(int_to_bytes(cS)).digest()
+        cK = hashlib.sha256(int_to_bytes(cS, 'little')).digest()
         return hashlib.sha256(cK + salt).digest()
 
 

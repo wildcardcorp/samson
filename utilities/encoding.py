@@ -34,7 +34,7 @@ def from_NAF(naf):
 
 
 
-def int_to_bytes(n, byteorder='little'):
+def int_to_bytes(n, byteorder='big'):
     """Converts the given int n to bytes and returns them."""
     return n.to_bytes(max((n.bit_length() + 7) // 8, 1), byteorder)
 

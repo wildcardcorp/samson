@@ -28,7 +28,7 @@ index_functions = 16*[lambda i: i] + \
 
 
 def state_to_bytes(state):
-    return int_to_bytes(sum(x<<(32*i) for i, x in enumerate(state)))
+    return int_to_bytes(sum(x<<(32*i) for i, x in enumerate(state)), 'little')
 
 
 def bytes_to_state(state_bytes):

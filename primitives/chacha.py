@@ -54,7 +54,7 @@ class ChaCha(object):
             for i in range(16):
                 x[i] += tmp[i]
 
-            yield b''.join([int_to_bytes(state_int & 0xFFFFFFFF) for state_int in x])
+            yield b''.join([int_to_bytes(state_int & 0xFFFFFFFF, 'little') for state_int in x])
 
 
 

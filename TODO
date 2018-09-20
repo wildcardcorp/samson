@@ -21,3 +21,5 @@ OK  Abstract block cipher modes
     OK  CTR
     OK  OFB
     OK  CFB
+
+X   Rijndael

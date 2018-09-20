@@ -40,14 +40,14 @@ class SRPServer(object):
         v = self.accounts[identity]
         A = request['A']
 
-        hex_A = int_to_bytes(A)
+        hex_A = int_to_bytes(A, 'little')
         print(hex_A)
-        hex_B = int_to_bytes(request['B'])
+        hex_B = int_to_bytes(request['B'], 'little')
 
         uH = int.from_bytes(hashlib.sha256(hex_A + hex_B).digest(), 'little')
 
         p1 = (A * modexp(v, uH, self.N))
         sS = modexp(p1, self.b, self.N)
 
-        sK = hashlib.sha256(int_to_bytes(sS)).digest()
+        sK = hashlib.sha256(int_to_bytes(sS, 'little')).digest()
         return hashlib.sha256(sK + self.salt).digest() == client_hash

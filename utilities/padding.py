@@ -33,9 +33,7 @@ def md_pad(msg, fakeLen=None, byteorder='little'):
 
     # append length of message (before pre-processing), in bits, as 64-bit big-endian integer
     message_bit_length = length * 8
-    #padding += int_to_bytes(message_bit_length, endian)
     padding += message_bit_length.to_bytes(8, byteorder=byteorder)
-    #padding += struct.pack(b'>Q', message_bit_length)
     return msg + padding
 
     

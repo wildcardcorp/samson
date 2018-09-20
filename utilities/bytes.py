@@ -1,8 +1,11 @@
-from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks
+from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose
 from samson.utilities.encoding import int_to_bytes
 from samson.utilities.general import rand_bytes
 
 class Bytes(bytearray):
+    def __init__(self, bytes_like, byteorder='big'):
+        super().__init__(bytes_like)
+        self.byteorder = byteorder
 
     @staticmethod
     def wrap(bytes_like):
@@ -38,16 +41,16 @@ class Bytes(bytearray):
         
 
     def __and__(self, other):
-        self_as_int = int.from_bytes(self, 'little')
-        return Bytes(int_to_bytes(self_as_int & int.from_bytes(other, 'little'), 'little'))
+        self_as_int = int.from_bytes(self, self.byteorder)
+        return Bytes(int_to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self.byteorder))
 
     def __rand__(self, other):
         return self.__and__(other)
 
 
     def __or__(self, other):
-        self_as_int = int.from_bytes(self, 'little')
-        return Bytes(int_to_bytes(self_as_int | int.from_bytes(other, 'little'), 'little'))
+        self_as_int = int.from_bytes(self, self.byteorder)
+        return Bytes(int_to_bytes(self_as_int | int.from_bytes(other, self.byteorder), self.byteorder))
 
 
     def __ror__(self, other):
@@ -64,21 +67,21 @@ class Bytes(bytearray):
 
 
     def lrot(self, amount, bits=None):
-        as_int = int.from_bytes(self, 'little')
+        as_int = int.from_bytes(self, self.byteorder)
 
         if not bits:
             bits = len(self) * 8
 
-        back_to_bytes = int_to_bytes(left_rotate(as_int, amount, bits), 'little')
+        back_to_bytes = int.to_bytes(left_rotate(as_int, amount, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes)
 
 
     def rrot(self, amount, bits=None):
-        as_int = int.from_bytes(self, 'little')
+        as_int = int.from_bytes(self, self.byteorder)
 
         if not bits:
             bits = len(self) * 8
-        back_to_bytes = int_to_bytes(right_rotate(as_int, amount, bits), 'little')
+        back_to_bytes = int.to_bytes(right_rotate(as_int, amount, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes)
 
 
@@ -86,3 +89,7 @@ class Bytes(bytearray):
     def chunk(self, size, allow_partials=False):
         for block in get_blocks(self, size, allow_partials):
             yield block
+
+
+    def transpose(self, size):
+        return Bytes(b''.join(transpose(self, size)))
