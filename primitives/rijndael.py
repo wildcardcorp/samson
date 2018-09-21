@@ -49,6 +49,12 @@ INV_SBOX = invert_sbox(SBOX)
 MIX_MATRIX = [2, 3, 1, 1, 1, 2, 3, 1, 1, 1, 2, 3, 3, 1, 1, 2]
 INV_MIX_MATRIX = [14, 11, 13, 9, 9, 14, 11, 13, 13, 9, 14, 11, 11, 13, 9, 14]
 
+SHIFT_ROW_OFFSETS = [
+    *[[0, 1, 2, 3]] * 3,
+    [0, 1, 2, 4],
+    [0, 1, 3, 4]
+]
+
 
 class Rijndael(object):
     def __init__(self, key, block_size=128):
@@ -90,7 +96,7 @@ class Rijndael(object):
 
 
     def encrypt(self, plaintext):
-        num_rounds = len(self.key) // 2 + 3
+        num_rounds = len(self.key) // 4 + 7
         state_matrix = Bytes.wrap(plaintext).transpose(4)
         
         for i in range(num_rounds):
@@ -111,7 +117,7 @@ class Rijndael(object):
 
 
     def decrypt(self, ciphertext):
-        num_rounds = len(self.key) // 2 + 3
+        num_rounds = len(self.key) // 4 + 7
         state_matrix = Bytes.wrap(ciphertext)
 
         reversed_round_keys = self.round_keys[::-1]
@@ -135,11 +141,13 @@ class Rijndael(object):
 
 
     def shift_rows(self, state_matrix):
-        return b''.join([row.lrot(j * 8) for j, row in enumerate(state_matrix.chunk(4))])
+        offsets = SHIFT_ROW_OFFSETS[(self.block_size // 32) - 4]
+        return b''.join([row.lrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(4))])
 
 
     def inv_shift_rows(self, state_matrix):
-        return b''.join([row.rrot(j * 8) for j, row in enumerate(state_matrix.chunk(4))])
+        offsets = SHIFT_ROW_OFFSETS[(self.block_size // 32) - 4]
+        return b''.join([row.rrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(4))])
 
 
     # https://en.wikipedia.org/wiki/Rijndael_MixColumns
@@ -168,22 +176,4 @@ class Rijndael(object):
             new_state[c + 4] = (self._gmul(mix_matrix[4], state_matrix[c]) ^ self._gmul(mix_matrix[5], state_matrix[c + 4]) ^ self._gmul(mix_matrix[6], state_matrix[c + 8]) ^ self._gmul(mix_matrix[7], state_matrix[c + 12])) & 0xFF
             new_state[c + 8] = (self._gmul(mix_matrix[8], state_matrix[c]) ^ self._gmul(mix_matrix[9], state_matrix[c + 4]) ^ self._gmul(mix_matrix[10], state_matrix[c + 8]) ^ self._gmul(mix_matrix[11], state_matrix[c + 12])) & 0xFF
             new_state[c + 12] = (self._gmul(mix_matrix[12], state_matrix[c]) ^ self._gmul(mix_matrix[13], state_matrix[c + 4]) ^ self._gmul(mix_matrix[14], state_matrix[c + 8]) ^ self._gmul(mix_matrix[15], state_matrix[c + 12])) & 0xFF
-
-            # new_state[c] = (self._gmul(2, state_matrix[c]) ^ self._gmul(3, state_matrix[c + 4]) ^ state_matrix[c + 8] ^ state_matrix[c + 12]) & 0xFF
-            # new_state[c + 4] = (state_matrix[c] ^ self._gmul(2, state_matrix[c + 4]) ^ self._gmul(3, state_matrix[c + 8]) ^ state_matrix[c + 12]) & 0xFF
-            # new_state[c + 8] = (state_matrix[c] ^ state_matrix[c + 4] ^ self._gmul(2, state_matrix[c + 8]) ^ self._gmul(3, state_matrix[c + 12])) & 0xFF
-            # new_state[c + 12] = (self._gmul(3, state_matrix[c]) ^ state_matrix[c + 4] ^ state_matrix[c + 8] ^ self._gmul(2, state_matrix[c + 12])) & 0xFF
-
         return new_state
-
-
-
-    # def inv_mix_columns(self, state_matrix):
-    #     new_state = [None] * 16
-    #     for c in range(4):
-    #         new_state[c] = (self._gmul(14, state_matrix[c]) ^ self._gmul(11, state_matrix[c + 4]) ^ state_matrix[c + 8] ^ state_matrix[c + 12]) & 0xFF
-    #         new_state[c + 4] = (state_matrix[c] ^ self._gmul(2, state_matrix[c + 4]) ^ self._gmul(3, state_matrix[c + 8]) ^ state_matrix[c + 12]) & 0xFF
-    #         new_state[c + 8] = (state_matrix[c] ^ state_matrix[c + 4] ^ self._gmul(2, state_matrix[c + 8]) ^ self._gmul(3, state_matrix[c + 12])) & 0xFF
-    #         new_state[c + 12] = (self._gmul(3, state_matrix[c]) ^ state_matrix[c + 4] ^ state_matrix[c + 8] ^ self._gmul(2, state_matrix[c + 12])) & 0xFF
-
-    #     return new_state
