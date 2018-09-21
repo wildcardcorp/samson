@@ -1,4 +1,4 @@
-from samson.utilities.manipulation import left_rotate, stretch_key
+from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
 
 
@@ -55,6 +55,12 @@ SHIFT_ROW_OFFSETS = [
     [0, 1, 3, 4]
 ]
 
+NUM_ROUNDS = [
+    [10, 12, 14],
+    [12, 12, 14],
+    [14, 14, 14]
+]
+
 
 class Rijndael(object):
     def __init__(self, key, block_size=128):
@@ -68,19 +74,21 @@ class Rijndael(object):
         self.key = Bytes.wrap(key)
         self.block_size = block_size
 
+        self._chunk_size = self.block_size // 32
         round_keys = self.key_schedule()
-        self.round_keys = [Bytes(b''.join(round_keys[i:i + 4])) for i in range(0, len(round_keys), 4)]
+        self.round_keys = [Bytes(b''.join(round_keys[i:i + self._chunk_size])) for i in range(0, len(round_keys), self._chunk_size)]
+
 
 
     # https://en.wikipedia.org/wiki/Rijndael_key_schedule
     def key_schedule(self):
         N = len(self.key) // 4
         K = list(self.key.chunk(4))
-        R = max(N, self.block_size // 32) + 7
+        R = max(N, self._chunk_size) + 7
 
         W = []
 
-        for i in range(4*R):
+        for i in range(self._chunk_size*R):
             if i < N:
                 W_i = K[i]
             elif i % N == 0:
@@ -95,11 +103,17 @@ class Rijndael(object):
         return W
 
 
+
     def encrypt(self, plaintext):
-        num_rounds = len(self.key) // 4 + 7
+        Nk = len(self.key) // 4
+        Nb = self._chunk_size
+        num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
+
+        #self._chunk_size
         state_matrix = Bytes.wrap(plaintext).transpose(4)
-        
+
         for i in range(num_rounds):
+            #self._chunk_size
             round_key = self.round_keys[i].transpose(4)
             if i == 0:
                 state_matrix ^= round_key
@@ -113,12 +127,17 @@ class Rijndael(object):
                 state_matrix = self.shift_rows(state_matrix)
                 state_matrix ^= round_key
         
-        return state_matrix
+        #self._chunk_size
+        return state_matrix.transpose(self._chunk_size)
+
 
 
     def decrypt(self, ciphertext):
-        num_rounds = len(self.key) // 4 + 7
-        state_matrix = Bytes.wrap(ciphertext)
+        Nk = len(self.key) // 4
+        Nb = self._chunk_size
+        num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
+
+        state_matrix = Bytes.wrap(ciphertext).transpose(4)
 
         reversed_round_keys = self.round_keys[::-1]
 
@@ -136,18 +155,18 @@ class Rijndael(object):
                 state_matrix = Bytes([INV_SBOX[byte] for byte in state_matrix])
                 state_matrix ^= round_key
         
-        return state_matrix.transpose(4)
+        return state_matrix.transpose(self._chunk_size)
 
 
 
     def shift_rows(self, state_matrix):
-        offsets = SHIFT_ROW_OFFSETS[(self.block_size // 32) - 4]
-        return b''.join([row.lrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(4))])
+        offsets = SHIFT_ROW_OFFSETS[(self._chunk_size) - 4]
+        return b''.join([row.lrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(self._chunk_size))])
 
 
     def inv_shift_rows(self, state_matrix):
-        offsets = SHIFT_ROW_OFFSETS[(self.block_size // 32) - 4]
-        return b''.join([row.rrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(4))])
+        offsets = SHIFT_ROW_OFFSETS[(self._chunk_size) - 4]
+        return b''.join([row.rrot(offsets[j] * 8) for j, row in enumerate(state_matrix.chunk(self._chunk_size))])
 
 
     # https://en.wikipedia.org/wiki/Rijndael_MixColumns
@@ -169,11 +188,15 @@ class Rijndael(object):
         return p
 
 
+
     def mix_columns(self, state_matrix, mix_matrix):
-        new_state = [None] * 16
-        for c in range(4):
-            new_state[c] = (self._gmul(mix_matrix[0], state_matrix[c]) ^ self._gmul(mix_matrix[1], state_matrix[c + 4]) ^ self._gmul(mix_matrix[2], state_matrix[c + 8]) ^ self._gmul(mix_matrix[3], state_matrix[c + 12])) & 0xFF
-            new_state[c + 4] = (self._gmul(mix_matrix[4], state_matrix[c]) ^ self._gmul(mix_matrix[5], state_matrix[c + 4]) ^ self._gmul(mix_matrix[6], state_matrix[c + 8]) ^ self._gmul(mix_matrix[7], state_matrix[c + 12])) & 0xFF
-            new_state[c + 8] = (self._gmul(mix_matrix[8], state_matrix[c]) ^ self._gmul(mix_matrix[9], state_matrix[c + 4]) ^ self._gmul(mix_matrix[10], state_matrix[c + 8]) ^ self._gmul(mix_matrix[11], state_matrix[c + 12])) & 0xFF
-            new_state[c + 12] = (self._gmul(mix_matrix[12], state_matrix[c]) ^ self._gmul(mix_matrix[13], state_matrix[c + 4]) ^ self._gmul(mix_matrix[14], state_matrix[c + 8]) ^ self._gmul(mix_matrix[15], state_matrix[c + 12])) & 0xFF
+        new_state = [None] * len(state_matrix)
+        c0, c1, c2, c3 = [self._chunk_size * i for i in range(4)]
+
+        for i in range(self._chunk_size):
+            new_state[i + c0] = (self._gmul(mix_matrix[0], state_matrix[i + c0]) ^ self._gmul(mix_matrix[1], state_matrix[i + c1]) ^ self._gmul(mix_matrix[2], state_matrix[i + c2]) ^ self._gmul(mix_matrix[3], state_matrix[i + c3])) & 0xFF
+            new_state[i + c1] = (self._gmul(mix_matrix[4], state_matrix[i + c0]) ^ self._gmul(mix_matrix[5], state_matrix[i + c1]) ^ self._gmul(mix_matrix[6], state_matrix[i + c2]) ^ self._gmul(mix_matrix[7], state_matrix[i + c3])) & 0xFF
+            new_state[i + c2] = (self._gmul(mix_matrix[8], state_matrix[i + c0]) ^ self._gmul(mix_matrix[9], state_matrix[i + c1]) ^ self._gmul(mix_matrix[10], state_matrix[i + c2]) ^ self._gmul(mix_matrix[11], state_matrix[i + c3])) & 0xFF
+            new_state[i + c3] = (self._gmul(mix_matrix[12], state_matrix[i + c0]) ^ self._gmul(mix_matrix[13], state_matrix[i + c1]) ^ self._gmul(mix_matrix[14], state_matrix[i + c2]) ^ self._gmul(mix_matrix[15], state_matrix[i + c3])) & 0xFF
+        
         return new_state
