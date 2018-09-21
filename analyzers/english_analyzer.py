@@ -224,7 +224,7 @@ class EnglishAnalyzer(Analyzer):
         except UnicodeDecodeError as _:
             return 0
 
-        words = [word for word in re.split('[?.,! ]', as_str) if word != '']
+        words = [word for word in re.split('[?.,! ]', as_str.lower()) if word != '']
         word_freq = sum([1 for w in words if len(w) > 2 and len(w) < 8])
 
 

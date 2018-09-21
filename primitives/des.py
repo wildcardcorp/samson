@@ -1,4 +1,4 @@
-from samson.primitives.feistel_network import FeistelNetwork
+from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.encoding import bytes_to_bitstring
 from samson.utilities.manipulation import left_rotate
 

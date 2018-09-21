@@ -5,7 +5,7 @@ import struct
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.padding import md_pad
 from samson.utilities.encoding import int_to_bytes
-from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
+from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 
 #h0, h1, h2, h3, h4
 #_process_chunk

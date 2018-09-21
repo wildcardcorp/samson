@@ -1,5 +1,5 @@
 from samson.attacks.nostradamus_attack import NostradamusAttack
-from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
+from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from Crypto.Cipher import AES
 from samson.utilities.manipulation import stretch_key
 from samson.utilities.encoding import int_to_bytes

@@ -61,7 +61,7 @@ NUM_ROUNDS = [
     [14, 14, 14]
 ]
 
-
+# https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
 class Rijndael(object):
     def __init__(self, key, block_size=128):
         if not (len(key) * 8) in range(128, 257, 32):
@@ -77,7 +77,14 @@ class Rijndael(object):
         self._chunk_size = self.block_size // 32
         round_keys = self.key_schedule()
         self.round_keys = [Bytes(b''.join(round_keys[i:i + self._chunk_size])) for i in range(0, len(round_keys), self._chunk_size)]
+        
+        Nk = len(self.key) // 4
+        Nb = self._chunk_size 
+        self.num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
 
+
+    def __repr__(self):
+        return "<Rijndael: key={}, key_size={}, block_size={}>".format(self.key, len(self.key) * 8, self.block_size)
 
 
     # https://en.wikipedia.org/wiki/Rijndael_key_schedule
@@ -104,20 +111,14 @@ class Rijndael(object):
 
 
 
-    def encrypt(self, plaintext):
-        Nk = len(self.key) // 4
-        Nb = self._chunk_size
-        num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
-
-        #self._chunk_size
+    def yield_encrypt(self, plaintext):
         state_matrix = Bytes.wrap(plaintext).transpose(4)
 
-        for i in range(num_rounds):
-            #self._chunk_size
+        for i in range(self.num_rounds):
             round_key = self.round_keys[i].transpose(4)
             if i == 0:
                 state_matrix ^= round_key
-            elif i < (num_rounds - 1):
+            elif i < (self.num_rounds - 1):
                 state_matrix = Bytes([SBOX[byte] for byte in state_matrix])
                 state_matrix = self.shift_rows(state_matrix)
                 state_matrix = Bytes(self.mix_columns(state_matrix, MIX_MATRIX))
@@ -126,26 +127,25 @@ class Rijndael(object):
                 state_matrix = Bytes([SBOX[byte] for byte in state_matrix])
                 state_matrix = self.shift_rows(state_matrix)
                 state_matrix ^= round_key
-        
-        #self._chunk_size
-        return state_matrix.transpose(self._chunk_size)
+            
+            yield state_matrix.transpose(self._chunk_size)
+
+
+    def encrypt(self, plaintext):
+        return list(self.yield_encrypt(plaintext))[-1]
 
 
 
-    def decrypt(self, ciphertext):
-        Nk = len(self.key) // 4
-        Nb = self._chunk_size
-        num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
-
+    def yield_decrypt(self, ciphertext):
         state_matrix = Bytes.wrap(ciphertext).transpose(4)
 
         reversed_round_keys = self.round_keys[::-1]
 
-        for i in range(num_rounds):
+        for i in range(self.num_rounds):
             round_key = reversed_round_keys[i].transpose(4)
             if i == 0:
                 state_matrix ^= round_key
-            elif i < (num_rounds - 1):
+            elif i < (self.num_rounds - 1):
                 state_matrix = self.inv_shift_rows(state_matrix)
                 state_matrix = Bytes([INV_SBOX[byte] for byte in state_matrix])
                 state_matrix ^= round_key
@@ -154,9 +154,13 @@ class Rijndael(object):
                 state_matrix = self.inv_shift_rows(state_matrix)
                 state_matrix = Bytes([INV_SBOX[byte] for byte in state_matrix])
                 state_matrix ^= round_key
-        
-        return state_matrix.transpose(self._chunk_size)
 
+            yield state_matrix.transpose(self._chunk_size)
+
+
+
+    def decrypt(self, ciphertext):
+        return list(self.yield_decrypt(ciphertext))[-1]
 
 
     def shift_rows(self, state_matrix):

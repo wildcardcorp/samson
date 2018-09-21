@@ -22,4 +22,4 @@ OK  Abstract block cipher modes
     OK  OFB
     OK  CFB
 
-X   Rijndael
+OK  Rijndael

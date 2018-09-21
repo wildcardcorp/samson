@@ -1,0 +1,67 @@
+from samson.primitives.rijndael import Rijndael
+import codecs
+import unittest
+
+
+class RijndaelTestCase(unittest.TestCase):
+    def _run_test(self, key, plaintext, block_size, test_vector):
+        rijndael = Rijndael(key, block_size=block_size)
+        ciphertext = rijndael.encrypt(plaintext)
+        cipherhex = codecs.encode(ciphertext, 'hex_codec')
+
+        self.assertEqual(cipherhex, test_vector)
+        self.assertEqual(plaintext, rijndael.decrypt(ciphertext))
+
+
+    # AES FIPS tests
+    # https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf
+    def test_k128_b128(self):
+        key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f, 16, 'big')
+        plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
+        test_vector = b'69c4e0d86a7b0430d8cdb78070b4c55a'
+        block_size = 128
+
+        self._run_test(key, plaintext, block_size, test_vector)
+
+
+
+    def test_k192_b128(self):
+        key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f1011121314151617, 24, 'big')
+        plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
+        test_vector = b'dda97ca4864cdfe06eaf70a0ec0d7191'
+        block_size = 128
+
+        self._run_test(key, plaintext, block_size, test_vector)
+
+
+
+    def test_k256_b128(self):
+        key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 32, 'big')
+        plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
+        test_vector = b'8ea2b7ca516745bfeafc49904b496089'
+        block_size = 128
+
+        self._run_test(key, plaintext, block_size, test_vector)
+
+
+
+    
+    # Unverified Rijndael Tests
+    # https://www.cosic.esat.kuleuven.be/nessie/testvectors/bc/rijndael/Rijndael-256-192.unverified.test-vectors
+    def test_k256_b192(self):
+        key = int.to_bytes(0x8000000000000000000000000000000000000000000000000000000000000000, 32, 'big')
+        plaintext = b'\x00' * 24
+        test_vector = b'06EB844DEC23F29F029BE85FDCE578CEC5C663CE0C70403C'.lower()
+        block_size = 192
+
+        self._run_test(key, plaintext, block_size, test_vector)
+
+
+    # https://www.cosic.esat.kuleuven.be/nessie/testvectors/bc/rijndael/Rijndael-256-256.unverified.test-vectors
+    def test_k256_b256(self):
+        key = int.to_bytes(0x8000000000000000000000000000000000000000000000000000000000000000, 32, 'big')
+        plaintext = b'\x00' * 32
+        test_vector = b'E62ABCE069837B65309BE4EDA2C0E149FE56C07B7082D3287F592C4A4927A277'.lower()
+        block_size = 256
+
+        self._run_test(key, plaintext, block_size, test_vector)

@@ -1,4 +1,4 @@
-from samson.primitives.merkle_damgard_construction import MerkleDamgardConstruction
+from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.padding import md_pad
 from samson.utilities.encoding import int_to_bytes

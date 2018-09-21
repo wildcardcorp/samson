@@ -1,4 +1,3 @@
-# from samson.utilities.manipulation import xor_buffs
 from samson.utilities.bytes import Bytes
 from samson.utilities.padding import pkcs7_pad
 
