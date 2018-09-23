@@ -1,7 +1,8 @@
-from scipy.stats import chisquare
+# from scipy.stats import chisquare
 from samson.utilities.encoding import bytes_to_bitstring
 from math import ceil, log, sqrt
 from Crypto.Cipher import ARC4
+from copy import deepcopy
 import json
 import difflib
 import scipy.special
@@ -59,19 +60,50 @@ def count_bytes(in_bytes):
     return byte_ctr
 
 
-
-def calculate_byte_distribution(in_bytes):
-    byte_ctrs = count_bytes(in_bytes)
-    results = [v for k,v in byte_ctrs.items()]
-
-    padded_results = [0] * (min(len(in_bytes) - len(results), 256 - len(results))) + results
+# Takes in two dictionaries: an 'observed_dict' and an 'expected_freq_dict'.
+def chisquare(observed_dict, expected_freq_dict):
+    observed_len = sum([v for _k, v in observed_dict.items()])
+    total = 0
+    for key, freq_value in expected_freq_dict.items():
+        if key in observed_dict:
+            obs_val = observed_dict[key]
+        else:
+            obs_val = 0
+        
+        expected_number = observed_len * freq_value
+        total += (expected_number - obs_val) ** 2 / expected_number
     
-    return chisquare(padded_results)
+    return total
+
+
+
+
+# def calculate_byte_distribution(in_bytes, expected_freq=None):
+#     byte_ctrs = count_bytes(in_bytes)
+
+#     for i in range(256):
+#         if i not in byte_ctrs:
+#             byte_ctrs[i] = 0
+    
+#     results = [v for _k,v in byte_ctrs.items()]
+
+#     freq_copy = deepcopy(expected_freq)
+    
+#     if freq_copy:
+#         for i in range(256):
+#             if i not in freq_copy:
+#                 freq_copy[i] = 0
+
+
+#     expected_distribution = [v for _k,v in freq_copy.items()]
+    
+#     return chisquare(results, expected_distribution)
 
 
 
 def birthday_attack(bits, probability):
     return sqrt(2 * 2**bits * log(1/(1-float(probability))))
+
 
 
 def expected_collisions(bits, num_inputs):

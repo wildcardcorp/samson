@@ -14,12 +14,19 @@ X   CRIME Attack
     X   Work on less trivial problems
 
 
-OK  DES
-OK  Abstract block cipher modes
-    OK  ECB
-    OK  CBC
-    OK  CTR
-    OK  OFB
-    OK  CFB
+OK  Linear Congruential Generator
+X   PRNG tests
+X   LLL algorithm
+X   Clean up EnglishAnalyzer
+    X   Make the code more readable
+    X   Use LFSR to detect non-delimited words
+    X   Include Chi Squared test
 
-OK  Rijndael
+
+X   English Chi Squared distribution
+X   Integer factorization
+X   Abstract algebra and modular arithmetic
+X   Elliptical curve arithmetic
+
+X   Code reorganization
+X   Commenting/convenience functions/use internal classes

@@ -1,4 +1,5 @@
 from samson.analyzers.analyzer import Analyzer
+# from samson.utilities.analysis import calculate_byte_distribution
 import string
 import os
 import re
@@ -236,6 +237,13 @@ class EnglishAnalyzer(Analyzer):
         bigrams = _num_bigrams(as_str.lower())
 
         found_words = sum([(len(word) - 1) ** 2 for word in words if word in wordlist])
+
+        expected_english_distribution = {}
+        for letter, freq in letter_freq.items():
+            expected_english_distribution[bytes(letter, 'utf-8')] = freq * len(in_bytes)
+
+
+        # calculate_byte_distribution(in_bytes, expected_english_distribution)
 
         return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1)
 
