@@ -1,5 +1,5 @@
 from samson.analyzers.analyzer import Analyzer
-# from samson.utilities.analysis import calculate_byte_distribution
+from samson.utilities.analysis import count_bytes, chisquare
 import string
 import os
 import re
@@ -174,28 +174,6 @@ most_common_bigrams = {
 }
 
 
-def _num_ascii(in_bytes):
-    return sum([1 for char in in_bytes if char in ascii_range]) / len(in_bytes)
-
-
-def _num_alpha(in_bytes):
-    return sum([1 for char in in_bytes if char in list(range(65, 122))]) / len(in_bytes)
-
-
-
-def _num_first_letters(in_bytes):
-    try:
-        as_str = in_bytes.decode()
-    except UnicodeDecodeError as _:
-        return 0
-
-    return sum([first_letter_frequencies[char] for char in as_str.lower() if char in first_letter_frequencies]) / len(in_bytes)
-
-
-def _num_capital_letters(in_bytes):
-    return sum([1 for char in in_bytes if char in range(65, 90)]) / len(in_bytes)
-
-
 
 def _num_common_words(string):
     return sum([val * string.count(word) for word, val in most_common_words.items()]) / len(string)
@@ -225,16 +203,17 @@ class EnglishAnalyzer(Analyzer):
         except UnicodeDecodeError as _:
             return 0
 
-        words = [word for word in re.split('[?.,! ]', as_str.lower()) if word != '']
+        str_lower = as_str.lower()
+        words = [word for word in re.split('[?.,! ]', str_lower) if word != '']
         word_freq = sum([1 for w in words if len(w) > 2 and len(w) < 8])
 
 
-        alphabet_ratio = sum([1 for char in as_str.lower() if char in string.ascii_lowercase]) / len(as_str)
-        ascii_ratio = sum([1 for char in as_str.lower() if ord(char) in ascii_range]) / len(as_str)
+        alphabet_ratio = sum([1 for char in str_lower if char in string.ascii_lowercase]) / len(as_str)
+        ascii_ratio = sum([1 for char in str_lower if ord(char) in ascii_range]) / len(as_str)
 
-        common_words = _num_common_words(as_str.lower())
-        first_letter_freq = _num_common_first_letters(as_str.lower())
-        bigrams = _num_bigrams(as_str.lower())
+        common_words = _num_common_words(str_lower)
+        first_letter_freq = _num_common_first_letters(str_lower)
+        bigrams = _num_bigrams(str_lower)
 
         found_words = sum([(len(word) - 1) ** 2 for word in words if word in wordlist])
 
@@ -243,9 +222,11 @@ class EnglishAnalyzer(Analyzer):
             expected_english_distribution[bytes(letter, 'utf-8')] = freq * len(in_bytes)
 
 
-        # calculate_byte_distribution(in_bytes, expected_english_distribution)
+        # We divide it by the `length*2` to normalize it since I empirically found that the chisquared of
+        # a uniform distribution of `length` bytes tends towards it.
+        chisquared_analysis = 1 / (chisquare(count_bytes(in_bytes), expected_english_distribution) / (len(in_bytes) * 2))
 
-        return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1)
+        return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1) * chisquared_analysis
 
 
     

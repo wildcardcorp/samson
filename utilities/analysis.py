@@ -72,6 +72,15 @@ def chisquare(observed_dict, expected_freq_dict):
         
         expected_number = observed_len * freq_value
         total += (expected_number - obs_val) ** 2 / expected_number
+
+    
+    for key, obs_value in observed_dict.items():
+        if key not in expected_freq_dict:
+            obs_val = obs_value
+        else:
+            obs_val = 0
+
+        total += obs_val ** 2
     
     return total
 
