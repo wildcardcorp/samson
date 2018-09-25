@@ -6,9 +6,20 @@ def gcd(a, b):
         return gcd(b, a % b)
 
 
+# https://anh.cs.luc.edu/331/notes/xgcd.pdf
+def xgcd(a,b):
+    prevx, x = 1, 0; prevy, y = 0, 1
+    while b:
+        q = a//b
+        x, prevx = prevx - q*x, x
+        y, prevy = prevy - q*y, y
+        a, b = b, a % b
+    return a, b, prevx, prevy
+
 
 def lcm(a, b):
     return a // gcd(a, b) * b
+
 
 
 def mod_inv(a, n):
@@ -18,18 +29,9 @@ def mod_inv(a, n):
     and https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
     """
 
-    t = 0
-    r = n
+    _, b, t, _ = xgcd(a, n)
 
-    new_t = 1
-    new_r = a
-
-    while new_r != 0:
-        quotient = r // new_r
-        t, new_t = new_t, t - quotient * new_t
-        r, new_r = new_r, r - quotient * new_r
-    
-    if r > 1:
+    if b > 1:
         raise Exception("'a' is not invertible")
     
     if t < 0:
@@ -49,3 +51,25 @@ def modexp (g, u, p):
       u >>= 1
       g = (g * g)%p
    return s
+
+
+# https://stackoverflow.com/questions/23621833/is-cube-root-integer
+def kth_root(n,k):
+    lb,ub = 0,n #lower bound, upper bound
+    while lb < ub:
+        guess = (lb+ub)//2
+        if pow(guess,k) < n: lb = guess+1
+        else: ub = guess
+    return lb
+
+
+def crt(residues, moduli):
+    assert len(residues) == len(moduli)
+    x = residues[0]
+    Nx = moduli[0]
+
+    for i in range(1, len(residues)):
+        x = (mod_inv(Nx, moduli[i]) * (residues[i] - x)) * Nx + x
+        Nx = Nx * moduli[i]
+
+    return x % Nx, Nx
