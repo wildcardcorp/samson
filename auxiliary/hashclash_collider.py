@@ -1,4 +1,4 @@
-from samson.primitives.md5 import MD5
+from samson.hashes.md5 import MD5
 import tempfile
 import subprocess
 

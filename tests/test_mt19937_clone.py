@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from samson.attacks.mt19937_clone_attack import MT19937CloneAttack
-from samson.primitives.mt19937 import MT19937
+from samson.prngs.mt19937 import MT19937
 import unittest
 
 

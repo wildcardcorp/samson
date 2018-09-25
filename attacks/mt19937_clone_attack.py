@@ -1,4 +1,4 @@
-from samson.primitives.mt19937 import MT19937
+from samson.prngs.mt19937 import MT19937
 
 # We don't have to include a constant since 32-bit Mersenne Twister doesn't
 # use non-idempotent constants on its right shifts.

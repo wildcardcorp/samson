@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import zlib
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.cbc import CBC
-from samson.primitives.block_cipher_modes.ctr import CTR
+from samson.block_ciphers.modes.cbc import CBC
+from samson.block_ciphers.modes.ctr import CTR
 
 from samson.utilities.general import rand_bytes
 from samson.attacks.compression_ratio_side_channel_attack import CompressionRatioSideChannelAttack

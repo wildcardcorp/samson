@@ -3,7 +3,7 @@ from samson.constructions.merkle_damgard_construction import MerkleDamgardConstr
 from Crypto.Cipher import AES
 from samson.utilities.manipulation import stretch_key
 from samson.utilities.encoding import int_to_bytes
-from samson.primitives.block_cipher_modes.ecb import ECB
+from samson.block_ciphers.modes.ecb import ECB
 
 from samson.auxiliary.naive_collider import NaiveMDCollider
 import unittest

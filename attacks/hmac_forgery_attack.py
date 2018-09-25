@@ -1,5 +1,5 @@
 from samson.utilities.padding import md_pad
-from samson.primitives.sha1 import SHA1
+from samson.hashes.sha1 import SHA1
 import struct
 
 def _build_sha1_internal_state(hash_bytes):

@@ -111,7 +111,7 @@ def fun_fi(K_i, x):
     l_3, r_3 = r_2, S9[l_2] ^ r_2
     l_3 = S7[r_2] ^ (r_3 & 0b1111111)
 
-    return Bytes(int_to_bytes(l_3 << 9 | r_3, 'big'))
+    return Bytes(int.to_bytes(l_3 << 9 | r_3, 2, 'big'))
 
 
 def fun_fo(KO_i, KI_i, x):

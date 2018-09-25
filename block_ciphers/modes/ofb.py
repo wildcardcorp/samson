@@ -1,6 +1,6 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
-from samson.primitives.block_cipher_modes.cbc import CBC
+from samson.block_ciphers.modes.cbc import CBC
 from math import ceil
 
 

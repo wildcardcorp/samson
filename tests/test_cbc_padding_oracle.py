@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from Crypto.Random import random
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.cbc import CBC
+from samson.block_ciphers.modes.cbc import CBC
 from samson.utilities.general import rand_bytes
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle

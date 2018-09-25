@@ -2,6 +2,7 @@
 from samson.utilities.encoding import bytes_to_bitstring
 from math import ceil, log, sqrt
 from Crypto.Cipher import ARC4
+import operator
 from copy import deepcopy
 import json
 import difflib
@@ -85,29 +86,19 @@ def chisquare(observed_dict, expected_freq_dict):
     return total
 
 
+def find_key_size(cipherbytes, key_range, candidate_slice_size):
+    key_distances = {}
+    for size in key_range:
+        size_sum = 0
+        num_blocks = (len(cipherbytes) // size)
+        for block in range(num_blocks - 1):
+            size_sum += hamming_distance(cipherbytes[block * size: (block + 1) * size], cipherbytes[(block + 1) * size: (block + 2) * size]) / size
+
+        key_distances[size] = size_sum / num_blocks
 
 
-# def calculate_byte_distribution(in_bytes, expected_freq=None):
-#     byte_ctrs = count_bytes(in_bytes)
-
-#     for i in range(256):
-#         if i not in byte_ctrs:
-#             byte_ctrs[i] = 0
-    
-#     results = [v for _k,v in byte_ctrs.items()]
-
-#     freq_copy = deepcopy(expected_freq)
-    
-#     if freq_copy:
-#         for i in range(256):
-#             if i not in freq_copy:
-#                 freq_copy[i] = 0
-
-
-#     expected_distribution = [v for _k,v in freq_copy.items()]
-    
-#     return chisquare(results, expected_distribution)
-
+    candidates = sorted(key_distances.items(), key=operator.itemgetter(1))[:candidate_slice_size]
+    return candidates
 
 
 def birthday_attack(bits, probability):

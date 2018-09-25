@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from samson.utilities.general import rand_bytes
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.cbc import CBC
+from samson.block_ciphers.modes.cbc import CBC
 from samson.attacks.cbc_iv_key_equivalence_attack import CBCIVKeyEquivalenceAttack
 import base64
 import unittest

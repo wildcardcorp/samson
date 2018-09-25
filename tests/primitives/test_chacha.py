@@ -1,4 +1,4 @@
-from samson.primitives.chacha import ChaCha
+from samson.stream_ciphers.chacha import ChaCha
 import codecs
 import unittest
 

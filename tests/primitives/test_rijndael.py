@@ -1,16 +1,27 @@
-from samson.primitives.rijndael import Rijndael
+from samson.block_ciphers.rijndael import Rijndael
 import codecs
 import unittest
 
 
 class RijndaelTestCase(unittest.TestCase):
-    def _run_test(self, key, plaintext, block_size, test_vector):
+    def _run_test(self, key, plaintext, block_size, test_vector, iterations=1):
         rijndael = Rijndael(key, block_size=block_size)
-        ciphertext = rijndael.encrypt(plaintext)
-        cipherhex = codecs.encode(ciphertext, 'hex_codec')
+        
+        
+
+        to_enc = plaintext
+        for _ in range(iterations):
+            to_enc = rijndael.encrypt(to_enc)
+
+        cipherhex = codecs.encode(to_enc, 'hex_codec')
 
         self.assertEqual(cipherhex, test_vector)
-        self.assertEqual(plaintext, rijndael.decrypt(ciphertext))
+
+        to_dec = to_enc
+        for _ in range(iterations):
+            to_dec = rijndael.decrypt(to_dec)
+
+        self.assertEqual(plaintext, to_dec)
 
 
     # AES FIPS tests
@@ -56,6 +67,9 @@ class RijndaelTestCase(unittest.TestCase):
 
         self._run_test(key, plaintext, block_size, test_vector)
 
+        test_vector = b'3E5ECCD1EC6B225E4AF1992BCCA9253BD16DA75FFE590545'.lower()
+        self._run_test(key, plaintext, block_size, test_vector, 1000)
+
 
     # https://www.cosic.esat.kuleuven.be/nessie/testvectors/bc/rijndael/Rijndael-256-256.unverified.test-vectors
     def test_k256_b256(self):
@@ -65,3 +79,6 @@ class RijndaelTestCase(unittest.TestCase):
         block_size = 256
 
         self._run_test(key, plaintext, block_size, test_vector)
+
+        test_vector = b'16990D2F01F21A61678538BD10F1F231A1DCB8D4E73CDDF6A33B5B5FA2368E14'.lower()
+        self._run_test(key, plaintext, block_size, test_vector, 1000)

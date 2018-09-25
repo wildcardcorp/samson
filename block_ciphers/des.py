@@ -1,4 +1,5 @@
 from samson.constructions.feistel_network import FeistelNetwork
+from samson.utilities.bytes import Bytes
 from samson.utilities.encoding import bytes_to_bitstring
 from samson.utilities.manipulation import left_rotate
 
@@ -196,10 +197,10 @@ class DES(FeistelNetwork):
     def encrypt(self, plaintext):
         permuted_plaintext = self.process_plaintext(plaintext)
         result = FeistelNetwork.encrypt(self, self.key, permuted_plaintext)
-        return self.process_ciphertext(result)
+        return Bytes(self.process_ciphertext(result))
 
 
     def decrypt(self, ciphertext):
         permuted_ciphertext = self.process_plaintext(ciphertext)
         result = FeistelNetwork.decrypt(self, self.key, permuted_ciphertext)
-        return self.process_ciphertext(result)
+        return Bytes(self.process_ciphertext(result))

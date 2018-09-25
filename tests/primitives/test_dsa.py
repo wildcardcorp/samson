@@ -1,4 +1,4 @@
-from samson.primitives.dsa import DSA
+from samson.publickey.dsa import DSA
 from copy import deepcopy
 import hashlib
 import unittest

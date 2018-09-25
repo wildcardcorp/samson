@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.ctr import CTR
+from samson.block_ciphers.modes.ctr import CTR
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.analysis import levenshtein_distance

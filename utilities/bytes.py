@@ -1,4 +1,4 @@
-from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose
+from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose, stretch_key
 from samson.utilities.encoding import int_to_bytes
 from samson.utilities.general import rand_bytes
 
@@ -25,7 +25,7 @@ class Bytes(bytearray):
 
 
     def __xor__(self, other):
-        return Bytes(xor_buffs(self, other))
+        return Bytes(xor_buffs(self, other), self.byteorder)
 
 
     def __rxor__(self, other):
@@ -37,13 +37,13 @@ class Bytes(bytearray):
         if type(result) is int:
             return result
         else:
-            return Bytes(result)
+            return Bytes(result, self.byteorder)
         
 
     def __and__(self, other):
         self_len = len(self)
         self_as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int.to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self_len, self.byteorder))
+        return Bytes(int.to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self_len, self.byteorder), self.byteorder)
 
 
     def __rand__(self, other):
@@ -52,7 +52,7 @@ class Bytes(bytearray):
 
     def __or__(self, other):
         self_as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int_to_bytes(self_as_int | int.from_bytes(other, self.byteorder), self.byteorder))
+        return Bytes(int_to_bytes(self_as_int | int.from_bytes(other, self.byteorder), self.byteorder), self.byteorder)
 
 
     def __ror__(self, other):
@@ -60,11 +60,11 @@ class Bytes(bytearray):
 
 
     def __add__(self, other):
-        return Bytes(bytearray.__add__(self, other))
+        return Bytes(bytearray.__add__(self, other), self.byteorder)
 
 
     def __radd__(self, other):
-        return Bytes(bytearray(other).__add__(self))
+        return Bytes(bytearray(other).__add__(self), self.byteorder)
 
 
 
@@ -75,7 +75,7 @@ class Bytes(bytearray):
             bits = len(self) * 8
 
         back_to_bytes = int.to_bytes(left_rotate(as_int, amount, bits), bits // 8, self.byteorder)
-        return Bytes(back_to_bytes)
+        return Bytes(back_to_bytes, self.byteorder)
 
 
     def rrot(self, amount, bits=None):
@@ -84,7 +84,7 @@ class Bytes(bytearray):
         if not bits:
             bits = len(self) * 8
         back_to_bytes = int.to_bytes(right_rotate(as_int, amount, bits), bits // 8, self.byteorder)
-        return Bytes(back_to_bytes)
+        return Bytes(back_to_bytes, self.byteorder)
 
 
 
@@ -93,4 +93,13 @@ class Bytes(bytearray):
 
 
     def transpose(self, size):
-        return Bytes(b''.join(transpose(self, size)))
+        return Bytes(b''.join(transpose(self, size)), self.byteorder)
+
+
+    def zfill(self, size):
+        as_int = int.from_bytes(self, self.byteorder)
+        return Bytes(int.to_bytes(as_int, size, self.byteorder))
+
+
+    def stretch(self, size, offset=0):
+        return Bytes(stretch_key(self, size, offset), self.byteorder)

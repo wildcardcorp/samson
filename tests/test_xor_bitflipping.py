@@ -2,8 +2,8 @@
 import urllib.parse
 from samson.utilities.general import rand_bytes
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.cbc import CBC
-from samson.primitives.block_cipher_modes.ctr import CTR
+from samson.block_ciphers.modes.cbc import CBC
+from samson.block_ciphers.modes.ctr import CTR
 
 from samson.attacks.xor_bitflipping_attack import XORBitflippingAttack
 from samson.oracles.encryption_oracle import EncryptionOracle

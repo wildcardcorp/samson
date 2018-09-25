@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from Crypto.Cipher import AES
-from samson.primitives.block_cipher_modes.ecb import ECB
+from samson.block_ciphers.modes.ecb import ECB
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.manipulation import get_blocks

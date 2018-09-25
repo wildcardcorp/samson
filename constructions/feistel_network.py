@@ -34,8 +34,8 @@ class FeistelNetwork(object):
 
 
     def encrypt(self, key, plaintext):
-        return b''.join(list(self.yield_encrypt(key, plaintext))[-1])
+        return Bytes(b''.join(list(self.yield_encrypt(key, plaintext))[-1]))
 
     
     def decrypt(self, key, ciphertext):
-        return b''.join(list(self.yield_decrypt(key, ciphertext))[-1])
+        return Bytes(b''.join(list(self.yield_decrypt(key, ciphertext))[-1]))

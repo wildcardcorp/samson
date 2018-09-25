@@ -1,5 +1,5 @@
 from samson.utilities.manipulation import xor_buffs
-from samson.primitives.xor import decrypt
+from samson.utilities.bytes import Bytes
 from copy import deepcopy
 import struct
 import pickle
@@ -27,7 +27,7 @@ class XORTranspositionAttack(object):
         for cipher in transposed_ciphers:
             all_chars = {}
             for char in range(256):
-                plaintext = decrypt(struct.pack('B', char), cipher)
+                plaintext = Bytes(struct.pack('B', char)).stretch(len(cipher)) ^ cipher
 
                 all_chars[char] = (self.analyzer.analyze(plaintext), plaintext)
 
@@ -52,7 +52,7 @@ class XORTranspositionAttack(object):
                     frames = []
                     for curr_cipher in retransposed_plaintexts:
                         cipher_copy = deepcopy(curr_cipher)
-                        cipher_copy[i] = ord(decrypt(struct.pack('B', char), struct.pack('B', curr_cipher[i])))
+                        cipher_copy[i] = ord(Bytes(struct.pack('B', char)) ^ struct.pack('B', curr_cipher[i]))
 
                         preprocessed_frame = self.analyzer.preprocess(cipher_copy)
                         frames.append(preprocessed_frame)

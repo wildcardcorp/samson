@@ -1,5 +1,5 @@
 from samson.oracles.padding_oracle import PaddingOracle
-from samson.primitives.rsa import RSA
+from samson.publickey.rsa import RSA
 from samson.utilities.padding import pkcs15_pad
 from samson.utilities.encoding import int_to_bytes
 from random import randint

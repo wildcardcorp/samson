@@ -1,4 +1,4 @@
-from samson.primitives.des import DES
+from samson.block_ciphers.des import DES
 import codecs
 import unittest
 
