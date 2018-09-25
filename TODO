@@ -19,14 +19,17 @@ X   PRNG tests
 X   LLL algorithm
 X   Clean up EnglishAnalyzer
     X   Make the code more readable
-    X   Use LFSR to detect non-delimited words
-    X   Include Chi Squared test
+    X   Use bit-shift-register-type-deal to detect non-delimited words
+    ?   Include Chi Squared test
 
 
 X   English Chi Squared distribution
 X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
+X   Wang's Attack
+X   KASUMI
+X   ARC4
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

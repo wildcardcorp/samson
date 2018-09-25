@@ -17,6 +17,10 @@ class AffineCipher(object):
             self.inv_char_map[alphabet[i]] = alphabet[(inv_a*(i-b))%len(alphabet)]
 
 
+    def __repr__(self):
+        return "<Affine: a={}, b={}, alphabet={}>".format(self.a, self.b, self.alphabet)
+
+
     def encrypt(self, plaintext):
         return ''.join([self.char_map[char] for char in plaintext])
 

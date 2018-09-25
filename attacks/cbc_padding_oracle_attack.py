@@ -16,7 +16,7 @@ class CBCPaddingOracleAttack(object):
 
 
     def execute(self, ciphertext):
-        blocks = list(Bytes.wrap(ciphertext).chunk(self.block_size))
+        blocks = Bytes.wrap(ciphertext).chunk(self.block_size)
         reversed_blocks = blocks[::-1]
 
         plaintexts = []

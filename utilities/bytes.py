@@ -41,8 +41,10 @@ class Bytes(bytearray):
         
 
     def __and__(self, other):
+        self_len = len(self)
         self_as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int_to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self.byteorder))
+        return Bytes(int.to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self_len, self.byteorder))
+
 
     def __rand__(self, other):
         return self.__and__(other)
@@ -87,8 +89,7 @@ class Bytes(bytearray):
 
 
     def chunk(self, size, allow_partials=False):
-        for block in get_blocks(self, size, allow_partials):
-            yield block
+        return get_blocks(self, size, allow_partials)
 
 
     def transpose(self, size):

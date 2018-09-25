@@ -13,8 +13,12 @@ class DSA(object):
         
         self.x = int.from_bytes(rand_bytes(len(int_to_bytes(self.q))), byteorder='big') % self.q
         self.y = pow(self.g, self.x, self.p)
-        
-        
+
+    
+    def __repr__(self):
+        return "<DSA: p={}, q={}, g={}, x={}, y={}>".format(self.p, self.q, self.g, self.x, self.y)
+
+    
     def sign(self, H, message, k=None):
         k = k or max(1, int.from_bytes(rand_bytes(len(int_to_bytes(self.q))), byteorder='big') % self.q)
         inv_k = mod_inv(k, self.q)

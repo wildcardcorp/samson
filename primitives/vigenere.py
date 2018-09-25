@@ -1,4 +1,5 @@
 from samson.utilities.analysis import chisquare, count_bytes
+from samson.utilities.bytes import Bytes
 import string
 
 
@@ -42,6 +43,11 @@ class Vigenere(object):
     def __init__(self, key, alphabet=bytes(string.ascii_lowercase, 'utf-8')):
         self.key = key
         self.alphabet = alphabet
+
+
+    
+    def __repr__(self):
+        return "<Vigenere: key={}, alphabet={}>".format(self.key, self.alphabet)
     
 
     def encrypt(self, plaintext):
@@ -52,7 +58,7 @@ class Vigenere(object):
             c_i_idx = (self.alphabet.index(bytes([char])) + self.alphabet.index(k_i)) % len(self.alphabet)
             result.append(self.alphabet[c_i_idx])
 
-        return bytes(result)
+        return Bytes(bytes(result))
 
     
     def decrypt(self, ciphertext):
@@ -63,15 +69,16 @@ class Vigenere(object):
             p_i_idx = (self.alphabet.index(bytes([char])) - self.alphabet.index(k_i)) % len(self.alphabet)
             result.append(self.alphabet[p_i_idx])
 
-        return bytes(result)
+        return Bytes(bytes(result))
 
 
     @staticmethod
-    def break_vigenere(ciphertext):
+    def break_vigenere(ciphertext, alphabet=bytes(string.ascii_lowercase, 'utf-8'), expected_distribution=letter_distribution, min_key_length=1, max_key_length=20):
+        ciphertext = Bytes.wrap(ciphertext)
         cipher_scores = []
         cipher_len = len(ciphertext)
 
-        for i in range(1, 5):
+        for i in range(min_key_length, max_key_length):
             transposed = ciphertext.transpose(i)
             total_key_score = 1
             top_chunk_scores = []
@@ -79,21 +86,20 @@ class Vigenere(object):
             for chunk in transposed.chunk(cipher_len // i):
                 curr_chunk_scores = []
 
-                for j in range(26):
-                    new_chunk = []
+                for char in alphabet:
+                    tmp_vig = Vigenere(bytes([char]))
+                    new_chunk = tmp_vig.decrypt(chunk)
 
-                    for c in chunk:
-                        new_c = (c - 97 + j) % 26 + 97
-                        new_chunk.append(new_c)
+                    chunk_score = chisquare(count_bytes(new_chunk), expected_distribution)
+                    curr_chunk_scores.append((char, chunk_score))
 
-                    chunk_score = chisquare(count_bytes(bytes(new_chunk)), letter_distribution)
-                    curr_chunk_scores.append((j, chunk_score))
 
-                top_chunk_scores.append(sorted(curr_chunk_scores, key=lambda chunk_score: chunk_score[1], reverse=False)[:2])
+                top_chunk_scores.append(sorted(curr_chunk_scores, key=lambda chunk_score: chunk_score[1], reverse=False)[0])
 
             for chunk_score in top_chunk_scores:
-                total_key_score *= chunk_score[0][1]
+                total_key_score += chunk_score[1]
                 
             cipher_scores.append((total_key_score, top_chunk_scores))
 
-        return cipher_scores
+        top_key_score = sorted(cipher_scores, key=lambda kv: kv[0])[0]
+        return Vigenere(bytes([char for char,score in top_key_score[1]]), alphabet=alphabet)

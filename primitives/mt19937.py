@@ -24,6 +24,7 @@ class MT19937:
 
     def __init__(self, seed=0):
         self.state = [0] * n
+        self.seed = seed
 
         # Seed the algo
         self.index = n
@@ -32,6 +33,9 @@ class MT19937:
         for i in range(1, n):
             self.state[i] = asint32(f * (self.state[i - 1] ^ self.state[i - 1] >> (w - 2)) + i)
 
+
+    def __repr__(self):
+        return "<MT19937: seed={}, index={}, state={}>".format(self.seed, self.index, self.state)
 
 
     def twist(self):

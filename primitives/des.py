@@ -179,6 +179,10 @@ class DES(FeistelNetwork):
         self.key = key
 
     
+    def __repr__(self):
+        return "<DES: key={}>".format(self.key)
+
+    
     def process_plaintext(self, plaintext):
         plaintext_bitstring = bytes_to_bitstring(plaintext)
         return int.to_bytes(int(''.join([plaintext_bitstring[IP[i] - 1] for i in range(64)]), 2), 8, 'big')

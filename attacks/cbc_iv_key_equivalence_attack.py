@@ -15,7 +15,7 @@ class CBCIVKeyEquivalenceAttack(object):
         edited_cipher[self.block_size * 2:self.block_size * 3] = edited_cipher[:self.block_size]
 
         recovered_bytes = self.oracle.request(bytes(edited_cipher))
-        blocks = list(Bytes(recovered_bytes).chunk(self.block_size))
+        blocks = Bytes(recovered_bytes).chunk(self.block_size)
 
         derived_iv = blocks[0] ^ blocks[2]
         return derived_iv

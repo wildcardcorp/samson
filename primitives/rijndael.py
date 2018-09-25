@@ -90,7 +90,7 @@ class Rijndael(object):
     # https://en.wikipedia.org/wiki/Rijndael_key_schedule
     def key_schedule(self):
         N = len(self.key) // 4
-        K = list(self.key.chunk(4))
+        K = self.key.chunk(4)
         R = max(N, self._chunk_size) + 7
 
         W = []
