@@ -7,6 +7,10 @@ class MarkovState(object):
         self.transitions = transitions
 
 
+    def __repr__(self):
+        return "<MarkovState: transitions={}, count={}, probability={}>".format(self.transitions.keys(), self.count, self.probability)
+
+
     # Recursively turn counts into probabilities
     def calculate_chain_probs(self):
         total_count = sum([subchain.count for token, subchain in self.transitions.items()])

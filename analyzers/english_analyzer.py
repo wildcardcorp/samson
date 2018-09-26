@@ -1,5 +1,8 @@
 from samson.analyzers.analyzer import Analyzer
 from samson.utilities.analysis import count_bytes, chisquare
+from samson.auxiliary.tokenizer import Tokenizer
+from samson.auxiliary.token_list_handler import TokenListHandler
+from samson.auxiliary.viterbi_decoder import ViterbiDecoder
 import string
 import os
 import re
@@ -191,6 +194,8 @@ def _num_common_first_letters(string):
 def _num_bigrams(string):
     return sum([val * string.count(bigram.lower()) for bigram, val in most_common_bigrams.items()]) / len(string)
 
+TOKENIZER = Tokenizer([word for word, _ in wordlist.items() if len(word) > 2], TokenListHandler)
+VITERBI_DECODER = ViterbiDecoder()
 
 class EnglishAnalyzer(Analyzer):
     def __init__(self):
@@ -215,7 +220,9 @@ class EnglishAnalyzer(Analyzer):
         first_letter_freq = _num_common_first_letters(str_lower)
         bigrams = _num_bigrams(str_lower)
 
-        found_words = sum([(len(word) - 1) ** 2 for word in words if word in wordlist])
+        #found_words = sum([(len(word) - 1) ** 2 for word in words if word in wordlist])
+        found_words = sum([len(word) ** 2 for word in TOKENIZER.tokenize([str_lower])])
+        #found_words = sum([len(word) ** 2 for word in VITERBI_DECODER.score(str_lower.upper(), 14)[1] if word.lower() in wordlist])
 
         expected_english_distribution = {}
         for letter, freq in letter_freq.items():

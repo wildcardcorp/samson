@@ -30,15 +30,15 @@ class Playfair(object):
                 plaintext = plaintext.replace(char, "")
 
 
-        # Substitute duplicate letters with x
-        for i in range(len(plaintext) - 1):
-            if plaintext[i] == plaintext[i + 1]:
-                plaintext[i + 1] = 'x'
-
-
         # If plaintext has an odd number of characters, add an 'x' to the end
         if len(plaintext) % 2 == 1:
             plaintext += 'x'
+
+
+        # Substitute duplicate letters with x
+        for i in range(0, len(plaintext), 2):
+            if plaintext[i] == plaintext[i + 1]:
+                plaintext = plaintext[:i + 1] + 'x' + plaintext[i + 2:]
         
 
         ciphertext = ''
@@ -53,8 +53,8 @@ class Playfair(object):
                 new_a = a_row * 5 + b_col
                 new_b = b_row * 5 + a_col
             elif a_row == b_row:
-                new_a = a_row + ((a_col + 1) % 5)
-                new_b = a_row + ((b_col + 1) % 5)
+                new_a = a_row * 5 + ((a_col + 1) % 5)
+                new_b = a_row * 5 + ((b_col + 1) % 5)
             else:
                 new_a = ((a_row + 1) % 5) * 5 + a_col
                 new_b = ((b_row + 1) % 5) * 5 + a_col
@@ -77,8 +77,8 @@ class Playfair(object):
                 new_a = a_row * 5 + b_col
                 new_b = b_row * 5 + a_col
             elif a_row == b_row:
-                new_a = a_row + ((a_col - 1) % 5)
-                new_b = a_row + ((b_col - 1) % 5)
+                new_a = a_row * 5 + ((a_col - 1) % 5)
+                new_b = a_row * 5 + ((b_col - 1) % 5)
             else:
                 new_a = ((a_row - 1) % 5) * 5 + a_col
                 new_b = ((b_row - 1) % 5) * 5 + a_col

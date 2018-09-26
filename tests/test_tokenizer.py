@@ -1,10 +1,11 @@
 from samson.auxiliary.tokenizer import Tokenizer
+from samson.auxiliary.markov_chain_handler import MarkovChainHandler
 import unittest
 
 class TokenizerTestCase(unittest.TestCase):
     def test_basecase(self):
-        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya'])
-        chain = tokenizer.generate_chain(['abcdhiya', 'helloadam'])
+        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya'], MarkovChainHandler)
+        chain = tokenizer.tokenize(['abcdhiya', 'helloadam'])
 
         # Verify first level tokens
         self.assertTrue(all([token in chain.transitions for token in ['abc', 'hello']]))
@@ -24,8 +25,8 @@ class TokenizerTestCase(unittest.TestCase):
 
 
     def test_rollback(self):
-        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya'])
-        chain = tokenizer.generate_chain(['adabcadam'])
+        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya'], MarkovChainHandler)
+        chain = tokenizer.tokenize(['adabcadam'])
 
         # Verify first level tokens
         self.assertTrue(all([token in chain.transitions for token in ['abc']]))
@@ -42,8 +43,8 @@ class TokenizerTestCase(unittest.TestCase):
 
 
     def test_longest_substring(self):
-        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya', 'hiyabois'])
-        chain = tokenizer.generate_chain(['abcdhiya', 'helloadam', 'adabcadam', 'whoishiyabois'])
+        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya', 'hiyabois'], MarkovChainHandler)
+        chain = tokenizer.tokenize(['abcdhiya', 'helloadam', 'adabcadam', 'whoishiyabois'])
 
         # Verify first level tokens
         self.assertTrue(all([token in chain.transitions for token in ['abc', 'hello', 'hiyabois']]))

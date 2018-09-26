@@ -28,7 +28,7 @@ X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
-X   KASUMI
+OK  KASUMI
 X   ARC4
 
 X   Code reorganization

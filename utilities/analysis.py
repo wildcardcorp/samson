@@ -1,4 +1,3 @@
-# from scipy.stats import chisquare
 from samson.utilities.encoding import bytes_to_bitstring
 from math import ceil, log, sqrt
 from Crypto.Cipher import ARC4
@@ -107,7 +106,7 @@ def birthday_attack(bits, probability):
 
 
 def expected_collisions(bits, num_inputs):
-   return 2**(-bits)*scipy.special.comb(num_inputs, 2)
+    return 2**(-bits)*scipy.special.comb(num_inputs, 2)
 
 
 
