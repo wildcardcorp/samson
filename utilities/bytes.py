@@ -4,6 +4,9 @@ from samson.utilities.general import rand_bytes
 
 class Bytes(bytearray):
     def __init__(self, bytes_like, byteorder='big'):
+        if type(bytes_like) is int:
+            bytes_like = int_to_bytes(bytes_like, byteorder)
+            
         super().__init__(bytes_like)
         self.byteorder = byteorder
 

@@ -1,4 +1,3 @@
-from samson.prngs.lfsr import LFSR
 from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX, INV_SBOX as RIJ_INV_SBOX
 from samson.utilities.bytes import Bytes
 
@@ -22,20 +21,21 @@ SQ = [
 ]
 
 # https://www.gsma.com/aboutus/wp-content/uploads/2014/12/snow3gspec.pdf
+# https://github.com/mitshell/CryptoMobile/blob/master/C_alg/SNOW_3G.c
 class SNOW3G(object):
     def __init__(self, key, iv):
         self.key = Bytes.wrap(key)
         self.iv = Bytes.wrap(iv)
 
-        k0, k1, k2, k3 = self.key.chunk(4)
-        iv0, iv1, iv2, iv3 = self.iv.chunk(4)
+        k0, k1, k2, k3 = [chunk.to_int() for chunk in self.key.chunk(4)]
+        iv0, iv1, iv2, iv3 = [chunk.to_int() for chunk in self.iv.chunk(4)]
 
-        s = []
+        s = [None] * 16
         s[15] = k3 ^ iv0
         s[14] = k2
         s[13] = k1
         s[12] = k0 ^ iv1
-        s[11] = k3 ^ 1
+        s[11] = k3 ^ 0xFFFFFFFF
         s[10] = k2 ^ 0xFFFFFFFF ^ iv2
         s[9] = k1 ^ 0xFFFFFFFF ^ iv3
         s[8] = k0 ^ 0xFFFFFFFF
@@ -48,9 +48,16 @@ class SNOW3G(object):
         s[1] = k1 ^ 0xFFFFFFFF
         s[0] = k0 ^ 0xFFFFFFFF
 
-        R1 = 0
-        R2 = 0
-        R3 = 0
+        self.s = s
+
+        self.R1 = 0
+        self.R2 = 0
+        self.R3 = 0
+
+        for _ in range(32):
+            F = self.clock_FSM()
+            self.clock_lfsr(F)
+            # print(self.s)
     
 
     def MULx(self, V, c):
@@ -58,6 +65,14 @@ class SNOW3G(object):
             return ((V << 1) % 256) ^ c
         else:
             return V << 1
+
+
+    def MULa(self, c):
+        return (self.MULxPOW(c, 23, 0xA9) << 24) + (self.MULxPOW(c, 245, 0xA9) << 16) + (self.MULxPOW(c, 48, 0xA9) << 8) + self.MULxPOW(c, 239, 0xA9)
+
+    
+    def DIVa(self, c):
+        return (self.MULxPOW(c, 16, 0xA9) << 24) + (self.MULxPOW(c, 39, 0xA9) << 16) + (self.MULxPOW(c, 6, 0xA9) << 8) + self.MULxPOW(c, 64, 0xA9)
 
 
     def MULxPOW(self, V, i, c):
@@ -69,30 +84,18 @@ class SNOW3G(object):
 
 
     def S1(self, w):
-        return self._perform_sbox_transform(w, RIJ_SBOX, 0x1B)
-        # srw0, srw1, srw2, srw3 = [RIJ_SBOX[w_i] for w_i in w]
-
-        # r0 = self.MULx(srw0, 0x1B) ^ srw1 ^ srw2 ^ self.MULx(srw3, 0x1B) ^ srw3
-        # r1 = self.MULx(srw0, 0x1B) ^ srw0 ^ self.MULx(srw1, 0x1B)  ^ srw2 ^ srw3
-        # r2 = srw0 ^ self.MULx(srw1, 0x1B) ^ srw1  ^ self.MULx(srw2, 0x1B) ^ srw3
-        # r3 = srw0 ^ srw1 ^ self.MULx(srw2, 0x1B) ^ srw2 ^ self.MULx(srw3, 0x1B)
-
-        # return Bytes([r0, r1, r2, r3])
+        return self._perform_sbox_transform(Bytes.wrap(w).zfill(4), RIJ_SBOX, 0x1B, True)
 
 
     def S2(self, w):
-        return self._perform_sbox_transform(w, SQ, 0x69)
-        # sqw0, sqw1, sqw2, sqw3 = [SQ[w_i] for w_i in w]
-
-        # r0 = self.MULx(sqw0, 0x69) ^ sqw1 ^ sqw2 ^ self.MULx(sqw3, 0x69) ^ sqw3
-        # r1 = self.MULx(sqw0, 0x69) ^ sqw0 ^ self.MULx(sqw1, 0x69)  ^ sqw2 ^ sqw3
-        # r2 = sqw0 ^ self.MULx(sqw1, 0x69) ^ sqw1  ^ self.MULx(sqw2, 0x69) ^ sqw3
-        # r3 = sqw0 ^ sqw1 ^ self.MULx(sqw2, 0x69) ^ sqw2 ^ self.MULx(sqw3, 0x69)
-
-        # return Bytes([r0, r1, r2, r3])
+        return self._perform_sbox_transform(Bytes.wrap(w).zfill(4), SQ, 0x69)
 
 
-    def _perform_sbox_transform(self, w, sbox, val):
+    def _perform_sbox_transform(self, w, sbox, val, s2=False):
+        # if s2:
+        #     print(w.to_int())
+        #sqw0, sqw1, sqw2, sqw3 = (w << 24) & 0xFF, (w << 16) & 0xFF, (w << 8) & 0xFF, w & 0xFF
+        #print(sqw0, sqw1, sqw2, sqw3)
         sqw0, sqw1, sqw2, sqw3 = [sbox[w_i] for w_i in w]
 
         r0 = self.MULx(sqw0, val) ^ sqw1 ^ sqw2 ^ self.MULx(sqw3, val) ^ sqw3
@@ -100,17 +103,42 @@ class SNOW3G(object):
         r2 = sqw0 ^ self.MULx(sqw1, val) ^ sqw1  ^ self.MULx(sqw2, val) ^ sqw3
         r3 = sqw0 ^ sqw1 ^ self.MULx(sqw2, val) ^ sqw2 ^ self.MULx(sqw3, val)
 
-        return Bytes([r0, r1, r2, r3])
+        #print(r0, r1, r2, r3)
+
+        return Bytes([r0, r1, r2, r3]).to_int()
     
 
-    def FSM(self, r1, r2, r3):
-        F = ((s15 + r1) % (2 ** 32)) ^ r2
-        r = (r2 + r3 ^ s5) % (2 ** 32)
-        r3 = self.S2(r2)
-        r2 = self.S1(r1)
-        r1 = r
+    def clock_FSM(self):
+        F = ((self.s[15] + self.R1) % (2 ** 32)) ^ self.R2
+        r = (self.R2 + (self.R3 ^ self.s[5])) % (2 ** 32)
+        self.R3 = self.S2(self.R2)
+        self.R2 = self.S1(self.R1)
+        self.R1 = r
+
+        return F
 
 
-    def encrypt(self, plaintext):
-        lfsr = LFSR(1)
+    def clock_lfsr(self, F=None):
+        v = ((self.s[0] << 8) & 0xFFFFFF00) ^ self.MULa((self.s[0] >> 24) & 0xFF) ^ self.s[2] ^ ((self.s[11] >> 8) & 0x00FFFFFF) ^ self.DIVa(self.s[11] & 0xFF)
+        if F:
+            v^= F
+
+        for i in range(15):
+            self.s[i] = self.s[i + 1]
+
+        self.s[15] = v
+
+
+    def yield_state(self, n):
+        _F = self.clock_FSM()
+        self.clock_lfsr()
+
+        ks = []
         
+        for _ in range(n):
+            F = self.clock_FSM()
+            ks.append(F ^ self.s[0])
+            self.clock_lfsr()
+
+        print(ks)
+        return sum([Bytes(i) for i in ks])

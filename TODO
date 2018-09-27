@@ -30,6 +30,7 @@ X   Elliptical curve arithmetic
 X   Wang's Attack
 OK  KASUMI
 ?   ARC4
+X   Keccak
 X   Davies Meyers Fixed Points
 
 X   Code reorganization
