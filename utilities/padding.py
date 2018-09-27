@@ -22,18 +22,19 @@ def pkcs15_pad(data, key_byte_length):
     return b'\x00\x02' + padding + b'\x00' + data
 
 
-def md_pad(msg, fakeLen=None, byteorder='little'):
+def md_pad(msg, fakeLen=None, byteorder='little', bit_size=64):
     length = fakeLen or len(msg)
     # append the bit '1' to the message
     padding = b'\x80'
+    byte_size = bit_size // 8
 
     # append 0 <= k < 512 bits '0', so that the resulting message length (in bytes)
     # is congruent to 56 (mod 64)
-    padding += b'\x00' * ((56 - (length + 1) % 64) % 64)
+    padding += b'\x00' * (((bit_size - byte_size) - (length + 1) % bit_size) % bit_size)
 
     # append length of message (before pre-processing), in bits, as 64-bit big-endian integer
     message_bit_length = length * 8
-    padding += message_bit_length.to_bytes(8, byteorder=byteorder)
+    padding += message_bit_length.to_bytes(byte_size, byteorder=byteorder)
     return msg + padding
 
     
