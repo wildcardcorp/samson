@@ -25,7 +25,10 @@ class Bytes(bytearray):
 
 
     def __xor__(self, other):
-        return Bytes(xor_buffs(self, other), self.byteorder)
+        if type(other) is int:
+            return Bytes(int.to_bytes(self.to_int() ^ other, len(self), self.byteorder), self.byteorder)
+        else:
+            return Bytes(xor_buffs(self, other), self.byteorder)
 
 
     def __rxor__(self, other):
@@ -41,9 +44,12 @@ class Bytes(bytearray):
         
 
     def __and__(self, other):
-        self_len = len(self)
-        self_as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int.to_bytes(self_as_int & int.from_bytes(other, self.byteorder), self_len, self.byteorder), self.byteorder)
+        other_as_int = other
+
+        if not type(other) is int:
+            other_as_int = int.from_bytes(other, self.byteorder)
+
+        return Bytes(int.to_bytes(self.to_int() & other_as_int, len(self), self.byteorder), self.byteorder)
 
 
     def __rand__(self, other):
@@ -51,8 +57,12 @@ class Bytes(bytearray):
 
 
     def __or__(self, other):
-        self_as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int_to_bytes(self_as_int | int.from_bytes(other, self.byteorder), self.byteorder), self.byteorder)
+        other_as_int = other
+
+        if not type(other) is int:
+            other_as_int = int.from_bytes(other, self.byteorder)
+
+        return Bytes(int.to_bytes(self.to_int() | other_as_int, len(self), self.byteorder), self.byteorder)
 
 
     def __ror__(self, other):
@@ -68,31 +78,26 @@ class Bytes(bytearray):
 
 
     def __lshift__(self, num):
-        as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int.to_bytes((as_int << num) %  (2**(len(self) * 8)), len(self), self.byteorder))
+        return Bytes(int.to_bytes((self.to_int() << num) %  (2**(len(self) * 8)), len(self), self.byteorder))
 
 
     def __rshift__(self, num):
-        as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int.to_bytes((as_int >> num) % (2**(len(self) * 8)), len(self), self.byteorder))
+        return Bytes(int.to_bytes((self.to_int() >> num) % (2**(len(self) * 8)), len(self), self.byteorder))
 
 
     def lrot(self, amount, bits=None):
-        as_int = int.from_bytes(self, self.byteorder)
-
         if not bits:
             bits = len(self) * 8
 
-        back_to_bytes = int.to_bytes(left_rotate(as_int, amount, bits), bits // 8, self.byteorder)
+        back_to_bytes = int.to_bytes(left_rotate(self.to_int(), amount, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes, self.byteorder)
 
 
     def rrot(self, amount, bits=None):
-        as_int = int.from_bytes(self, self.byteorder)
-
         if not bits:
             bits = len(self) * 8
-        back_to_bytes = int.to_bytes(right_rotate(as_int, amount, bits), bits // 8, self.byteorder)
+
+        back_to_bytes = int.to_bytes(right_rotate(self.to_int(), amount, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes, self.byteorder)
 
 
@@ -106,9 +111,12 @@ class Bytes(bytearray):
 
 
     def zfill(self, size):
-        as_int = int.from_bytes(self, self.byteorder)
-        return Bytes(int.to_bytes(as_int, size, self.byteorder))
+        return Bytes(int.to_bytes(self.to_int(), size, self.byteorder))
 
 
     def stretch(self, size, offset=0):
         return Bytes(stretch_key(self, size, offset), self.byteorder)
+
+    
+    def to_int(self):
+        return int.from_bytes(self, self.byteorder)
