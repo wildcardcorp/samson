@@ -22,8 +22,10 @@ class AffineCipher(object):
 
 
     def encrypt(self, plaintext):
-        return ''.join([self.char_map[char] for char in plaintext])
+        primitive_len = len(self.alphabet[0])
+        return ''.join([self.char_map[plaintext[i:i + primitive_len]] for i in range(0, len(plaintext), primitive_len)])
 
 
-    def decrypt(self, plaintext):
-        return ''.join([self.inv_char_map[char] for char in plaintext])
+    def decrypt(self, ciphertext):
+        primitive_len = len(self.alphabet[0])
+        return ''.join([self.inv_char_map[ciphertext[i:i + primitive_len]] for i in range(0, len(ciphertext), primitive_len)])
