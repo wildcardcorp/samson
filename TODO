@@ -29,7 +29,8 @@ X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
 OK  KASUMI
-X   ARC4
+?   ARC4
+X   Davies Meyers Fixed Points
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

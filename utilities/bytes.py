@@ -67,6 +67,15 @@ class Bytes(bytearray):
         return Bytes(bytearray(other).__add__(self), self.byteorder)
 
 
+    def __lshift__(self, num):
+        as_int = int.from_bytes(self, self.byteorder)
+        return Bytes(int.to_bytes((as_int << num) %  (2**(len(self) * 8)), len(self), self.byteorder))
+
+
+    def __rshift__(self, num):
+        as_int = int.from_bytes(self, self.byteorder)
+        return Bytes(int.to_bytes((as_int >> num) % (2**(len(self) * 8)), len(self), self.byteorder))
+
 
     def lrot(self, amount, bits=None):
         as_int = int.from_bytes(self, self.byteorder)
