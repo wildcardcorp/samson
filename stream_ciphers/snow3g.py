@@ -140,5 +140,4 @@ class SNOW3G(object):
             ks.append(F ^ self.s[0])
             self.clock_lfsr()
 
-        print(ks)
-        return sum([Bytes(i) for i in ks])
+        return sum([Bytes(i).zfill(4) for i in ks])

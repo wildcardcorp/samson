@@ -6,15 +6,12 @@ import unittest
 class RijndaelTestCase(unittest.TestCase):
     def _run_test(self, key, plaintext, block_size, test_vector, iterations=1):
         rijndael = Rijndael(key, block_size=block_size)
-        
-        
 
         to_enc = plaintext
         for _ in range(iterations):
             to_enc = rijndael.encrypt(to_enc)
 
         cipherhex = codecs.encode(to_enc, 'hex_codec')
-
         self.assertEqual(cipherhex, test_vector)
 
         to_dec = to_enc
