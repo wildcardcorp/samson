@@ -14,7 +14,6 @@ X   CRIME Attack
     X   Work on less trivial problems
 
 
-OK  Linear Congruential Generator
 X   PRNG tests
 X   LLL algorithm
 X   Clean up EnglishAnalyzer
@@ -28,7 +27,6 @@ X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
-OK  KASUMI
 ?   ARC4
 X   Keccak
 X   Davies Meyers Fixed Points

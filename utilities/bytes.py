@@ -88,6 +88,11 @@ class Bytes(bytearray):
         return Bytes(int.to_bytes((self.to_int() >> num) % (2**(len(self) * 8)), len(self), self.byteorder))
 
 
+    def __invert__(self):
+        max_val = 2 ** (len(self) * 8) - 1
+        return Bytes(max_val - self.to_int(), self.byteorder)
+
+
     def lrot(self, amount, bits=None):
         if not bits:
             bits = len(self) * 8
