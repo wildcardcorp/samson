@@ -34,6 +34,11 @@ class Keccak(object):
         self.sponge = SpongeConstruction(self.keccak_f, self.pad, r, c)
         self.digest_size = (digest_size // 8)
 
+    
+
+    def __repr__(self):
+        return "<Keccak r={}, c={}, digest_size={}>".format(self.r, self.c, self.digest_size)
+
 
     def pad(self, in_bytes):
         bit_rate_bytes = (self.r + 7) // 8

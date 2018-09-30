@@ -18,9 +18,6 @@ class SpongeConstruction(object):
         padded = self.pad_func(in_bytes)
         
         for block in padded.chunk(self.block_size):
-            # print(block)
-            # print(self.S[:self.block_size])
-
             curr = 0
             for y in range(5):
                 for x in range(5):
