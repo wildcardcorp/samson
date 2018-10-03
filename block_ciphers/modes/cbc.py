@@ -1,4 +1,3 @@
-from Crypto.Cipher import AES
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from samson.utilities.bytes import Bytes
