@@ -32,7 +32,7 @@ class SpongeConstruction(object):
             out = Bytes(b'')
             for y in range(5):
                 for x in range(5):
-                    out += Bytes(self.S[x][y])[::-1]
+                    out += Bytes(self.S[x][y]).zfill(8)[::-1]
 
             yield out[:self.block_size]
             self.S = self.perm_func(self.S)
