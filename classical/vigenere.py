@@ -48,7 +48,9 @@ class Vigenere(object):
     
     def __repr__(self):
         return "<Vigenere: key={}, alphabet={}>".format(self.key, self.alphabet)
-    
+
+    def __str__(self):
+        return self.__repr__()
 
     def encrypt(self, plaintext):
         result = []

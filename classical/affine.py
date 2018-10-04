@@ -20,6 +20,9 @@ class AffineCipher(object):
     def __repr__(self):
         return "<Affine: a={}, b={}, alphabet={}>".format(self.a, self.b, self.alphabet)
 
+    def __str__(self):
+        return self.__repr__()
+
 
     def encrypt(self, plaintext):
         primitive_len = len(self.alphabet[0])

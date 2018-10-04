@@ -19,6 +19,9 @@ class Playfair(object):
     def __repr__(self):
         return "<Playfair key={}>".format(self.key)
 
+    def __str__(self):
+        return self.__repr__()
+
 
 
     def encrypt(self, plaintext):

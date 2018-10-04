@@ -11,6 +11,9 @@ class RC4(object):
     def __repr__(self):
         return "<RC4: key={}, S={}, i={}, j={} >".format(self.key, self.S, self.i, self.j)
 
+    def __str__(self):
+        return self.__repr__()
+
 
     def key_schedule(self, key):
         key_length = len(key)

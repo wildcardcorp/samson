@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.math import tonelli
+from samson.utilities.math import tonelli, mod_inv
 from fastecdsa.point import Point
+import random
 
 class DualEC(object):
     # P and Q are Point objects from fastecdsa
@@ -15,15 +16,26 @@ class DualEC(object):
         return f"<DualEC: P={self.P}, Q={self.Q}, t={self.t}>"
 
 
+    def __str__(self):
+        return self.__repr__()
+
+
     def generate(self):
         s = (self.t * self.P).x
         self.t = s
         self.r = (s * self.Q).x
 
-        return Bytes(int.to_bytes(self.r, 32, 'big')[-30:])
+        return Bytes(int.to_bytes(self.r, 32, 'big')[2:])
 
 
-    # def generate_backdoor()
+    @staticmethod
+    def generate_backdoor(curve):
+        P = curve.G
+        d = random.randint(2, curve.q)
+        e = mod_inv(d, curve.q)
+        Q = e * P
+
+        return P, Q, d
 
 
     @staticmethod
@@ -46,6 +58,7 @@ class DualEC(object):
                 R = Point(test_x, y)
                 dR = d * R
                 test_r2 = dR.x * Q
+
                 if int.to_bytes(test_r2.x, 32, 'big')[2:2 + len(r2)] == r2:
                     possible_states.append(DualEC(P, Q, dR.x))
                     print(test_r2)
@@ -53,4 +66,3 @@ class DualEC(object):
                 pass
 
         return possible_states
-        

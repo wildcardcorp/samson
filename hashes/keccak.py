@@ -39,6 +39,9 @@ class Keccak(object):
     def __repr__(self):
         return "<Keccak r={}, c={}, digest_size={}>".format(self.r, self.c, self.digest_size)
 
+    def __str__(self):
+        return self.__repr__()
+        
 
     def pad(self, in_bytes):
         bit_rate_bytes = (self.r + 7) // 8

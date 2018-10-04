@@ -27,6 +27,10 @@ class Bytes(bytearray):
         return '<Bytes: {}>'.format(str(bytes(self)))
 
 
+    def __str__(self):
+        return self.__repr__()
+
+
     def __xor__(self, other):
         if type(other) is int:
             return Bytes(int.to_bytes(self.to_int() ^ other, len(self), self.byteorder), self.byteorder)

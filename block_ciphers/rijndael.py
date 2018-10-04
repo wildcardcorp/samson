@@ -86,6 +86,9 @@ class Rijndael(object):
     def __repr__(self):
         return "<Rijndael: key={}, key_size={}, block_size={}>".format(self.key, len(self.key) * 8, self.block_size)
 
+    def __str__(self):
+        return self.__repr__()
+
 
     # https://en.wikipedia.org/wiki/Rijndael_key_schedule
     def key_schedule(self):

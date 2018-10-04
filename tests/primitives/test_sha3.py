@@ -9,4 +9,6 @@ class SHA3TestCase(unittest.TestCase):
             for _ in range(10):
                 in_bytes = Bytes.random(128)
                 sha3 = hash_type()
+                print(in_bytes)
+                print(reference_method)
                 self.assertEqual(sha3.hash(in_bytes), reference_method(in_bytes).digest())

@@ -38,6 +38,10 @@ class MT19937:
         return "<MT19937: seed={}, index={}, state={}>".format(self.seed, self.index, self.state)
 
 
+    def __str__(self):
+        return self.__repr__()
+        
+
     def twist(self):
         for i in range(n):
             y = asint32((self.state[i] & 0x80000000) + (self.state[(i + 1) % n] & 0x7fffffff))

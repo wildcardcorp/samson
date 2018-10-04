@@ -106,7 +106,11 @@ class SHA2(MerkleDamgardConstruction):
         return "<SHA2: initial_state={}, block_size={}, digest_size={}".format(self.initial_state, self.block_size, self.digest_size)
 
 
+    def __str__(self):
+        return self.__repr__()
+
  
+
     def compression_func(self, block, state):
         bit_mask = 0xFFFFFFFF if self.state_size == 4 else 0xFFFFFFFFFFFFFFFF
         bit_size = self.state_size * 8

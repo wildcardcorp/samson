@@ -41,6 +41,11 @@ class RSA(object):
         return '<RSA: bits={}, p={}, q={}, e={}, n={}, phi={}, d={}, alt_d={}>'.format(self.bits, self.p, self.q, self.e, self.n, self.phi, self.d, self.alt_d)
 
 
+
+    def __str__(self):
+        return self.__repr__()
+
+        
     def encrypt(self, message):
         m = int.from_bytes(message, byteorder='big')
         return pow(m, self.e, self.n)

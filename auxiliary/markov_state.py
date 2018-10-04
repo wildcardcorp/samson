@@ -10,6 +10,10 @@ class MarkovState(object):
     def __repr__(self):
         return "<MarkovState: transitions={}, count={}, probability={}>".format(self.transitions.keys(), self.count, self.probability)
 
+    def __str__(self):
+        return self.__repr__()
+
+
 
     # Recursively turn counts into probabilities
     def calculate_chain_probs(self):
