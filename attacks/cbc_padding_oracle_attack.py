@@ -15,7 +15,7 @@ class CBCPaddingOracleAttack(object):
         self.block_size = block_size
 
 
-    def execute(self, ciphertext):
+    def execute(self, ciphertext, unpad=True):
         blocks = Bytes.wrap(ciphertext).chunk(self.block_size)
         reversed_blocks = blocks[::-1]
 
@@ -31,7 +31,8 @@ class CBCPaddingOracleAttack(object):
                 preceding_block = reversed_blocks[i + 1]
 
             for _ in range(len(block)):
-                last_working_char = b'\x00'
+                #last_working_char = b'\x00'
+                last_working_char = None
 
                 for possible_char in range(256):
                     test_byte = struct.pack('B', possible_char)
@@ -48,7 +49,16 @@ class CBCPaddingOracleAttack(object):
                         log.debug("Found working byte: {}".format(test_byte))
                         last_working_char = test_byte
 
+                    # Early out optimization. Note, we're being careful about PKCS7 padding here.
+                    if last_working_char and possible_char >= self.block_size:
+                        break
+
                 plaintext = last_working_char + plaintext
 
             plaintexts.append(plaintext)
-        return pkcs7_unpad(b''.join(plaintexts[::-1]), self.block_size)
+        
+        result = b''.join(plaintexts[::-1])
+
+        if unpad:
+            result = pkcs7_unpad(result, self.block_size)
+        return result

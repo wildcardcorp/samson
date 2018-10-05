@@ -7,7 +7,7 @@ class SHA3(object):
 
         def pad(in_bytes):
             bit_rate_bytes = (k.r + 7) // 8
-            pad_len = bit_rate_bytes - len(in_bytes)
+            pad_len = bit_rate_bytes - (len(in_bytes) % bit_rate_bytes)
 
             if pad_len == 0:
                 pad_len = bit_rate_bytes
