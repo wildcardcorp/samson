@@ -195,7 +195,7 @@ def _num_bigrams(string):
     return sum([val * string.count(bigram.lower()) for bigram, val in most_common_bigrams.items()]) / len(string)
 
 TOKENIZER = Tokenizer([word for word, _ in wordlist.items() if len(word) > 2], TokenListHandler)
-VITERBI_DECODER = ViterbiDecoder()
+#VITERBI_DECODER = ViterbiDecoder()
 
 class EnglishAnalyzer(Analyzer):
     def __init__(self):

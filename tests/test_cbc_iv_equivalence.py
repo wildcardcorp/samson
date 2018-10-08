@@ -13,7 +13,7 @@ key_size = 16
 key = rand_bytes(key_size)
 iv = key
 
-#aes = AES.new(key, AES.MODE_ECB)
+
 aes = Rijndael(key)
 cbc = CBC(aes.encrypt, aes.decrypt, iv, 16)
 
