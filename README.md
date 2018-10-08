@@ -46,6 +46,9 @@ Includes:
 * **Architecture**: Linux 4.16.3-301.fc28.x86_64 #1 SMP Mon Apr 23 21:59:58 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
 * **OS**: Fedora Security Lab (Fedora release 28)
 
+## Installation
+`sudo dnf -y install python3-devel gmp-devel redhat-rpm-config`
+
 
 ## Performance
 Samson's primitives aren't the fastest nor were they meant to be. If you're concerned about performance, you have a couple of options:

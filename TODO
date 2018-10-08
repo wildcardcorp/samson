@@ -33,6 +33,10 @@ X   Davies Meyers Fixed Points
 X   RC6
 X   PBKDF2
 X   Argon2
+X   Lattice Object?
+X   Pallier
+X   NTRU
+X   Gentry construction
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes
