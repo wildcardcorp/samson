@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import zlib
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.ctr import CTR
 
@@ -14,17 +14,18 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+key_size = 16
 block_size = 16
 secret = b"Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE="
 
 def aes_ctr_oracle(message):
-    aes = AES.new(rand_bytes(block_size), AES.MODE_ECB)
+    aes = Rijndael(rand_bytes(key_size))
     ciphertext = CTR(aes.encrypt, rand_bytes(block_size // 2), block_size).encrypt(zlib.compress(message))
     return len(ciphertext)
 
 
 def aes_cbc_oracle(message):
-    aes = AES.new(rand_bytes(block_size), AES.MODE_ECB)
+    aes = Rijndael(rand_bytes(key_size))
     ciphertext = CBC(aes.encrypt, aes.decrypt, rand_bytes(block_size), block_size).encrypt(zlib.compress(message))
     return len(ciphertext)
 

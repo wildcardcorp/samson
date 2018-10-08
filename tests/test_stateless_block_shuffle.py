@@ -1,15 +1,16 @@
 #!/usr/bin/python3
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ecb import ECB
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_pad
 
+key_size = 16
 block_size = 16
-key = rand_bytes(block_size)
+key = rand_bytes(key_size)
 
-aes = AES.new(rand_bytes(block_size), AES.MODE_ECB)
+aes = Rijndael(key)
 ecb = ECB(aes.encrypt, aes.decrypt, block_size)
 
 def parse_user(user):

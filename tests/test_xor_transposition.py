@@ -1,28 +1,29 @@
 #!/usr/bin/python3
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ctr import CTR
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.analysis import levenshtein_distance
 from samson.attacks.xor_transposition_attack import XORTranspositionAttack
 from samson.analyzers.english_analyzer import EnglishAnalyzer
-from Crypto.Cipher import ARC4
+from samson.stream_ciphers.rc4 import RC4
 import base64
 import unittest
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
 
+key_size = 16
 block_size = 16
-key = rand_bytes(block_size)
+key = rand_bytes(key_size)
 
 def encrypt_ctr(secret):
-    return CTR(AES.new(key, AES.MODE_ECB).encrypt, int.to_bytes(0, block_size // 2, 'big'), block_size).encrypt(secret)
+    return CTR(Rijndael(key).encrypt, int.to_bytes(0, block_size // 2, 'big'), block_size).encrypt(secret)
 
 
 def encrypt_rc4(secret):
-    cipher = ARC4.new(key)
-    return cipher.encrypt(secret)
+    cipher = RC4(key)
+    return cipher.yield_state(len(secret)) ^ secret
 
 
 class XORTranspositionTestCase(unittest.TestCase):

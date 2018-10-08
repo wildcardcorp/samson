@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from samson.utilities.general import rand_bytes
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.attacks.cbc_iv_key_equivalence_attack import CBCIVKeyEquivalenceAttack
 import base64
@@ -9,12 +9,13 @@ import unittest
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
 
-block_size = 32
-key = rand_bytes(block_size)
+key_size = 16
+key = rand_bytes(key_size)
 iv = key
 
-aes = AES.new(key, AES.MODE_ECB)
-cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+#aes = AES.new(key, AES.MODE_ECB)
+aes = Rijndael(key)
+cbc = CBC(aes.encrypt, aes.decrypt, iv, 16)
 
 def sender_encrypt(data):
     return cbc.encrypt(data)
@@ -32,11 +33,11 @@ class CBCIVEquivalenceTestCase(unittest.TestCase):
         plaintext = b'-Super secret message! Hope no one cracks this!-'
         ciphertext = sender_encrypt(plaintext)
 
-        attack = CBCIVKeyEquivalenceAttack(self, block_size)
+        attack = CBCIVKeyEquivalenceAttack(self, 16)
         key_iv = bytes(attack.execute(ciphertext))
 
         self.assertEqual(key_iv, key)
-        recovered_plaintext = CBC(None, AES.new(key_iv, AES.MODE_ECB).decrypt, key_iv, block_size).decrypt(bytes(ciphertext))
+        recovered_plaintext = CBC(None, Rijndael(key).decrypt, key_iv, 16).decrypt(bytes(ciphertext))
         
         print(recovered_plaintext)
         self.assertEqual(plaintext, recovered_plaintext)

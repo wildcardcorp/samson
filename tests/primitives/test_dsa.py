@@ -29,7 +29,7 @@ class DSATestCase(unittest.TestCase):
 
     
     def test_k_derivation(self):
-        messageB = int.from_bytes(hashlib.sha1(b'hiyabois').digest(), byteorder='big')
+        messageB = int.from_bytes(hashlib.sha1(b'deadbeef').digest(), byteorder='big')
         sig_genB = self.dsa.sign(H, messageB, k)
         found_k = self.dsa.derive_k_from_sigs(message, sig, messageB, sig_genB)
         self.assertEqual(found_k, k)

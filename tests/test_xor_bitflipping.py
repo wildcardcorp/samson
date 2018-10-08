@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import urllib.parse
 from samson.utilities.general import rand_bytes
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.ctr import CTR
 
@@ -9,12 +9,14 @@ from samson.attacks.xor_bitflipping_attack import XORBitflippingAttack
 from samson.oracles.encryption_oracle import EncryptionOracle
 import unittest
 
+key_size = 16
 block_size = 16
-key = rand_bytes(block_size)
+
+key = rand_bytes(key_size)
 iv = rand_bytes(block_size)
 nonce = rand_bytes(block_size // 2)
 
-aes = AES.new(key, AES.MODE_ECB)
+aes = Rijndael(key)
 cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
 
 def format_data(data):

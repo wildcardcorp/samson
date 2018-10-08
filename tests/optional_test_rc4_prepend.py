@@ -1,7 +1,7 @@
 from samson.attacks.rc4_prepend_attack import RC4PrependAttack
 from samson.oracles.encryption_oracle import EncryptionOracle
 from samson.utilities.general import rand_bytes
-from Crypto.Cipher import ARC4
+from samson.stream_ciphers.rc4 import RC4
 import base64
 import unittest
 
@@ -14,8 +14,10 @@ secret = b'hey'
 
 def random_encrypt(data):
     key = rand_bytes(16)
-    cipher = ARC4.new(key)
-    return cipher.encrypt(data + secret)
+    cipher = RC4(key)
+    plaintext = (data + secret)
+
+    return cipher.yield_state(len(plaintext)) ^ plaintext
 
 
 

@@ -43,16 +43,16 @@ class TokenizerTestCase(unittest.TestCase):
 
 
     def test_longest_substring(self):
-        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya', 'hiyabois'], MarkovChainHandler)
-        chain = tokenizer.tokenize(['abcdhiya', 'helloadam', 'adabcadam', 'whoishiyabois'])
+        tokenizer = Tokenizer(['abc', 'hello', 'adam', 'hiya', 'deadbeef'], MarkovChainHandler)
+        chain = tokenizer.tokenize(['abcdhiya', 'helloadam', 'adabcadam', 'whoisdeadbeef'])
 
         # Verify first level tokens
-        self.assertTrue(all([token in chain.transitions for token in ['abc', 'hello', 'hiyabois']]))
+        self.assertTrue(all([token in chain.transitions for token in ['abc', 'hello', 'deadbeef']]))
 
         # Verify second level tokens
         self.assertTrue(all([token in chain.transitions['abc'].transitions for token in ['hiya', 'adam']]))
         self.assertTrue(all([token in chain.transitions['hello'].transitions for token in ['adam']]))
-        self.assertTrue(chain.transitions['hiyabois'].transitions == {})
+        self.assertTrue(chain.transitions['deadbeef'].transitions == {})
 
         # Verify we did NOT take the substring
         self.assertFalse('hiya' in chain.transitions)
@@ -60,7 +60,7 @@ class TokenizerTestCase(unittest.TestCase):
         # Verify first level probabilities
         self.assertEqual(chain.transitions['abc'].probability, 0.5)
         self.assertEqual(chain.transitions['hello'].probability, 0.25)
-        self.assertEqual(chain.transitions['hiyabois'].probability, 0.25)
+        self.assertEqual(chain.transitions['deadbeef'].probability, 0.25)
 
 
         # Verify second level probabilities

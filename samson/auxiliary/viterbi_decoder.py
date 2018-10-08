@@ -12,26 +12,31 @@ class ViterbiDecoder(object):
                 self.Pw[key.upper()] = self.Pw.get(key.upper(), 0) + int(count)
 
         self.N = 1024908267229 ## Number of tokens
-        #calculate first order log probabilities
+
+        # Calculate first order log probabilities
         for key in self.Pw.keys():
             self.Pw[key] = log10(float(self.Pw[key])/self.N)
-        #get second order word model 
+
+        # Get second order word model 
         self.Pw2 = {}
         with open(os.path.join(os.path.dirname(__file__), 'count_2w.txt'), 'r') as f:
             for line in f.readlines():
                 key,count = line.split('\t') 
                 self.Pw2[key.upper()] = self.Pw2.get(key.upper(), 0) + int(count)
-        #calculate second order log probabilities
+
+        # Calculate second order log probabilities
         for key in self.Pw2.keys():
-            word1,word2 = key.split()
+            word1,_word2 = key.split()
             if word1 not in self.Pw: 
                 self.Pw2[key] = log10(float(self.Pw2[key])/self.N)
             else: 
                 self.Pw2[key] = log10(float(self.Pw2[key])/self.N) - self.Pw[word1]
-        # precalculate the probabilities we assign to words not in our dict, L is length of word
+
+        # Precalculate the probabilities we assign to words not in our dict, L is length of word
         self.unseen = [log10(10./(self.N * 10**L)) for L in range(50)]        
         
-    # conditional word probability    
+        
+    # Conditional word probability    
     def cPw(self,word,prev='<UNK>'):
         if word not in self.Pw: 
             return self.unseen[len(word)]
@@ -40,6 +45,7 @@ class ViterbiDecoder(object):
         else: 
             return self.Pw2[prev+' '+word]
     
+
     def score(self,text,maxwordlen=20):
         prob = [[-99e99]*maxwordlen for _ in range(len(text))]
         strs = [['']*maxwordlen for _ in range(len(text))]

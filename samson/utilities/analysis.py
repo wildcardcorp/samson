@@ -1,6 +1,6 @@
 from samson.utilities.encoding import bytes_to_bitstring
 from math import ceil, log, sqrt
-from Crypto.Cipher import ARC4
+from samson.stream_ciphers.rc4 import RC4
 import operator
 from copy import deepcopy
 import json
@@ -130,8 +130,8 @@ def generate_random_rc4_bias_map(data=b'\x00' * 51, key_size=128, sample_size=2*
     ciphertexts = []
     for _ in range(sample_size):
         key = os.urandom(key_size // 8)
-        cipher = ARC4.new(key)
-        ciphertexts.append(cipher.encrypt(data))
+        cipher = RC4(key)
+        ciphertexts.append(cipher.yield_state(len(data)) ^ data)
 
 
     return generate_rc4_bias_map(ciphertexts)

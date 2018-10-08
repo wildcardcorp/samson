@@ -1,6 +1,6 @@
 from samson.attacks.nostradamus_attack import NostradamusAttack
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.manipulation import stretch_key
 from samson.utilities.encoding import int_to_bytes
 from samson.block_ciphers.modes.ecb import ECB
@@ -13,11 +13,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 
 
 hash_size = 2
+key_size = 16
 block_size = 16
 
 
 def compressor(message, state):
-    return bytes(ECB(AES.new(bytes(stretch_key(state, 16)), AES.MODE_ECB).encrypt, None, block_size).encrypt(message)[:hash_size])
+    return bytes(ECB(Rijndael(stretch_key(state, key_size)).encrypt, None, block_size).encrypt(message)[:hash_size])
 
 
 def padder(message):

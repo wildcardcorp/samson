@@ -1,21 +1,22 @@
 #!/usr/bin/python3
-from Crypto.Random import random
-from Crypto.Cipher import AES
+from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.utilities.general import rand_bytes
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
+import random
 import base64
 import unittest
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
 
+key_size = 16
 block_size = 16
-key = rand_bytes(block_size)
+key = rand_bytes(key_size)
 iv = rand_bytes(block_size)
 
-aes = AES.new(key, AES.MODE_ECB)
+aes = Rijndael(key)
 cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
 
 plaintext_strings = [
