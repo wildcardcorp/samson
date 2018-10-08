@@ -32,7 +32,6 @@ class PKCS15PaddingOracleAttack(object):
         key_byte_len = key_length // 8
         # Convenience variables
         B = 2 ** (8 * (key_byte_len - 2))
-        # n, e = rsa.n, rsa.e
 
         # Initial values
         c_0 = c
