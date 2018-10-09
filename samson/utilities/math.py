@@ -1,3 +1,6 @@
+import numpy as np
+from copy import deepcopy
+import time
 
 def gcd(a, b):
     if b == 0:
@@ -113,3 +116,54 @@ def tonelli(n, p):
         t = (t * c) % p
         m = i
     return r
+
+
+
+# # https://gist.github.com/iizukak/1287876/edad3c337844fac34f7e56ec09f9cb27d4907cc7
+# def gram_schmidt1(lattice):
+#     Q, _R = np.linalg.qr(lattice)
+#     return Q
+
+
+def gram_schmidt(X, row_vecs=True, norm = True):
+    if not row_vecs:
+        X = X.T
+    Y = X[0:1,:].copy()
+    for i in range(1, X.shape[0]):
+        proj = np.diag((X[i,:].dot(Y.T)/np.linalg.norm(Y,axis=1)**2).flat).dot(Y)
+        Y = np.vstack((Y, X[i,:] - proj.sum(0)))
+    if norm:
+        Y = np.diag(1/np.linalg.norm(Y,axis=1)).dot(Y)
+    if row_vecs:
+        return Y
+    else:
+        return Y.T
+
+
+# https://github.com/orisano/olll/blob/master/olll.py
+# https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
+def lll(in_basis, delta=0.75):
+    basis = deepcopy(in_basis)
+    n = len(basis)
+    ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+
+    def mu(i, j):
+        return np.dot(ortho[j], basis[i]) / np.dot(ortho[j], ortho[j])
+
+    k = 1
+    while k < n:
+        for j in range(k - 1, -1, -1):
+            mu_kj = mu(k, j)
+            if abs(mu_kj) > 0.5:
+                basis[k] = basis[k] - basis[j] * round(mu_kj)
+                ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+
+
+        if np.dot(ortho[k], ortho[k]) >= (delta - mu(k, k - 1)**2) * np.dot(ortho[k - 1], ortho[k - 1]):
+            k += 1
+        else:
+            basis[k], basis[k - 1] = deepcopy(basis[k - 1]), deepcopy(basis[k])
+            ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+            k = max(k - 1, 1)
+
+    return np.array([list(map(int, b)) for b in basis])
