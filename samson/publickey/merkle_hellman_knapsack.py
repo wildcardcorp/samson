@@ -2,6 +2,8 @@
 from samson.utilities.math import mod_inv, lll, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 import numpy as np
+from sympy.matrices import Matrix, eye
+
 
 class MerkleHellmanKnapsack(object):
     def __init__(self, priv=None, q=None, r=None, max_diff=2**20):
@@ -58,15 +60,19 @@ class MerkleHellmanKnapsack(object):
 
     @staticmethod
     def recover_plaintext(ciphertext, pub):
-        ident = np.identity(len(pub))
-        pub_matrix = np.append(ident, [pub], axis=0)
-        problem_matrix = np.append(pub_matrix, np.array([[0] * len(pub) + [-ciphertext]]).T, axis=1)
+        ident = eye(len(pub))
+        pub_matrix = ident.col_join(Matrix([pub]))
+        problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]]).T).T
 
-        solution_matrix = lll(problem_matrix.T, 0.99)
+        matrices = [problem_matrix.row(row) for row in range(problem_matrix.rows)]
+        #print(matrices)
+        solution_matrix = lll(matrices, 0.99)
 
-        for row in solution_matrix:
-            new_row = row[row[:] >= 0]
-            new_row = new_row[new_row[:] <= 1]
+        # print(solution_matrix)
 
-            if len(new_row) == len(row):
-                return row[:-1]
+        for row in range(solution_matrix.rows):
+            row_mat = solution_matrix.row(row)
+            new_row = [item for item in row_mat if item >= 0 and item <= 1]
+
+            if len(new_row) == len(row_mat):
+                return row_mat[:-1]

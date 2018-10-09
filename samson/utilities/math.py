@@ -1,6 +1,7 @@
-import numpy as np
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
+from sympy.matrices import Matrix, GramSchmidt
+from sympy import isprime
 import math
 
 def gcd(a, b):
@@ -120,30 +121,15 @@ def tonelli(n, p):
 
 
 
-def gram_schmidt(X, row_vecs=True, norm = True):
-    if not row_vecs:
-        X = X.T
-    Y = X[0:1,:].copy()
-    for i in range(1, X.shape[0]):
-        proj = np.diag((X[i,:].dot(Y.T)/np.linalg.norm(Y,axis=1)**2).flat).dot(Y)
-        Y = np.vstack((Y, X[i,:] - proj.sum(0)))
-    if norm:
-        Y = np.diag(1/np.linalg.norm(Y,axis=1)).dot(Y)
-    if row_vecs:
-        return Y
-    else:
-        return Y.T
-
-
 # https://github.com/orisano/olll/blob/master/olll.py
 # https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
 def lll(in_basis, delta=0.75):
     basis = deepcopy(in_basis)
     n = len(basis)
-    ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+    ortho = GramSchmidt(basis)
 
     def mu(i, j):
-        return np.dot(ortho[j], basis[i]) / np.dot(ortho[j], ortho[j])
+        return ortho[j].dot(basis[i]) / ortho[j].dot(ortho[j])
 
     k = 1
     while k < n:
@@ -151,24 +137,25 @@ def lll(in_basis, delta=0.75):
             mu_kj = mu(k, j)
             if abs(mu_kj) > 0.5:
                 basis[k] = basis[k] - basis[j] * round(mu_kj)
-                ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+                ortho = GramSchmidt(basis)
 
 
-        if np.dot(ortho[k], ortho[k]) >= (delta - mu(k, k - 1)**2) * np.dot(ortho[k - 1], ortho[k - 1]):
+        if ortho[k].dot(ortho[k]) >= (delta - mu(k, k - 1)**2) * (ortho[k - 1].dot(ortho[k - 1])):
             k += 1
         else:
             basis[k], basis[k - 1] = deepcopy(basis[k - 1]), deepcopy(basis[k])
-            ortho = gram_schmidt(basis, row_vecs=True, norm=False)
+            ortho = GramSchmidt(basis)
             k = max(k - 1, 1)
 
-    return np.array([list(map(int, b)) for b in basis])
+    return Matrix([list(map(int, b)) for b in basis])
+
 
 
 def generate_superincreasing_seq(length, max_diff):
     seq = []
 
     last_sum = 0
-    for i in range(length):
+    for _ in range(length):
         delta = int.from_bytes(rand_bytes(math.ceil(math.log(max_diff, 256))), 'big') % max_diff
         seq.append(last_sum + delta)
         last_sum = sum(seq)
@@ -176,7 +163,20 @@ def generate_superincreasing_seq(length, max_diff):
     return seq
 
 
+
 def find_coprime(p, search_range):
     for i in search_range:
         if gcd(p, i) == 1:
             return i
+
+
+
+def find_prime(bits):
+    rand_num = int.from_bytes(rand_bytes(math.ceil(bits / 8)), 'big')
+    rand_num |= 2**(bits - 1)
+    rand_num |= 1
+
+    while not isprime(rand_num):
+        rand_num += 2
+    
+    return rand_num

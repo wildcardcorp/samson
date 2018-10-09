@@ -1,5 +1,4 @@
-from Crypto.Util.number import getPrime
-from samson.utilities.math import gcd, lcm, mod_inv
+from samson.utilities.math import gcd, lcm, mod_inv, find_prime
 from samson.utilities.encoding import int_to_bytes
 import random
 
@@ -19,7 +18,8 @@ class RSA(object):
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
         else:
             while gcd(self.e, phi) != 1:
-                p, q = getPrime(bits // 2), getPrime(bits // 2)
+                #p, q = getPrime(bits // 2), getPrime(bits // 2)
+                p, q = find_prime(bits // 2), find_prime(bits // 2)
                 phi = lcm(p - 1, q - 1)
                 self.n = p * q
 

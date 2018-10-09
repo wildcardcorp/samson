@@ -1,5 +1,7 @@
 import os
-from setuptools import setup, find_packages
+#from setuptools import setup, find_packages
+import setuptools
+from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md')) as f:
@@ -8,9 +10,7 @@ with open(os.path.join(here, 'README.md')) as f:
 
 # see requirements.txt for requirements
 requires = [
-    "pycrypto",
     "scipy",
-    "sklearn",
     "fastecdsa",
     "sympy"
 ]
@@ -18,7 +18,7 @@ requires = [
 tests_require = [
 ]
 
-setup(name='samson',
+setup(name='samson-crypto',
       version='0.0.1',
       description='Cryptanalysis and attack framework',
       long_description=README,
