@@ -1,15 +1,24 @@
 
-from samson.utilities.math import mod_inv, lll
+from samson.utilities.math import mod_inv, lll, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 import numpy as np
 
 class MerkleHellmanKnapsack(object):
-    def __init__(self, priv, q, r):
-        self.priv = priv
-        self.q = q
-        self.r = r
+    def __init__(self, priv=None, q=None, r=None, max_diff=2**20):
+        super_seq = generate_superincreasing_seq(9, max_diff)
+        self.priv = priv or super_seq[:8]
+        self.q = q or super_seq[-1]
+        self.r = r or find_coprime(self.q, range(2, self.q))
 
-        self.pub = [(w * r) % q for w in self.priv]
+        self.pub = [(w * self.r) % self.q for w in self.priv]
+
+
+    def __repr__(self):
+        return f"<MerkleHellmanKnapsack: priv={self.priv}, pub={self.pub}, q={self.q}, r={self.r}>"
+    
+
+    def __str__(self):
+        return self.__repr__()
 
 
     def encrypt(self, message):

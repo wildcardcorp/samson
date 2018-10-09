@@ -1,6 +1,7 @@
 import numpy as np
 from copy import deepcopy
-import time
+from samson.utilities.general import rand_bytes
+import math
 
 def gcd(a, b):
     if b == 0:
@@ -119,12 +120,6 @@ def tonelli(n, p):
 
 
 
-# # https://gist.github.com/iizukak/1287876/edad3c337844fac34f7e56ec09f9cb27d4907cc7
-# def gram_schmidt1(lattice):
-#     Q, _R = np.linalg.qr(lattice)
-#     return Q
-
-
 def gram_schmidt(X, row_vecs=True, norm = True):
     if not row_vecs:
         X = X.T
@@ -167,3 +162,21 @@ def lll(in_basis, delta=0.75):
             k = max(k - 1, 1)
 
     return np.array([list(map(int, b)) for b in basis])
+
+
+def generate_superincreasing_seq(length, max_diff):
+    seq = []
+
+    last_sum = 0
+    for i in range(length):
+        delta = int.from_bytes(rand_bytes(math.ceil(math.log(max_diff, 256))), 'big') % max_diff
+        seq.append(last_sum + delta)
+        last_sum = sum(seq)
+
+    return seq
+
+
+def find_coprime(p, search_range):
+    for i in search_range:
+        if gcd(p, i) == 1:
+            return i
