@@ -8,6 +8,14 @@ class ECDHE(object):
         self.G = G
 
 
+    def __repr__(self):
+        return f"<ECDHE: key={self.key}, G={self.G}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def get_challenge(self):
         return self.key * self.G
 

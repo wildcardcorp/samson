@@ -2,7 +2,7 @@ from samson.protocols.ecdhe import ECDHE
 from samson.utilities.bytes import Bytes
 import unittest
 
-class ECDHEestCase(unittest.TestCase):
+class ECDHETestCase(unittest.TestCase):
     def test_ecdhe(self):
         ecdhe1 = ECDHE()
         ecdhe2 = ECDHE()

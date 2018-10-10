@@ -37,6 +37,9 @@ X   Lattice Object?
 X   Pallier
 X   NTRU
 X   Gentry construction
+X   ECDSA
+X   Dragonfly
+X   GCM
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

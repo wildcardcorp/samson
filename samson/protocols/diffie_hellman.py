@@ -16,6 +16,15 @@ class DiffieHellman(object):
         self.p = p
 
 
+    
+    def __repr__(self):
+        return f"<DiffieHellman: key={self.key}, g={self.g}, p={self.p}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def get_challenge(self):
         return pow(self.g, self.key, self.p)
 
