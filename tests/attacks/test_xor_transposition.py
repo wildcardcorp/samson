@@ -28,7 +28,7 @@ def encrypt_rc4(secret):
 
 class XORTranspositionTestCase(unittest.TestCase):
     def try_encryptor(self, encryptor):
-        with open('tests/test_ctr_transposition.txt') as f:
+        with open('tests/attacks/test_ctr_transposition.txt') as f:
             secrets = [base64.b64decode(line.strip().encode()) for line in f.readlines()]
 
         ciphertexts = [encryptor(secret) for secret in secrets]

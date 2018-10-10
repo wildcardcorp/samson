@@ -47,7 +47,10 @@ Includes:
 * **OS**: Fedora Security Lab (Fedora release 28)
 
 ## Installation
-`sudo dnf -y install python3-devel gmp-devel redhat-rpm-config`
+bash```
+sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
+pip3 install samson-crypto
+```
 
 
 ## Performance

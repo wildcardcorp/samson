@@ -15,7 +15,7 @@ X   CRIME Attack
 
 
 X   PRNG tests
-X   LLL algorithm
+OK  LLL algorithm
 X   Clean up EnglishAnalyzer
     X   Make the code more readable
     OK  Use bit-shift-register-type-deal to detect non-delimited words

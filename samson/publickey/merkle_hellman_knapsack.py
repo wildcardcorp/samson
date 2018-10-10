@@ -68,11 +68,10 @@ class MerkleHellmanKnapsack(object):
         #print(matrices)
         solution_matrix = lll(matrices, 0.99)
 
-        # print(solution_matrix)
-
         for row in range(solution_matrix.rows):
             row_mat = solution_matrix.row(row)
             new_row = [item for item in row_mat if item >= 0 and item <= 1]
 
             if len(new_row) == len(row_mat):
-                return row_mat[:-1]
+                return int(''.join([str(val) for val in row_mat[:-1]]), 2)
+        return solution_matrix
