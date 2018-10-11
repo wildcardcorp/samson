@@ -89,11 +89,10 @@ class SHA1(MerkleDamgardConstruction):
         self.block_size = 64
 
 
-sha1 = SHA1()
 
-assert(sha1.hash(b"The quick brown fox jumps over the lazy dog") ==
-        bytes.fromhex("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"))
-assert(sha1.hash(b"The quick brown fox jumps over the lazy cog") ==
-        bytes.fromhex("de9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3"))
-assert(sha1.hash(b"") ==
-        bytes.fromhex("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
+    def __repr__(self):
+        return f"<SHA1: initial_state={self.initial_state}, block_size={self.block_size}, pad_func={self.pad_func}>"
+
+
+    def __str__(self):
+        return self.__repr__()

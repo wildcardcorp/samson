@@ -37,7 +37,7 @@ class Keccak(object):
     
 
     def __repr__(self):
-        return "<Keccak r={}, c={}, digest_size={}>".format(self.r, self.c, self.digest_size)
+        return f"<Keccak r={self.r}, c={self.c}, digest_size={self.digest_size}, sponge={self.sponge}>"
 
     def __str__(self):
         return self.__repr__()

@@ -2,6 +2,7 @@ from samson.constructions.merkle_damgard_construction import MerkleDamgardConstr
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.padding import md_pad
 from samson.utilities.encoding import int_to_bytes
+from samson.utilities.bytes import Bytes
 import math
 
 # https://rosettacode.org/wiki/MD5/Implementation#Python
@@ -55,7 +56,7 @@ def compression_func(message, state):
             new_state[i] += val
             new_state[i] &= 0xFFFFFFFF
 
-    return state_to_bytes(new_state)
+    return Bytes(state_to_bytes(new_state))
 
 
 def padding_func(message):
@@ -69,3 +70,12 @@ class MD5(MerkleDamgardConstruction):
         self.compression_func = compression_func
         self.pad_func = padding_func
         self.block_size = 64
+
+
+
+    def __repr__(self):
+        return f"<MD5: initial_state={self.initial_state}, block_size={self.block_size}, pad_func={self.pad_func}>"
+
+
+    def __str__(self):
+        return self.__repr__()

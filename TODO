@@ -22,24 +22,26 @@ X   Clean up EnglishAnalyzer
     OK  Include Chi Squared test
 
 
-OK  English Chi Squared distribution
 X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
-OK  ARC4
-OK  Keccak
 X   Davies Meyers Fixed Points
 X   RC6
 X   PBKDF2
 X   Argon2
 X   Lattice Object?
-X   Pallier
+OK  Pallier
 X   NTRU
 X   Gentry construction
 X   ECDSA
-X   Dragonfly
+OK  Dragonfly
 X   GCM
+X   CCM
+X   XTS
+X   BLAKE/2b
+X   MD4
+X   NTRU
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

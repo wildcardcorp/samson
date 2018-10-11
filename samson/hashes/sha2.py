@@ -103,7 +103,7 @@ class SHA2(MerkleDamgardConstruction):
     
 
     def __repr__(self):
-        return "<SHA2: initial_state={}, block_size={}, digest_size={}".format(self.initial_state, self.block_size, self.digest_size)
+        return "<SHA2: initial_state={}, block_size={}, digest_size={}>".format(self.initial_state, self.block_size, self.digest_size)
 
 
     def __str__(self):

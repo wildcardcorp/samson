@@ -13,6 +13,14 @@ class SpongeConstruction(object):
 
         self.S = [[0] * 5 for _ in range(5)]
 
+
+    def __repr__(self):
+        return f"<Sponge r={self.r}, c={self.c}, block_size={self.block_size}, S={self.S}, pad_func={self.pad_func}>"
+
+    def __str__(self):
+        return self.__repr__()
+    
+
     
     def absorb(self, in_bytes):
         padded = self.pad_func(in_bytes)
