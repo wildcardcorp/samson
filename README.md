@@ -46,8 +46,10 @@ Includes:
 * **Architecture**: Linux 4.16.3-301.fc28.x86_64 #1 SMP Mon Apr 23 21:59:58 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
 * **OS**: Fedora Security Lab (Fedora release 28)
 
+
 ## Installation
-bash```
+RHEL derivatives
+```bash
 sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
 pip3 install samson-crypto
 ```
@@ -59,4 +61,4 @@ Samson's primitives aren't the fastest nor were they meant to be. If you're conc
 * Use primitives from a faster library (e.g. pycrypto)
 * Use PyPy instead of CPython
 
-Since samson mostly calls Python, PyPy offers large speed-ups. However, `multiprocessing` doesn't work very well with PyPy. There seems to be a memory leak, and sometimes bytes are unpickled as strings. I recommend against running the RC4 prepend attack with PyPy as it uses `multiprocessing`. Additionally, the latest stable version of PyPy works with 3.5 while SHA3 was introduced in 3.6. samson's SHA3 will still work, but the tests will fail.
+Since samson mostly calls Python, PyPy offers large speed-ups. However, `multiprocessing` doesn't work very well with PyPy. There seems to be a memory leak, and sometimes bytes are unpickled as strings. I recommend against running the RC4 prepend attack with PyPy as it uses `multiprocessing`. Additionally, the latest stable version of PyPy works with Python 3.5 while SHA3 was introduced in 3.6. samson's SHA3 will still work, but the tests will fail.

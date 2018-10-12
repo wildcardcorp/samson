@@ -11,11 +11,11 @@ class Bytes(bytearray):
         self.byteorder = byteorder
 
     @staticmethod
-    def wrap(bytes_like):
+    def wrap(bytes_like, byteorder='big'):
         if isinstance(bytes_like, Bytes):
             return bytes_like
         else:
-            return Bytes(bytes_like)
+            return Bytes(bytes_like, byteorder=byteorder)
 
     
     @staticmethod
@@ -24,7 +24,7 @@ class Bytes(bytearray):
 
 
     def __repr__(self):
-        return '<Bytes: {}>'.format(str(bytes(self)))
+        return f'<Bytes: {str(bytes(self))}, byteorder={self.byteorder}>'
 
 
     def __str__(self):
@@ -123,7 +123,7 @@ class Bytes(bytearray):
 
 
     def zfill(self, size):
-        return Bytes(int.to_bytes(self.to_int(), size, self.byteorder))
+        return Bytes(int.to_bytes(self.to_int(), size, self.byteorder), self.byteorder)
 
 
     def stretch(self, size, offset=0):
