@@ -51,7 +51,7 @@ FR = [F5, F4, F3, F2, F1]
 KL = [0x00000000, 0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xA953FD4E]
 KR = [0x50A28BE6, 0x5C4DD124, 0x6D703EF3, 0x7A6D76E9, 0x00000000]
 
-INIT_STATE = Bytes(0x0123456789ABCDEFFEDCBA9876543210F0E1D2C3, byteorder='big')
+INIT_STATE = Bytes(int.to_bytes(0x0123456789ABCDEFFEDCBA9876543210F0E1D2C3, 20, 'big'), byteorder='little')
 
 
 
@@ -59,7 +59,7 @@ def COMPRESS(message, state):
     # The authors of RIPEMD160 couldn't decide on whether to use big or little endian, so they used both!
     # RIPEMD160 takes in bytes as big endian but operates and outputs bytes of little endian. Man, was this 'fun.'
 
-    h = [chunk[::-1].to_int() for chunk in state.chunk(4)]
+    h = [chunk.to_int() for chunk in state.chunk(4)]
     msg_chunks = [chunk[::-1].to_int() for chunk in Bytes.wrap(message, byteorder='big').chunk(4)]
 
     AL = AR = h[0]
@@ -83,7 +83,7 @@ def COMPRESS(message, state):
     h[4] = (h[0] + BL + CR) & 0xFFFFFFFF
     h[0] = T 
 
-    return sum([Bytes(state, 'little').zfill(4) for state in h]) #.zfill(4)
+    return sum([Bytes(state, 'little').zfill(4) for state in h])
 
 
 def padding_func(message):
