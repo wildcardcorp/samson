@@ -21,7 +21,8 @@ SIGMA = [
 class BLAKE2(object):
     def __init__(self, key, desired_hash_len):
         self.key = key
-        self.desired_hash_len = desired_hash_len
+        self.digest_size = desired_hash_len
+        self.block_size = self.BLOCK_SIZE
 
 
     def padding_func(self, message):
@@ -92,7 +93,7 @@ class BLAKE2(object):
         if last_block_size == 0 and len(message) > 0:
             last_block_size = self.BLOCK_SIZE
 
-        state[0] ^= (0x0101 << 16) + (len(self.key) << 8) + (self.desired_hash_len)
+        state[0] ^= (0x0101 << 16) + (len(self.key) << 8) + (self.digest_size)
 
         if len(self.key) > 0:
             message = self.padding_func(self.key) + message
@@ -108,7 +109,7 @@ class BLAKE2(object):
             state = self.compress(state, self.IV, chunk, bytes_compressed, is_last_block)
             
 
-        return sum([Bytes(h, byteorder='little').zfill(self.WORD_SIZE // 8) for h in state])[:self.desired_hash_len]
+        return sum([Bytes(h, byteorder='little').zfill(self.WORD_SIZE // 8) for h in state])[:self.digest_size]
 
 
 
@@ -127,7 +128,7 @@ class BLAKE2b(BLAKE2):
 
 
     def __repr__(self):
-        return f"<BLAKE2b: iv={self.IV}, desired_hash_len={self.desired_hash_len}, key={self.key}>"
+        return f"<BLAKE2b: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
 
 
     def __str__(self):
@@ -148,7 +149,7 @@ class BLAKE2s(BLAKE2):
 
 
     def __repr__(self):
-        return f"<BLAKE2s: iv={self.IV}, desired_hash_len={self.desired_hash_len}, key={self.key}>"
+        return f"<BLAKE2s: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
 
 
     def __str__(self):

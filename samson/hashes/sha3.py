@@ -18,7 +18,7 @@ class SHA3(object):
                 return in_bytes + bytes([0x06] + ([0] * (pad_len - 2)) + [0x80])
 
         
-        k.sponge.pad_func = pad
+        k.pad_func = pad
         return k
 
 

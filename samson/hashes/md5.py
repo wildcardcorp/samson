@@ -29,7 +29,7 @@ index_functions = 16*[lambda i: i] + \
 
 
 def state_to_bytes(state):
-    return int_to_bytes(sum(x<<(32*i) for i, x in enumerate(state)), 'little')
+    return int.to_bytes(sum(x<<(32*i) for i, x in enumerate(state)), 16, 'little')
 
 
 def bytes_to_state(state_bytes):
@@ -70,6 +70,7 @@ class MD5(MerkleDamgardConstruction):
         self.compression_func = compression_func
         self.pad_func = padding_func
         self.block_size = 64
+        self.digest_size = 16
 
 
 

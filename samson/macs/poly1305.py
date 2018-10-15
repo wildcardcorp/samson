@@ -12,7 +12,7 @@ class Poly1305(object):
 
 
     def __repr__(self):
-        return f"<Poly1305: key={self.key}, nonce={self.nonce}, cipher={self.cipher}>"
+        return f"<Poly1305: key={self.key}, nonce={self.nonce}, r={self.r}, cipher={self.cipher}>"
 
 
     def __str__(self):

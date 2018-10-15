@@ -24,20 +24,19 @@ R = [
 ]
 
 # https://keccak.team/keccak_specs_summary.html
-class Keccak(object):
-    def __init__(self, r, c, digest_size):
-        self.r = r
-        self.c = c
+class Keccak(SpongeConstruction):
+    def __init__(self, r, c, digest_size, auto_reset_state=True):
+        super().__init__(self.keccak_f, self.pad, r, c)
         self.w = (r + c) // 25
 
         self.n = int(log(self.w, 2) * 2 + 12)
-        self.sponge = SpongeConstruction(self.keccak_f, self.pad, r, c)
         self.digest_size = (digest_size // 8)
+        self.auto_reset_state = auto_reset_state
 
     
 
     def __repr__(self):
-        return f"<Keccak r={self.r}, c={self.c}, digest_size={self.digest_size}, sponge={self.sponge}>"
+        return f"<Keccak r={self.r}, c={self.c}, n={self.n}, w={self.w}, digest_size={self.digest_size}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()
@@ -58,14 +57,11 @@ class Keccak(object):
 
     def keccak_f(self, A):
         for i in range(self.n):
-            # print(i)
             A = self.round_func(A, RC[i])
-            # print(A)
         return A
 
 
     def round_func(self, A, rc):
-        # print(A)
         C = [0] * 5
         for x in range(5):
             C[x] = A[x][0] ^ A[x][1] ^ A[x][2] ^ A[x][3] ^ A[x][4]
@@ -96,5 +92,8 @@ class Keccak(object):
     
 
     def hash(self, plaintext):
-        self.sponge.absorb(Bytes.wrap(plaintext))
-        return sum(self.sponge.squeeze(self.digest_size))[:self.digest_size]
+        if self.auto_reset_state:
+            self.reset()
+            
+        self.absorb(Bytes.wrap(plaintext))
+        return sum(self.squeeze(self.digest_size))[:self.digest_size]

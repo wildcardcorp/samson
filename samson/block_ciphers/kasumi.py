@@ -134,7 +134,7 @@ class KASUMI(FeistelNetwork):
 
 
     def __repr__(self):
-        return "<KASUMI: key={}".format(self.key)
+        return f"<KASUMI: key={self.key}>"
 
     def __str__(self):
         return self.__repr__()

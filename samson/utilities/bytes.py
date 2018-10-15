@@ -1,6 +1,7 @@
 from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose, stretch_key
 from samson.utilities.encoding import int_to_bytes
 from samson.utilities.general import rand_bytes
+import codecs
 
 class Bytes(bytearray):
     def __init__(self, bytes_like, byteorder='big'):
@@ -132,3 +133,14 @@ class Bytes(bytearray):
     
     def to_int(self):
         return int.from_bytes(self, self.byteorder)
+
+    def int(self):
+        return self.to_int()
+
+    
+    def to_hex(self):
+        return codecs.encode(self, 'hex_codec')
+
+    
+    def hex(self):
+        return self.to_hex()

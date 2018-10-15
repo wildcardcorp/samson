@@ -181,7 +181,7 @@ class DES(FeistelNetwork):
 
     
     def __repr__(self):
-        return "<DES: key={}>".format(self.key)
+        return f"<DES: key={self.key}>"
 
     def __str__(self):
         return self.__repr__()

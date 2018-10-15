@@ -96,6 +96,7 @@ class RIPEMD160(MerkleDamgardConstruction):
         self.pad_func = padding_func
         self.compression_func = COMPRESS
         self.block_size = 64
+        self.digest_size = 20
 
 
     def __repr__(self):

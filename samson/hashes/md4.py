@@ -73,6 +73,7 @@ class MD4(MerkleDamgardConstruction):
         self.compression_func = compression_func
         self.pad_func = padding_func
         self.block_size = 64
+        self.digest_size = 16
 
 
     def __repr__(self):

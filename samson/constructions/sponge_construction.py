@@ -21,6 +21,9 @@ class SpongeConstruction(object):
         return self.__repr__()
     
 
+    def reset(self):
+        self.S = [[0] * 5 for _ in range(5)]
+
     
     def absorb(self, in_bytes):
         padded = self.pad_func(in_bytes)

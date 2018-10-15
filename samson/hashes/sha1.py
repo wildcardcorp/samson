@@ -64,7 +64,7 @@ def compression_func(chunk, state):
 
 
 def state_to_bytes(state):
-    return int_to_bytes(sum(x<<(32*i) for i, x in enumerate(state[::-1])), 'big')
+    return int.to_bytes(sum(x<<(32*i) for i, x in enumerate(state[::-1])), 20, 'big')
 
 
 def bytes_to_state(state_bytes):
@@ -87,6 +87,7 @@ class SHA1(MerkleDamgardConstruction):
         self.compression_func = compression_func
         self.pad_func = padding_func
         self.block_size = 64
+        self.digest_size = 20
 
 
 
