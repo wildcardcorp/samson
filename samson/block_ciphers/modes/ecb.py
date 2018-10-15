@@ -10,6 +10,14 @@ class ECB(object):
         self.block_size = block_size
 
 
+    def __repr__(self):
+        return f"<ECB: encryptor={self.encryptor}, decryptor={self.decryptor}, block_size={self.block_size}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def encrypt(self, plaintext, pad=True):
         if pad:
             plaintext = pkcs7_pad(plaintext, self.block_size)

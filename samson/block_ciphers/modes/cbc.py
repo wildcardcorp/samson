@@ -11,6 +11,14 @@ class CBC(object):
         self.block_size = block_size
 
 
+    def __repr__(self):
+        return f"<CBC: encryptor={self.encryptor}, decryptor={self.decryptor}, iv={self.iv}, block_size={self.block_size}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def encrypt(self, plaintext, pad=True):
         plaintext = Bytes.wrap(plaintext)
 

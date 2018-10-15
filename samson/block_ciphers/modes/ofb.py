@@ -1,4 +1,3 @@
-from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.cbc import CBC
 from math import ceil
@@ -10,6 +9,13 @@ class OFB(object):
         self.iv = iv
         self.block_size = block_size
         self._cbc = CBC(encryptor, None, iv, block_size)
+
+    def __repr__(self):
+        return f"<OFB: encryptor={self.encryptor}, iv={self.iv}, block_size={self.block_size}>"
+
+
+    def __str__(self):
+        return self.__repr__()
 
 
     def encrypt(self, plaintext):

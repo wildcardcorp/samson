@@ -10,6 +10,15 @@ class CFB(object):
         self.block_size = block_size
 
 
+    def __repr__(self):
+        return f"<CFB: encryptor={self.encryptor}, iv={self.iv}, block_size={self.block_size}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+
+
+
     def encrypt(self, plaintext):
         ciphertext = b''
         plaintext = Bytes.wrap(plaintext)
