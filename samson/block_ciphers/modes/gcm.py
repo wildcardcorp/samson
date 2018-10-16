@@ -10,11 +10,10 @@ GCM_REDUCTION_TABLE = [
 
 
 class GCM(object):
-    def __init__(self, encryptor, block_size):
+    def __init__(self, encryptor):
         self.encryptor = encryptor
-        self.block_size = block_size
-        self.H = self.encryptor(b'\x00' * self.block_size).int()
-        self.ctr = CTR(self.encryptor, b'\x00' * 8, self.block_size)
+        self.H = self.encryptor(b'\x00' * 16).int()
+        self.ctr = CTR(self.encryptor, b'\x00' * 8, 16)
 
         # Precompute the product table
         # TODO: Replace with more understandable GF implementation
@@ -27,7 +26,7 @@ class GCM(object):
 
 
     def __repr__(self):
-        return f"<GCM: encryptor={self.encryptor}, H={self.H}, ctr={self.ctr}, block_size={self.block_size}>"
+        return f"<GCM: encryptor={self.encryptor}, H={self.H}, ctr={self.ctr}>"
 
 
     def __str__(self):
@@ -35,31 +34,37 @@ class GCM(object):
     
 
     def _clock_ctr(self, nonce):
-        self.ctr.nonce = Bytes(nonce).zfill(12)
-        self.ctr.counter = 1
-        return self.ctr.encrypt(Bytes(nonce).zfill(self.block_size))
+        nonce = Bytes.wrap(nonce)
+        if len(nonce) == 12:
+            self.ctr.nonce = nonce
+            self.ctr.counter = 1
+        else:
+            payload = nonce + (b'\x00' * (16 - (len(nonce)) % 16)) + (b'\x00' * 8) + Bytes(len(nonce) * 8).zfill(8)
+            J_0 = Bytes(self.update(0, payload)).zfill(16)
+            self.ctr.nonce = J_0[:15]
+            self.ctr.counter = J_0[-1]
+            
+        return self.ctr.encrypt(Bytes(b'').zfill(16))
+
 
 
     def encrypt(self, nonce, plaintext, data):
-        assert len(nonce) <= 12
-
-        tagMask = self._clock_ctr(nonce)
+        tag_mask = self._clock_ctr(nonce)
         data = Bytes.wrap(data)
 
         ciphertext = self.ctr.encrypt(plaintext)
-        tag = self.auth(ciphertext, data, tagMask)
+        tag = self.auth(ciphertext, data, tag_mask)
 
         return ciphertext + tag
     
 
-    def decrypt(self, nonce, authed_ciphertext, data):
-        assert len(nonce) <= 12
 
+    def decrypt(self, nonce, authed_ciphertext, data):
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
         
-        tagMask = self._clock_ctr(nonce)
+        tag_mask = self._clock_ctr(nonce)
         data = Bytes.wrap(data)
-        tag = self.auth(ciphertext, data, tagMask)
+        tag = self.auth(ciphertext, data, tag_mask)
 
         # Do I care about constant time?
         if tag != orig_tag:
@@ -95,13 +100,13 @@ class GCM(object):
         return ret
 
 
-    def auth(self, ciphertext, ad, tagMask):
+    def auth(self, ciphertext, ad, tag_mask):
         y = 0
         y = self.update(y, ad)
         y = self.update(y, ciphertext)
         y ^= (len(ad) << (3 + 64)) | (len(ciphertext) << 3)
         y = self._mul(y)
-        y ^= tagMask.int()
+        y ^= tag_mask.int()
         return Bytes(int.to_bytes(y, 16, 'big'))
 
 

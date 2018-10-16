@@ -139,7 +139,7 @@ class Bytes(bytearray):
 
     
     def to_hex(self):
-        return codecs.encode(self, 'hex_codec')
+        return Bytes(codecs.encode(self, 'hex_codec'))
 
     
     def hex(self):

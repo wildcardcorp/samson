@@ -15,7 +15,7 @@ class CBCMAC(object):
         return self.__repr__()
 
     
-    def generate(self, plaintext):
+    def generate(self, plaintext, pad=True):
         cryptor = self.cipher(self.key)
         cbc = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size // 8)
-        return cbc.encrypt(plaintext)[-(cryptor.block_size // 8):]
+        return cbc.encrypt(plaintext, pad)[-(cryptor.block_size // 8):]

@@ -28,20 +28,20 @@ X   Elliptical curve arithmetic
 X   Wang's Attack
 X   Davies Meyers Fixed Points
 X   RC6
-X   PBKDF2
 X   Argon2
 X   Lattice Object?
-OK  Pallier
-X   NTRU
-X   Gentry construction
 X   ECDSA
-OK  Dragonfly
-X   GCM
 X   CCM
+X   EAX
 X   XTS
-X   BLAKE/2b
-X   MD4
+X   scrypt
+X   bcrypt
+X   Twofish
+X   IDEA
 X   NTRU
+X   Curve25519
+X   EdDSA
+X   HKDF
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

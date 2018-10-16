@@ -23,21 +23,18 @@ TEST_VECS = [
 
 
 class GCMTestCase(unittest.TestCase):
-    
-    # https://www.schneier.com/code/vectors.txt
+    # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+    # https://boringssl.googlesource.com/boringssl/+/2214/crypto/cipher/cipher_test.txt
+    # http://luca-giuzzi.unibs.it/corsi/Support/papers-cryptography/gcm-spec.pdf
     def test_all_vecs(self):
         for unparsed_vec in TEST_VECS:
-            print(unparsed_vec)
             _alg, key, nonce, plaintext, ciphertext, data, tag = unparsed_vec.split(":")
             key_bytes, nonce, plaintext, expected_ciphertext, data, expected_tag = [codecs.decode(item.encode('utf-8'), 'hex_codec') for item in [key, nonce, plaintext, ciphertext, data, tag]]
-            
-            print(key_bytes, nonce, plaintext, expected_ciphertext, data, expected_tag)
 
-            key = Bytes(key_bytes).zfill(16)
-            gcm = GCM(Rijndael(key).encrypt, 16)
-            authed_ct = gcm.encrypt(Bytes(nonce).zfill(12), Bytes(plaintext), data)
+            key = Bytes(key_bytes).zfill(len(key_bytes))
+            gcm = GCM(Rijndael(key).encrypt)
+            authed_ct = gcm.encrypt(Bytes(nonce), Bytes(plaintext), data)
             
-
             self.assertEqual(authed_ct[:-16], expected_ciphertext)
             self.assertEqual(authed_ct[-16:], expected_tag)
             self.assertEqual(plaintext, gcm.decrypt(nonce, authed_ct, data))

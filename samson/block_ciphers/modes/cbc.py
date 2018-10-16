@@ -25,6 +25,9 @@ class CBC(object):
         if pad:
             plaintext = pkcs7_pad(plaintext, self.block_size)
 
+        if len(plaintext) % self.block_size != 0:
+            raise Exception("Plaintext is not a multiple of the block size")
+
         ciphertext = Bytes(b'')
         last_block = self.iv
 
@@ -38,6 +41,9 @@ class CBC(object):
 
     def decrypt(self, ciphertext, unpad=True):
         plaintext = b''
+
+        if len(ciphertext) % self.block_size != 0:
+            raise Exception("Ciphertext is not a multiple of the block size")
 
         last_block = self.iv
         for block in get_blocks(ciphertext, self.block_size):

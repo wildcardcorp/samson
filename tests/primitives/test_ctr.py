@@ -1,0 +1,39 @@
+from samson.block_ciphers.rijndael import Rijndael
+from samson.utilities.bytes import Bytes
+from samson.block_ciphers.modes.ctr import CTR
+import codecs
+import unittest
+from math import ceil
+
+
+TEST_VECS = [
+    "AES-128-CTR:AE6852F8121067CC4BF7A5765577F39E:00000030000000000000000000000001:53696E676C6520626C6F636B206D7367:E4095D4FB7A7B3792D6175A3261311B8:1",
+    "AES-128-CTR:7E24067817FAE0D743D6CE1F32539163:006CB6DBC0543B59DA48D90B00000001:000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F:5104A106168A72D9790D41EE8EDAD388EB2E1EFC46DA57C8FCE630DF9141BE28:1",
+    "AES-128-CTR:7691BE035E5020A8AC6E618529F9A0DC:00E0017B27777F3F4A1786F000000001:000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20212223:C1CF48A89F2FFDD9CF4652E9EFDB72D74540A42BDE6D7836D59A5CEAAEF3105325B2072F:1",
+    "AES-256-CTR:776BEFF2851DB06F4C8A0542C8696F6C6A81AF1EEC96B4D37FC1D689E6C1C104:00000060DB5672C97AA8F0B200000001:53696E676C6520626C6F636B206D7367:145AD01DBF824EC7560863DC71E3E0C0:1",
+    "AES-256-CTR:F6D66D6BD52D59BB0796365879EFF886C66DD51A5B6A99744B50590C87A23884:00FAAC24C1585EF15A43D87500000001:000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F:F05E231B3894612C49EE000B804EB2A9B8306B508F839D6A5530831D9344AF1C:1",
+    "AES-256-CTR:FF7A617CE69148E4F1726E2F43581DE2AA62D9F805532EDFF1EED687FB54153D:001CC5B751A51D70A1C1114800000001:000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20212223:EB6C52821D0BBBF7CE7594462ACA4FAAB407DF866569FD07F48CC0B583D6071F1EC0E6B8:1"
+]
+
+
+class CTRTestCase(unittest.TestCase):
+    
+    # https://boringssl.googlesource.com/boringssl/+/2214/crypto/cipher/cipher_test.txt
+    def test_all_vecs(self):
+        for unparsed_vec in TEST_VECS:
+            print(unparsed_vec)
+            _alg, key, nonce, plaintext, ciphertext, _what = unparsed_vec.split(":")
+            key_bytes, nonce, plaintext, expected_ciphertext = [codecs.decode(item.encode('utf-8'), 'hex_codec') for item in [key, nonce, plaintext, ciphertext]]
+            
+            print(key_bytes, nonce, plaintext, expected_ciphertext)
+
+            key = Bytes(key_bytes).zfill(ceil(len(key_bytes) / 16) * 16)
+
+            ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
+            ctr.counter = 1
+            ciphertext = ctr.encrypt(plaintext)
+            
+            ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
+            ctr.counter = 1
+            self.assertEqual(ciphertext, expected_ciphertext)
+            self.assertEqual(plaintext, ctr.decrypt(ciphertext))
