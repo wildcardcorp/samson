@@ -20,17 +20,24 @@ class CCM(object):
 
     def __str__(self):
         return self.__repr__()
+
     
-
-    # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38c.pdf
-    def encrypt(self, nonce, plaintext, data):
+    def _calculate_formattting_params(self, nonce, plaintext, data):
         data_len = len(data)
-
         q = 15 - len(nonce)
         flags = (64 * (data_len > 0)) + 8 * (((self.mac_len) - 2) // 2) + (q - 1)
         b_0 = Bytes(flags) + nonce + int.to_bytes(len(plaintext), q, 'big')
 
-        formatted_nonce = Bytes(q - 1) + nonce
+        return data_len, q, flags, b_0
+
+
+    def _pad_to_16(self, in_bytes):
+        return in_bytes + (b'\x00' * ((16 - (len(in_bytes) % 16)) % 16))
+
+
+    # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38c.pdf
+    def _generate_mac(self, nonce, plaintext, data):
+        data_len, _q, _flags, b_0 = self._calculate_formattting_params(nonce, plaintext, data)
 
         data_len_encoded = b''
         if data_len > 0:
@@ -45,16 +52,42 @@ class CCM(object):
             
             data_len_encoded += int.to_bytes(data_len, size, 'big')
         
-        padded_data = data_len_encoded + data + (b'\x00' * (16 - (len(data_len_encoded + data) % 16)))
-        padded_plaintext = plaintext + (b'\x00' * (16 - (len(plaintext) % 16)))
-
-        self.ctr.nonce = formatted_nonce
-        keystream = self.ctr.encrypt(Bytes(b'').zfill(len(plaintext) + 16))
+        padded_data = self._pad_to_16(data_len_encoded + data)
+        padded_plaintext = self._pad_to_16(plaintext)
 
         T = self.cmac.generate(b_0 + padded_data + padded_plaintext, pad=False)
+        return T
 
+
+    def _generate_keystream(self, nonce, q, length):
+        formatted_nonce = Bytes(q - 1) + nonce
+        self.ctr.nonce = formatted_nonce
+        self.ctr.counter = 0
+        keystream = self.ctr.encrypt(Bytes(b'').zfill(length))
+
+        return keystream
+
+
+    def encrypt(self, nonce, plaintext, data):
+        T = self._generate_mac(nonce, plaintext, data)
+        _data_len, q, _flags, _b_0 = self._calculate_formattting_params(nonce, plaintext, data)
+
+        keystream = self._generate_keystream(nonce, q, len(plaintext) + 16)
         return (keystream[len(T):] ^ (plaintext)) + (T ^ keystream[:len(T)])[:self.mac_len]
 
 
     def decrypt(self, nonce, ciphertext, data):
-        pass
+        _data_len, q, _flags, _b_0 = self._calculate_formattting_params(nonce, ciphertext, data)
+
+        keystream = self._generate_keystream(nonce, q, len(ciphertext) + (16 - self.mac_len))
+
+        total_plaintext = (keystream[16:] + keystream[:self.mac_len]) ^ ciphertext
+        plaintext, mac = total_plaintext[:-self.mac_len], total_plaintext[-self.mac_len:]
+
+        T = self._generate_mac(nonce, plaintext, data)[:self.mac_len]
+
+        # TODO: Need constant time
+        if T != mac:
+            raise Exception("Authentication of data failed: MACs not equal")
+
+        return plaintext
