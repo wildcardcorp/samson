@@ -26,9 +26,29 @@ class AffineCipher(object):
 
     def encrypt(self, plaintext):
         primitive_len = len(self.alphabet[0])
-        return ''.join([self.char_map[plaintext[i:i + primitive_len]] for i in range(0, len(plaintext), primitive_len)])
+
+        ciphertext = ''
+        for i in range(0, len(plaintext), primitive_len):
+            curr_symbol = plaintext[i:i + primitive_len]
+
+            if curr_symbol in self.char_map:
+                ciphertext += self.char_map[curr_symbol]
+            else:
+                ciphertext += curr_symbol
+
+        return ciphertext
 
 
     def decrypt(self, ciphertext):
         primitive_len = len(self.alphabet[0])
-        return ''.join([self.inv_char_map[ciphertext[i:i + primitive_len]] for i in range(0, len(ciphertext), primitive_len)])
+
+        plaintext = ''
+        for i in range(0, len(ciphertext), primitive_len):
+            curr_symbol = ciphertext[i:i + primitive_len]
+
+            if curr_symbol in self.inv_char_map:
+                plaintext += self.inv_char_map[curr_symbol]
+            else:
+                plaintext += curr_symbol
+
+        return plaintext

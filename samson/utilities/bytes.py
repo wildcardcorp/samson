@@ -11,6 +11,7 @@ class Bytes(bytearray):
         super().__init__(bytes_like)
         self.byteorder = byteorder
 
+
     @staticmethod
     def wrap(bytes_like, byteorder='big'):
         if isinstance(bytes_like, Bytes):
@@ -20,8 +21,9 @@ class Bytes(bytearray):
 
     
     @staticmethod
-    def random(size=16):
-        return Bytes(rand_bytes(size))
+    def random(size=16, byteorder='big'):
+        return Bytes(rand_bytes(size), byteorder=byteorder)
+
 
 
     def __repr__(self):
@@ -32,6 +34,7 @@ class Bytes(bytearray):
         return self.__repr__()
 
 
+    # Operators
     def __xor__(self, other):
         if type(other) is int:
             return Bytes(int.to_bytes(self.to_int() ^ other, len(self), self.byteorder), self.byteorder)
@@ -98,6 +101,7 @@ class Bytes(bytearray):
         return Bytes(max_val - self.to_int(), self.byteorder)
 
 
+    # Manipulation
     def lrot(self, amount, bits=None):
         if not bits:
             bits = len(self) * 8
@@ -131,16 +135,36 @@ class Bytes(bytearray):
         return Bytes(stretch_key(self, size, offset), self.byteorder)
 
     
+
+    # Conversions
     def to_int(self):
         return int.from_bytes(self, self.byteorder)
+
 
     def int(self):
         return self.to_int()
 
     
     def to_hex(self):
-        return Bytes(codecs.encode(self, 'hex_codec'))
+        return Bytes(codecs.encode(self, 'hex_codec'), self.byteorder)
 
     
     def hex(self):
         return self.to_hex()
+
+
+    def to_bin(self):
+        from samson.utilities.bitstring import Bitstring
+        return Bitstring(self, byteorder=self.byteorder).zfill(len(self) * 8)
+
+    
+    def bin(self):
+        return self.to_bin()
+
+    
+    def to_bits(self):
+        return self.to_bin()
+    
+    
+    def bits(self):
+        return self.to_bits()

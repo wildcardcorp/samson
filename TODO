@@ -26,22 +26,25 @@ X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
-X   Davies Meyers Fixed Points
+X   Davies Meyer Fixed Points
 X   RC6
 X   Argon2
 X   Lattice Object?
-X   ECDSA
-X   CCM
 X   EAX
 X   XTS
 X   scrypt
 X   bcrypt
 X   Twofish
+X   Serpent
 X   IDEA
 X   NTRU
 X   Curve25519
 X   EdDSA
 X   HKDF
+X   OAEP
+X   ElGamal
+X   ZUC
+X   SAT solving
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

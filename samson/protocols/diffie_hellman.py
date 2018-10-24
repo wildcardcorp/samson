@@ -1,4 +1,5 @@
 from samson.utilities.general import rand_bytes
+from sympy.ntheory.residue_ntheory import _discrete_log_pohlig_hellman
 
 class DiffieHellman(object):
     # https://www.ietf.org/rfc/rfc3526.txt
@@ -16,7 +17,6 @@ class DiffieHellman(object):
         self.p = p
 
 
-    
     def __repr__(self):
         return f"<DiffieHellman: key={self.key}, g={self.g}, p={self.p}>"
 
@@ -31,3 +31,7 @@ class DiffieHellman(object):
 
     def derive_key(self, challenge):
         return pow(challenge, self.key, self.p)
+    
+
+    def factor_key_from_smooth_p(self, pubkey):
+        return int(_discrete_log_pohlig_hellman(self.p, pubkey, self.g, self.p - 1))

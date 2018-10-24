@@ -28,3 +28,7 @@ class Analyzer(object):
 
 
         return sorted(candidates, key=lambda x: self.analyze(x[1]), reverse=True)
+
+
+    def select_highest_scores(self, in_list, num=1):
+        return sorted(in_list, key=lambda item: self.analyze(item), reverse=True)[:num]

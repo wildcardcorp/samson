@@ -80,6 +80,7 @@ def crt(residues, moduli):
     return x % Nx, Nx
 
 
+
 def legendre(a, p):
     return pow(a, (p - 1) // 2, p)
 
@@ -151,10 +152,10 @@ def lll(in_basis, delta=0.75):
 
 
 
-def generate_superincreasing_seq(length, max_diff):
+def generate_superincreasing_seq(length, max_diff, starting=0):
     seq = []
 
-    last_sum = 0
+    last_sum = starting
     for _ in range(length):
         delta = int.from_bytes(rand_bytes(math.ceil(math.log(max_diff, 256))), 'big') % max_diff
         seq.append(last_sum + delta)

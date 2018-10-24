@@ -6,11 +6,11 @@ from sympy.matrices import Matrix, eye
 
 
 class MerkleHellmanKnapsack(object):
-    def __init__(self, priv=None, q=None, r=None, max_diff=2**20):
-        super_seq = generate_superincreasing_seq(9, max_diff)
-        self.priv = priv or super_seq[:8]
+    def __init__(self, priv=None, q=None, r=None, max_diff=2**20, pub_len=8):
+        super_seq = generate_superincreasing_seq(pub_len + 1, max_diff, starting=Bytes.random(max(1, pub_len // 8)).int())
+        self.priv = priv or super_seq[:pub_len]
         self.q = q or super_seq[-1]
-        self.r = r or find_coprime(self.q, range(2, self.q))
+        self.r = r or find_coprime(self.q, range(self.q // 4, self.q))
 
         self.pub = [(w * self.r) % self.q for w in self.priv]
 
@@ -30,9 +30,9 @@ class MerkleHellmanKnapsack(object):
 
         all_sums = []
         
-        for i in range(len(bin_str) // 8):
-            byte_str = bin_str[i * 8:(i + 1) * 8]
-            all_sums.append(sum([int(byte_str[j]) * self.pub[j] for j in range(8)]))
+        for i in range(len(bin_str) // len(self.pub)):
+            byte_str = bin_str[i * len(self.pub):(i + 1) * len(self.pub)]
+            all_sums.append(sum([int(byte_str[j]) * self.pub[j] for j in range(len(self.pub))]))
 
         return all_sums
 
@@ -46,14 +46,14 @@ class MerkleHellmanKnapsack(object):
             curr = inv_sum
             bin_string = ''
 
-            for i in range(7, -1, -1):
+            for i in range(len(self.pub) - 1, -1, -1):
                 if self.priv[i] <= curr:
                     curr -= self.priv[i]
                     bin_string += '1'
                 else:
                     bin_string += '0'
 
-            plaintext += int.to_bytes(int(bin_string[::-1], 2), 1, 'big')
+            plaintext += int.to_bytes(int(bin_string[::-1], 2), len(self.pub) // 8, 'big')
 
         return plaintext
 
@@ -65,7 +65,7 @@ class MerkleHellmanKnapsack(object):
         problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]]).T).T
 
         matrices = [problem_matrix.row(row) for row in range(problem_matrix.rows)]
-        #print(matrices)
+        print(matrices)
         solution_matrix = lll(matrices, 0.99)
 
         for row in range(solution_matrix.rows):

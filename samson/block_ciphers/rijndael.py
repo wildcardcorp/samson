@@ -84,7 +84,7 @@ class Rijndael(object):
 
 
     def __repr__(self):
-        return "<Rijndael: key={}, key_size={}, block_size={}>".format(self.key, len(self.key) * 8, self.block_size)
+        return f"<Rijndael: key={self.key}, key_size={len(self.key) * 8}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()
