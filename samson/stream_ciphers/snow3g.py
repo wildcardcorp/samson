@@ -57,7 +57,6 @@ class SNOW3G(object):
         for _ in range(32):
             F = self.clock_FSM()
             self.clock_lfsr(F)
-            # print(self.s)
     
 
     def MULx(self, V, c):
@@ -92,18 +91,12 @@ class SNOW3G(object):
 
 
     def _perform_sbox_transform(self, w, sbox, val, s2=False):
-        # if s2:
-        #     print(w.to_int())
-        #sqw0, sqw1, sqw2, sqw3 = (w << 24) & 0xFF, (w << 16) & 0xFF, (w << 8) & 0xFF, w & 0xFF
-        #print(sqw0, sqw1, sqw2, sqw3)
         sqw0, sqw1, sqw2, sqw3 = [sbox[w_i] for w_i in w]
 
         r0 = self.MULx(sqw0, val) ^ sqw1 ^ sqw2 ^ self.MULx(sqw3, val) ^ sqw3
         r1 = self.MULx(sqw0, val) ^ sqw0 ^ self.MULx(sqw1, val)  ^ sqw2 ^ sqw3
         r2 = sqw0 ^ self.MULx(sqw1, val) ^ sqw1  ^ self.MULx(sqw2, val) ^ sqw3
         r3 = sqw0 ^ sqw1 ^ self.MULx(sqw2, val) ^ sqw2 ^ self.MULx(sqw3, val)
-
-        #print(r0, r1, r2, r3)
 
         return Bytes([r0, r1, r2, r3]).to_int()
     

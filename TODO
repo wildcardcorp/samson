@@ -35,9 +35,8 @@ X   XTS
 X   scrypt
 X   bcrypt
 X   Twofish
-X   Serpent
 X   IDEA
-X   NTRU
+?   NTRU
 X   Curve25519
 X   EdDSA
 X   HKDF
@@ -45,6 +44,7 @@ X   OAEP
 X   ElGamal
 X   ZUC
 X   SAT solving
+X   A5/1
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

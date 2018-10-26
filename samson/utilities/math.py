@@ -1,7 +1,8 @@
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import isprime
+from sympy import isprime, GF, Poly
+from sympy.abc import x
 import math
 
 def gcd(a, b):
@@ -181,3 +182,37 @@ def find_prime(bits):
         rand_num += 2
     
     return rand_num
+
+
+# https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
+def berlekamp_massey(output_list):
+    n = len(output_list)
+    b = [1] + [0] * (n - 1)
+    c = [1] + [0] * (n - 1)
+
+    L = 0
+    m = -1
+
+    i  = 0
+    while i < n:
+        out_vec = output_list[i - L:i][::-1]
+        c_vec = c[1:L+i]
+        d = output_list[i] + sum([s_x * c_x for s_x, c_x in zip(out_vec, c_vec)]) % 2
+
+        if d == 1:
+            t = deepcopy(c)
+            p = [0] * n
+            for j in range(L):
+                if b[j] == 1:
+                    p[j + i - m] = 1
+            
+            c = [(c_x + p_x) % 2 for c_x, p_x in zip(c, p)]
+
+            if L <= i / 2:
+                L = i + 1 - L
+                m = i
+                b = t
+        
+        i += 1
+
+    return Poly(c[:L + 1], x)

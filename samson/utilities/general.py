@@ -1,9 +1,15 @@
+import random
+
 URANDOM = open("/dev/urandom", "rb")
 
 
 def rand_bytes(size=16):
     return URANDOM.read(size)
-    
+
+
+def shuffle(in_list):
+    random.shuffle(in_list, lambda: int.from_bytes(rand_bytes(32), 'big') / (2 ** 256))
+
 
 def de_bruijn(k, n):
   """
