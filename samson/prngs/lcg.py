@@ -1,5 +1,7 @@
-from samson.utilities.math import gcd, mod_inv
+from samson.utilities.math import gcd, mod_inv, lll
+from sympy.matrices import Matrix
 import functools
+
 
 class LCG(object):
     def __init__(self, X, a, c, m):
@@ -32,6 +34,7 @@ class LCG(object):
         return gcd(self.m, self.c) == 1 and divisible_by_four
 
 
+
     # https://tailcall.net/blog/cracking-randomness-lcgs/
     @staticmethod
     def crack(states, multiplier=None, increment=None, modulus=None):
@@ -49,3 +52,50 @@ class LCG(object):
             increment = (states[1] - states[0] * multiplier) % modulus
 
         return LCG(states[-1], multiplier, increment, modulus)
+    
+    
+
+    # Reference: https://github.com/mariuslp/PCG_attack
+    # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
+    # ^^ "Reconstructing Truncated Integer Variables Satisfying Linear Congruences"
+    @staticmethod
+    def crack_truncated(outputs, multiplier, increment, modulus, trunc_amount):
+        if increment == 0:
+            computed_seed = LCG.solve_tlcg(outputs, multiplier, modulus, trunc_amount)
+
+            # Here we take the second to last seed since our implementation edits the state BEFORE it returns
+            return LCG((multiplier * computed_seed[-2]) % modulus, multiplier, increment, modulus)
+
+        else:
+            diffs = [o2 - o1 for o1, o2 in zip(outputs, outputs[1:])]
+            seed_diffs = LCG.solve_tlcg(diffs, multiplier, modulus, trunc_amount)
+
+            for z in range(2**trunc_amount):
+                # TODO: Finish up this part
+                pass
+
+
+
+
+    @staticmethod
+    def solve_tlcg(outputs, multiplier, modulus, trunc_amount):
+        # Initialize matrix `L`
+        l_matrix = [[0 for _ in range(len(outputs))] for _ in range(len(outputs))]
+        l_matrix[0][0] = modulus
+
+        for i in range(1, len(outputs)):
+            l_matrix[i][0] = multiplier ** i
+            l_matrix[i][i] = -1
+
+
+        l_matrix = Matrix(l_matrix)
+        reduced_basis = lll([l_matrix.row(row) for row in range(l_matrix.rows)])
+
+        # Construct and reduce `y` vector
+        y = Matrix([2**trunc_amount * x % modulus for x in outputs])
+        reduced_outputs = reduced_basis * y
+
+        c_prime = Matrix([(round(x / modulus) * modulus) - x for x in reduced_outputs])
+        z = Matrix(reduced_basis.LUsolve(c_prime))
+
+        return y + z
