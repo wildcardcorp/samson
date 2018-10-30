@@ -3,6 +3,7 @@ from sympy import ZZ, Poly, GF, invert
 from sympy.polys.polyerrors import NotInvertible
 from samson.utilities.bitstring import Bitstring
 from samson.utilities.general import shuffle
+from samson.utilities.math import is_power_of_two
 from sympy.ntheory import isprime
 import math
 
@@ -25,8 +26,7 @@ def rand_poly(length, len_non_zeroes, neg_ones_mod=0):
     return Poly(poly_arr, x).set_domain(ZZ)
 
 
-def is_power_of_two(n):
-    return n != 0 and (n & (n - 1) == 0)
+
 
 
 def invert_poly(f_poly, R_poly, p):

@@ -41,10 +41,9 @@ X   Curve25519
 X   EdDSA
 X   HKDF
 X   OAEP
-X   ElGamal
+?   ElGamal
 X   ZUC
 X   SAT solving
-X   A5/1
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

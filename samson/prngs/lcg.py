@@ -1,5 +1,8 @@
-from samson.utilities.math import gcd, mod_inv, lll
+from samson.utilities.math import gcd, mod_inv, lll, is_power_of_two
 from sympy.matrices import Matrix
+from sympy import isprime
+from sympy.ntheory import factorint
+from sympy.ntheory.residue_ntheory import is_primitive_root
 import functools
 
 
@@ -25,13 +28,20 @@ class LCG(object):
         return self.X
 
     
+    # https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
     def check_full_period(self):
-        divisible_by_four = True
-        if self.m % 4 == 0:
-            divisible_by_four = (self.a - 1) % 4 == 0
+        if isprime(self.m) and self.c == 0 and is_primitive_root(self.a, self.m):
+            return True
+        elif is_power_of_two(self.m) and self.c == 0:
+            return False
+        else:
+            divisible_by_four = True
+            if self.m % 4 == 0:
+                divisible_by_four = (self.a - 1) % 4 == 0
 
-        # TODO: Factor 
-        return gcd(self.m, self.c) == 1 and divisible_by_four
+            factors = [factor for factor, count in factorint(self.m).items()]
+            divisible_by_all_factors = all([((self.a - 1) % factor) == 0 for factor in factors])
+            return gcd(self.m, self.c) == 1 and divisible_by_four and divisible_by_all_factors
 
 
 
@@ -59,9 +69,10 @@ class LCG(object):
     # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
     # ^^ "Reconstructing Truncated Integer Variables Satisfying Linear Congruences"
     @staticmethod
-    def crack_truncated(outputs, multiplier, increment, modulus, trunc_amount):
+    def crack_truncated(outputs, outputs_to_predict, multiplier, increment, modulus, trunc_amount):
+        # Trivial case
         if increment == 0:
-            computed_seed = LCG.solve_tlcg(outputs, multiplier, modulus, trunc_amount)
+            computed_seed = LCG.solve_tlcg(outputs + outputs_to_predict, multiplier, modulus, trunc_amount)
 
             # Here we take the second to last seed since our implementation edits the state BEFORE it returns
             return LCG((multiplier * computed_seed[-2]) % modulus, multiplier, increment, modulus)
@@ -69,10 +80,35 @@ class LCG(object):
         else:
             diffs = [o2 - o1 for o1, o2 in zip(outputs, outputs[1:])]
             seed_diffs = LCG.solve_tlcg(diffs, multiplier, modulus, trunc_amount)
+            seed_diffs = [seed_diff % modulus for seed_diff in seed_diffs]
 
-            for z in range(2**trunc_amount):
-                # TODO: Finish up this part
-                pass
+
+            # Bruteforce low bits
+            for z in range(2 ** trunc_amount):
+                x_0 = (outputs[0] << trunc_amount) + z
+                x_1 = (seed_diffs[0] + x_0) % modulus
+                computed_c = (x_1 - multiplier * x_0) % modulus
+
+                computed_x_2 = (multiplier * x_1 + computed_c) % modulus
+                actual_x_2 = (seed_diffs[1] + x_1) % modulus
+
+                if computed_x_2 == actual_x_2:
+                    computed_seeds = [x_0]
+
+                    for diff in seed_diffs:
+                        computed_seeds.append((diff + computed_seeds[-1]) % modulus)
+                    
+
+                    # It's possible to find a spectrum of nearly-equivalent LCGs.
+                    # The accuracy of `predicted_lcg` is dependent on the size of `outputs_to_predict` and the
+                    # parameters of the LCG.
+                    predicted_seed = (multiplier * computed_seeds[-2] + computed_c) % modulus
+                    predicted_lcg = LCG(X=int(predicted_seed), a=multiplier, c=int(computed_c), m=modulus)
+
+                    if [predicted_lcg.generate() >> trunc_amount for _ in range(len(outputs_to_predict))] == outputs_to_predict:
+                        return predicted_lcg
+
+
 
 
 
