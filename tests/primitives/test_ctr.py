@@ -21,11 +21,8 @@ class CTRTestCase(unittest.TestCase):
     # https://boringssl.googlesource.com/boringssl/+/2214/crypto/cipher/cipher_test.txt
     def test_all_vecs(self):
         for unparsed_vec in TEST_VECS:
-            print(unparsed_vec)
             _alg, key, nonce, plaintext, ciphertext, _what = unparsed_vec.split(":")
             key_bytes, nonce, plaintext, expected_ciphertext = [codecs.decode(item.encode('utf-8'), 'hex_codec') for item in [key, nonce, plaintext, ciphertext]]
-            
-            print(key_bytes, nonce, plaintext, expected_ciphertext)
 
             key = Bytes(key_bytes).zfill(ceil(len(key_bytes) / 16) * 16)
 

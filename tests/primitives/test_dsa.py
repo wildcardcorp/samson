@@ -31,12 +31,12 @@ class DSATestCase(unittest.TestCase):
     def test_k_derivation(self):
         messageB = int.from_bytes(hashlib.sha1(b'deadbeef').digest(), byteorder='big')
         sig_genB = self.dsa.sign(H, messageB, k)
-        found_k = self.dsa.derive_k_from_sigs(message, sig, messageB, sig_genB)
+        found_k = self.dsa.derive_k_from_sigs(H, message, sig, messageB, sig_genB)
         self.assertEqual(found_k, k)
 
 
     def test_x_derivation(self):
         n_dsa = deepcopy(self.dsa)
         n_dsa.x = 0
-        n_dsa.derive_x_from_k(H, message, k, sig)
+        n_dsa.x = n_dsa.derive_x_from_k(H, message, k, sig)
         self.assertEqual(n_dsa.x, x)

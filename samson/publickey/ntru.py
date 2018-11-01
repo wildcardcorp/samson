@@ -1,9 +1,9 @@
 from sympy.abc import x
 from sympy import ZZ, Poly, GF, invert
 from sympy.polys.polyerrors import NotInvertible
-from samson.utilities.bitstring import Bitstring
 from samson.utilities.general import shuffle
 from samson.utilities.math import is_power_of_two
+from samson.utilities.encoding import int_to_bytes
 from sympy.ntheory import isprime
 import math
 
@@ -112,7 +112,7 @@ class NTRU(object):
         random_poly = random_poly or rand_poly(self.N, int(math.sqrt(self.q)))
 
         # Convert plaintext into polynomial
-        pt_poly = Poly([int(bit) for bit in Bitstring(plaintext)][::-1], x).set_domain(ZZ)
+        pt_poly = Poly([int(bit) for bit in bin(int.from_bytes(plaintext, 'big'))[2:]][::-1], x).set_domain(ZZ)
 
         rhm = (random_poly * self.h_poly).trunc(self.q) + pt_poly
         ct_poly = (rhm % self.R_poly).trunc(self.q)
@@ -131,5 +131,5 @@ class NTRU(object):
 
         pt_poly = ((self.f_p_poly * b_poly) % self.R_poly).trunc(self.p)
 
-        pt_bitstring = Bitstring(''.join([str(bit) for bit in pt_poly.all_coeffs()[::-1]]))
-        return pt_bitstring.bytes()
+        pt_bitstring = ''.join([str(bit) for bit in pt_poly.all_coeffs()[::-1]])
+        return int_to_bytes(int(pt_bitstring, 2))

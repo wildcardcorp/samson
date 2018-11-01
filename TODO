@@ -26,22 +26,18 @@ X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
+X   Manger's attack (OAEP Padding Oracle)
 X   Davies Meyer Fixed Points
 X   RC6
 X   Argon2
-X   Lattice Object?
 X   EAX
 X   XTS
 X   scrypt
 X   bcrypt
 X   Twofish
 X   IDEA
-?   NTRU
 X   Curve25519
 X   EdDSA
-X   HKDF
-X   OAEP
-?   ElGamal
 X   ZUC
 X   SAT solving
 

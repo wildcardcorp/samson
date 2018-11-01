@@ -24,6 +24,7 @@ class SerpentTestCase(unittest.TestCase):
         self._run_test(key, plaintext, expected_ciphertext, iter_100)
 
 
+
     def test_serp_256_1(self):
         key = 0x4000000000000000000000000000000000000000000000000000000000000000
         plaintext = 0x00000000000000000000000000000000
