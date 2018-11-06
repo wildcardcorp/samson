@@ -38,7 +38,7 @@ class RSA(object):
 
 
     def __repr__(self):
-        return '<RSA: bits={}, p={}, q={}, e={}, n={}, phi={}, d={}, alt_d={}>'.format(self.bits, self.p, self.q, self.e, self.n, self.phi, self.d, self.alt_d)
+        return f"<RSA: bits={self.bits}, p={self.p}, q={self.q}, e={self.e}, n={self.n}, phi={self.phi}, d={self.d}, alt_d={self.alt_d}>"
 
 
 

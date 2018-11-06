@@ -220,3 +220,12 @@ def berlekamp_massey(output_list):
 
 def is_power_of_two(n):
     return n != 0 and (n & (n - 1) == 0)
+
+
+
+def int_to_poly(integer):
+    return Poly(sum([int(bit) * x ** i for i, bit in enumerate(bin(integer)[2:][::-1])][::-1]) + x, domain=GF(2)) - Poly(x, domain=GF(2))
+
+
+def poly_to_int(poly):
+    return int(''.join([str(bit) for bit in poly.all_coeffs()]), 2)

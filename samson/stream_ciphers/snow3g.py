@@ -59,6 +59,15 @@ class SNOW3G(object):
             self.clock_lfsr(F)
     
 
+
+    def __repr__(self):
+        return f"<SNOW3G: key={self.key}, iv={self.iv}, s={self.s}, R1={self.self.R1}, R2={self.self.R2}, R3={self.self.R3}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+
     def MULx(self, V, c):
         if V >> 7:
             return ((V << 1) % 256) ^ c

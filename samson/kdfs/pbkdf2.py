@@ -8,6 +8,13 @@ class PBKDF2(object):
         self.num_iters = num_iters
 
 
+    def __repr__(self):
+        return f"<PBKDF2: hash_fn={self.hash_fn}, desired_len={self.desired_len}, num_iters={self.num_iters}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def derive(self, password, salt):
         hash_len = len(self.hash_fn(b'', b''))
         num_blocks = ceil(self.desired_len / hash_len)

@@ -1,0 +1,40 @@
+from samson.utilities.manipulation import left_rotate
+
+
+def V116_PLUS(x):
+    s0, s1 = x
+    result = (s0 + s1) & 0x3FFFFFFFFFFFFFF
+
+    s1 ^= s0
+    x[0] = left_rotate(s0, 24, bits=58) ^ s1 ^ ((s1 << 2) & 0x3FFFFFFFFFFFFFF)
+    x[1] = left_rotate(s1, 35, bits=58)
+    return x, result
+
+
+def V128_PLUS(x):
+    s0, s1 = x
+    result = (s0 + s1) & 0xFFFFFFFFFFFFFFF
+
+    s1 ^= s0
+    x[0] = left_rotate(s0, 55, bits=64) ^ s1 ^ ((s1 << 14) & 0xFFFFFFFFFFFFFFF)
+    x[1] = left_rotate(s1, 36, bits=64)
+    return x, result
+
+
+
+class Xoroshiro(object):
+    def __init__(self, seed, variant=V128_PLUS):
+        self.state = seed
+        self.variant = variant
+
+    def __repr__(self):
+        return f"<Xoroshiro: state={self.state}, variant={self.variant}>"
+
+
+    def __str__(self):
+        return self.__repr__()
+    
+
+    def generate(self):
+        self.state, result = self.variant(self.state)
+        return result

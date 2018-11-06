@@ -12,7 +12,6 @@ class HKDF(object):
     def __repr__(self):
         return f"<HKDF: hash_obj={self.hash_obj}, desired_len={self.desired_len}>"
 
-
     def __str__(self):
         return self.__repr__()
 

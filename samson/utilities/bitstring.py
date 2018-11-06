@@ -145,8 +145,7 @@ class Bitstring(UserString):
 
     
     def to_bytes(self):
-        #return Bytes([int(str(chunk), 2) for chunk in self.zfill(self.byte_length()).chunk(8, allow_partials=True)], self.byteorder)
-        return Bytes([int(str(chunk), 2) for chunk in self.zfill(self.byte_length() * 8).chunk(8, allow_partials=True)], self.byteorder)
+        return Bytes([int(str(chunk), 2) for chunk in self.zfill(self.byte_length()).chunk(8, allow_partials=True)], self.byteorder)
 
     
     def bytes(self):

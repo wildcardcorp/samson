@@ -9,7 +9,7 @@ class RC4(object):
 
 
     def __repr__(self):
-        return "<RC4: key={}, S={}, i={}, j={} >".format(self.key, self.S, self.i, self.j)
+        return f"<RC4: key={self.key}, S={self.S}, i={self.i}, j={self.j}>"
 
     def __str__(self):
         return self.__repr__()

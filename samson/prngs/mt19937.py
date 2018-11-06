@@ -35,7 +35,7 @@ class MT19937:
 
 
     def __repr__(self):
-        return "<MT19937: seed={}, index={}, state={}>".format(self.seed, self.index, self.state)
+        return f"<MT19937: seed={self.seed}, index={self.index}, state={self.state}>"
 
 
     def __str__(self):
