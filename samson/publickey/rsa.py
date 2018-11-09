@@ -18,7 +18,6 @@ class RSA(object):
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
         else:
             while gcd(self.e, phi) != 1:
-                #p, q = getPrime(bits // 2), getPrime(bits // 2)
                 p, q = find_prime(bits // 2), find_prime(bits // 2)
                 phi = lcm(p - 1, q - 1)
                 self.n = p * q

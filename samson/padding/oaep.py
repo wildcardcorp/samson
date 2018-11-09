@@ -6,8 +6,8 @@ def MGF1(seed, length):
     mask = b''
     sha1 = SHA1()
 
-    for i in range(seed_int, seed_int + (length + 19) // 20):
-        mask += sha1.hash(Bytes(i))
+    for i in range((length + 19) // 20):
+        mask += sha1.hash(seed + Bytes(i).zfill(4))
     
     return mask[:length]
 
@@ -30,9 +30,9 @@ class OAEP(object):
 
         
 
-    def pad(self, plaintext):
+    def pad(self, plaintext, seed=None):
         plaintext = Bytes.wrap(plaintext)
-        k = self.modulus_len // 8
+        k = (self.modulus_len + 7) // 8
 
         # Step 1: Length checking
         h_len = self.hash_obj.digest_size
@@ -45,10 +45,11 @@ class OAEP(object):
 
         # Step 2: EME-OAEP encoding
         l_hash = self.hash_obj.hash(self.label)
+
         ps = Bytes(b'').zfill(ps_len)
         db = l_hash + ps + b'\x01' + plaintext
 
-        seed = Bytes.random(h_len)
+        seed = seed or Bytes.random(h_len)
 
         db_mask = self.mgf(seed, k - h_len - 1)
         masked_db = db ^ db_mask
@@ -60,10 +61,14 @@ class OAEP(object):
 
 
 
-    def unpad(self, plaintext):
-        plaintext = Bytes.wrap(plaintext)
-        k = self.modulus_len // 8
+    def unpad(self, plaintext, allow_mangers=False, skip_label_check=False):
+        k = (self.modulus_len + 7) // 8
         h_len = self.hash_obj.digest_size
+        plaintext = Bytes.wrap(plaintext).zfill(k)
+
+        if allow_mangers:
+            if plaintext[0] != 0:
+                raise ValueError("First byte is not zero! ;)")
         
         masked_seed, masked_db = plaintext[1:(h_len + 1)], plaintext[(h_len + 1):]
 
@@ -74,7 +79,7 @@ class OAEP(object):
         db = masked_db ^ db_mask
 
         l_hash, m = db[:h_len], db[h_len + db[h_len:].index(b'\x01') + 1:]
-        if l_hash != self.hash_obj.hash(self.label):
-            return ValueError("Label hashes do not match")
+        if not skip_label_check and l_hash != self.hash_obj.hash(self.label):
+            raise ValueError("Label hashes do not match")
 
         return m

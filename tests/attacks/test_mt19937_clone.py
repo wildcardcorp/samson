@@ -11,5 +11,5 @@ class MT19937CloneAttackTestCase(unittest.TestCase):
 
     def test_clone_attack(self):
         attack = MT19937CloneAttack()
-        cloned = attack.execute([self.rand.randint() for i in range(624)])
-        self.assertEqual(self.rand.randint(), cloned.randint())
+        cloned = attack.execute([self.rand.generate() for i in range(624)])
+        self.assertEqual(self.rand.generate(), cloned.generate())

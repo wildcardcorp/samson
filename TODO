@@ -14,19 +14,10 @@ X   CRIME Attack
     X   Work on less trivial problems
 
 
-X   PRNG tests
-OK  LLL algorithm
-X   Clean up EnglishAnalyzer
-    X   Make the code more readable
-    OK  Use bit-shift-register-type-deal to detect non-delimited words
-    OK  Include Chi Squared test
-
-
 X   Integer factorization
 X   Abstract algebra and modular arithmetic
 X   Elliptical curve arithmetic
 X   Wang's Attack
-X   Manger's attack (OAEP Padding Oracle)
 X   Davies Meyer Fixed Points
 X   RC6
 X   Argon2
@@ -34,12 +25,15 @@ X   EAX
 X   XTS
 X   scrypt
 X   bcrypt
-X   Twofish
 X   IDEA
 X   Curve25519
 X   EdDSA
 X   ZUC
 X   SAT solving
+X   Camellia
+X   SEED
+X   CAST
+X   PCG
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes

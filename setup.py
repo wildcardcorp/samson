@@ -19,7 +19,7 @@ tests_require = [
 ]
 
 setup(name='samson-crypto',
-      version='0.0.6',
+      version='0.0.7',
       description='Cryptanalysis and attack framework',
       long_description=README,
       classifiers=[

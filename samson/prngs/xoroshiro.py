@@ -21,6 +21,20 @@ def V128_PLUS(x):
     return x, result
 
 
+def V256_STAR_STAR(x):
+    s0, s1, s2, s3 = x
+    s2 ^= s0
+    s3 ^= s1
+
+    result = left_rotate(s1 * 5, 7, bits=64) * 9
+    x[0] = s0 ^ s3
+    x[1] = s1 ^ s2
+    x[2] = s2 ^ ((s1 << 17) & 0xFFFFFFFFFFFFFFF)
+    x[3] = left_rotate(s3, 45, bits=64)
+
+    return x, result
+
+
 
 class Xoroshiro(object):
     def __init__(self, seed, variant=V128_PLUS):

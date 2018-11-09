@@ -53,7 +53,7 @@ class MT19937:
         self.index = 0
 
 
-    def randint(self):
+    def generate(self):
         if self.index >= n:
             self.twist()
 
@@ -65,8 +65,9 @@ class MT19937:
         return asint32(y)
 
 
+
 if __name__ == '__main__':
     random = MT19937(0)
-    assert random.randint() == 2357136044
-    for i in range(1000): random.randint()
-    assert random.randint() == 1193028842
+    assert random.generate() == 2357136044
+    for i in range(1000): random.generate()
+    assert random.generate() == 1193028842
