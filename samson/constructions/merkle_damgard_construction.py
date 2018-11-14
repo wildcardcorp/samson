@@ -2,11 +2,20 @@ from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import md_pad
 
 class MerkleDamgardConstruction(object):
-    def __init__(self, initial_state, compression_func, pad_func=lambda msg: md_pad(msg), block_size=64):
+    def __init__(self, initial_state, compression_func, pad_func=md_pad, block_size=64):
         self.pad_func = pad_func
         self.initial_state = initial_state
         self.compression_func = compression_func
         self.block_size = block_size
+
+
+
+    def __repr__(self):
+        return f"<MerkleDamgardConstruction initial_state={self.initial_state}, compression_func={self.compression_func}, block_size={self.block_size}, pad_func={self.pad_func}>"
+
+    def __str__(self):
+        return self.__repr__()
+
 
 
     def yield_state(self, message):

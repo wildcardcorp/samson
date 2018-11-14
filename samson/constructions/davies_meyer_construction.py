@@ -5,6 +5,14 @@ class DaviesMeyerConstruction(object):
         self.initial_state = initial_state
         self.encryptor = encryptor
         self.decryptor = decryptor
+    
+
+
+    def __repr__(self):
+        return f"<DaviesMeyerConstruction initial_state={self.initial_state}, encryptor={self.encryptor}, decryptor={self.decryptor}>"
+
+    def __str__(self):
+        return self.__repr__()
 
 
     def yield_state(self, message):

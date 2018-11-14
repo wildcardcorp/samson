@@ -7,6 +7,14 @@ class FeistelNetwork(object):
         self.key_schedule = key_schedule
 
 
+    def __repr__(self):
+        return f"<FeistelNetwork round_func={self.round_func}, key_schedule={self.key_schedule}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+
     def yield_encrypt(self, key, plaintext):
         half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)

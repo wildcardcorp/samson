@@ -1,3 +1,4 @@
 scipy
 fastecdsa
 sympy
+pyasn1

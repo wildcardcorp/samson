@@ -1,10 +1,9 @@
-#!/usr/bin/python3
-# source: https://github.com/ajalt/python-sha1/blob/master/sha1.py
+# Ref: https://github.com/ajalt/python-sha1/blob/master/sha1.py
 import io
 import struct
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.padding import md_pad
-from samson.utilities.encoding import int_to_bytes
+from samson.utilities.bytes import Bytes
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 
 #h0, h1, h2, h3, h4
@@ -59,7 +58,7 @@ def compression_func(chunk, state):
 
     state = [h0, h1, h2, h3, h4]
 
-    return state_to_bytes(state)
+    return Bytes(state_to_bytes(state))
 
 
 

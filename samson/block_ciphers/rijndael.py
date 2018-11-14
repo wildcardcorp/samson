@@ -64,6 +64,7 @@ NUM_ROUNDS = [
 # https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
 class Rijndael(object):
     def __init__(self, key, block_size=128):
+        key = Bytes.wrap(key)
         if not (len(key) * 8) in range(128, 257, 32):
             raise Exception("Invalid key size! Must be between 128 and 256 and a multiple of 32")
         
@@ -71,7 +72,7 @@ class Rijndael(object):
             raise Exception("Invalid 'block_size'! Must be between 128 and 256 and a multiple of 32")
 
         
-        self.key = Bytes.wrap(key)
+        self.key = key
         self.block_size = block_size
 
         self._chunk_size = self.block_size // 32

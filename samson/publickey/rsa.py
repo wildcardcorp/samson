@@ -1,5 +1,7 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import int_to_bytes
+from samson.utilities.encoding import int_to_bytes, pem_encode, pem_decode
+from pyasn1.codec.der import encoder, decoder
+from pyasn1.type.univ import Sequence, Integer
 import random
 
 class RSA(object):
@@ -54,7 +56,39 @@ class RSA(object):
         plaintext = pow(message, self.d, self.n)
         return int_to_bytes(plaintext, 'big')
 
+
+
+    def export_key(self, encode_pem=True):
+        seq = Sequence()
+
+        for x in [0, self.n, self.e, self.d, self.p, self.q]:
+            seq.setComponentByPosition(len(seq), Integer(x))
+        
+        der_encoded = encoder.encode(seq)
+
+        if pem_encode:
+            der_encoded = pem_encode(der_encoded, 'RSA PRIVATE KEY')
+
+        return der_encoded
+
     
+    @staticmethod
+    def import_key(buffer):
+        try:
+            buffer = pem_decode(buffer)
+        except ValueError as _:
+            pass
+        
+
+        seq = decoder.decode(buffer)
+        _n, e, _d, p, q = [int(item) for item in seq[0][1:]]
+        rsa = RSA(0, p=p, q=q, e=e)
+        rsa.bits = rsa.n.bit_length()
+        return rsa
+    
+
+
+
     @staticmethod
     def factorize_from_shared_p(n1, n2, e):
         assert n1 != n2

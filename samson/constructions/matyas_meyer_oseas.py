@@ -7,6 +7,14 @@ class MatyasMeyerOseasConstruction(object):
         self.decryptor = decryptor
 
 
+
+    def __repr__(self):
+        return f"<MatyasMeyerOseasConstruction initial_state={self.initial_state}, encryptor={self.encryptor}, decryptor={self.decryptor}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
     def yield_state(self, message):
         block_size = len(self.initial_state)
         message = Bytes.wrap(message)

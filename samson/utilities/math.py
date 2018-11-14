@@ -176,12 +176,17 @@ def find_coprime(p, search_range):
 def find_prime(bits):
     rand_num = int.from_bytes(rand_bytes(math.ceil(bits / 8)), 'big')
     rand_num |= 2**(bits - 1)
-    rand_num |= 1
+    return next_prime(rand_num)
 
-    while not isprime(rand_num):
-        rand_num += 2
+
+
+def next_prime(start_int):
+    start_int |= 1
+    while not isprime(start_int):
+        start_int += 2
     
-    return rand_num
+    return start_int
+
 
 
 # https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm

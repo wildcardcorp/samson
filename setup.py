@@ -12,14 +12,15 @@ with open(os.path.join(here, 'README.md')) as f:
 requires = [
     "scipy",
     "fastecdsa",
-    "sympy"
+    "sympy",
+    "pyasn1"
 ]
 
 tests_require = [
 ]
 
 setup(name='samson-crypto',
-      version='0.0.7',
+      version='0.0.8',
       description='Cryptanalysis and attack framework',
       long_description=README,
       classifiers=[
