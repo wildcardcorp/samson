@@ -1,17 +1,19 @@
-from samson.prngs.bitsliced_glfsr import BitslicedGLFSR
+from samson.prngs.bitsliced_flfsr import BitslicedFLFSR
+from samson.utilities.bytes import Bytes
 from sympy import Poly
 from sympy.abc import x
 
 # https://github.com/ttsou/airprobe/blob/master/A5.1/python/A51_Tables/a51.py
+# Implemented in big endian
 class A51(object):
     def __init__(self, key, frame_num):
         self.key = key
         self.frame_num = frame_num
 
         self.lfsr_regs = [
-            BitslicedGLFSR(19, 10, [13, 16, 17, 18]),
-            BitslicedGLFSR(22, 11, [20, 21]),
-            BitslicedGLFSR(23, 12, [7, 20, 21, 22])
+            BitslicedFLFSR(19, 10, [13, 16, 17, 18]),
+            BitslicedFLFSR(22, 11, [20, 21]),
+            BitslicedFLFSR(23, 12, [7, 20, 21, 22])
         ]
 
         for lfsr in self.lfsr_regs:
@@ -47,4 +49,4 @@ class A51(object):
             self.clock()
             bitstring += str(self.lfsr_regs[0].value() ^ self.lfsr_regs[1].value() ^ self.lfsr_regs[2].value())
         
-        return int(bitstring, 2)
+        return Bytes(int(bitstring, 2))

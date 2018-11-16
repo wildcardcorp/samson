@@ -1,5 +1,4 @@
 import os
-#from setuptools import setup, find_packages
 import setuptools
 from distutils.core import setup
 

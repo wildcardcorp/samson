@@ -161,4 +161,3 @@ class SHA2(MerkleDamgardConstruction):
         state[7] += h
 
         return Bytes(b''.join([int.to_bytes(h_i & bit_mask, self.state_size, 'big') for h_i in state]))
-

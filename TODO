@@ -22,7 +22,6 @@ X   Davies Meyer Fixed Points
 X   RC6
 X   Argon2
 X   EAX
-X   XTS
 X   scrypt
 X   bcrypt
 X   IDEA

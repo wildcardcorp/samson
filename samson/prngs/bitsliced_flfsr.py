@@ -1,6 +1,6 @@
 from samson.utilities.bitstring import Bitstring
 
-class BitslicedGLFSR(object):
+class BitslicedFLFSR(object):
     def __init__(self, length, clock_bit, taps, seed=0):
         self.state = bin(seed)[2:].zfill(length)
         self.length = length
@@ -9,7 +9,7 @@ class BitslicedGLFSR(object):
 
 
     def __repr__(self):
-        return f"<BitslicedGLFSR: state={self.state}, length={self.length}, clockbit={self.clock_bit}, taps={self.taps}>"
+        return f"<BitslicedFLFSR: state={self.state}, length={self.length}, clockbit={self.clock_bit}, taps={self.taps}>"
 
 
     def __str__(self):
