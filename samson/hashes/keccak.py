@@ -25,12 +25,12 @@ R = [
 
 # https://keccak.team/keccak_specs_summary.html
 class Keccak(SpongeConstruction):
-    def __init__(self, r, c, digest_size, auto_reset_state=True):
+    def __init__(self, r, c, digest_bit_size, auto_reset_state=True):
         super().__init__(self.keccak_f, self.pad, r, c)
         self.w = (r + c) // 25
 
         self.n = int(log(self.w, 2) * 2 + 12)
-        self.digest_size = (digest_size // 8)
+        self.digest_size = (digest_bit_size // 8)
         self.auto_reset_state = auto_reset_state
 
     

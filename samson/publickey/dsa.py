@@ -2,8 +2,6 @@ import codecs
 from samson.utilities.math import mod_inv
 from samson.utilities.general import rand_bytes
 from samson.utilities.encoding import int_to_bytes
-import hashlib
-
 
 class DSA(object):
     def __init__(self, p=None, q=None, g=None, x=None):

@@ -1,5 +1,4 @@
 from samson.macs.poly1305 import Poly1305
-import codecs
 import unittest
 
 testvec = [

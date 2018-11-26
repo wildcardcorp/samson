@@ -1,4 +1,3 @@
-from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from math import ceil
 

@@ -1,7 +1,5 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.manipulation import left_rotate
-from samson.utilities.padding import md_pad
-from samson.utilities.encoding import int_to_bytes
 from samson.utilities.bytes import Bytes
 import math
 
@@ -59,18 +57,15 @@ def compression_func(message, state):
     return Bytes(state_to_bytes(new_state))
 
 
-def padding_func(message):
-    return md_pad(message, None, 'little')
-
-
 
 class MD5(MerkleDamgardConstruction):
-    def __init__(self, initial_state=None):
-        self.initial_state = initial_state or state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])
-        self.compression_func = compression_func
-        self.pad_func = padding_func
-        self.block_size = 64
-        self.digest_size = 16
+    def __init__(self, initial_state=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])):
+        super().__init__(
+            initial_state=initial_state,
+            compression_func=compression_func,
+            digest_size=16,
+            endianness='little'
+        )
 
 
 

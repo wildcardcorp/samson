@@ -1,5 +1,4 @@
-from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose, stretch_key
-from samson.utilities.encoding import int_to_bytes
+from samson.utilities.manipulation import get_blocks, transpose, stretch_key
 from samson.utilities.general import rand_bytes
 from samson.utilities.bytes import Bytes
 import math

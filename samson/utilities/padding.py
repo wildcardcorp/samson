@@ -36,5 +36,3 @@ def md_pad(msg, fakeLen=None, byteorder='little', bit_size=64):
     message_bit_length = length * 8
     padding += message_bit_length.to_bytes(byte_size, byteorder=byteorder)
     return msg + padding
-
-    

@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-from samson.utilities.padding import pkcs7_pad
 from samson.utilities.general import rand_bytes
-from samson.attacks.hmac_forgery_attack import HMACForgeryAttack
 from samson.hashes.sha1 import SHA1
 import unittest
 
@@ -18,15 +16,16 @@ class HMACForgeryTestCase(unittest.TestCase):
         original = insecure_hmac(key, message)
         forged_append = b';admin=true'
 
-        attack = HMACForgeryAttack()
-
         actual_secret_len = -1
         crafted_payload = None
         new_signature = None
 
+        sha1 = SHA1()
+
         for secret_len in range(64):
             # We attempt a forgery
-            payload, signature = attack.execute(original, message, forged_append, secret_len)
+            # payload, signature = attack.execute(original, message, forged_append, secret_len)
+            payload, signature = sha1.length_extension(original, message, forged_append, secret_len)
 
             # Server calculates HMAC with secret
             desired = insecure_hmac(key, payload)

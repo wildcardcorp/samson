@@ -38,7 +38,7 @@ class HMACTestCase(unittest.TestCase):
 
     def test_sha2(self):
         for hash_type, reference_method in [(224, hashlib.sha224), (256, hashlib.sha256), (384, hashlib.sha384), (512, hashlib.sha512)]:
-            self._run_tests(lambda: SHA2(digest_size=hash_type), reference_method)
+            self._run_tests(lambda: SHA2(hash_type), reference_method)
 
 
     def test_blake2(self):

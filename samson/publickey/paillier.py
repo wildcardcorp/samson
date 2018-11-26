@@ -1,4 +1,4 @@
-from samson.utilities.math import find_prime, lcm, mod_inv, gcd
+from samson.utilities.math import find_prime, mod_inv, gcd
 from samson.utilities.bytes import Bytes
 
 

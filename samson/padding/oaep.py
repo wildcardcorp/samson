@@ -2,7 +2,6 @@ from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 
 def MGF1(seed, length):
-    seed_int = seed.int()
     mask = b''
     sha1 = SHA1()
 

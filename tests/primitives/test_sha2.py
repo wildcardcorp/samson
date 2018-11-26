@@ -7,7 +7,7 @@ class SHA2TestCase(unittest.TestCase):
     def test_sha2(self):
         for hash_type, reference_method in [(224, hashlib.sha224), (256, hashlib.sha256), (384, hashlib.sha384), (512, hashlib.sha512)]:
             for i in range(9):
-                sha2 = SHA2(digest_size=hash_type)
+                sha2 = SHA2(hash_type)
                 
                 for _ in range(100):
                     in_bytes = Bytes.random(i * 32)

@@ -2,7 +2,7 @@ from samson.attacks.rc4_prepend_attack import RC4PrependAttack
 from samson.oracles.encryption_oracle import EncryptionOracle
 from samson.utilities.general import rand_bytes
 from samson.stream_ciphers.rc4 import RC4
-import base64
+#import base64
 import unittest
 
 import logging

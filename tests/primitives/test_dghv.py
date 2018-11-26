@@ -1,6 +1,5 @@
 from samson.publickey.dghv import DGHV
 from samson.utilities.bytes import Bytes
-import codecs
 import unittest
 
 

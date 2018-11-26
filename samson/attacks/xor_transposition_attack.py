@@ -2,8 +2,6 @@ from samson.utilities.manipulation import xor_buffs
 from samson.utilities.bytes import Bytes
 from copy import deepcopy
 import struct
-import pickle
-import os
 
 import logging
 log = logging.getLogger(__name__)

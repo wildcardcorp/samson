@@ -46,7 +46,6 @@ class Tokenizer(object):
 
                 while char_counter < len(part):
                     char = part[char_counter]
-                    #print("Starting {} {}".format(char_counter, char))
 
                     if char in curr_token_chain:
                         token += char
@@ -57,7 +56,6 @@ class Tokenizer(object):
                         # This is a valid substring, and we've reached the end of the part
                         if curr_token_chain == {'$$': None} or ('$$' in curr_token_chain and char_counter + 1 == len(part)):
                             token_handler.handle_token(token)
-                            #print("Found end {}".format(token))
 
                             token = ''
                             last_largest_substring = ''
@@ -66,7 +64,6 @@ class Tokenizer(object):
                         # This is a valid substring, but it may not be the whole string.
                         # We'll keep track of it in case it is.
                         elif '$$' in curr_token_chain:
-                            #print("Found valid substring {}".format(token))
                             last_largest_substring = token
 
 
@@ -81,12 +78,10 @@ class Tokenizer(object):
                         # The entire thing isn't a valid token, but a substring is.
                         substring_mod = 0
                         if last_largest_substring != '':
-                            #token = last_largest_substring
                             token_handler.handle_token(last_largest_substring)
                             substring_mod = len(last_largest_substring) - 1
-                            #print("Found valid substring {} from invalid".format(last_largest_substring))
+                            
 
-                        #print("Resetting counter: token:{}, len(token): {}, substring_mod: {}".format(token, len(token), substring_mod))
                         char_counter -= len(token) - substring_mod
                         token = ''
                         last_largest_substring = ''
@@ -96,8 +91,3 @@ class Tokenizer(object):
 
 
         return token_handler.finalize()
-        # ###########################
-        # #         STEP 2          #
-        # # Calculate probabilities #
-        # ###########################
-        # parsed_chain.calculate_chain_probs()

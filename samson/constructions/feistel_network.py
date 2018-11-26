@@ -1,5 +1,4 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.padding import pkcs7_pad
 
 class FeistelNetwork(object):
     def __init__(self, round_func, key_schedule):

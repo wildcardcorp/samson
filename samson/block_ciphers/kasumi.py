@@ -1,6 +1,6 @@
 from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import int_to_bytes, bytes_to_bitstring, bitstring_to_bytes
+from samson.utilities.encoding import int_to_bytes, bytes_to_bitstring
 
 # https://asecuritysite.com/encryption/kasumi
 S7 = (

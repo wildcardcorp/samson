@@ -1,7 +1,5 @@
 from samson.prngs.bitsliced_flfsr import BitslicedFLFSR
 from samson.utilities.bytes import Bytes
-from sympy import Poly
-from sympy.abc import x
 
 # https://github.com/ttsou/airprobe/blob/master/A5.1/python/A51_Tables/a51.py
 # Implemented in big endian

@@ -1,10 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.math import poly_to_int, int_to_poly
 from samson.utilities.manipulation import right_rotate, left_rotate
-from samson.constructions.feistel_network import FeistelNetwork
-from sympy import GF, Poly
-from sympy.abc import x
-
 
 GF_MOD = 2**8 + 2**6 + 2**5 + 2**3 + 1
 GF_MOD_POLY = int_to_poly(GF_MOD)

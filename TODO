@@ -1,24 +1,6 @@
-?   Implement stateless block cipher shuffling
-X   Implement timing attack algorithm
-
-X   Implement logging for all modules
-
-X   Nostradamus attack
-    OK  Works with prefixes
-    OK  Works with len(prefixes) not a power of 2
-    X   Implement less naively (?)
-        X   Hashclash wrapper
-    X   Works with MD5
-
-X   CRIME Attack
-    X   Work on less trivial problems
-
-
-X   Integer factorization
-X   Abstract algebra and modular arithmetic
-X   Elliptical curve arithmetic
+Idea backlog
+---------------
 X   Wang's Attack
-X   Davies Meyer Fixed Points
 X   RC6
 X   Argon2
 X   EAX
@@ -27,12 +9,58 @@ X   bcrypt
 X   IDEA
 X   Curve25519
 X   EdDSA
-X   ZUC
-X   SAT solving
+X   SAT solving (probably just an interface)
 X   Camellia
 X   SEED
 X   CAST
 X   PCG
+X   OMAC
+X   UMAC
+X   Timing attack miniframework
+?   Stateless block cipher shuffling
+X   Pluggable reporting backends (tqdm, logging, etc)
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes
+
+
+TENTATIVE SCHEDULE
+---------------
+
+11/26 (Monday)
+---------------
+OK  ZUC
+OK  Davies-Meyer fixed points
+OK  Move HMAC forgery to MerkleDamgard
+OK  Clean up MD hashes (use super constructor)
+OK  Clean up unused variables and imports
+
+
+11/27 (Tuesday)
+---------------
+X   Camellia
+X   Fix/test ECDSA
+
+
+11/28 (Wednesday)
+---------------
+X   EdDSA
+X   Clean up the organization of padding schemes
+
+
+11/29 (Thursday)
+---------------
+X   Add documentation comments
+X   Fix CRIME/BREACH (clean up and better results)
+
+
+11/30 (Friday)
+---------------
+X   Make Bitstring sane... (use something like TDD)
+
+X   Nostradamus attack
+    OK  Works with prefixes
+    OK  Works with len(prefixes) not a power of 2
+    X   Implement less naively (?)
+        X   Hashclash wrapper
+    X   Works with MD5

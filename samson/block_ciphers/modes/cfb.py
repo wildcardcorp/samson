@@ -1,7 +1,5 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
-from math import ceil
-
 
 class CFB(object):
     def __init__(self, encryptor, iv, block_size):

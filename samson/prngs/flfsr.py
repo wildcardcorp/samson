@@ -1,5 +1,4 @@
 from sympy import Poly
-from samson.utilities.math import berlekamp_massey
 
 class FLFSR(object):
     def __init__(self, seed, polynomial):

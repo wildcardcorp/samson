@@ -1,7 +1,6 @@
 from samson.utilities.manipulation import left_rotate, get_blocks
 from samson.utilities.bytes import Bytes
 from copy import deepcopy
-from math import ceil
 
 # https://en.wikipedia.org/wiki/Salsa20
 

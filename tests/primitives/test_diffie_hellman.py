@@ -1,5 +1,4 @@
 from samson.protocols.diffie_hellman import DiffieHellman
-from samson.utilities.bytes import Bytes
 import unittest
 
 class DiffieHellmanTestCase(unittest.TestCase):

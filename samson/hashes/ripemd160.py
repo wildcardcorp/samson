@@ -1,8 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
-from samson.utilities.padding import md_pad
-from samson.hashes.md5 import bytes_to_state, state_to_bytes
 
 # http://cacr.uwaterloo.ca/hac/about/chap9.pdf
 RL = [
@@ -86,17 +84,14 @@ def COMPRESS(message, state):
     return sum([Bytes(state, 'little').zfill(4) for state in h])
 
 
-def padding_func(message):
-    return md_pad(message, None, 'little')
-
-
 class RIPEMD160(MerkleDamgardConstruction):
     def __init__(self, initial_state=INIT_STATE):
-        self.initial_state = initial_state
-        self.pad_func = padding_func
-        self.compression_func = COMPRESS
-        self.block_size = 64
-        self.digest_size = 20
+        super().__init__(
+            initial_state=initial_state,
+            compression_func=COMPRESS,
+            digest_size=20,
+            endianness='little'
+        )
 
 
     def __repr__(self):

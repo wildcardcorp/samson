@@ -1,4 +1,3 @@
-from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
 from copy import deepcopy
 

@@ -1,8 +1,7 @@
 from samson.utilities.encoding import bytes_to_bitstring
-from math import ceil, log, sqrt
+from math import log, sqrt
 from samson.stream_ciphers.rc4 import RC4
 import operator
-from copy import deepcopy
 import json
 import difflib
 import scipy.special

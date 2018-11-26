@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from samson.attacks.mt19937_clone_attack import MT19937CloneAttack
 from samson.prngs.mt19937 import MT19937
 import unittest
 
@@ -10,6 +9,5 @@ class MT19937CloneAttackTestCase(unittest.TestCase):
 
 
     def test_clone_attack(self):
-        attack = MT19937CloneAttack()
-        cloned = attack.execute([self.rand.generate() for i in range(624)])
+        cloned = MT19937.crack([self.rand.generate() for i in range(624)])
         self.assertEqual(self.rand.generate(), cloned.generate())

@@ -19,6 +19,54 @@ def temper(y):
     return y
 
 
+# We don't have to include a constant since 32-bit Mersenne Twister doesn't
+# use non-idempotent constants on its right shifts.
+def _untemper_right(y, bits):
+    # Create a 32-bit mask with `bits` 1s at the beginning.
+    # We'll shift this over the iterations to invert the temper.
+    mask = (1 << bits) - 1 << 32 - bits
+    shift_mod = 0
+
+    while mask > 0:
+        y ^= shift_mod
+
+        # Get next `bits` bits of y
+        # Ex: bits = 3, mask = '00011100000000000'
+        # '100_010_00100100001' -> '000000_010_00000000'
+        shift_mod = (y & mask) >> bits
+
+        # Move mask right `bits` to select next bits to shift
+        # Ex: bits = 3
+        # 11100000000000000 -> 00011100000000000
+        mask >>= bits
+    return y
+
+
+def _untemper_left(y, bits, constant):
+    int32_mask = 0xFFFFFFFF
+    mask = (1 << bits) - 1
+    shift_mod = 0
+
+    while (mask & int32_mask) > 0:
+        y ^= shift_mod & constant
+
+        # Get next `bits` bits of y
+        shift_mod = (y & mask) << bits
+
+        # Move mask right `bits` to select next bits to shift
+        mask <<= bits
+    return y
+
+
+def _untemper(y):
+    y = _untemper_right(y, l)
+    y = _untemper_left(y, t, c)
+    y = _untemper_left(y, s, b)
+    y = _untemper_right(y, u)
+    return y & d
+
+
+
 # Implementation of MT19937
 class MT19937:
 
@@ -65,9 +113,12 @@ class MT19937:
         return asint32(y)
 
 
+    @staticmethod
+    def crack(observed_outputs):
+        if len(observed_outputs) < 624:
+            raise ValueError("`observed_outputs` must contain at least 624 consecutive outputs.")
 
-if __name__ == '__main__':
-    random = MT19937(0)
-    assert random.generate() == 2357136044
-    for i in range(1000): random.generate()
-    assert random.generate() == 1193028842
+        cloned = MT19937(0)
+        cloned.state = [_untemper(output) for output in observed_outputs][-624:]
+
+        return cloned

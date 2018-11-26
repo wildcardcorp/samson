@@ -1,7 +1,5 @@
 import struct
-from copy import deepcopy
 from samson.utilities.manipulation import left_rotate
-from samson.utilities.padding import md_pad
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.hashes.md5 import state_to_bytes, bytes_to_state
 from samson.utilities.bytes import Bytes
@@ -61,19 +59,15 @@ def compression_func(message, state):
     return Bytes(state_to_bytes(new_state))
 
 
-    
-def padding_func(message):
-    return md_pad(message, None, 'little')
-
-
 
 class MD4(MerkleDamgardConstruction):
-    def __init__(self, internal_state=state_to_bytes(iv)):
-        self.initial_state = deepcopy(internal_state)
-        self.compression_func = compression_func
-        self.pad_func = padding_func
-        self.block_size = 64
-        self.digest_size = 16
+    def __init__(self, initial_state=state_to_bytes(iv)):
+        super().__init__(
+            initial_state=initial_state,
+            compression_func=compression_func,
+            digest_size=16,
+            endianness='little'
+        )
 
 
     def __repr__(self):

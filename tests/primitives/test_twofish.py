@@ -1,6 +1,5 @@
 from samson.block_ciphers.twofish import Twofish
 from samson.utilities.bytes import Bytes
-import hashlib
 import unittest
 
 # https://www.schneier.com/academic/paperfiles/paper-twofish-paper.pdf

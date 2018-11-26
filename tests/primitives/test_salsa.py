@@ -1,7 +1,5 @@
 from samson.stream_ciphers.salsa import Salsa
 from samson.utilities.bytes import Bytes
-import codecs
-import hashlib
 import unittest
 
 # http://www.ecrypt.eu.org/stream/svn/viewcvs.cgi/ecrypt/trunk/submissions/salsa20/full/verified.test-vectors?rev=161

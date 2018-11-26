@@ -1,5 +1,3 @@
-from samson.utilities.bytes import Bytes
-
 class PBKDF1(object):
     def __init__(self, hash_fn, desired_len, num_iters):
         self.hash_fn = hash_fn

@@ -1,4 +1,3 @@
-from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.cbc import CBC
 from math import ceil
 

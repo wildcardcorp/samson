@@ -1,9 +1,7 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
-from samson.constructions.davies_meyer_construction import DaviesMeyerConstruction
 from samson.utilities.bytes import Bytes
 from samson.utilities.padding import md_pad
 from samson.utilities.manipulation import right_rotate, get_blocks
-from copy import deepcopy
 
 # https://en.wikipedia.org/wiki/SHA-2
 H_256 = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
@@ -45,61 +43,75 @@ K_512 = [
 ]
 
 
-def sha256_padding(message):
-    return md_pad(message, None, 'big')
-
-
-def sha512_padding(message):
-    return md_pad(message, None, 'big', bit_size=128)
-
-
 class SHA2(MerkleDamgardConstruction):
-    def __init__(self , h=None, digest_size=256):
-        if not digest_size in [224, 256, 384, 512]:
-            raise Exception("{} not a valid digest size for SHA2".format(digest_size))
+    def __init__(self, digest_bit_size=256, h=None):
+        if not digest_bit_size in [224, 256, 384, 512]:
+            raise Exception("{} not a valid digest bit-size for SHA2".format(digest_bit_size))
+        
 
-        if digest_size == 256:
+        digest_size = digest_bit_size // 8
+
+        if digest_bit_size == 256:
             h_arr = H_256
-            self.block_size = 64
             self.state_size = 4
             self.rounds = 64
             self.rot = ROT_256
-            self.pad_func = sha256_padding
             self.k = K_256
-        elif digest_size == 224:
+
+            super().__init__(
+                initial_state=None,
+                compression_func=None,
+                digest_size=digest_size
+            )
+        elif digest_bit_size == 224:
             h_arr = H_224
-            self.block_size = 64
+
             self.state_size = 4
             self.rounds = 64
             self.rot = ROT_256
-            self.pad_func = sha256_padding
             self.k = K_256
-        elif digest_size == 384:
+
+            super().__init__(
+                initial_state=None,
+                compression_func=None,
+                digest_size=digest_size
+            )
+        elif digest_bit_size == 384:
             h_arr = H_384
-            self.block_size = 128
             self.state_size = 8
             self.rounds = 80
             self.rot = ROT_512
-            self.pad_func = sha512_padding
             self.k = K_512
+
+            super().__init__(
+                initial_state=None,
+                compression_func=None,
+                digest_size=digest_size,
+                block_size=128,
+                bit_size=128
+            )
         else:
             h_arr = H_512
-            self.block_size = 128
             self.state_size = 8
             self.rounds = 80
             self.rot = ROT_512
-            self.pad_func = sha512_padding
             self.k = K_512
+
+            super().__init__(
+                initial_state=None,
+                compression_func=None,
+                digest_size=digest_size,
+                block_size=128,
+                bit_size=128
+            )
 
         self.initial_state = h or Bytes(b''.join([int.to_bytes(h_i, self.state_size, 'big') for h_i in h_arr]))
         
-        
-        self.digest_size = digest_size
 
 
     def yield_state(self, message):
         for state in MerkleDamgardConstruction.yield_state(self, message):
-            yield state[:self.digest_size // 8]
+            yield state[:self.digest_size]
     
 
     def __repr__(self):
@@ -110,6 +122,10 @@ class SHA2(MerkleDamgardConstruction):
         return self.__repr__()
 
  
+
+    def pad_func(self, message):
+        return md_pad(message, None, 'big', bit_size=self.bit_size)
+
 
     def compression_func(self, block, state):
         bit_mask = 0xFFFFFFFF if self.state_size == 4 else 0xFFFFFFFFFFFFFFFF

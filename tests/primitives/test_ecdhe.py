@@ -1,5 +1,4 @@
 from samson.protocols.ecdhe import ECDHE
-from samson.utilities.bytes import Bytes
 import unittest
 
 class ECDHETestCase(unittest.TestCase):

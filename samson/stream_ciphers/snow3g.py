@@ -1,4 +1,4 @@
-from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX, INV_SBOX as RIJ_INV_SBOX
+from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX
 from samson.utilities.bytes import Bytes
 
 SQ = [

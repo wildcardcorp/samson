@@ -1,8 +1,6 @@
 # Ref: https://github.com/ajalt/python-sha1/blob/master/sha1.py
-import io
 import struct
 from samson.utilities.manipulation import left_rotate
-from samson.utilities.padding import md_pad
 from samson.utilities.bytes import Bytes
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 
@@ -71,23 +69,17 @@ def bytes_to_state(state_bytes):
     return [(as_int>>(32*i)) & 0xffffffff for i in range(4, -1, -1)]
 
 
-    
-def padding_func(message):
-    return md_pad(message, None, 'big')
-
 
 class SHA1(MerkleDamgardConstruction):
-    def __init__(self, initial_state=None):
-        self.initial_state = initial_state or state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])
+    def __init__(self, initial_state=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])):
+        if type(initial_state) is list:
+            initial_state = state_to_bytes(initial_state)
 
-        if type(self.initial_state) is list:
-            self.initial_state = state_to_bytes(self.initial_state)
-
-        self.compression_func = compression_func
-        self.pad_func = padding_func
-        self.block_size = 64
-        self.digest_size = 20
-
+        super().__init__(
+            initial_state=initial_state,
+            compression_func=compression_func,
+            digest_size=20,
+        )
 
 
     def __repr__(self):

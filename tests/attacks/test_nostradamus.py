@@ -2,7 +2,6 @@ from samson.attacks.nostradamus_attack import NostradamusAttack
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.manipulation import stretch_key
-from samson.utilities.encoding import int_to_bytes
 from samson.block_ciphers.modes.ecb import ECB
 
 from samson.auxiliary.naive_collider import NaiveMDCollider
@@ -26,7 +25,9 @@ def padder(message):
 
 
 def construction_func(iv, message):
-    return MerkleDamgardConstruction(iv, compressor, padder, block_size=hash_size).yield_state(message)
+    md = MerkleDamgardConstruction(iv, compressor, digest_size=block_size, block_size=hash_size)
+    md.pad_func = padder
+    return md.yield_state(message)
 
 
 class NostradamusAttackTestCase(unittest.TestCase):

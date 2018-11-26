@@ -1,6 +1,5 @@
 from samson.macs.hmac import HMAC
 from samson.kdfs.pbkdf2 import PBKDF2
-import hmac as pyhmac
 
 from samson.hashes.sha3 import SHA3
 from samson.hashes.md5 import MD5
@@ -44,7 +43,7 @@ class PBKDF2TestCase(unittest.TestCase):
 
     def test_sha2(self):
         for hash_type, reference_method in [(224, 'sha224'), (256, 'sha256'), (384, 'sha384'), (512, 'sha512')]:
-            self._run_tests(lambda: SHA2(digest_size=hash_type), reference_method)
+            self._run_tests(lambda: SHA2(hash_type), reference_method)
 
 
     def test_blake2(self):

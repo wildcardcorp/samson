@@ -1,6 +1,4 @@
-from samson.analyzers.english_analyzer import EnglishAnalyzer
 from samson.utilities.manipulation import xor_buffs
-import codecs
 
 class XORDictionaryAttack(object):
     def __init__(self, analyzer, wordlist):

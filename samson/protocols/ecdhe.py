@@ -1,4 +1,3 @@
-from fastecdsa.point import Point
 from fastecdsa.curve import P256
 from samson.utilities.general import rand_bytes
 
