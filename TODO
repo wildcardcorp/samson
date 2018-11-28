@@ -39,12 +39,13 @@ OK  Clean up unused variables and imports
 11/27 (Tuesday)
 ---------------
 X   Camellia
-X   Fix/test ECDSA
+OK  Fix/test ECDSA
 
 
 11/28 (Wednesday)
 ---------------
 X   EdDSA
+OK  DH25519/448
 X   Clean up the organization of padding schemes
 
 
