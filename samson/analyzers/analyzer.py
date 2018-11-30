@@ -1,34 +1,37 @@
-import itertools
-import struct
-
 class Analyzer(object):
-    def __init__(self, attempt_key):
-        self.attempt_key = attempt_key
+    """
+    Base class for all Analyzers.
 
+    Analyzers take in a byte-string and outputs a score where high scores match a context better.
+    The score does not have to be absolute.
+    """
 
-    def analyze(self, in_bytes):
+    def __init__(self):
         pass
 
 
-    def build_candidates(self, in_bytes, key_length):
-        all_keys = itertools.product(range(2), repeat=key_length)
-        candidates = []
+    def analyze(self, in_bytes: bytes) -> float:
+        """
+        Analyzes a bytes-like object and returns its "score".
 
-        for key in all_keys:
-            bin_key = b''
-            for i in range(max(key_length // 8, 1)):
-                bin_key += struct.pack('B', int(''.join([str(curr_int) for curr_int in key[i * 8: (i + 1) * 8]]), 2))
+        Parameters:
+            in_bytes (bytes): The bytes-like object to be analyzed.
 
-            #, is_readable
-            plaintext = self.attempt_key(bin_key, in_bytes)
-
-            candidates.append((bin_key, plaintext))
-            # if is_readable:
-            #     candidates.append((bin_key, plaintext))
+        Returns:
+            float: The score.
+        """
+        raise NotImplementedError("The `analyze` method must be implemented by a subclass.")
 
 
-        return sorted(candidates, key=lambda x: self.analyze(x[1]), reverse=True)
+    def select_highest_scores(self, in_list: list, num: int=1) -> list:
+        """
+        Analyzes a list `in_list`, sorts the list, and returns the top `num` scores.
 
+        Parameters:
+            in_list (list): The list of byte-like objects to be analyzed.
+            num      (int): Number of results to return.
 
-    def select_highest_scores(self, in_list, num=1):
+        Returns:
+            list: `in_list` sorted and truncated.
+        """
         return sorted(in_list, key=lambda item: self.analyze(item), reverse=True)[:num]

@@ -1,5 +1,6 @@
 from samson.utilities.padding import pkcs7_unpad
 from samson.utilities.bytes import Bytes
+from samson.oracles.padding_oracle import PaddingOracle
 import struct
 
 import logging
@@ -7,14 +8,41 @@ log = logging.getLogger(__name__)
 
 # https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
 class CBCPaddingOracleAttack(object):
-    # Expects a PaddingOracle
-    def __init__(self, oracle, iv, block_size=16):
+    """
+    Performs a CBC padding oracle.
+
+    Currently only works with PKCS7.
+
+    Conditions:
+        * CBC is being used
+        * The system leaks whether the plaintext's padding was correct or not
+        * The user has access to an oracle that attempts to decrypt arbitrary ciphertext
+    """
+    def __init__(self, oracle: PaddingOracle, iv: bytes, block_size: int=16):
+        """
+        Parameters:
+            oracle (PaddingOracle): An oracle that takes in a bytes-like object and returns a boolean
+                                    indicating whether the padding was correct.
+            iv             (bytes): Initialization vector (or previous ciphertext block) of the ciphertext
+                                    to crack.
+            block_size       (int): Block size of the block cipher being used.
+        """
         self.oracle = oracle
         self.iv = Bytes.wrap(iv)
         self.block_size = block_size
 
 
-    def execute(self, ciphertext, unpad=True):
+    def execute(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
+        """
+        Executes the attack.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like ciphertext to be decrypted.
+            unpad       (bool): Whether or not to attempt to unpad the result.
+
+        Returns:
+            Bytes: Plaintext corresponding to the inputted ciphertext.
+        """
         blocks = Bytes.wrap(ciphertext).chunk(self.block_size)
         reversed_blocks = blocks[::-1]
 
@@ -30,7 +58,6 @@ class CBCPaddingOracleAttack(object):
                 preceding_block = reversed_blocks[i + 1]
 
             for _ in range(len(block)):
-                #last_working_char = b'\x00'
                 last_working_char = None
 
                 for possible_char in range(256):
@@ -56,7 +83,7 @@ class CBCPaddingOracleAttack(object):
 
             plaintexts.append(plaintext)
         
-        result = b''.join(plaintexts[::-1])
+        result = Bytes(b''.join(plaintexts[::-1]))
 
         if unpad:
             result = pkcs7_unpad(result, self.block_size)

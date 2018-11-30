@@ -26,26 +26,8 @@ X   Commenting/convenience functions/use internal classes
 
 TENTATIVE SCHEDULE
 ---------------
-
-11/26 (Monday)
----------------
-OK  ZUC
-OK  Davies-Meyer fixed points
-OK  Move HMAC forgery to MerkleDamgard
-OK  Clean up MD hashes (use super constructor)
-OK  Clean up unused variables and imports
-
-
-11/27 (Tuesday)
----------------
-X   Camellia
-OK  Fix/test ECDSA
-
-
 11/28 (Wednesday)
 ---------------
-X   EdDSA
-OK  DH25519/448
 X   Clean up the organization of padding schemes
 
 

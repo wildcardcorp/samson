@@ -1,11 +1,20 @@
 from copy import deepcopy
+from types import FunctionType
+from samson.utilities.bytes import Bytes
 
 import logging
 log = logging.getLogger(__name__)
 
 
-
 class NostradamusAttack(object):
+    """
+    Performs an precomputed multicollision attack.
+
+    The Nostradamus attack is an extension to an iterated-hash multicollision. By precomputing a binary collision tree,
+    you can coerce several initial values into a singular final collision. This was used to "predict" the 2008 presidential
+    elections. It's highly recommended to use an efficient collision function like an implementation of Wang's attack (Google "Hashclash").
+    """
+
     # 'k' is the number of levels the tree will have
     # `construction_func` takes in a message and POSSIBLY an IV and outputs a generator that yields the intermediary state
 
@@ -13,8 +22,16 @@ class NostradamusAttack(object):
     # def construction_func(iv, message):
     #   return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
 
-    #construction_func,
-    def __init__(self, k, collision_func, output_size, prefixes=None):
+    def __init__(self, k: int, collision_func: FunctionType, output_size: int, prefixes: list=None):
+        """
+        Parameters:
+            k               (int): Number of levels the tree will have.
+            collision_func (func): Function that finds a collision in the hash function. Should return a tuple
+                                   (input_bytes1, input_bytes2, colliding_state).
+            output_size     (int): Size of the hash output.
+            prefixes       (list): List of bytes-like prefixes. These are the starting nodes of the tree.
+                                   You should set this to values you want to guarantee are in the tree.
+        """
         self.k = k
         self.prefixes = prefixes or [int.to_bytes(i, output_size, 'little') for i in range(2 ** k)]
         self.collision_func = collision_func
@@ -28,6 +45,9 @@ class NostradamusAttack(object):
 
 
     def _generate_tree(self):
+        """
+        Builds a binary hash tree of colliding, intermediary Merkle-Damgard construction states.
+        """
         log.debug('Generating hash tree')
         tree = []
         for i in range(self.k):
@@ -87,7 +107,16 @@ class NostradamusAttack(object):
 
 
 
-    def execute(self, message):
+    def execute(self, message: bytes) -> Bytes:
+        """
+        Traverves the hash tree and builds an appropriate suffix to cause the collision.
+
+        Parameters:
+            message (bytes): Bytes-like message to find a suffix for.
+        
+        Returns:
+            Bytes: either an empty byte-string or a suffix that causes the collision.
+        """
         suffix = b''
 
         while message in self.hash_tree:
@@ -101,4 +130,4 @@ class NostradamusAttack(object):
             suffix += next_suffix
             message = found_node[-1]
 
-        return suffix
+        return Bytes(suffix)

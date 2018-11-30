@@ -1,17 +1,43 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_unpad
+from samson.utilities.bytes import Bytes
+from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
 import struct
 
 import logging
 log = logging.getLogger(__name__)
 
 class ECBPrependAttack(object):
-    # Expects a StatelessBlockEncryptionOracle
-    def __init__(self, oracle):
+    """
+    Performs a plaintext recovery attack.
+
+    By prepending data to the secret, we can take advantage of ECB's statelessness and iteratively build
+    ciphertext blocks that match the secret's ciphertext blocks.
+
+    Conditions:
+        * ECB is being used
+        * The user has access to an oracle that accepts arbitrary plaintext and returns the ciphertext
+        * The user's input is prepended to the secret plaintext
+    """
+
+    def __init__(self, oracle: StatelessBlockEncryptionOracle):
+        """
+        Parameters:
+            oracle (StatelessBlockEncryptionOracle): An oracle that takes in plaintext and returns the ciphertext.
+        """
         self.oracle = oracle
 
 
-    def execute(self):
+    def execute(self, unpad: bool=True) -> Bytes:
+        """
+        Executes the attack.
+
+        Parameters:
+            unpad (bool): Whether or not to PKCS7 unpad the result.
+        
+        Returns:
+            Bytes: The recovered plaintext.
+        """
         baseline = len(self.oracle.encrypt(b''))
         block_size = self.oracle.find_block_size()
 
@@ -38,4 +64,9 @@ class ECBPrependAttack(object):
                         break
 
             plaintexts.append(plaintext)
-        return pkcs7_unpad(b''.join(plaintexts), block_size=block_size)
+
+        result = b''.join(plaintexts)
+        if unpad:
+            result = pkcs7_unpad(result, block_size=block_size)
+
+        return Bytes(result)

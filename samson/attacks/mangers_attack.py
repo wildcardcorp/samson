@@ -1,4 +1,6 @@
 from samson.utilities.bytes import Bytes
+from samson.oracles.padding_oracle import PaddingOracle
+from samson.publickey.rsa import RSA
 import math
 
 import logging
@@ -8,7 +10,20 @@ log = logging.getLogger(__name__)
 # AKA OAEP padding oracle
 # http://archiv.infsec.ethz.ch/education/fs08/secsem/Manger01.pdf
 class MangersAttack(object):
-    def __init__(self, padding_oracle, rsa):
+    """
+    Performs a plaintext recovery attack.
+    
+    Manger's attack stems from a padding oracle on RSA-OAEP. According to OAEP's specification, the first byte
+    *has* to be zero. If the code checks this and leaks whether it's zero or not, we can efficiently retrieve
+    the plaintext through an adaptive chosen-plaintext attack.
+    """
+
+    def __init__(self, padding_oracle: PaddingOracle, rsa: RSA):
+        """
+        Parameters:
+            padding_oracle (PaddingOracle): An oracle that takes in bytes and returns whether the first byte of the decrypted plaintext is zero.
+            rsa                      (RSA): An RSA instance containing the public key parameters.
+        """
         self.oracle = padding_oracle
         self.rsa = rsa
 
@@ -18,7 +33,16 @@ class MangersAttack(object):
         return self.oracle.check_padding(Bytes((c * f_e) % N))
 
 
-    def execute(self, ciphertext):
+    def execute(self, ciphertext: bytes) -> Bytes:
+        """
+        Executes Manger's attack.
+
+        Parameters:
+            ciphertext (bytes): The ciphertext to decrypt.
+        
+        Returns:
+            Bytes: The ciphertext's corresponding plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
         ct_int = ciphertext.int()
 

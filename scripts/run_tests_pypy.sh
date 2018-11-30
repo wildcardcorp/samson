@@ -1,2 +1,3 @@
 #!/bin/bash
-pypy3 -m unittest discover tests/
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+pypy3 -m unittest discover $DIR/../tests/

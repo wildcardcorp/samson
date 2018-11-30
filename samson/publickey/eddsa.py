@@ -1,4 +1,3 @@
-from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.publickey.dsa import DSA
 from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint
@@ -9,7 +8,7 @@ def bit(h,i):
   return (h[i//8] >> (i%8)) & 1
 
 # https://ed25519.cr.yp.to/python/ed25519.py
-class Ed25519(DSA):
+class EdDSA(DSA):
     def __init__(self, curve=EdwardsCurve25519, hash_obj=SHA2(512), d=None, A=None):
         self.B = curve.B
         self.curve = curve
@@ -18,7 +17,7 @@ class Ed25519(DSA):
 
         self.h = hash_obj.hash(self.d)
 
-        self.a = 2**(curve.b - 2) + sum(2**i * bit(self.h, i) for i in range(3, curve.b-2))
+        self.a = 2**(curve.n) | sum(2**i * bit(self.h, i) for i in range(curve.c, curve.n))
         self.A = A or self.B * self.a
 
 
@@ -33,7 +32,7 @@ class Ed25519(DSA):
 
     def encode_point(self, P):
         x, y = P.x, P.y
-        return Bytes(((x & 1) << self.curve.b-1) + ((y << 1) >> 1), 'little')
+        return Bytes(((x & 1) << self.curve.b-1) + ((y << 1) >> 1), 'little').zfill(self.curve.b//8)
     
 
     def decode_point(self, in_bytes):
@@ -49,11 +48,13 @@ class Ed25519(DSA):
         
 
 
-    def sign(self, message, k=None):
-        r = self.H.hash(self.h[self.curve.b//8:] + message)[::-1].int()
-        R = self.B * r
-        S = (r + self.H.hash(self.encode_point(R) + self.encode_point(self.A) + message)[::-1].int() * self.a) % self.curve.l
-        return (self.encode_point(R) + Bytes(S, 'little')).zfill(self.curve.b//4)
+    def sign(self, message):
+        r = self.H.hash(self.curve.magic + self.h[self.curve.b//8:] + message)[::-1].int()
+        R = self.B * (r % self.curve.l)
+        eR = self.encode_point(R)
+        k = self.H.hash(self.curve.magic + eR + self.encode_point(self.A) + message)[::-1].int()
+        S = (r + (k % self.curve.l) * self.a) % self.curve.l
+        return eR + Bytes(S, 'little').zfill(self.curve.b//8)
     
     
 
@@ -65,6 +66,7 @@ class Ed25519(DSA):
         
         R = self.decode_point(sig[:self.curve.b//8])
         S = sig[self.curve.b//8:].int()
-        h = self.H.hash(self.encode_point(R) + self.encode_point(self.A) + message)[::-1].int()
+
+        h = self.H.hash(self.curve.magic + self.encode_point(R) + self.encode_point(self.A) + message)[::-1].int()
 
         return self.B * S == R + (self.A * h)

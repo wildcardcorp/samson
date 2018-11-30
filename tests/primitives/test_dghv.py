@@ -15,7 +15,7 @@ class DGHVTestCase(unittest.TestCase):
     def test_xor(self):
         dghv = DGHV()
 
-        for i in range(1000):
+        for _ in range(1000):
             a, b = Bytes.random(4).to_int(), Bytes.random(4).to_int()
             a_bin = [int(char) for char in bin(a)[2:].zfill(32)]
             b_bin = [int(char) for char in bin(b)[2:].zfill(32)]

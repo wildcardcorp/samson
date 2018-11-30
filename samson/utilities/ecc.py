@@ -129,9 +129,12 @@ class Curve448(MontgomeryCurve):
 
 # https://ed25519.cr.yp.to/python/ed25519.py
 class TwistedEdwardsCurve(object):
-    def __init__(self, a, b, q, l, d, B):
+    def __init__(self, a, c, n, b, magic, q, l, d, B):
         self.a = a
+        self.c = c
+        self.n = n
         self.b = b
+        self.magic = magic
         self.q = q
         self.l = l
         self.d = d
@@ -158,14 +161,20 @@ class TwistedEdwardsCurve(object):
     
 
     def recover_point_from_y(self, y):
-        xx = (y*y-1) * mod_inv(self.d*y*y+1, self.q)
-        x = pow(xx, (self.q+3)//8, self.q)
+        xx = (y*y-1) * mod_inv(self.d*y*y-self.a, self.q)
+        if self.q % 8 == 5:
+            x = pow(xx, (self.q+3)//8, self.q)
 
-        if (x*x - xx) % self.q != 0:
-            x = (x*self.I) % self.q
+            if (x*x - xx) % self.q != 0:
+                x = (x*self.I) % self.q
 
-        if x % 2 != 0:
-            x = self.q-x
+            if x % 2 != 0:
+                x = self.q-x
+
+        elif self.q % 4 == 3:
+            x = pow(xx, (self.q+1)//4, self.q)
+        else:
+            raise Exception("Unsupported prime `q`.")
 
         return TwistedEdwardsPoint(x % self.q, y % self.q, self)
 
@@ -229,5 +238,5 @@ class TwistedEdwardsPoint(object):
 
 
 
-EdwardsCurve25519 = TwistedEdwardsCurve(a=-1, b=256, q=2**255 - 19, l=2**252 + 27742317777372353535851937790883648493, d=-121665 * pow(121666, 2**255 - 19 -2, 2**255 - 19), B=(15112221349535400772501151409588531511454012693041857206046113283949847762202, 46316835694926478169428394003475163141307993866256225615783033603165251855960))
-EdwardsCurve448   = TwistedEdwardsCurve(a=1, b=456, q=2**448 - 2**224 - 1, l=2**446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d, d=-39081, B=(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660))
+EdwardsCurve25519 = TwistedEdwardsCurve(a=-1, c=3, n=254, b=256, magic=b'', q=2**255 - 19, l=2**252 + 27742317777372353535851937790883648493, d=-121665 * pow(121666, 2**255 - 19 -2, 2**255 - 19), B=(15112221349535400772501151409588531511454012693041857206046113283949847762202, 46316835694926478169428394003475163141307993866256225615783033603165251855960))
+EdwardsCurve448   = TwistedEdwardsCurve(a=1, c=2, n=447, b=456, magic=b'SigEd448\x00\x00', q=2**448 - 2**224 - 1, l=2**446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d, d=-39081, B=(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660))

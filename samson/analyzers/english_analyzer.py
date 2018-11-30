@@ -196,11 +196,23 @@ def _num_bigrams(string):
 TOKENIZER = Tokenizer([word for word, _ in wordlist.items() if len(word) > 2], TokenListHandler)
 
 class EnglishAnalyzer(Analyzer):
+    """
+    Analyzer for English text.
+    """
     def __init__(self):
         pass
 
 
-    def analyze(self, in_bytes):
+    def analyze(self, in_bytes: bytes) -> float:
+        """
+        Takes in a bytes-like object and returns a relative score.
+
+        Parameters:
+            in_bytes (bytes): The bytes-like object to be "scored".
+        
+        Returns:
+            float: The relative score of the object.
+        """
         try:
             as_str = in_bytes.decode()
         except UnicodeDecodeError as _:
@@ -233,7 +245,19 @@ class EnglishAnalyzer(Analyzer):
 
 
     
-    def preprocess(self, in_bytes, in_ciphers=None):
+    def preprocess(self, in_bytes: bytes, in_ciphers: bytes=None) -> dict:
+        """
+        Takes in a bytes-like object and returns the processed feature-space used in scoring.
+        This is good for training statistical models.
+
+        Parameters:
+            in_bytes   (bytes): The bytes-like object to be "scored".
+            in_ciphers (bytes): (Optional) If set, will check if `in_bytes` is a subset of `in_ciphers`.
+                                Used for supervised machine learning.
+        
+        Returns:
+            dictionary: Dictionary containing the processed features.
+        """
         try:
             as_str = in_bytes.decode()
         except UnicodeDecodeError as _:

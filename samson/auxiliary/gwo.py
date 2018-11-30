@@ -14,6 +14,14 @@ from copy import deepcopy
 class GreyWolfOptimizer:
 
   def __init__(self, nWolves, nIters, boundsMat, minConv, objFunc):
+    """
+    Parameters:
+      nWolves (int):
+      nIters (int):
+      boundsMat (numpy.ndarray):
+      minConv (float):
+      objFunc (func):
+    """
     self.numWolves = nWolves
     self.maxIt = nIters
     self.wolves = np.zeros((0, boundsMat.shape[0] + 1))

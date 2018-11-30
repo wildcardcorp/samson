@@ -2,9 +2,7 @@ from fastecdsa.curve import P192, P224, P256, P521
 from samson.publickey.ecdsa import ECDSA
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA2
-from samson.utilities.bytes import Bytes
 import unittest
-import hashlib
 
 
 # https://tools.ietf.org/html/rfc6979#appendix-A.2.5
