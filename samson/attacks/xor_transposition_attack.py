@@ -1,5 +1,6 @@
 from samson.utilities.manipulation import xor_buffs
 from samson.utilities.bytes import Bytes
+from samson.analyzers.analyzer import Analyzer
 from copy import deepcopy
 import struct
 
@@ -7,11 +8,11 @@ import logging
 log = logging.getLogger(__name__)
 
 class XORTranspositionAttack(object):
-    def __init__(self, analyzer):
+    def __init__(self, analyzer: Analyzer):
         self.analyzer = analyzer
 
 
-    def execute(self, ciphertexts, iterations=3):
+    def execute(self, ciphertexts: list, iterations: int=3) -> list:
         min_size = min([len(ciphertext) for ciphertext in ciphertexts])
 
         same_size_ciphers = [ciphertext[:min_size] for ciphertext in ciphertexts]

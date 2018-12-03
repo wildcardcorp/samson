@@ -1,4 +1,6 @@
 from samson.utilities.encoding import int_to_bytes
+from samson.oracles.padding_oracle import PaddingOracle
+from samson.utilities.bytes import Bytes
 from random import randint
 
 import logging
@@ -20,18 +22,49 @@ def _append_and_merge(new_a, new_b, intervals):
 
 
 class PKCS15PaddingOracleAttack(object):
-    def __init__(self, oracle):
+    """
+    Performs a plaintext recovery attack.
+
+    The PKCS#1 v1.5 padding oracle attack found by Daniel Bleichenbacher is an adaptive chosen-plaintext attack that
+    takes advantage of an information leak through the validation of the plaintext's padding. Using RSA's homomorphic
+    properties, the algorithm can iteratively converge on the correct plaintext.
+
+    Conditions:
+        * RSA is being used
+        * PKCS#1 v1.5 padding is being used
+        * The user has access to an oracle that allows abitrary plaintext input and leaks whether the padding is correct.
+    """
+
+    def __init__(self, oracle: PaddingOracle):
+        """
+        Parameters:
+            oracle (PaddingOracle): An oracle that takes in an integer and returns whether the padding is correct.
+        """
         self.oracle = oracle
 
 
     
-    def execute(self, c, n, e, key_length):
+    def execute(self, ciphertext: int, n: int, e: int, key_length: int) -> Bytes:
+        """
+        Executes the attack.
+
+        Parameters:
+            ciphertext (int): The ciphertext represented as an integer.
+                     n (int): The RSA instance's modulus.
+                     e (int): The RSA instance's public exponent.
+            key_length (int): The the bit length of the RSA instance (2048, 4096, etc).
+        
+        Returns:
+            Bytes: The ciphertext's corresponding plaintext.
+        """
         key_byte_len = key_length // 8
+
         # Convenience variables
         B = 2 ** (8 * (key_byte_len - 2))
 
         # Initial values
-        c_0 = c
+        c = ciphertext
+        c_0 = ciphertext
         M = [(2*B, 3*B - 1)]
         i = 1
 
@@ -80,7 +113,7 @@ class PKCS15PaddingOracleAttack(object):
                 a, b = M[0]
 
                 if a == b:
-                    return b'\x00' + int_to_bytes(a, 'big')
+                    return Bytes(b'\x00' + int_to_bytes(a, 'big'))
 
                 r = _ceil(2 * (b*s - 2*B), n)
                 s = _ceil(2*B + r*n, b)

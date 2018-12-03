@@ -20,7 +20,7 @@ aes = Rijndael(key)
 cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
 
 def format_data(data):
-    return ("comment1=cooking%20MCs;userdata=" + urllib.parse.quote(data) + ";comment2=%20like%20a%20pound%20of%20bacon").encode()
+    return ("comment1=cooking%20MCs;userdata=" + urllib.parse.quote(data.decode()) + ";comment2=%20like%20a%20pound%20of%20bacon").encode()
 
 
 # CBC Functions

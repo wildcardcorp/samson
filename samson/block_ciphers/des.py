@@ -178,6 +178,7 @@ class DES(FeistelNetwork):
     def __init__(self, key):
         super().__init__(round_func, key_schedule)
         self.key = key
+        self.block_size = 8
 
     
     def __repr__(self):

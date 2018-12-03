@@ -1,39 +1,37 @@
 from samson.utilities.manipulation import left_rotate
 
+MASK58 = 0x3FFFFFFFFFFFFFF
+MASK64 = 0xFFFFFFFFFFFFFFFF
 
 def V116_PLUS(x):
     s0, s1 = x
-    result = (s0 + s1) & 0x3FFFFFFFFFFFFFF
+    result = (s0 + s1) & MASK58
 
     s1 ^= s0
-    x[0] = left_rotate(s0, 24, bits=58) ^ s1 ^ ((s1 << 2) & 0x3FFFFFFFFFFFFFF)
+    x[0] = left_rotate(s0, 24, bits=58) ^ s1 ^ ((s1 << 2) & MASK58)
     x[1] = left_rotate(s1, 35, bits=58)
     return x, result
 
 
+# Might be correct for V128.
+# def V128(x):
+#     s0, s1 = x
+#     result = (s0 + s1) & MASK64
+
+#     s1 ^= s0
+#     x[0] = left_rotate(s0, 55, bits=64) ^ s1 ^ ((s1 << 14) & MASK64)
+#     x[1] = left_rotate(s1, 36, bits=64)
+#     return x, result
+
+
 def V128_PLUS(x):
     s0, s1 = x
-    result = (s0 + s1) & 0xFFFFFFFFFFFFFFF
+    result = (s0 + s1) & MASK64
 
     s1 ^= s0
-    x[0] = left_rotate(s0, 55, bits=64) ^ s1 ^ ((s1 << 14) & 0xFFFFFFFFFFFFFFF)
-    x[1] = left_rotate(s1, 36, bits=64)
+    x[0] = left_rotate(s0, 24, bits=64) ^ s1 ^ ((s1 << 16) & MASK64)
+    x[1] = left_rotate(s1, 37, bits=64)
     return x, result
-
-
-def V256_STAR_STAR(x):
-    s0, s1, s2, s3 = x
-    s2 ^= s0
-    s3 ^= s1
-
-    result = left_rotate(s1 * 5, 7, bits=64) * 9
-    x[0] = s0 ^ s3
-    x[1] = s1 ^ s2
-    x[2] = s2 ^ ((s1 << 17) & 0xFFFFFFFFFFFFFFF)
-    x[3] = left_rotate(s3, 45, bits=64)
-
-    return x, result
-
 
 
 class Xoroshiro(object):

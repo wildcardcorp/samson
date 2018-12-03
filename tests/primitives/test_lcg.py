@@ -2,6 +2,13 @@ from samson.prngs.lcg import LCG
 from samson.utilities.bytes import Bytes
 import unittest
 
+
+def wiki_lcg(modulus, a, c, seed):
+    while True:
+        seed = (a * seed + c) % modulus
+        yield seed
+
+
 class LCGTestCase(unittest.TestCase):
     def test_crack(self):
         for _ in range(10):
@@ -27,3 +34,17 @@ class LCGTestCase(unittest.TestCase):
 
             accuracy = sum([ref_lcg.generate() >> trunc_amount == cracked_lcg.generate() >> trunc_amount for _ in range(1000)]) / 1000
             self.assertGreater(accuracy, 0.9)
+
+
+
+    def test_correctness(self):
+        for _ in range(100):
+            seed = Bytes.random(16).int()
+            a = Bytes.random(2).int()
+            m = Bytes.random(12).int()
+            c = Bytes.random(2).int()
+
+            lcg = LCG(X=seed, a=a, c=c, m=m)
+            ref_lcg = wiki_lcg(m, a, c, seed).__next__
+
+            self.assertTrue([lcg.generate() for _ in range(10000)], [ref_lcg() for _ in range(10000)])

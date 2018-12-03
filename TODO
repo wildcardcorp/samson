@@ -8,9 +8,7 @@ X   scrypt
 X   bcrypt
 X   IDEA
 X   Curve25519
-X   EdDSA
 X   SAT solving (probably just an interface)
-X   Camellia
 X   SEED
 X   CAST
 X   PCG
@@ -24,22 +22,36 @@ X   Code reorganization
 X   Commenting/convenience functions/use internal classes
 
 
-TENTATIVE SCHEDULE
+CURRENT
 ---------------
-11/28 (Wednesday)
----------------
+0.1.0
+===============
+Goals:
+    * Everything works
+    * Document everything
+    * Test everything
+
+X   Finish PCG
 X   Clean up the organization of padding schemes
-
-
-11/29 (Thursday)
----------------
 X   Add documentation comments
 X   Fix CRIME/BREACH (clean up and better results)
-
-
-11/30 (Friday)
----------------
 X   Make Bitstring sane... (use something like TDD)
+X   Clean up code/make interfaces more uniform
+X   Clean up ViterbiDecoder
+
+X   Add NTRU tests
+X   Add ECB-CTS tests
+X   Add DualEC tests
+X   Add GLFSR tests
+X   Add FLFSR tests
+X   Add LFG tests
+X   Add MWC1616 tests
+X   Add PCG tests
+X   Add Xoroshiro tests
+X   Add Merkle-Hellman Knapsack tests
+
+X   Decouple padding from ECB, CBC, etc
+X   Choose bitlength or bytelength convention (look at Rijndael)
 
 X   Nostradamus attack
     OK  Works with prefixes

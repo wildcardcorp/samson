@@ -4,11 +4,13 @@ from samson.utilities.bytes import Bytes
 class TDES(object):
     def __init__(self, key):
         key = Bytes.wrap(key)
-        if not len(key) in [56, 112, 168]:
-            raise ValueError('`key` must be a multiple of 56')
+        if not len(key) in [8, 16, 24]:
+            raise ValueError('`key` size must be in [8, 16 , 24]')
 
         self.key = key
-        self.des_arr = [DES(subkey) for subkey in key.chunk(56)]
+        self.des_arr = [DES(subkey.zfill(8)) for subkey in key.chunk(8)]
+        self.block_size = 8
+        
 
     
     def __repr__(self):

@@ -19,8 +19,8 @@ class ElGamal(object):
 
 
     # https://en.wikipedia.org/wiki/ElGamal_encryption
-    def encrypt(self, plaintext):
-        K_e = max(1, Bytes.random().int() % self.p)
+    def encrypt(self, plaintext, k=None):
+        K_e = k or max(1, Bytes.random().int() % self.p)
         c_1 = pow(self.g, K_e, self.p)
         s = pow(self.pub, K_e, self.p)
         plaintext = Bytes.wrap(plaintext)

@@ -44,7 +44,7 @@ class Keccak(SpongeConstruction):
 
     def pad(self, in_bytes):
         bit_rate_bytes = (self.r + 7) // 8
-        pad_len = bit_rate_bytes - len(in_bytes)
+        pad_len = (bit_rate_bytes - len(in_bytes)) % bit_rate_bytes
 
         if pad_len == 0:
             pad_len = bit_rate_bytes
