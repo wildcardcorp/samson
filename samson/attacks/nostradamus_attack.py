@@ -18,9 +18,6 @@ class NostradamusAttack(object):
     # 'k' is the number of levels the tree will have
     # `construction_func` takes in a message and POSSIBLY an IV and outputs a generator that yields the intermediary state
 
-    # Example:
-    # def construction_func(iv, message):
-    #   return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
 
     def __init__(self, k: int, collision_func: FunctionType, output_size: int, prefixes: list=None):
         """

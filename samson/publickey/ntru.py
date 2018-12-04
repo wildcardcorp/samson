@@ -27,8 +27,6 @@ def rand_poly(length, len_non_zeroes, neg_ones_mod=0):
 
 
 
-
-
 def invert_poly(f_poly, R_poly, p):
     if isprime(p):
         inv_poly = invert(f_poly, R_poly, domain=GF(p))

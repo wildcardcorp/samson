@@ -14,7 +14,6 @@ PARAMS = [
 class KeccakTestCase(unittest.TestCase):
     def _run_test(self, plaintext, expected_hashes):
         for i, expected_hash in enumerate(expected_hashes):
-            print(i)
             keccak = Keccak(*PARAMS[i])
             self.assertEqual(keccak.hash(plaintext), expected_hash)
 

@@ -1,11 +1,9 @@
 from samson.prngs.xorshift import Xorshift, V116_PLUS, V1024_STAR, V128_PLUS, V32, V64, V128
-from samson.utilities.bytes import Bytes
 import unittest
 
 
 class XorshiftTestCase(unittest.TestCase):
     # We include a `modifier` parameter since Erlang/Elixir's rand starts from 1 instead of 0.
-
     def _run_test(self, seed, variant, expected_outputs, modifier):
         xs = Xorshift(seed, variant=variant)
         self.assertEqual([xs.generate() + modifier for _ in range(len(expected_outputs))], expected_outputs)

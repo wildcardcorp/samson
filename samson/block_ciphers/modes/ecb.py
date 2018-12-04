@@ -4,7 +4,15 @@ from samson.utilities.bytes import Bytes
 
 
 class ECB(object):
+    """Electronic codebook block cipher mode."""
+
     def __init__(self, encryptor, decryptor, block_size):
+        """
+        Parameters:
+            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
+            block_size (int): Block size of the underlying encryption algorithm.
+        """
         self.encryptor = encryptor
         self.decryptor = decryptor
         self.block_size = block_size
@@ -19,6 +27,16 @@ class ECB(object):
 
 
     def encrypt(self, plaintext, pad=True):
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+            pad        (bool): Pads the plaintext with PKCS7.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         if pad:
             plaintext = pkcs7_pad(plaintext, self.block_size)
 
@@ -31,6 +49,16 @@ class ECB(object):
         
 
     def decrypt(self, ciphertext, unpad=True):
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+            unpad       (bool): Unpads the plaintext with PKCS7.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         plaintext = Bytes(b'')
         for block in get_blocks(ciphertext, self.block_size):
             plaintext += self.decryptor(block)

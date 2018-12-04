@@ -1,4 +1,3 @@
-from samson.utilities.bytes import Bytes
 from samson.prngs.mt19937 import MT19937
 import unittest
 import random

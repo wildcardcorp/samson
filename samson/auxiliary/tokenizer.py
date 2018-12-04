@@ -2,9 +2,22 @@
 # Generates a Markov Chain
 # Must work for delimited and non-delimited inputs
 # Must grab the longest string possible
+from samson.auxiliary.token_list_handler import TokenListHandler
+from samson.auxiliary.tokenizer_handler import TokenizerHandler
 
 class Tokenizer(object):
-    def __init__(self, token_list, token_handler, delimiter=' '):
+    """
+    Splits a string into the longest 'tokens' parameterized bt the `token_list`. Works for delimited
+    and non-delimited inputs.
+    """
+
+    def __init__(self, token_list: list, token_handler: TokenizerHandler=TokenListHandler, delimiter: str=' '):
+        """
+        Parameters:
+            token_list                (list): List of possible tokens, e.g. wordlist.
+            token_handler (TokenizerHandler): Instantiable class.
+            delimiter                  (str): (Optional) Delimiter to split samples apart.
+        """
         self.token_list = token_list
         self.token_handler = token_handler
         self.delimiter = delimiter
@@ -24,8 +37,16 @@ class Tokenizer(object):
 
 
 
-    def tokenize(self, samples):
+    def tokenize(self, samples: list) -> object:
+        """
+        Tokenizes a list of samples.
 
+        Parameters:
+            samples (list): List of string samples to break into tokens.
+        
+        Returns:
+            object: The finalized return of the `token_handler`.
+        """
         ################
         #    STEP 1    #
         # Create chain #

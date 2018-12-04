@@ -1,4 +1,3 @@
-from samson.utilities.bytes import Bytes
 from samson.publickey.elgamal import ElGamal
 import unittest
 

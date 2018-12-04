@@ -1,5 +1,4 @@
 from samson.prngs.xoroshiro import Xoroshiro, V116_PLUS, V128_PLUS
-from samson.utilities.bytes import Bytes
 import unittest
 
 class XoroshiroTestCase(unittest.TestCase):

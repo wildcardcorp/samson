@@ -1,10 +1,23 @@
 from samson.utilities.bytes import Bytes
 
-# https://en.wikipedia.org/wiki/Disk_encryption_theory#Xor%E2%80%93encrypt%E2%80%93xor_(XEX)
-# This is basically XEX with conditional CTS. Padding the plaintext to the 16-byte boundary
-# should, therefore, result in a correct execution of XEX.
 class XTS(object):
+    """
+    Xor-encrypt-xor with ciphertext stealing block cipher mode.
+
+
+    This is basically XEX with conditional CTS. Padding the plaintext to the 16-byte boundary
+    should, therefore, result in a correct execution of XEX.
+
+    https://en.wikipedia.org/wiki/Disk_encryption_theory#Xor%E2%80%93encrypt%E2%80%93xor_(XEX)
+    """
+
     def __init__(self, encryptor, decryptor, sector_encryptor):
+        """
+        Parameters:
+            encryptor        (func): Function that takes in a plaintext and returns a ciphertext.
+            decryptor        (func): Function that takes in a ciphertext and returns a plaintext.
+            sector_encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+        """
         self.encryptor = encryptor
         self.decryptor = decryptor
         self.sector_encryptor = sector_encryptor

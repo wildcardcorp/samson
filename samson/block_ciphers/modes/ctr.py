@@ -3,7 +3,15 @@ from math import ceil
 
 
 class CTR(object):
+    """Counter block cipher mode."""
+    
     def __init__(self, encryptor, nonce, block_size):
+        """
+        Parameters:
+            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+            nonce    (bytes): Bytes-like nonce.
+            block_size (int): Block size of the underlying encryption algorithm.
+        """
         self.encryptor = encryptor
         self.nonce = Bytes.wrap(nonce)
         self.block_size = block_size
@@ -19,6 +27,15 @@ class CTR(object):
         return self.__repr__()
 
     def encrypt(self, plaintext):
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         keystream = Bytes(b'')
 
         num_blocks = ceil(len(plaintext) / self.block_size)
@@ -30,4 +47,13 @@ class CTR(object):
 
 
     def decrypt(self, ciphertext):
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         return self.encrypt(ciphertext)

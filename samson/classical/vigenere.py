@@ -96,27 +96,20 @@ class Vigenere(object):
                     new_chunk = tmp_vig.decrypt(chunk)
 
                     chunk_score = chisquare(count_bytes(new_chunk), expected_distribution)
-                    #chunk_score = analyzer.analyze(new_chunk)
                     curr_chunk_scores.append((char, chunk_score))
 
 
                 top_chunk_scores.append(sorted(curr_chunk_scores, key=lambda chunk_score: chunk_score[1], reverse=False)[0])
-                #top_chunk_scores.append(sorted(curr_chunk_scores, key=lambda chunk_score: chunk_score[1], reverse=True)[0])
 
             for chunk_score in top_chunk_scores:
                 total_key_score += chunk_score[1]
                 
             cipher_scores.append((total_key_score, top_chunk_scores))
 
-        # top_key_score = sorted(cipher_scores, key=lambda kv: kv[0])[0]
         analyzer_scores = []
         for _total_score, top_chunk_scores in cipher_scores:
             vig = Vigenere(bytes([char for char,score in top_chunk_scores]), alphabet=alphabet)
-            #print(vig.decrypt(ciphertext))
             analyzer_scores.append((analyzer.analyze(vig.decrypt(ciphertext)) / len(vig.key), vig))
 
-        #top_key_score = sorted(cipher_scores, key=lambda kv: kv[0], reverse=True)[0]
         top_analyzed_score = sorted(analyzer_scores, key=lambda kv: kv[0], reverse=True)[0]
         return top_analyzed_score[1]
-        #return Vigenere(bytes([char for char,score in top_key_score[1]]), alphabet=alphabet)
-        # return Vigenere(bytes([char for char,score in top_key_score[1]]), alphabet=alphabet)

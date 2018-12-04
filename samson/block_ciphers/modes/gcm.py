@@ -10,7 +10,13 @@ GCM_REDUCTION_TABLE = [
 
 
 class GCM(object):
+    """Galois counter mode (GCM) block cipher mode"""
+
     def __init__(self, encryptor):
+        """
+        Parameters:
+            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+        """
         self.encryptor = encryptor
         self.H = self.encryptor(b'\x00' * 16).int()
         self.ctr = CTR(self.encryptor, b'\x00' * 8, 16)

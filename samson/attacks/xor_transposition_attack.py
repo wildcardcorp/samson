@@ -8,11 +8,39 @@ import logging
 log = logging.getLogger(__name__)
 
 class XORTranspositionAttack(object):
+    """
+    Performs a plaintext recovery attack.
+
+    Using only an Analyzer, attempts to break a many-time pad using structural properties.
+    This attack has two phases:
+        * Transposition analysis - creates a matrix out of the bytes and transposes it so the rows share a common keystream byte before analyzing it. WARNING: the ciphertexts are trimmed to the length of the smallest sample.
+        
+        * Full-text analysis - reverts the transposed matrix and then copies the new, partial plaintexts over the original ciphertexts. Each ciphertext is analyzed in its entirety and the best character per position is chosen. This process can be repeated to incrementally recover more plaintext.
+    
+    Conditions:
+        * A stream/OTP-like cipher is used. I.E. plaintext XOR keystream
+        * The user has collected more than one ciphertext using the same keystream.
+    """
+
     def __init__(self, analyzer: Analyzer):
+        """
+        Parameters:
+            analyzer (Analyzer): Analyzer that correctly scores the underlying plaintext.
+        """
         self.analyzer = analyzer
 
 
     def execute(self, ciphertexts: list, iterations: int=3) -> list:
+        """
+        Executes the attack.
+        
+        Parameters:
+            ciphertexts (list): List of bytes-like ciphertexts using the same keystream.
+            iterations   (int): Number of iterations of the full-text analysis phase. Accuracy-time trade-off.
+
+        Returns:
+            list: List of recovered plaintexts.
+        """
         min_size = min([len(ciphertext) for ciphertext in ciphertexts])
 
         same_size_ciphers = [ciphertext[:min_size] for ciphertext in ciphertexts]

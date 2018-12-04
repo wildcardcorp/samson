@@ -61,7 +61,6 @@ class DualEC(object):
 
                 if int.to_bytes(test_r2.x, 32, 'big')[2:2 + len(r2)] == r2:
                     possible_states.append(DualEC(P, Q, dR.x))
-                    print(test_r2)
             except Exception as _:
                 pass
 

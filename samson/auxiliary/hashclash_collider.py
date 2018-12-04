@@ -8,14 +8,32 @@ log = logging.getLogger(__name__)
 
 
 class HashClashCollider(object):
-    def __init__(self, hash_clash_base_location):
+    """
+    Finds MD5 collisions with HashClash. Used in the Nostradamus attack.
+    """
+
+    def __init__(self, hash_clash_base_location: str):
+        """
+        Parameters:
+            hash_clash_base_location (str): Path to HashClash's location on disk.
+        """
         self.hash_clash_base_location = hash_clash_base_location
         self.hasher = MD5()
         self.hasher.pad_func = lambda x: x
 
 
     
-    def find_collision(self, p1, p2):
+    def find_collision(self, p1: bytes, p2: bytes) -> (bytes, bytes, bytes):
+        """
+        Finds a collision using HashClash.
+
+        Parameters:
+            p1 (bytes): First sample.
+            p2 (bytes): Second sample.
+        
+        Returns:
+            tuple: Tuple of bytes representing the collision as (p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)).
+        """
         tmp_dir = tempfile.TemporaryDirectory()
 
         log.info('Creating new directory: {}'.format(tmp_dir))

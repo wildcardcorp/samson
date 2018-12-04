@@ -1,12 +1,50 @@
 from samson.utilities.manipulation import xor_buffs
+from samson.analyzers.analyzer import Analyzer
 
+# TODO: Make work with more than two ciphertexts.
+# TODO: Implement logging
 class XORDictionaryAttack(object):
-    def __init__(self, analyzer, wordlist):
+    """
+    Preforms a plaintext recovery attack.
+
+    Attempts to retrieve the plaintext from two or more ciphertexts using a dictionary attack.
+    The basic premise is if the ciphertexts are fully contained within the wordlist,
+    then XORing one ciphertext with the correct word (or whatever values are in the wordlist)
+    will produce the correct keystream segment. This segment is then XOR'd with the other ciphertext and
+    fed through the analyzer. The word with the highest score is most likely correct.
+
+    Conditions:
+        * A stream/OTP-like cipher is used. I.E. plaintext XOR keystream
+        * The user has collected more than one ciphertext using the same keystream.
+    """
+
+    def __init__(self, analyzer: Analyzer, wordlist: list):
+        """
+        Parameters:
+            analyzer (Analyzer): Analyzer that correctly scores the underlying plaintext.
+            wordlist     (list): List of strings for the dictionary attack.
+        """
         self.analyzer = analyzer
         self.wordlist = wordlist
         
     
-    def execute(self, ciphertexts, word_ranges=[2,3,4]):
+    def execute(self, ciphertexts: list, word_ranges: list=[2,3,4]) -> list:
+        """
+        Executes the attack.
+        
+        Parameters:
+            ciphertexts (list): List of bytes-like ciphertexts using the same keystream.
+            word_ranges (list): List of numbers of words to try. E.G. [2, 3, 4] means
+                                try the Cartesian product of 2, 3,
+                                and 4-tuple word combinations.
+        
+        Returns:
+            list: Top 10 possible plaintexts.
+        """
+
+        if len(ciphertexts) != 2:
+            raise ValueError('`ciphertexts` MUST contain at least two samples.')
+
         two_time = xor_buffs(*ciphertexts)
 
         cipher_len = len(two_time)

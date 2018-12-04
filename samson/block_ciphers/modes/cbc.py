@@ -1,10 +1,20 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from samson.utilities.bytes import Bytes
+from types import FunctionType
 
 
 class CBC(object):
-    def __init__(self, encryptor, decryptor, iv, block_size):
+    """Cipherblock chaining block cipher mode."""
+
+    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, iv: bytes, block_size: int):
+        """
+        Parameters:
+            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
+            iv       (bytes): Bytes-like initialization vector.
+            block_size (int): Block size of the underlying encryption algorithm.
+        """
         self.encryptor = encryptor
         self.decryptor = decryptor
         self.iv = iv
@@ -19,7 +29,17 @@ class CBC(object):
         return self.__repr__()
 
 
-    def encrypt(self, plaintext, pad=True):
+    def encrypt(self, plaintext: bytes, pad: bool=True) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+            pad        (bool): Pads the plaintext with PKCS7.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
 
         if pad:
@@ -39,7 +59,17 @@ class CBC(object):
         return ciphertext
 
 
-    def decrypt(self, ciphertext, unpad=True):
+    def decrypt(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+            unpad       (bool): Unpads the plaintext with PKCS7.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         plaintext = b''
 
         if len(ciphertext) % self.block_size != 0:

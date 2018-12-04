@@ -1,10 +1,19 @@
 from samson.utilities.bytes import Bytes
+from samson.block_ciphers.modes.ecb import ECB
 
 # https://en.wikipedia.org/wiki/Ciphertext_stealing
 # CTS-3
 class ECBCTS(object):
-    def __init__(self, underlying_mode):
-        self.underlying_mode = underlying_mode
+    """Electronic codebook with ciphertext stealing block cipher mode."""
+
+    def __init__(self, encryptor, decryptor, block_size):
+        """
+        Parameters:
+            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
+            block_size (int): Block size of the underlying encryption algorithm.
+        """
+        self.underlying_mode = ECB(encryptor, decryptor, block_size)
     
 
     def __repr__(self):
@@ -15,7 +24,16 @@ class ECBCTS(object):
 
 
     
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
         block_size = self.underlying_mode.block_size
         pt_len = len(plaintext)
@@ -31,7 +49,16 @@ class ECBCTS(object):
 
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
         block_size = self.underlying_mode.block_size
         ct_len = len(ciphertext)

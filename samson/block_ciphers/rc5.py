@@ -51,8 +51,6 @@ class RC5(object):
         for i in range(b - 1, -1, -1):
             L[i // u] = Bytes.wrap(L[i // u] << 8).int() + self.key[i]
         
-
-        print(L)
         S = [(P_w[const_idx] + (Q_w[const_idx] * i)) % self.mod for i in range(t)]
 
         i = j = 0
