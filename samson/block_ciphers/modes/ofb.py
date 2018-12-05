@@ -1,11 +1,12 @@
 from samson.block_ciphers.modes.cbc import CBC
 from math import ceil
-
+from types import FunctionType
+from samson.utilities.bytes import Bytes
 
 class OFB(object):
     """Output feedback block cipher mode."""
 
-    def __init__(self, encryptor, iv, block_size):
+    def __init__(self, encryptor: FunctionType, iv: bytes, block_size: int):
         """
         Parameters:
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
@@ -17,15 +18,15 @@ class OFB(object):
         self.block_size = block_size
         self._cbc = CBC(encryptor, None, iv, block_size)
 
+
     def __repr__(self):
         return f"<OFB: encryptor={self.encryptor}, iv={self.iv}, block_size={self.block_size}>"
-
 
     def __str__(self):
         return self.__repr__()
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.
 
@@ -41,7 +42,7 @@ class OFB(object):
         return keystream[:len(plaintext)] ^ plaintext
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
         """
         Decrypts `ciphertext`.
 

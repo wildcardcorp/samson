@@ -7,7 +7,18 @@ import functools
 
 
 class LCG(object):
-    def __init__(self, X, a, c, m):
+    """
+    Linear congruential generator of the form `(a*X + c) mod m`.
+    """
+
+    def __init__(self, X: int, a: int, c: int, m: int):
+        """
+        Parameters:
+            X (int): Initial state.
+            a (int): Multiplier.
+            c (int): Increment.
+            m (int): Modulus.
+        """
         self.a = a
         self.c = c
         self.m = m
@@ -23,13 +34,25 @@ class LCG(object):
         return self.__repr__()
         
 
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.X = (self.a * self.X + self.c) % self.m
         return self.X
 
     
     # https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
-    def check_full_period(self):
+    def check_full_period(self) -> bool:
+        """
+        Checks whether the LCG will achieve a full period with its current parameters.
+
+        Returns:
+            bool: Whether or not it will acheive a full period.
+        """
         if isprime(self.m) and self.c == 0 and is_primitive_root(self.a, self.m):
             return True
         elif is_power_of_two(self.m) and self.c == 0:
@@ -47,7 +70,19 @@ class LCG(object):
 
     # https://tailcall.net/blog/cracking-randomness-lcgs/
     @staticmethod
-    def crack(states, multiplier=None, increment=None, modulus=None):
+    def crack(states: list, multiplier: int=None, increment: int=None, modulus: int=None):
+        """
+        Given a few full states (probably under ten) and any (or even none) of the parameters of an LCG, returns a replica LCG.
+
+        Parameters:
+            states    (list): List of full-state outputs (in order).
+            multiplier (int): (Optional) The LCG's multiplier.
+            increment  (int): (Optional) The LCG's increment.
+            modulus    (int): (Optional) The LCG's modulus.
+        
+        Returns:
+            LCG: Replica LCG that predicts all future outputs of the original.
+        """
         if not modulus:
             diffs = [state1 - state0 for state0, state1 in zip(states, states[1:])]
             congruences = [t2*t0 - t1*t1 for t0, t1, t2 in zip(diffs, diffs[1:], diffs[2:])]
@@ -69,7 +104,20 @@ class LCG(object):
     # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
     # ^^ "Reconstructing Truncated Integer Variables Satisfying Linear Congruences"
     @staticmethod
-    def crack_truncated(outputs, outputs_to_predict, multiplier, increment, modulus, trunc_amount):
+    def crack_truncated(outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int):
+        """
+        Given a decent number of truncated states (about 200 when there's only 3-bit outputs), returns a replica LCG.
+
+        Parameters:
+            outputs            (list): List of truncated-state outputs (in order).
+            outputs_to_predict (list): Next few outputs to compare against. Accuracy/number of samples trade-off.
+            multiplier          (int): The LCG's multiplier.
+            increment           (int): The LCG's increment.
+            modulus             (int): The LCG's modulus.
+        
+        Returns:
+            LCG: Replica LCG that predicts all future outputs of the original.
+        """
         # Trivial case
         if increment == 0:
             computed_seed = LCG.solve_tlcg(outputs + outputs_to_predict, multiplier, modulus, trunc_amount)
@@ -111,10 +159,21 @@ class LCG(object):
 
 
 
-
-
     @staticmethod
-    def solve_tlcg(outputs, multiplier, modulus, trunc_amount):
+    def solve_tlcg(outputs: list, multiplier: int, modulus: int, trunc_amount: int) -> Matrix:
+        """
+        Used internally by `crack_truncated`. Uses the LLL algorithm to find seed differentials.
+
+        Parameters:
+            outputs            (list): List of truncated-state outputs (in order).
+            multiplier          (int): The LCG's multiplier.
+            increment           (int): The LCG's increment.
+            modulus             (int): The LCG's modulus.
+        
+        Returns:
+            Matrix: `sympy` `Matrix` representing seed differentials.
+
+        """
         # Initialize matrix `L`
         l_matrix = [[0 for _ in range(len(outputs))] for _ in range(len(outputs))]
         l_matrix[0][0] = modulus

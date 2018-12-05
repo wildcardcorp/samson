@@ -1,4 +1,5 @@
 from samson.utilities.manipulation import left_rotate
+from types import FunctionType
 
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
@@ -35,7 +36,12 @@ def V128_PLUS(x):
 
 
 class Xoroshiro(object):
-    def __init__(self, seed, variant=V128_PLUS):
+    def __init__(self, seed: int, variant: FunctionType=V128_PLUS):
+        """
+        Parameters:
+            seed       (int): Initial value.
+            variant   (func): Xoroshiro variant. Function that takes in an integer and returns (new_state, output).
+        """
         self.state = seed
         self.variant = variant
 
@@ -47,6 +53,12 @@ class Xoroshiro(object):
         return self.__repr__()
     
 
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.state, result = self.variant(self.state)
         return result

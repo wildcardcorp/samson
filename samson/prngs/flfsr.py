@@ -1,11 +1,22 @@
 from sympy import Poly
+from samson.utilities.math import poly_to_int
+from samson.prngs.glfsr import GLFSR
 
-class FLFSR(object):
-    def __init__(self, seed, polynomial):
+class FLFSR(GLFSR):
+    """
+    Fibonacci linear-feedback shift register.
+    """
+
+    def __init__(self, seed: int, polynomial: Poly):
+        """
+        Parameters:
+            seed        (int): Initial value.
+            polynomial (Poly): Either a `sympy` `Poly` or an integer that represents the polynomal.
+        """
         self.state = seed
 
         if type(polynomial) is Poly:
-            polynomial = int(''.join(str(coeff) for coeff in polynomial.all_coeffs()), 2)
+            polynomial = poly_to_int(polynomial)
 
         self.polynomial = polynomial
         self.mask = 1
@@ -35,10 +46,39 @@ class FLFSR(object):
 
 
 
-    def clock(self):
+    def clock(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.state <<= 1
 
         lsb = sum([int(bit) for bit in bin(self.state & self.polynomial)[2:]]) % 2
         self.state |= lsb
         self.state &= 0xFFFFFFFFFFFFFFFF
-        return self.state & self.mask
+        return self.state & 1
+    
+
+
+    def reverse_clock(self, output: int):
+        """
+        Clocks the state in reverse given the previous output.
+
+        Parameters:
+            output (int): Previous output.
+        """
+        raise NotImplementedError()
+
+
+
+    def generate(self) -> int:
+        """
+        Calls self.clock(). Here for interface uniformity.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        return self.clock()
+    

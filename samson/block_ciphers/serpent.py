@@ -298,7 +298,17 @@ PHI = 0x9e3779b9
 ROUNDS = 32
 
 class Serpent(object):
-    def __init__(self, key):
+    """
+    Structure: Substitution–permutation network
+    Key size: 128, 192, 256 bits
+    Block size: 128 bits
+    """
+
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         self.key = Bytes(key, byteorder='big')
         self._stretch_key()
         self.key = Bytes(self.key.int(), 'little').zfill(32)
@@ -429,7 +439,16 @@ class Serpent(object):
 
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext_formatted = Bitstring.wrap(plaintext, 'little')[::-1].zfill(128)
         B_hat = self.IP(plaintext_formatted)
 
@@ -442,7 +461,16 @@ class Serpent(object):
 
 
     
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext_formatted = Bitstring.wrap(ciphertext, 'little')[::-1].zfill(128)
         B_hat = self.IP(ciphertext_formatted)
 

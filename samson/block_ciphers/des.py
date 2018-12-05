@@ -175,7 +175,17 @@ def round_func(R_i, k_i):
 
 
 class DES(FeistelNetwork):
-    def __init__(self, key):
+    """
+    Structure: Feistel Network
+    Key size: 64 (56, actually)
+    Block size: 64
+    """
+
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         super().__init__(round_func, key_schedule)
         self.key = key
         self.block_size = 8
@@ -198,13 +208,31 @@ class DES(FeistelNetwork):
         return int.to_bytes(int(''.join([ciphertext_bitstring[FP[i] - 1] for i in range(64)]), 2), 8, 'big')
     
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         permuted_plaintext = self.process_plaintext(plaintext)
         result = FeistelNetwork.encrypt(self, self.key, permuted_plaintext)
         return Bytes(self.process_ciphertext(result))
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         permuted_ciphertext = self.process_plaintext(ciphertext)
         result = FeistelNetwork.decrypt(self, self.key, permuted_ciphertext)
         return Bytes(self.process_ciphertext(result))

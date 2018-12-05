@@ -71,7 +71,15 @@ def bytes_to_state(state_bytes):
 
 
 class SHA1(MerkleDamgardConstruction):
-    def __init__(self, initial_state=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])):
+    """
+    Cryptographic hash function considered to be broken but is still widely used.
+    """
+
+    def __init__(self, initial_state: bytes=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])):
+        """
+        Parameters:
+            initial_state (bytes): (Optional) Initial internal state.
+        """
         if type(initial_state) is list:
             initial_state = state_to_bytes(initial_state)
 

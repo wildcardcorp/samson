@@ -19,13 +19,22 @@ SIGMA = [
 
 
 class BLAKE2(object):
-    def __init__(self, key, desired_hash_len):
+    """
+    Cryptographic hash function based on ChaCha.
+    """
+
+    def __init__(self, key: bytes, desired_hash_len: int):
+        """
+        Parameters:
+            key            (bytes): (Optional) Bytes-like object to key the hash.
+            desired_hash_len (int): Desired output length.
+        """
         self.key = key
         self.digest_size = desired_hash_len
         self.block_size = self.BLOCK_SIZE
 
 
-    def padding_func(self, message):
+    def padding_func(self, message: bytes) -> bytes:
         if len(message) % self.BLOCK_SIZE != 0 or len(message) == 0:
             message = message + b'\x00' * (self.BLOCK_SIZE - (len(message) % self.BLOCK_SIZE))
         return message
@@ -84,7 +93,16 @@ class BLAKE2(object):
 
 
 
-    def hash(self, message):
+    def hash(self, message: bytes) -> Bytes:
+        """
+        Hashes the `message`.
+
+        Parameters:
+            message (bytes): Message to be hashed.
+        
+        Returns:
+            Bytes: The hash digest.
+        """
         message = Bytes(message, 'little')
         state = deepcopy(self.IV)
 
@@ -124,6 +142,11 @@ class BLAKE2b(BLAKE2):
     ROTATIONS = [32, 24, 16, 63]
 
     def __init__(self, desired_hash_len=64, key=b''):
+        """
+        Parameters:
+            key            (bytes): (Optional) Bytes-like object to key the hash.
+            desired_hash_len (int): Desired output length.
+        """
         super().__init__(key, desired_hash_len)
 
 
@@ -145,6 +168,11 @@ class BLAKE2s(BLAKE2):
 
 
     def __init__(self, desired_hash_len=32, key=b''):
+        """
+        Parameters:
+            key            (bytes): (Optional) Bytes-like object to key the hash.
+            desired_hash_len (int): Desired output length.
+        """
         super().__init__(key, desired_hash_len)
 
 

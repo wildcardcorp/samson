@@ -1,5 +1,6 @@
-# https://en.wikipedia.org/wiki/Xorshift
+from types import FunctionType
 
+# https://en.wikipedia.org/wiki/Xorshift
 
 MASK32 = 0xFFFFFFFF
 MASK58 = 0x3FFFFFFFFFFFFFF
@@ -78,7 +79,12 @@ def V1024_STAR(state):
 
 
 class Xorshift(object):
-    def __init__(self, seed, variant=V128_PLUS):
+    def __init__(self, seed: int, variant: FunctionType=V128_PLUS):
+        """
+        Parameters:
+            seed       (int): Initial value.
+            variant   (func): Xorshift variant. Function that takes in the current state (may be a list) and returns (new_state, output).
+        """
         self.state = seed
         self.variant = variant
 
@@ -89,6 +95,12 @@ class Xorshift(object):
         return self.__repr__()
     
 
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.state, result = self.variant(self.state)
         return result

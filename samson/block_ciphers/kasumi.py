@@ -126,7 +126,17 @@ def fun_fo(KO_i, KI_i, x):
 
 # I WANT TO GET OFF MR. BONES' WILD RIDE
 class KASUMI(FeistelNetwork):
-    def __init__(self, key):
+    """
+    Structure: Feistel Network
+    Key size: 128
+    Block size: 64
+    """
+    
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         self.key = Bytes.wrap(key)
         self.key_schedule = key_schedule
         self.round_func = round_func
@@ -141,7 +151,16 @@ class KASUMI(FeistelNetwork):
 
 
     # For some reason KASUMI reverses the L_0 and R_0, so we need to feed it correctly into the FeistelNetwork
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)
         L_i, R_i = plaintext[:half], plaintext[half:]
@@ -149,7 +168,16 @@ class KASUMI(FeistelNetwork):
         return FeistelNetwork.encrypt(self, self.key, R_i + L_i)
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         plaintext = FeistelNetwork.decrypt(self, self.key, ciphertext)
 
         half = len(plaintext) // 2

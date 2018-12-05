@@ -237,7 +237,17 @@ def round_func(a, b, c, d):
 
 # https://en.wikipedia.org/wiki/Blowfish_(cipher)
 class Blowfish(object):
-    def __init__(self, key):
+    """
+    Structure: Feistel Network
+    Key size: 32-448 bits
+    Block size: 64 bits
+    """
+    
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         self.key = Bytes.wrap(key)
         self.P = deepcopy(P)
         self.S = [deepcopy(S1), deepcopy(S2), deepcopy(S3), deepcopy(S4)]
@@ -294,7 +304,16 @@ class Blowfish(object):
         return R_i, L_i
 
     
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
 
         half = len(plaintext) // 2
@@ -306,7 +325,16 @@ class Blowfish(object):
 
 
     
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
 
         half = len(ciphertext) // 2

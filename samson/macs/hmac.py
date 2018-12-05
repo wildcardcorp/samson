@@ -2,7 +2,16 @@ from samson.utilities.bytes import Bytes
 
 # https://en.wikipedia.org/wiki/HMAC
 class HMAC(object):
-    def __init__(self, key, hash_obj):
+    """
+    Hash-based message authentication code using a generic interface to hash functions.
+    """
+
+    def __init__(self, key: bytes, hash_obj: object):
+        """
+        Parameters:
+            key       (bytes): Bytes-like object to key the HMAC.
+            hash_obj (object): Instantiated object with compatible hash interface.
+        """
         self.key = Bytes.wrap(key)
         self.hash_obj = hash_obj
 
@@ -22,5 +31,14 @@ class HMAC(object):
         return self.__repr__()
 
 
-    def generate(self, message):
+    def generate(self, message: bytes) -> Bytes:
+        """
+        Generates a keyed MAC for `message`.
+
+        Parameters:
+            message (bytes): Message to generate a MAC for.
+        
+        Returns:
+            Bytes: The MAC.
+        """
         return self.hash_obj.hash(self.outer_key_pad + self.hash_obj.hash(self.inner_key_pad + message))

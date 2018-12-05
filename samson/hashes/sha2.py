@@ -45,6 +45,12 @@ K_512 = [
 
 class SHA2(MerkleDamgardConstruction):
     def __init__(self, digest_bit_size=256, h=None):
+        """
+        Parameters:
+            digest_bit_size (int): 
+            h             (bytes): (Optional) Initial internal state.
+        """
+
         if not digest_bit_size in [224, 256, 384, 512]:
             raise Exception("{} not a valid digest bit-size for SHA2".format(digest_bit_size))
         
@@ -87,8 +93,7 @@ class SHA2(MerkleDamgardConstruction):
                 initial_state=None,
                 compression_func=None,
                 digest_size=digest_size,
-                block_size=128,
-                bit_size=128
+                block_size=128
             )
         else:
             h_arr = H_512
@@ -101,8 +106,7 @@ class SHA2(MerkleDamgardConstruction):
                 initial_state=None,
                 compression_func=None,
                 digest_size=digest_size,
-                block_size=128,
-                bit_size=128
+                block_size=128
             )
 
         self.initial_state = h or Bytes(b''.join([int.to_bytes(h_i, self.state_size, 'big') for h_i in h_arr]))
@@ -120,11 +124,6 @@ class SHA2(MerkleDamgardConstruction):
 
     def __str__(self):
         return self.__repr__()
-
- 
-
-    def pad_func(self, message):
-        return md_pad(message, None, 'big', bit_size=self.bit_size)
 
 
     def compression_func(self, block, state):

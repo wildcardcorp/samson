@@ -1,11 +1,12 @@
 from samson.utilities.bytes import Bytes
 from math import ceil
+from types import FunctionType
 
 
 class CTR(object):
     """Counter block cipher mode."""
     
-    def __init__(self, encryptor, nonce, block_size):
+    def __init__(self, encryptor: FunctionType, nonce: bytes, block_size: int):
         """
         Parameters:
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
@@ -22,11 +23,12 @@ class CTR(object):
     def __repr__(self):
         return f"<CTR: encryptor={self.encryptor}, nonce={self.nonce}, counter={self.counter}, block_size={self.block_size}, byteorder={self.byteorder}>"
 
-
     def __str__(self):
         return self.__repr__()
 
-    def encrypt(self, plaintext):
+
+
+    def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.
 
@@ -46,7 +48,8 @@ class CTR(object):
         return keystream[:len(plaintext)] ^ plaintext
 
 
-    def decrypt(self, ciphertext):
+
+    def decrypt(self, ciphertext: bytes) -> Bytes:
         """
         Decrypts `ciphertext`.
 

@@ -1,8 +1,15 @@
 from math import ceil
 from samson.utilities.bytes import Bytes
+from types import FunctionType
 
 class PBKDF2(object):
-    def __init__(self, hash_fn, desired_len, num_iters):
+    def __init__(self, hash_fn: FunctionType, desired_len: int, num_iters: int):
+        """
+        Parameters:
+            hash_fn    (func): Function that takes in bytes and returns them hashed.
+            desired_len (int): Desired output length.
+            num_iters   (int): Number of iterations to perform.
+        """
         self.hash_fn = hash_fn
         self.desired_len = desired_len
         self.num_iters = num_iters
@@ -15,7 +22,17 @@ class PBKDF2(object):
         return self.__repr__()
 
 
-    def derive(self, password, salt):
+    def derive(self, password: bytes, salt: bytes) -> Bytes:
+        """
+        Derives a key.
+
+        Parameters:
+            password (bytes): Bytes-like object to key the internal state.
+            salt     (bytes): Salt to tweak the output.
+        
+        Returns:
+            Bytes: Derived key.
+        """
         hash_len = len(self.hash_fn(b'', b''))
         num_blocks = ceil(self.desired_len / hash_len)
 

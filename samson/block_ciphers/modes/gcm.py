@@ -1,5 +1,6 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
+from types import FunctionType
 
 # Reference
 # https://github.com/tomato42/tlslite-ng/blob/master/tlslite/utils/aesgcm.py
@@ -12,7 +13,7 @@ GCM_REDUCTION_TABLE = [
 class GCM(object):
     """Galois counter mode (GCM) block cipher mode"""
 
-    def __init__(self, encryptor):
+    def __init__(self, encryptor: FunctionType):
         """
         Parameters:
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
@@ -39,7 +40,7 @@ class GCM(object):
         return self.__repr__()
     
 
-    def _clock_ctr(self, nonce):
+    def _clock_ctr(self, nonce: bytes) -> Bytes:
         nonce = Bytes.wrap(nonce)
         if len(nonce) == 12:
             self.ctr.nonce = nonce
@@ -54,7 +55,18 @@ class GCM(object):
 
 
 
-    def encrypt(self, nonce, plaintext, data):
+    def encrypt(self, nonce: bytes, plaintext: bytes, data: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            nonce     (bytes): Bytes-like nonce.
+            plaintext (bytes): Bytes-like object to be encrypted.
+            data      (bytes): Bytes-like additional data to be authenticated but not encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         tag_mask = self._clock_ctr(nonce)
         data = Bytes.wrap(data)
 
@@ -65,7 +77,18 @@ class GCM(object):
     
 
 
-    def decrypt(self, nonce, authed_ciphertext, data):
+    def decrypt(self, nonce: bytes, authed_ciphertext: bytes, data: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            nonce     (bytes): Bytes-like nonce.
+            plaintext (bytes): Bytes-like object to be decrypted.
+            data      (bytes): Bytes-like additional data to be authenticated.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
         
         tag_mask = self._clock_ctr(nonce)
@@ -79,7 +102,7 @@ class GCM(object):
         return self.ctr.decrypt(ciphertext)
 
 
-    def _gcm_shift(self, x):
+    def _gcm_shift(self, x: int) -> int:
         high_bit_set = x & 1
         x >>= 1
 
@@ -89,7 +112,7 @@ class GCM(object):
         return x
 
     
-    def _reverse_bits(self, int16):
+    def _reverse_bits(self, int16: int) -> int:
         return int(bin(int16)[2:].zfill(4)[::-1], 2)
 
     
@@ -106,7 +129,7 @@ class GCM(object):
         return ret
 
 
-    def auth(self, ciphertext, ad, tag_mask):
+    def auth(self, ciphertext: Bytes, ad: Bytes, tag_mask: Bytes) -> Bytes:
         y = 0
         y = self.update(y, ad)
         y = self.update(y, ciphertext)
@@ -117,7 +140,7 @@ class GCM(object):
 
 
 
-    def update(self, y, data):
+    def update(self, y: int, data: Bytes) -> int:
         for chunk in data.chunk(16):
             y ^= chunk.int()
             y = self._mul(y)

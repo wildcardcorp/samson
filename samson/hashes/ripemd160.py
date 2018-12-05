@@ -85,7 +85,16 @@ def COMPRESS(message, state):
 
 
 class RIPEMD160(MerkleDamgardConstruction):
-    def __init__(self, initial_state=INIT_STATE):
+    """
+    Stands for RACE Integrity Primitives Evaluation Message Digest (RIPEMD). While there exist other
+    versions of RIPEMD (128, 256, and 320), 160 is the most popular.
+    """
+
+    def __init__(self, initial_state: bytes=INIT_STATE):
+        """
+        Parameters:
+            initial_state (bytes): (Optional) Initial internal state.
+        """
         super().__init__(
             initial_state=initial_state,
             compression_func=COMPRESS,

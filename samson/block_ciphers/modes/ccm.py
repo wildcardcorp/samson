@@ -5,7 +5,7 @@ from samson.utilities.bytes import Bytes
 class CCM(object):
     """Counter with CBC-MAC block cipher mode."""
 
-    def __init__(self, key, cipher, mac_len):
+    def __init__(self, key: bytes, cipher: object, mac_len: int):
         # Prevent circular dependencies in during __all__ imports
         from samson.macs.cbc_mac import CBCMAC
 
@@ -26,7 +26,7 @@ class CCM(object):
         return self.__repr__()
 
     
-    def _calculate_formattting_params(self, nonce, plaintext, data):
+    def _calculate_formattting_params(self, nonce: bytes, plaintext: bytes, data: bytes):
         data_len = len(data)
         q = 15 - len(nonce)
         flags = (64 * (data_len > 0)) + 8 * (((self.mac_len) - 2) // 2) + (q - 1)
@@ -35,12 +35,12 @@ class CCM(object):
         return data_len, q, flags, b_0
 
 
-    def _pad_to_16(self, in_bytes):
+    def _pad_to_16(self, in_bytes: bytes) -> bytes:
         return in_bytes + (b'\x00' * ((16 - (len(in_bytes) % 16)) % 16))
 
 
     # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38c.pdf
-    def _generate_mac(self, nonce, plaintext, data):
+    def _generate_mac(self, nonce: bytes, plaintext: bytes, data: bytes) -> bytes:
         data_len, _q, _flags, b_0 = self._calculate_formattting_params(nonce, plaintext, data)
 
         data_len_encoded = b''
@@ -63,7 +63,7 @@ class CCM(object):
         return T
 
 
-    def _generate_keystream(self, nonce, q, length):
+    def _generate_keystream(self, nonce: bytes, q: int, length: int) -> Bytes:
         formatted_nonce = Bytes(q - 1) + nonce
         self.ctr.nonce = formatted_nonce
         self.ctr.counter = 0
@@ -72,7 +72,19 @@ class CCM(object):
         return keystream
 
 
-    def encrypt(self, nonce, plaintext, data):
+
+    def encrypt(self, nonce: bytes, plaintext: bytes, data: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            nonce     (bytes): Bytes-like nonce.
+            plaintext (bytes): Bytes-like object to be encrypted.
+            data      (bytes): Bytes-like additional data to be authenticated but not encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         T = self._generate_mac(nonce, plaintext, data)
         _data_len, q, _flags, _b_0 = self._calculate_formattting_params(nonce, plaintext, data)
 
@@ -80,7 +92,19 @@ class CCM(object):
         return (keystream[len(T):] ^ (plaintext)) + (T ^ keystream[:len(T)])[:self.mac_len]
 
 
-    def decrypt(self, nonce, ciphertext, data):
+
+    def decrypt(self, nonce: bytes, ciphertext: bytes, data: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            nonce     (bytes): Bytes-like nonce.
+            plaintext (bytes): Bytes-like object to be decrypted.
+            data      (bytes): Bytes-like additional data to be authenticated.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         _data_len, q, _flags, _b_0 = self._calculate_formattting_params(nonce, ciphertext, data)
 
         keystream = self._generate_keystream(nonce, q, len(ciphertext) + (16 - self.mac_len))

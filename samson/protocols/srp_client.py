@@ -2,13 +2,27 @@ import hashlib
 from samson.utilities.math import modexp
 from samson.utilities.general import rand_bytes
 from samson.utilities.encoding import int_to_bytes
-import codecs
+from samson.utilities.bytes import Bytes
 
-NIST_prime = int.from_bytes(codecs.decode("ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff", 'hex_codec'), 'little')
+NIST_PRIME = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF
 
-
+# http://srp.stanford.edu/design.html
+# https://bnetdocs.org/document/24/nls-srp-protocol
+# TODO: Is SRP little endian or big endian?
 class SRPClient(object):
-    def __init__(self, identity, password, g=2, k=3, N=NIST_prime):
+    """
+    Secure Remote Password protocol client
+    """
+
+    def __init__(self, identity: bytes, password: bytes, g: int=2, k: int=3, N: int=NIST_PRIME):
+        """
+        Parameters:
+            identity (bytes): Username.
+            password (bytes): Password.
+            g          (int): Generator.
+            k          (int): Multiplier.
+            N          (int): Prime modulus.
+        """
         self.a = int.from_bytes(rand_bytes(4), 'little') % N
         self.g = g
         self.k = k
@@ -18,11 +32,28 @@ class SRPClient(object):
         self.N = N
 
     
-    def make_request(self):
+    def make_request(self) -> (bytes, int):
+        """
+        Creates the initial client request.
+
+        Returns:
+            tuple: Formatted as (identity, client's challenge `A`).
+        """
         return self.identity, self.A
 
 
-    def perform_challenge(self, salt, B):
+
+    def perform_challenge(self, salt: bytes, B: int) -> Bytes:
+        """
+        Performs server challenge.
+
+        Parameters:
+            salt  (bytes): Salt from server.
+            B       (int): Server's challenge.
+        
+        Returns:
+            Bytes: Challenge bytes to send to server.
+        """
         hex_A = int_to_bytes(self.A, 'little')
         hex_B = int_to_bytes(B, 'little')
 
@@ -34,13 +65,29 @@ class SRPClient(object):
         cS = modexp(p1, p2, self.N)
 
         cK = hashlib.sha256(int_to_bytes(cS, 'little')).digest()
-        return hashlib.sha256(cK + salt).digest()
+        return Bytes(hashlib.sha256(cK + salt).digest())
 
 
-    def craft_malicious_request(self):
+
+    def craft_malicious_request(self) -> (bytes, int):
+        """
+        Crafts a malicious request by setting the initial challenge parameter to zero.
+
+        Returns:
+            tuple: Formatted as (identity, 0).
+        """
         return self.identity, 0
 
 
-    def craft_auth_bypass(self, salt):
+    def craft_auth_bypass(self, salt: bytes) -> Bytes:
+        """
+        Crafts the authentication bypass challenge. Only works if server accepted the initial malicious request.
+
+        Parameters:
+            salt (bytes): Salt from server.
+
+        Returns:
+            Bytes: Challenge bytes to send to server.
+        """
         cK = hashlib.sha256(b'\x00' * 1).digest()
-        return hashlib.sha256(cK + salt).digest()
+        return Bytes(hashlib.sha256(cK + salt).digest())

@@ -41,10 +41,18 @@ for key, val in letter_freq.items():
 
 
 class Vigenere(object):
-    def __init__(self, key, alphabet=bytes(string.ascii_lowercase, 'utf-8')):
+    """
+    Polyalphabetic subsitution cipher that can be reduced to interwoven Caesar ciphers.
+    """
+
+    def __init__(self, key: bytes, alphabet=bytes(string.ascii_lowercase, 'utf-8')):
+        """
+        Parameters:
+            key      (bytes): Bytes-like object to key the cipher.
+            alphabet (bytes): Alphabet (in order) to encrypt over. Input must also be in this alphabet.
+        """
         self.key = key
         self.alphabet = alphabet
-
 
     
     def __repr__(self):
@@ -53,7 +61,17 @@ class Vigenere(object):
     def __str__(self):
         return self.__repr__()
 
-    def encrypt(self, plaintext):
+
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         result = []
 
         for i, char in enumerate(plaintext):
@@ -64,7 +82,16 @@ class Vigenere(object):
         return Bytes(bytes(result))
 
     
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         result = []
 
         for i, char in enumerate(ciphertext):
@@ -76,7 +103,7 @@ class Vigenere(object):
 
 
     @staticmethod
-    def break_vigenere(ciphertext, alphabet=bytes(string.ascii_lowercase, 'utf-8'), expected_distribution=letter_distribution, min_key_length=1, max_key_length=20):
+    def break_vigenere(ciphertext: str, alphabet: bytes=bytes(string.ascii_lowercase, 'utf-8'), expected_distribution=letter_distribution, min_key_length: int=1, max_key_length: int=20):
         ciphertext = Bytes.wrap(ciphertext)
         cipher_scores = []
         cipher_len = len(ciphertext)

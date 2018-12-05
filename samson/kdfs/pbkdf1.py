@@ -1,5 +1,18 @@
+from samson.utilities.bytes import Bytes
+from types import FunctionType
+
 class PBKDF1(object):
-    def __init__(self, hash_fn, desired_len, num_iters):
+    """
+    Password-based Key Derivation Function v1.
+    """
+
+    def __init__(self, hash_fn: FunctionType, desired_len: int, num_iters: int):
+        """
+        Parameters:
+            hash_fn    (func): Function that takes in bytes and returns them hashed.
+            desired_len (int): Desired output length.
+            num_iters   (int): Number of iterations to perform.
+        """
         self.hash_fn = hash_fn
         self.num_iters = num_iters
         self.desired_len = desired_len
@@ -12,7 +25,17 @@ class PBKDF1(object):
         return self.__repr__()
 
 
-    def derive(self, password, salt):
+    def derive(self, password: bytes, salt: bytes) -> Bytes:
+        """
+        Derives a key.
+
+        Parameters:
+            password (bytes): Bytes-like object to key the internal state.
+            salt     (bytes): Salt to tweak the output.
+        
+        Returns:
+            Bytes: Derived key.
+        """
         last_result = password + salt
         for _ in range(self.num_iters):
             last_result = self.hash_fn(last_result)

@@ -2,7 +2,15 @@ import string
 
 # http://practicalcryptography.com/ciphers/playfair-cipher/
 class Playfair(object):
-    def __init__(self, key):
+    """
+    Bigram substituion cipher.
+    """
+
+    def __init__(self, key: str):
+        """
+        Parameters:
+            key (str): Keyphrase containing no duplicate letters and not the letter 'j'.
+        """
         if len(list(set(list(key)))) < len(key):
             raise Exception("Key cannot have duplicate characters")
 
@@ -24,7 +32,16 @@ class Playfair(object):
 
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: str) -> str:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (str): String to be encrypted.
+        
+        Returns:
+            str: Resulting ciphertext.
+        """
         plaintext = plaintext.replace("j", "i")
 
         # Remove characters not in key
@@ -67,7 +84,16 @@ class Playfair(object):
 
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: str) -> str:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (str): Stringt to be decrypted.
+        
+        Returns:
+            str: Resulting plaintext.
+        """
         plaintext = ''
         for i in range(0, len(ciphertext), 2):
             a, b = ciphertext[i], ciphertext[i + 1]

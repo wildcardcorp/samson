@@ -63,7 +63,20 @@ NUM_ROUNDS = [
 
 # https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
 class Rijndael(object):
-    def __init__(self, key, block_size=128):
+    """
+    Underlying cipher of AES.
+
+    Structure: Substitution–permutation network
+    Key size: 128, 160, 192, 224, 256 bits
+    Block size: 128, 160, 192, 224, 256 bits
+    """
+
+    def __init__(self, key: bytes, block_size: int=128):
+        """
+        Parameters:
+            key      (bytes): Bytes-like object to key the cipher.
+            block_size (int): The desired block size in bits.
+        """
         key = Bytes.wrap(key)
         if not (len(key) * 8) in range(128, 257, 32):
             raise Exception("Invalid key size! Must be between 128 and 256 and a multiple of 32")
@@ -135,7 +148,16 @@ class Rijndael(object):
             yield state_matrix.transpose(self._chunk_size)
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         return list(self.yield_encrypt(plaintext))[-1]
 
 
@@ -163,7 +185,16 @@ class Rijndael(object):
 
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         return list(self.yield_decrypt(ciphertext))[-1]
 
 

@@ -69,8 +69,15 @@ def _untemper(y):
 
 # Implementation of MT19937
 class MT19937:
+    """
+    Mersenne Twister 19937
+    """
 
-    def __init__(self, seed=0):
+    def __init__(self, seed: int=0):
+        """
+        Parameters:
+            seed (int): Initial value.
+        """
         self.state = [0] * n
         self.seed = seed
 
@@ -91,6 +98,9 @@ class MT19937:
         
 
     def twist(self):
+        """
+        Called internally. Performs the `twist` operation of the Mersenne Twister.
+        """
         for i in range(n):
             y = asint32((self.state[i] & 0x80000000) + (self.state[(i + 1) % n] & 0x7fffffff))
             self.state[i] = self.state[(i + m) % n] ^ y >> 1
@@ -101,7 +111,13 @@ class MT19937:
         self.index = 0
 
 
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         if self.index >= n:
             self.twist()
 
@@ -114,7 +130,16 @@ class MT19937:
 
 
     @staticmethod
-    def crack(observed_outputs):
+    def crack(observed_outputs: list):
+        """
+        Given 624 observed, consecutive outputs, cracks the internal state of the original and returns a replica.
+
+        Parameters:
+            observed_outputs (list): List of consecutive inputs (in order, obviously).
+
+        Returns:
+            MT19937: A replica of the original MT19937.
+        """
         if len(observed_outputs) < 624:
             raise ValueError("`observed_outputs` must contain at least 624 consecutive outputs.")
 

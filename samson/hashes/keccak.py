@@ -25,7 +25,18 @@ R = [
 
 # https://keccak.team/keccak_specs_summary.html
 class Keccak(SpongeConstruction):
-    def __init__(self, r, c, digest_bit_size, auto_reset_state=True):
+    """
+    SHA3 winner based on the SpongeConstruction.
+    """
+
+    def __init__(self, r: int, c: int, digest_bit_size: int, auto_reset_state: bool=True):
+        """
+        Parameters:
+            r                 (int): Bit-size of the sponge function.
+            c                 (int): Sponge capacity.
+            digest_bit_size   (int): Desired size of output.
+            auto_reset_state (bool): Whether or not to reset the internal state before hashing.
+        """
         super().__init__(self.keccak_f, self.pad, r, c)
         self.w = (r + c) // 25
 
@@ -42,7 +53,7 @@ class Keccak(SpongeConstruction):
         return self.__repr__()
         
 
-    def pad(self, in_bytes):
+    def pad(self, in_bytes: bytes) -> bytes:
         bit_rate_bytes = (self.r + 7) // 8
         pad_len = (bit_rate_bytes - len(in_bytes)) % bit_rate_bytes
 
@@ -91,9 +102,19 @@ class Keccak(SpongeConstruction):
         return A
     
 
-    def hash(self, plaintext):
+
+    def hash(self, message: bytes) -> Bytes:
+        """
+        Hashes the `message`.
+
+        Parameters:
+            message (bytes): Message to be hashed.
+        
+        Returns:
+            Bytes: The hash digest.
+        """
         if self.auto_reset_state:
             self.reset()
             
-        self.absorb(Bytes.wrap(plaintext))
+        self.absorb(Bytes.wrap(message))
         return sum(self.squeeze(self.digest_size))[:self.digest_size]

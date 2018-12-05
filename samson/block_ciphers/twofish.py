@@ -125,7 +125,17 @@ def EXPAND_KEY(M_e, M_o, k):
 
 # https://www.schneier.com/academic/paperfiles/paper-twofish-paper.pdf
 class Twofish(object):
-    def __init__(self, key):
+    """
+    Structure: Feistel Network
+    Key size: 128, 192, 256 bits
+    Block size: 128 bits
+    """
+
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         self.key = Bytes.wrap(key)
         self.S = []
         self.K = None
@@ -177,7 +187,16 @@ class Twofish(object):
 
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
         pt_chunks = [chunk.zfill(4).int() for chunk in plaintext.chunk(4)]
 
@@ -203,7 +222,16 @@ class Twofish(object):
     
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
         ct_chunks = [chunk.zfill(4)[::-1].int() for chunk in ciphertext.chunk(4)]
 

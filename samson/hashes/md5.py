@@ -59,14 +59,21 @@ def compression_func(message, state):
 
 
 class MD5(MerkleDamgardConstruction):
-    def __init__(self, initial_state=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])):
+    """
+    Popular but completely broken cryptographic hash function.
+    """
+
+    def __init__(self, initial_state: bytes=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])):
+        """
+        Parameters:
+            initial_state (bytes): (Optional) Initial internal state.
+        """
         super().__init__(
             initial_state=initial_state,
             compression_func=compression_func,
             digest_size=16,
             endianness='little'
         )
-
 
 
     def __repr__(self):

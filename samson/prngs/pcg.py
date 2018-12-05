@@ -1,4 +1,5 @@
 from samson.utilities.manipulation import right_rotate
+from types import FunctionType
 
 #V{output_size}_{state_size}_{transform}[.._{n_transforms}]
 def V32_64_XSH_RR(x, mult, inc):
@@ -11,7 +12,14 @@ def V32_64_XSH_RR(x, mult, inc):
 
 # https://en.wikipedia.org/wiki/Permuted_congruential_generator
 class PCG(object):
-    def __init__(self, seed, multiplier, increment, variant=V32_64_XSH_RR):
+    def __init__(self, seed: int, multiplier: int, increment: int, variant: FunctionType=V32_64_XSH_RR):
+        """
+        Parameters:
+            seed       (int): Initial value.
+            multiplier (int): Multiplier.
+            increment  (int): Increment.
+            variant   (func): PCG variant. Function that takes in (state, multiplier, increment) and returns (new_state, output).
+        """
         self.state = seed
         self.multiplier = multiplier
         self.increment = increment
@@ -26,6 +34,12 @@ class PCG(object):
 
 
     
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.state, result = self.variant(self.state, self.multiplier, self.increment)
         return result

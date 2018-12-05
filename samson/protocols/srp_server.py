@@ -2,13 +2,20 @@ import hashlib
 from samson.utilities.math import modexp
 from samson.utilities.general import rand_bytes
 from samson.utilities.encoding import int_to_bytes
-import codecs
-
-NIST_prime = int.from_bytes(codecs.decode("ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca237327ffffffffffffffff", 'hex_codec'), 'little')
-
+from samson.protocols.srp_client import NIST_PRIME
 
 class SRPServer(object):
-    def __init__(self, g=2, k=3, N=NIST_prime):
+    """
+    Secure Remote Password protocol server
+    """
+
+    def __init__(self, g: int=2, k: int=3, N=NIST_PRIME):
+        """
+        Parameters:
+            g          (int): Generator.
+            k          (int): Multiplier.
+            N          (int): Prime modulus.
+        """
         self.g = g
         self.k = k
         self.N = N
@@ -20,22 +27,50 @@ class SRPServer(object):
         
 
 
-    def create_account(self, identity, password):
+    def create_account(self, identity: bytes, password: bytes):
+        """
+        Creates a new account entry with the server.
+
+        Parameters:
+            identity (bytes): Username.
+            password (bytes): Password.
+        """
         x = int.from_bytes(hashlib.sha256(self.salt + password).digest(), 'little')
         v = modexp(self.g, x, self.N)
         self.accounts[identity] = v
 
+
     
-    def respond_with_challenge(self, identity, A):
+    def respond_with_challenge(self, identity: bytes, A: int) -> (bytes, int):
+        """
+        Receives the client's challenge and returns the server's challenge.
+
+        Parameters:
+            identity (bytes): Username.
+            A          (int): Client's challenge.
+
+        Returns:
+            tuple: Formatted as (server salt, server's challenge `B`)
+        """
         v = self.accounts[identity]
-        #salt = gen_rand_key(4)
         B = self.k * v + modexp(self.g, self.b, self.N)
-        self.requests[identity] = {'A': A, 'B': B} #, 'salt': self.salt
+        self.requests[identity] = {'A': A, 'B': B}
         
         return self.salt, B
 
 
-    def check_challenge(self, identity, client_hash):
+
+    def check_challenge(self, identity: bytes, client_hash: bytes) -> bool:
+        """
+        Checks if the client's challenge is correct.
+
+        Parameters:
+            identity    (bytes): Username.
+            client_hash (bytes): Client's hash challenge.
+        
+        Returns:
+            bool: Whether or not the challenge is correct.
+        """
         request = self.requests[identity]
         v = self.accounts[identity]
         A = request['A']

@@ -1,11 +1,21 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.math import tonelli, mod_inv
 from fastecdsa.point import Point
+from fastecdsa.curve import Curve
 import random
 
 class DualEC(object):
-    # P and Q are Point objects from fastecdsa
-    def __init__(self, P, Q, seed):
+    """
+    Implementation of the NSA's backdoored DRBG.
+    """
+
+    def __init__(self, P: Point, Q: Point, seed: int):
+        """
+        Parameters:
+            P  (Point): Elliptical curve point `P`.
+            Q  (Point): Elliptical curve point `Q`.
+            seed (int): Initial value.
+        """
         self.P = P
         self.Q = Q
         self.t = seed
@@ -20,7 +30,13 @@ class DualEC(object):
         return self.__repr__()
 
 
-    def generate(self):
+    def generate(self) -> Bytes:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         s = (self.t * self.P).x
         self.t = s
         self.r = (s * self.Q).x
@@ -29,7 +45,16 @@ class DualEC(object):
 
 
     @staticmethod
-    def generate_backdoor(curve):
+    def generate_backdoor(curve: Curve) -> (Point, Point, int):
+        """
+        Generates backdoored parameters.
+
+        Parameters:
+            curve (Curve): `fastecdsa` Curve to use.
+        
+        Returns:
+            tuple: Result formatted as (P, backdoored Q, backdoor d)
+        """
         P = curve.G
         d = random.randint(2, curve.q)
         e = mod_inv(d, curve.q)
@@ -39,7 +64,20 @@ class DualEC(object):
 
 
     @staticmethod
-    def derive_from_backdoor(P, Q, d, observed_out):
+    def derive_from_backdoor(P: Point, Q: Point, d: int, observed_out: bytes) -> list:
+        """
+        Recovers the internal state of a Dual EC generator and builds a replica.
+
+        Parameters:
+            P            (Point): Elliptical curve point `P`.
+            Q            (Point): Elliptical curve point `Q`.
+            d              (int): Backdoor that relates Q to P.
+            observed_out (bytes): Observed output from the compromised Dual EC generator.
+        
+        Returns:
+            list: List of possible internal states.
+        """
+
         assert len(observed_out) >= 30
 
         curve = P.curve

@@ -7,7 +7,19 @@ Q_w = [0x9E37, 0x9E3779B9, 0x9E3779B97F4A7C15]
 
 # https://en.wikipedia.org/wiki/RC5#Algorithm
 class RC5(object):
-    def __init__(self, key, num_rounds=12, block_size=128):
+    """
+    Structure: Feistel Network
+    Key size: 0-2040 bits
+    Block size: 32, 64, 128 bits
+    """
+
+    def __init__(self, key: bytes, num_rounds: int=12, block_size: int=128):
+        """
+        Parameters:
+            key      (bytes): Bytes-like object to key the cipher.
+            num_rounds (int): Number of rounds to perform.
+            block_size (int): The desired block size in bits.
+        """
         if not block_size in [32, 64, 128]:
             raise Exception("Invalid block size: must be 32, 64, or 128 bits")
 
@@ -66,7 +78,16 @@ class RC5(object):
 
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
 
         A = plaintext[self.block_size // 8:].int()
@@ -83,7 +104,16 @@ class RC5(object):
 
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
 
         A = ciphertext[:self.block_size // 8].int()

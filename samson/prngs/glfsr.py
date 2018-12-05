@@ -1,12 +1,22 @@
 from sympy import Poly
 from samson.utilities.math import berlekamp_massey
+from samson.utilities.math import poly_to_int
 
 class GLFSR(object):
-    def __init__(self, seed, polynomial):
+    """
+    Galois linear-feedback shift register.
+    """
+
+    def __init__(self, seed: int, polynomial: Poly):
+        """
+        Parameters:
+            seed        (int): Initial value.
+            polynomial (Poly): Either a `sympy` `Poly` or an integer that represents the polynomal.
+        """
         self.state = seed
 
         if type(polynomial) is Poly:
-            polynomial = int(''.join(str(coeff) for coeff in polynomial.all_coeffs()), 2)
+            polynomial = poly_to_int(polynomial)
 
         self.polynomial = polynomial
         self.mask = 1
@@ -35,6 +45,12 @@ class GLFSR(object):
 
 
     def clock(self):
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.state <<= 1
         self.state &= self.wrap_around_mask
 
@@ -45,9 +61,26 @@ class GLFSR(object):
         else:
             return 0
         
+        
+
+    def generate(self) -> int:
+        """
+        Calls self.clock(). Here for interface uniformity
+        
+        Returns:
+            int: Next psuedorandom output.
+        """
+        return self.clock()
 
     
-    def reverse_clock(self, output):
+    
+    def reverse_clock(self, output: int):
+        """
+        Clocks the state in reverse given the previous output.
+
+        Parameters:
+            output (int): Previous output.
+        """
         for item in output:
             if item:
                 self.state ^= self.polynomial
@@ -57,17 +90,25 @@ class GLFSR(object):
 
 
 
-    # TODO: Make work with arbitrary polynomials!
     @staticmethod
-    def crack(output):
+    def crack(outputs: list):
+        """
+        Given a list of outputs, creates a GLFSR that generates the same sequence.
+
+        Parameters:
+            outputs (list): A list of outputs from the GLFSR (in order).
+        
+        Returns:
+            GLFSR: GLFSR that generates the same sequence.
+        """
         # Find minimum polynomial that represents the output
-        poly = berlekamp_massey(output)
+        poly = berlekamp_massey(outputs)
 
         # Create new LFSR and clock in reverse
         lfsr = GLFSR(0, poly)
-        lfsr.reverse_clock(output[::-1])
+        lfsr.reverse_clock(outputs[::-1])
 
         # Clock forward to synchronize with output
-        [(lfsr.clock(), lfsr.state) for i in range(len(output))]
+        [(lfsr.clock(), lfsr.state) for i in range(len(outputs))]
 
         return lfsr

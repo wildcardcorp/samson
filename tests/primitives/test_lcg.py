@@ -15,7 +15,7 @@ class LCGTestCase(unittest.TestCase):
             seed = Bytes.random(16).int()
 
             ref_lcg = LCG(X=seed, a=1103515245, c=12345, m=2**31)
-            outputs = [ref_lcg.generate() for _ in range(10)]
+            outputs = [ref_lcg.generate() for _ in range(15)]
 
             cracked_lcg = LCG.crack(outputs)
 

@@ -1,12 +1,13 @@
 from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
+from types import FunctionType
 
 
 class ECB(object):
     """Electronic codebook block cipher mode."""
 
-    def __init__(self, encryptor, decryptor, block_size):
+    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, block_size: int):
         """
         Parameters:
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
@@ -26,7 +27,7 @@ class ECB(object):
         return self.__repr__()
 
 
-    def encrypt(self, plaintext, pad=True):
+    def encrypt(self, plaintext: bytes, pad: bool=True) -> Bytes:
         """
         Encrypts `plaintext`.
 
@@ -48,7 +49,8 @@ class ECB(object):
         return ciphertext
         
 
-    def decrypt(self, ciphertext, unpad=True):
+
+    def decrypt(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
         """
         Decrypts `ciphertext`.
 

@@ -1,7 +1,19 @@
 from samson.utilities.math import mod_inv
 
 class AffineCipher(object):
-    def __init__(self, a, b, alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ ,.'):
+    """
+    Monoalphabetic substitution of the form `(ax + b) mod m`.
+
+    The Caesar cipher is an AffineCipher with a=1.
+    """
+
+    def __init__(self, a: int, b: int, alphabet: str='ABCDEFGHIJKLMNOPQRSTUVWXYZ ,.'):
+        """
+        Parameters:
+            a        (int): Multiplier.
+            b        (int): Linear shift.
+            alphabet (str): Alphabet (in order) to encrypt over. Input must also be in this alphabet.
+        """
         self.a = a
         self.b = b
         self.alphabet = alphabet
@@ -24,7 +36,16 @@ class AffineCipher(object):
         return self.__repr__()
 
 
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: str) -> str:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (str): String to be encrypted.
+        
+        Returns:
+            str: Resulting ciphertext.
+        """
         primitive_len = len(self.alphabet[0])
 
         ciphertext = ''
@@ -39,7 +60,16 @@ class AffineCipher(object):
         return ciphertext
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: str) -> str:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (str): Stringt to be decrypted.
+        
+        Returns:
+            str: Resulting plaintext.
+        """
         primitive_len = len(self.alphabet[0])
 
         plaintext = ''

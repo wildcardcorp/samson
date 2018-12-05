@@ -61,7 +61,15 @@ def compression_func(message, state):
 
 
 class MD4(MerkleDamgardConstruction):
-    def __init__(self, initial_state=state_to_bytes(iv)):
+    """
+    Obsolete cryptographic hash function and predecessor to MD5.
+    """
+
+    def __init__(self, initial_state: bytes=state_to_bytes(iv)):
+        """
+        Parameters:
+            initial_state (bytes): (Optional) Initial internal state.
+        """
         super().__init__(
             initial_state=initial_state,
             compression_func=compression_func,

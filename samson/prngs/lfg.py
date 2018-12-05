@@ -1,8 +1,22 @@
+from types import FunctionType
+
 class LFG(object):
+    """
+    Lagged Fibonacci generator
+    """
+
     ADD_OP = lambda a, b: a + b
     SUB_OP = lambda a, b: a - b
 
-    def __init__(self, state, tap, feed, length, operation=ADD_OP):
+    def __init__(self, state: int, tap: int, feed: int, length: int, operation: FunctionType=ADD_OP):
+        """
+        Parameters:
+            state     (int): Initial state.
+            tap       (int): Initial tap position.
+            feed      (int): Initial feed position.
+            length    (int): Length of internal state (modulus).
+            operation (int): The operation the LFG performs. Function that takes in an integer and returns an integer.
+        """
         self.state = state
         self.tap = tap
         self.feed = feed
@@ -18,7 +32,13 @@ class LFG(object):
 
 
 
-    def generate(self):
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
         self.tap = (self.tap - 1) % self.length
         self.feed = (self.feed - 1) % self.length
 

@@ -123,7 +123,19 @@ def ROTL128(x, amount):
 # https://tools.ietf.org/html/rfc3713
 # http://info.isl.ntt.co.jp/crypt/eng/camellia/dl/01espec.pdf
 class Camellia(object):
-    def __init__(self, key):
+    """
+    Comparable to AES in Europe.
+
+    Structure: Feistel Network
+    Key size: 128, 192, 256
+    Block size: 128
+    """
+
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Bytes-like object to key the cipher.
+        """
         key = Bytes.wrap(key)
 
         if not len(key) in [16, 24, 32]:
@@ -279,7 +291,16 @@ class Camellia(object):
 
 
         
-    def encrypt(self, plaintext):
+    def encrypt(self, plaintext: bytes) -> Bytes:
+        """
+        Encrypts `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Bytes-like object to be encrypted.
+        
+        Returns:
+            Bytes: Resulting ciphertext.
+        """
         plaintext = Bytes.wrap(plaintext)
         M = plaintext.int()
 
@@ -307,7 +328,16 @@ class Camellia(object):
 
     
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext`.
+
+        Parameters:
+            ciphertext (bytes): Bytes-like object to be decrypted.
+        
+        Returns:
+            Bytes: Resulting plaintext.
+        """
         ciphertext = Bytes.wrap(ciphertext)
         C = ciphertext.int()
 
