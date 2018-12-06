@@ -10,14 +10,34 @@ import os
 RC4_BIAS_MAP = [163, 0, 131, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 240, 17, 18, 0, 20, 21, 22, 0, 24, 25, 26, 0, 28, 29, 0, 31, 224, 33, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 0, 0, 0]
 
 
-def longest_substring(strA, strB):
-    seqMatch = difflib.SequenceMatcher(None, strA, strB)
-    match = seqMatch.find_longest_match(0, len(strA), 0, len(strB))
-    return strA[match.a: match.a + match.size]
+def longest_subsequence(seq_a: list, seq_b: list) -> list:
+    """
+    Finds the longest matching subsequence between two enumerable objects.
+
+    Parameters:
+        seq_a (list): First enumerable.
+        seq_b (list): Second enumerable.
+    
+    Returns
+        list: Longest subsequence.
+    """
+    seqMatch = difflib.SequenceMatcher(None, seq_a, seq_b)
+    match = seqMatch.find_longest_match(0, len(seq_a), 0, len(seq_b))
+    return seq_a[match.a: match.a + match.size]
 
 
 
-def hamming_distance(bytes1, bytes2):
+def hamming_distance(bytes1: bytes, bytes2: bytes) -> int:
+    """
+    Calculates the Hamming distance between two byte-strings.
+
+    Parameters:
+        bytes1 (bytes): First byte-string.
+        bytes2 (bytes): Second byte-string.
+    
+    Returns:
+        int: Hamming distance.
+    """
     assert len(bytes1) == len(bytes2)
     bitstring1 = bytes_to_bitstring(bytes1)
     bitstring2 = bytes_to_bitstring(bytes2)
@@ -29,38 +49,71 @@ def hamming_distance(bytes1, bytes2):
     return distance
 
 
-def levenshtein_distance(s1, s2):
-    if len(s1) < len(s2):
-        return levenshtein_distance(s2, s1)
 
-    # len(s1) >= len(s2)
-    if len(s2) == 0:
-        return len(s1)
+def levenshtein_distance(seq_a: list, seq_b: list) -> int:
+    """
+    Calculates the Levenshtein Distance between two enumerable objects.
 
-    previous_row = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
+    Parameters:
+        seq_a (list): First enumerable.
+        seq_b (list): Second enumerable.
+    
+    Returns:
+        int: Levenshtein Distance.
+    """
+    if len(seq_a) < len(seq_b):
+        return levenshtein_distance(seq_b, seq_a)
+
+    if len(seq_b) == 0:
+        return len(seq_a)
+
+    previous_row = range(len(seq_b) + 1)
+
+    for i, c1 in enumerate(seq_a):
         current_row = [i + 1]
-        for j, c2 in enumerate(s2):
+
+        for j, c2 in enumerate(seq_b):
             insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
-            deletions = current_row[j] + 1       # than s2
+            deletions = current_row[j] + 1       # than seq_b
             substitutions = previous_row[j] + (c1 != c2)
             current_row.append(min(insertions, deletions, substitutions))
+
         previous_row = current_row
     
     return previous_row[-1]
 
 
 
-def count_bytes(in_bytes):
-    byte_ctr = {curr_byte: 0 for curr_byte in in_bytes}
-    for curr_byte in in_bytes:
-        byte_ctr[curr_byte] += 1
+def count_items(items: list) -> dict:
+    """
+    Counts the items in an enumerable object.
 
-    return byte_ctr
+    Parameters:
+        items (list): Enumerable of items.
+    
+    Returns:
+        dict: Dictionary of {item, count}.
+    """
+    item_ctr = {curr_item: 0 for curr_item in items}
+
+    for curr_item in items:
+        item_ctr[curr_item] += 1
+
+    return item_ctr
 
 
-# Takes in two dictionaries: an 'observed_dict' and an 'expected_freq_dict'.
-def chisquare(observed_dict, expected_freq_dict):
+
+def chisquare(observed_dict: dict, expected_freq_dict: dict) -> float:
+    """
+    Calculates the Chi-squared score of an `observed_dict` against the `expected_freq_dict`.
+
+    Parameters:
+        observed_dict      (dict): Dictionary of observed items and their counts.
+        expected_freq_dict (dict): Dictionary of expected items and their counts.
+    
+    Returns:
+        float: Chi-squared score.
+    """
     observed_len = sum([v for _k, v in observed_dict.items()])
     total = 0
     for key, freq_value in expected_freq_dict.items():
@@ -84,33 +137,66 @@ def chisquare(observed_dict, expected_freq_dict):
     return total
 
 
-def find_key_size(cipherbytes, key_range, candidate_slice_size):
+
+def find_repeating_key_size(ciphertext: bytes, key_range: list) -> list:
+    """
+    Attempts to find the key size of a repeating XOR cipher.
+
+    Parameters:
+        ciphertext (bytes): Ciphertext to analyze.
+        key_range   (list): List of key sizes to test.
+
+    Returns:
+        list: Sorted list of most likely key sizes.
+    """
     key_distances = {}
+
     for size in key_range:
         size_sum = 0
-        num_blocks = (len(cipherbytes) // size)
+        num_blocks = (len(ciphertext) // size)
+
         for block in range(num_blocks - 1):
-            size_sum += hamming_distance(cipherbytes[block * size: (block + 1) * size], cipherbytes[(block + 1) * size: (block + 2) * size]) / size
+            size_sum += hamming_distance(ciphertext[block * size: (block + 1) * size], ciphertext[(block + 1) * size: (block + 2) * size]) / size
 
         key_distances[size] = size_sum / num_blocks
 
-
-    candidates = sorted(key_distances.items(), key=operator.itemgetter(1))[:candidate_slice_size]
-    return candidates
-
-
-def birthday_attack(bits, probability):
-    return sqrt(2 * 2**bits * log(1/(1-float(probability))))
+    return sorted(key_distances.items(), key=operator.itemgetter(1))
 
 
 
-def expected_collisions(bits, num_inputs):
+def birthday_attack_analysis(bits: int, probability: float) -> float:
+    """
+    Determines the average number of attempts before a collision occurs against `bits` with `probability`.
+
+    Parameters:
+        bits          (int): Number of bits in the keyspace.
+        probability (float): Target probability.
+    
+    Returns:
+        float: Average number of attempts before collision.
+    """
+    return sqrt(2 * 2**bits * log(1/(1-probability)))
+
+
+
+def num_expected_collisions(bits: int, num_inputs: int) -> float:
+    """
+    Calculates the number of expected collisions with `num_inputs` over `bits` keyspace.
+
+    Parameters:
+        bits       (int): Number of bits in the keyspace.
+        num_inputs (int): Hypothetical number of inputs.
+    
+    Returns:
+        float: Number of expected collisions.
+    """
     return 2**(-bits)*scipy.special.comb(num_inputs, 2)
 
 
 
 def generate_rc4_bias_map(ciphertexts):
     bias_map = [{} for i in range(256)]
+
     for c in ciphertexts:
         for i, byte in enumerate(c):
             if byte in bias_map[i]:
@@ -127,10 +213,11 @@ def generate_rc4_bias_map(ciphertexts):
 
 def generate_random_rc4_bias_map(data=b'\x00' * 51, key_size=128, sample_size=2**20):
     ciphertexts = []
+
     for _ in range(sample_size):
         key = os.urandom(key_size // 8)
         cipher = RC4(key)
-        ciphertexts.append(cipher.yield_state(len(data)) ^ data)
+        ciphertexts.append(cipher.generate(len(data)) ^ data)
 
 
     return generate_rc4_bias_map(ciphertexts)
@@ -164,6 +251,7 @@ def incremental_rc4_bias_map_gen(filepath, start_idx=0, data=b'\x00' * 51, key_s
 
 def merge_rc4_bias_map_files(base_path, num):
     bias_maps = []
+    
     for i in range(num):
         with open("{}.{}".format(base_path, i)) as f:
             content = f.read()

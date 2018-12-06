@@ -1,5 +1,5 @@
 from samson.analyzers.analyzer import Analyzer
-from samson.utilities.analysis import count_bytes, chisquare
+from samson.utilities.analysis import count_items, chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
 import string
@@ -239,7 +239,7 @@ class EnglishAnalyzer(Analyzer):
 
         # We divide it by the `length*2` to normalize it since I empirically found that the chisquared of
         # a uniform distribution of `length` bytes tends towards it.
-        chisquared_analysis = 1 / (chisquare(count_bytes(in_bytes), expected_english_distribution) / (len(in_bytes) * 2))
+        chisquared_analysis = 1 / (chisquare(count_items(in_bytes), expected_english_distribution) / (len(in_bytes) * 2))
 
         return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1) * chisquared_analysis
 

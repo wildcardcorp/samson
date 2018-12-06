@@ -6,8 +6,11 @@ import unittest
 class A51TestCase(unittest.TestCase):
     def _run_test(self, key, frame_num, expected_keystream_a, expected_keystream_b):
         a51 = A51(key=key, frame_num=frame_num)
-        keystream_a = a51.yield_state(114)
-        keystream_b = a51.yield_state(114)
+
+        # Need to generate 114-bits for each keystream
+        keystream = a51.generate(29).int()
+        keystream_a = Bytes(keystream >> 118)
+        keystream_b = Bytes((keystream >> 4) % 2**114)
 
         self.assertEqual(keystream_a, expected_keystream_a)
         self.assertEqual(keystream_b, expected_keystream_b)

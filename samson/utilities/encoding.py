@@ -3,8 +3,16 @@ import base64
 import re
 
 # https://en.wikipedia.org/wiki/Non-adjacent_form
-# Takes in bytes/bytearray or int
-def to_NAF(input_arg):
+def to_NAF(input_arg: bytes) -> list:
+    """
+    Converts bytes/bytearray or int to Non-adjacent form (NAF).
+
+    Parameters:
+        input_arg (bytes): Raw bytes/integer.
+    
+    Returns:
+        list: Sequence in NAF.
+    """
     if type(input_arg) is int:
         E = input_arg
     else:
@@ -25,7 +33,16 @@ def to_NAF(input_arg):
     return z[::-1]
 
 
-def from_NAF(naf):
+def from_NAF(naf: list) -> int:
+    """
+    Converts a NAF sequence into an integer.
+
+    Parameters:
+        naf (list): NAF sequence.
+    
+    Returns:
+        int: Integer representation.
+    """
     total = 0
     reversed_naf = naf[::-1]
     for i in range(len(naf)):
@@ -36,19 +53,48 @@ def from_NAF(naf):
 
 
 
-def int_to_bytes(n, byteorder='big'):
-    """Converts the given int n to bytes and returns them."""
+def int_to_bytes(n: int, byteorder: str='big') -> bytes:
+    """
+    Converts an int `n` to bytes.
+
+    Parameters:
+        n         (int): Integer.
+        byteorder (str): Desired byte order ('big' or 'little').
+    
+    Returns:
+        bytes: Bytes representation of `n`.
+    """
     return n.to_bytes(max((n.bit_length() + 7) // 8, 1), byteorder)
 
 
 
-def bytes_to_bitstring(input_bytes, fill=8):
+def bytes_to_bitstring(input_bytes: bytes, fill: int=8) -> str:
+    """
+    Converts bytes to a bitstring.
+
+    Parameters:
+        input_bytes (bytes): Bytes to convert.
+        fill          (int): Length of the output bitstring. Pads with zeroes.
+    
+    Returns:
+        bytes: Bytes representation of `n`.
+    """
     return ''.join(format(x, 'b').zfill(fill) for x in input_bytes)
 
 
 # https://stackoverflow.com/questions/32675679/convert-binary-string-to-bytearray-in-python-3
-def bitstring_to_bytes(bistring, byteorder='big'):
-    return int(bistring, 2).to_bytes(len(bistring) // 8, byteorder=byteorder)
+def bitstring_to_bytes(bitstring: str, byteorder: str='big') -> bytes:
+    """
+    Converts a bitstring to bytes.
+
+    Parameters:
+        bitstring (str): Bitstring to convert.
+        byteorder (str): Desired byte order ('big' or 'little').
+    
+    Returns:
+        bytes: Bytes representation.
+    """
+    return int(bitstring, 2).to_bytes(len(bitstring) // 8, byteorder=byteorder)
 
 
 
@@ -56,7 +102,16 @@ PRE_ENCAPSULATION_BOUNDARY_RE  = re.compile(rb'\s*-----BEGIN (.*)-----\n')
 POST_ENCAPSULATION_BOUNDARY_RE = re.compile(rb'-----END (.*)-----\s*')
 
 # TODO: Handle encrypted PEM files
-def pem_decode(pem_bytes):
+def pem_decode(pem_bytes: bytes) -> bytes:
+    """
+    Decodes PEM bytes into raw bytes.
+
+    Parameters:
+        pem_bytes (bytes): PEM-encoded bytes.
+
+    Returns:
+        bytes: Decoded bytes.
+    """
     if not PRE_ENCAPSULATION_BOUNDARY_RE.match(pem_bytes):
         raise ValueError('`pem_bytes` must have a valid pre-encapsulation boundary')
 
@@ -70,6 +125,17 @@ def pem_decode(pem_bytes):
 
 
 
-def pem_encode(der_bytes, marker, width=70):
+def pem_encode(der_bytes: bytes, marker: str, width: int=70) -> bytes:
+    """
+    PEM-encodes DER-encoded bytes.
+
+    Parameters:
+        der_bytes (bytes): DER-encoded bytes.
+        marker      (str): Header and footer marker (e.g. 'RSA PRIVATE KEY').
+        width       (int): Maximum line width before newline.
+
+    Returns:
+        bytes: PEM-encoded bytes.
+    """
     data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
     return f"-----BEGIN {marker}-----\n".encode('utf-8') + data + f"\n-----END {marker}-----".encode('utf-8')

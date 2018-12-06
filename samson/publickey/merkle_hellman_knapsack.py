@@ -5,24 +5,48 @@ from sympy.matrices import Matrix, eye
 
 
 class MerkleHellmanKnapsack(object):
-    def __init__(self, priv=None, q=None, r=None, max_diff=2**20, pub_len=8):
-        super_seq = generate_superincreasing_seq(pub_len + 1, max_diff, starting=Bytes.random(max(1, pub_len // 8)).int())
-        self.priv = priv or super_seq[:pub_len]
+    """
+    Merkle-Hellman Knapsack cryptosystem.
+
+    Broken and extremely rare cryptosystem based off of the hardness of the Knapsack problem.
+    """
+
+    def __init__(self, priv: list=None, q: int=None, r: int=None, max_diff: int=2**20, key_len: int=8):
+        """
+        Parameters:
+            priv    (list): Private key made from a superincreasing sequence.
+            q        (int): Modulus. Integer greater than the sum of `priv`.
+            r        (int): Multiplier. Integer coprime to `q` and between `q // 4` and `q`.
+            max_diff (int): Maximum difference between integers in the superincreasing sequence. Used for generating `priv`.
+            key_len  (int): Desired length of the key.
+        """
+        super_seq = generate_superincreasing_seq(key_len + 1, max_diff, starting=Bytes.random(max(1, key_len // 8)).int())
+        self.priv = priv or super_seq[:key_len]
         self.q = q or super_seq[-1]
         self.r = r or find_coprime(self.q, range(self.q // 4, self.q))
 
         self.pub = [(w * self.r) % self.q for w in self.priv]
 
 
+
     def __repr__(self):
         return f"<MerkleHellmanKnapsack: priv={self.priv}, pub={self.pub}, q={self.q}, r={self.r}>"
     
-
     def __str__(self):
         return self.__repr__()
 
 
-    def encrypt(self, message):
+
+    def encrypt(self, message: bytes) -> list:
+        """
+        Encrypt `message`.
+
+        Parameters:
+            message (bytes): Message to encrypt.
+
+        Returns:
+            list: List of ciphertext integers. List cardinality dependent on message/key-length ratio.
+        """
         bin_str = ''
         for byte in message:
             bin_str += bin(byte)[2:].zfill(8)
@@ -36,7 +60,17 @@ class MerkleHellmanKnapsack(object):
         return all_sums
 
 
-    def decrypt(self, sums):
+
+    def decrypt(self, sums: list) -> Bytes:
+        """
+        Decrypts `sums` back into plaintext.
+
+        Parameters:
+            sums (list): List of ciphertext sums.
+        
+        Returns:
+            Bytes: Decrypted plaintext.
+        """
         r_inv = mod_inv(self.r, self.q)
         inv_sums = [(byte_sum * r_inv) % self.q for byte_sum in sums]
         plaintext = Bytes(b'')
@@ -58,7 +92,18 @@ class MerkleHellmanKnapsack(object):
 
 
     @staticmethod
-    def recover_plaintext(ciphertext, pub, alpha=1):
+    def recover_plaintext(ciphertext: int, pub: list, alpha: int=1) -> Bytes:
+        """
+        Attempts to recover the plaintext without the private key.
+
+        Parameters:
+            ciphertext (int): A ciphertext sum.
+            pub        (int): The public key.
+            alpha      (int): Punishment coefficient for deviation from guessed bit distribution.
+        
+        Returns:
+            Bytes: Recovered plaintext.
+        """
         ident = eye(len(pub))
         pub_matrix = ident.col_join(Matrix([pub]))
         problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]]).T)
@@ -75,5 +120,5 @@ class MerkleHellmanKnapsack(object):
                 new_row = [item for item in row_mat if item >= 0 and item <= 1]
 
                 if len(new_row) == len(row_mat):
-                    return int(''.join([str(val) for val in row_mat[:-2]]), 2)
+                    return Bytes(int(''.join([str(val) for val in row_mat[:-2]]), 2))
         return solution_matrix

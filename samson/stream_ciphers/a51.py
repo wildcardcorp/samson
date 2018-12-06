@@ -4,7 +4,18 @@ from samson.utilities.bytes import Bytes
 # https://github.com/ttsou/airprobe/blob/master/A5.1/python/A51_Tables/a51.py
 # Implemented in big endian
 class A51(object):
-    def __init__(self, key, frame_num):
+    """
+    A5/1 stream cipher
+
+    Used in GSM celluar encryption.
+    """
+
+    def __init__(self, key: bytes, frame_num: int):
+        """
+        Parameters:
+            key     (bytes): Key.
+            frame_num (int): Current frame number.
+        """
         self.key = key
         self.frame_num = frame_num
 
@@ -26,13 +37,15 @@ class A51(object):
     def __repr__(self):
         return f"<A51: key={self.key}, frame_num={self.frame_num}, lfsr_regs={self.lfsr_regs}>"
 
-
     def __str__(self):
         return self.__repr__()
 
 
 
     def clock(self):
+        """
+        Performs the majority-vote clocking.
+        """
         majority = sum([lfsr.clock_value() for lfsr in self.lfsr_regs]) // 2
 
         for lfsr in self.lfsr_regs:
@@ -41,9 +54,18 @@ class A51(object):
 
 
     
-    def yield_state(self, size):
+    def generate(self, length: int) -> Bytes:
+        """
+        Generates `length` of keystream.
+
+        Parameters:
+            length (int): Desired length of keystream in bytes.
+        
+        Returns:
+            Bytes: Keystream.
+        """
         bitstring = ''
-        for _ in range(size):
+        for _ in range(length * 8):
             self.clock()
             bitstring += str(self.lfsr_regs[0].value() ^ self.lfsr_regs[1].value() ^ self.lfsr_regs[2].value())
         

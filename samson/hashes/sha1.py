@@ -91,7 +91,7 @@ class SHA1(MerkleDamgardConstruction):
 
 
     def __repr__(self):
-        return f"<SHA1: initial_state={self.initial_state}, block_size={self.block_size}, pad_func={self.pad_func}>"
+        return f"<SHA1: initial_state={self.initial_state}, block_size={self.block_size}>"
 
 
     def __str__(self):

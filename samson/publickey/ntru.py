@@ -3,20 +3,51 @@ from sympy import ZZ, Poly, GF, invert
 from sympy.polys.polyerrors import NotInvertible
 from samson.utilities.general import shuffle
 from samson.utilities.math import is_power_of_two
-from samson.utilities.encoding import int_to_bytes
+from samson.utilities.bytes import Bytes
 from sympy.ntheory import isprime
 import math
 
 
-def encode_bytes(in_arr):
-    return bytes([num % 256 for num in in_arr])
+def encode_bytes(in_arr: list) -> Bytes:
+    """
+    Encodes a list of numbers as Bytes.
+
+    Parameters:
+        in_arr (list): List to encode.
+
+    Returns:
+        Bytes: List encoded as Bytes.
+    """
+    return Bytes([num % 256 for num in in_arr])
 
 
-def decode_bytes(in_arr):
-    return [num - 256 if num > 127 else num for num in in_arr]
+
+def decode_bytes(in_bytes: bytes) -> list:
+    """
+    Decodes bytes into a list.
+
+    Parameters:
+        in_bytes (bytes): Bytes to decode.
+    
+    Returns:
+        list: List of integer representations of the bytes.
+    """
+    return [num - 256 if num > 127 else num for num in in_bytes]
 
 
-def rand_poly(length, len_non_zeroes, neg_ones_mod=0):
+
+def rand_poly(length: int, len_non_zeroes: int, neg_ones_mod: int=0) -> Poly:
+    """
+    Generates a random polynomial.
+
+    Parameters:
+        length         (int): Desired length of polynomial.
+        len_non_zeroes (int): Number of non-zero values in polynomial.
+        neg_ones_mod   (int): Modifier that reduces the number of -1 coefficients.
+    
+    Returns:
+        Poly: Random polynomial.
+    """
     poly_arr =  [0]  * ((length - len_non_zeroes * 2) + neg_ones_mod)
     poly_arr += [1]  * len_non_zeroes
     poly_arr += [-1] * (len_non_zeroes - neg_ones_mod)
@@ -27,7 +58,18 @@ def rand_poly(length, len_non_zeroes, neg_ones_mod=0):
 
 
 
-def invert_poly(f_poly, R_poly, p):
+def invert_poly(f_poly: Poly, R_poly: Poly, p: int) -> Poly:
+    """
+    Inverts a polynomial `f_poly` over `R_poly` in GF(p).
+
+    Parameters:
+        f_poly (Poly): Polynomial to be inverted.
+        R_poly (Poly): Polynomial to be inverted _over_.
+        p       (int): Integer modulus.
+    
+    Returns:
+        Poly: Inverted polynomial.
+    """
     if isprime(p):
         inv_poly = invert(f_poly, R_poly, domain=GF(p))
 
@@ -46,7 +88,19 @@ def invert_poly(f_poly, R_poly, p):
 
 # https://en.wikipedia.org/wiki/NTRUEncrypt
 class NTRU(object):
-    def __init__(self, N, p, q, f_poly=None, g_poly=None):
+    """
+    Nth-degree TRUncated polynomial ring
+    """
+
+    def __init__(self, N: int, p: int=3, q: int=128, f_poly: Poly=None, g_poly: Poly=None):
+        """
+        Parameters:
+            N       (int): Polynomial degree/modulus.
+            p       (int): Small modulus.
+            q       (int): Large modulus.
+            f_poly (Poly): F-polynomial of private key.
+            g_poly (Poly): G-polynomial of private key.
+        """
         self.N = N
         self.p = p
         self.q = q
@@ -71,9 +125,9 @@ class NTRU(object):
             self.generate_public_key()
 
 
+
     def __repr__(self):
         return f"<NTRU: N={self.N}, p={self.p}, q={self.q}, f_poly={self.f_poly}, g_poly={self.g_poly}, h_poly={self.h_poly}>"
-    
 
     def __str__(self):
         return self.__repr__()
@@ -81,6 +135,9 @@ class NTRU(object):
 
     
     def generate_random_keys(self):
+        """
+        Generates random private and public keys.
+        """
         self.g_poly = rand_poly(self.N, int(math.sqrt(self.q)))
 
         inversion_successful = False
@@ -96,6 +153,9 @@ class NTRU(object):
 
 
     def generate_public_key(self):
+        """
+        Attempts to find the public key for the current private key. May throw `NotInvertible`.
+        """
         self.f_p_poly = invert_poly(self.f_poly, self.R_poly, self.p)
         self.f_q_poly = invert_poly(self.f_poly, self.R_poly, self.q)
 
@@ -106,7 +166,17 @@ class NTRU(object):
 
 
 
-    def encrypt(self, plaintext, random_poly=None):
+    def encrypt(self, plaintext: bytes, random_poly: Poly=None) -> Bytes:
+        """
+        Encrpyts `plaintext`.
+
+        Parameters:
+            plaintext  (bytes): Plaintext to encrypt.
+            random_poly (Poly): (Optional) The random polynomial used in encryption.
+
+        Returns:
+            Bytes: Encrypted ciphertext.
+        """
         random_poly = random_poly or rand_poly(self.N, int(math.sqrt(self.q)))
 
         # Convert plaintext into polynomial
@@ -119,7 +189,16 @@ class NTRU(object):
     
 
 
-    def decrypt(self, ciphertext):
+    def decrypt(self, ciphertext: bytes) -> Bytes:
+        """
+        Decrypts `ciphertext` into plaintext.
+
+        Parameters:
+            ciphertext (bytes): Ciphertext.
+        
+        Returns:
+            Bytes: Decrypted plaintext.
+        """
         # Convert ciphertext into polynomial
         ct_poly = decode_bytes(ciphertext)
         msg_poly = Poly(ct_poly[::-1], x).set_domain(ZZ)
@@ -130,4 +209,4 @@ class NTRU(object):
         pt_poly = ((self.f_p_poly * b_poly) % self.R_poly).trunc(self.p)
 
         pt_bitstring = ''.join([str(bit) for bit in pt_poly.all_coeffs()[::-1]])
-        return int_to_bytes(int(pt_bitstring, 2))
+        return Bytes(int(pt_bitstring, 2))

@@ -1,7 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.publickey.eddsa import EdDSA
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
-from samson.hashes.sha2 import SHA2
+from samson.hashes.sha2 import SHA512
 from samson.hashes.sha3 import SHA3
 import unittest
 
@@ -22,7 +22,7 @@ class EdDSATestCase(unittest.TestCase):
     
     def _run_25519_test(self, message, d, expected_public_key=None, expected_sig=None):
         curve    = EdwardsCurve25519
-        hash_alg = SHA2(512)
+        hash_alg = SHA512()
         self._run_test(message, d, curve, hash_alg, expected_public_key, expected_sig)
 
 

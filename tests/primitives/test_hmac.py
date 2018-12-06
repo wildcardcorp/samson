@@ -5,7 +5,7 @@ from samson.hashes.sha3 import SHA3
 from samson.hashes.md5 import MD5
 from samson.hashes.md4 import MD4
 from samson.hashes.sha1 import SHA1
-from samson.hashes.sha2 import SHA2
+from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 from samson.hashes.blake2 import BLAKE2b, BLAKE2s
 from samson.hashes.ripemd160 import RIPEMD160
 
@@ -37,8 +37,8 @@ class HMACTestCase(unittest.TestCase):
 
 
     def test_sha2(self):
-        for hash_type, reference_method in [(224, hashlib.sha224), (256, hashlib.sha256), (384, hashlib.sha384), (512, hashlib.sha512)]:
-            self._run_tests(lambda: SHA2(hash_type), reference_method)
+        for hash_type, reference_method in [(SHA224, hashlib.sha224), (SHA256, hashlib.sha256), (SHA384, hashlib.sha384), (SHA512, hashlib.sha512)]:
+            self._run_tests(lambda: hash_type(), reference_method)
 
 
     def test_blake2(self):

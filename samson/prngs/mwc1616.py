@@ -7,13 +7,13 @@ class MWC1616(object):
     Multyply-with-carry 1616
     """
 
-    def __init__(self, seed: tuple, a: int=18030, b: int=30903, bits: int=32):
+    def __init__(self, seed: (int, int), a: int=18030, b: int=30903, bits: int=32):
         """
         Parameters:
-            seed (tuple): An integer or two-tuple of integers. If just an integer, it will be split into two.
-            a      (int): Multiplier for the state's first item.
-            b      (int): Multiplier for the state's second item.
-            bits   (int): Number of bits to allow in the internal state. We'll create a mask out of this.
+            seed ((int, int)): An integer or two-tuple of integers. If just an integer, it will be split into two.
+            a           (int): Multiplier for the state's first item.
+            b           (int): Multiplier for the state's second item.
+            bits        (int): Number of bits to allow in the internal state. We'll create a mask out of this.
         """
         if type(seed) == int:
             seed = ((seed >> 16) & 0xFFFF, seed & 0xFFFF)

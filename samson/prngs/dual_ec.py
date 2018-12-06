@@ -53,7 +53,7 @@ class DualEC(object):
             curve (Curve): `fastecdsa` Curve to use.
         
         Returns:
-            tuple: Result formatted as (P, backdoored Q, backdoor d)
+            (Point Point, int): Result formatted as (P, backdoored Q, backdoor d)
         """
         P = curve.G
         d = random.randint(2, curve.q)

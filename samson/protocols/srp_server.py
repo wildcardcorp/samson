@@ -50,7 +50,7 @@ class SRPServer(object):
             A          (int): Client's challenge.
 
         Returns:
-            tuple: Formatted as (server salt, server's challenge `B`)
+            (bytes, int): Formatted as (server salt, server's challenge `B`)
         """
         v = self.accounts[identity]
         B = self.k * v + modexp(self.g, self.b, self.N)

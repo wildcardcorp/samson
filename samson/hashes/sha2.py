@@ -44,73 +44,18 @@ K_512 = [
 
 
 class SHA2(MerkleDamgardConstruction):
-    def __init__(self, digest_bit_size=256, h=None):
-        """
-        Parameters:
-            digest_bit_size (int): 
-            h             (bytes): (Optional) Initial internal state.
-        """
+    def __init__(self, initial_state, digest_size, state_size, block_size, rounds, rot, k):
+        super().__init__(
+            initial_state=Bytes(b''.join([int.to_bytes(h_i, state_size, 'big') for h_i in initial_state])),
+            compression_func=None,
+            digest_size=digest_size,
+            block_size=block_size
+        )
 
-        if not digest_bit_size in [224, 256, 384, 512]:
-            raise Exception("{} not a valid digest bit-size for SHA2".format(digest_bit_size))
-        
-
-        digest_size = digest_bit_size // 8
-
-        if digest_bit_size == 256:
-            h_arr = H_256
-            self.state_size = 4
-            self.rounds = 64
-            self.rot = ROT_256
-            self.k = K_256
-
-            super().__init__(
-                initial_state=None,
-                compression_func=None,
-                digest_size=digest_size
-            )
-        elif digest_bit_size == 224:
-            h_arr = H_224
-
-            self.state_size = 4
-            self.rounds = 64
-            self.rot = ROT_256
-            self.k = K_256
-
-            super().__init__(
-                initial_state=None,
-                compression_func=None,
-                digest_size=digest_size
-            )
-        elif digest_bit_size == 384:
-            h_arr = H_384
-            self.state_size = 8
-            self.rounds = 80
-            self.rot = ROT_512
-            self.k = K_512
-
-            super().__init__(
-                initial_state=None,
-                compression_func=None,
-                digest_size=digest_size,
-                block_size=128
-            )
-        else:
-            h_arr = H_512
-            self.state_size = 8
-            self.rounds = 80
-            self.rot = ROT_512
-            self.k = K_512
-
-            super().__init__(
-                initial_state=None,
-                compression_func=None,
-                digest_size=digest_size,
-                block_size=128
-            )
-
-        self.initial_state = h or Bytes(b''.join([int.to_bytes(h_i, self.state_size, 'big') for h_i in h_arr]))
-        
+        self.state_size = state_size
+        self.rounds = rounds
+        self.rot = rot
+        self.k = k
 
 
     def yield_state(self, message):
@@ -176,3 +121,55 @@ class SHA2(MerkleDamgardConstruction):
         state[7] += h
 
         return Bytes(b''.join([int.to_bytes(h_i & bit_mask, self.state_size, 'big') for h_i in state]))
+
+    
+class SHA224(SHA2):
+    def __init__(self, h=None):
+        super().__init__(
+            initial_state=h or H_224,
+            digest_size=224 // 8,
+            state_size=4,
+            block_size=64,
+            rounds=64,
+            rot=ROT_256,
+            k=K_256
+        )
+
+
+class SHA256(SHA2):
+    def __init__(self, h=None):
+        super().__init__(
+            initial_state=h or H_256,
+            digest_size=256 // 8,
+            state_size=4,
+            block_size=64,
+            rounds=64,
+            rot=ROT_256,
+            k=K_256
+        )
+
+
+class SHA384(SHA2):
+    def __init__(self, h=None):
+        super().__init__(
+            initial_state=h or H_384,
+            digest_size=384 // 8,
+            state_size=8,
+            block_size=128,
+            rounds=80,
+            rot=ROT_512,
+            k=K_512
+        )
+
+
+class SHA512(SHA2):
+    def __init__(self, h=None):
+        super().__init__(
+            initial_state=h or H_512,
+            digest_size=512 // 8,
+            state_size=8,
+            block_size=128,
+            rounds=80,
+            rot=ROT_512,
+            k=K_512
+        )

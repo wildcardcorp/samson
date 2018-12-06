@@ -3,15 +3,43 @@ from samson.utilities.math import mod_inv
 import math
 
 # https://tools.ietf.org/html/rfc7748
-def cswap(swap, x_2, x_3):
+def cswap(swap: int, x_2: int, x_3: int) -> (int, int):
+    """
+    Conditional constant-time swap.
+
+    Parameters:
+        swap (int): 0 or 1. 1 means swap.
+        x_2  (int): First int.
+        x_3  (int): Second int.
+
+    Returns:
+        (int, int): Formatted as (x_2, x_3)
+    """
     dummy = swap * (x_2 - x_3)
     x_2 = x_2 - dummy
     x_3 = x_3 + dummy
     return (x_2, x_3)
 
 
+
+# https://tools.ietf.org/html/rfc7748#section-4.1
 class MontgomeryCurve(object):
-    def __init__(self, p, A, a24, U, V):
+    """
+    Montgomery Curve
+
+    Basically just decouples parameters from `MontgomeryPoint`.
+    """
+
+    # # https://tools.ietf.org/html/rfc7748#section-3
+    def __init__(self, p: int, A: int, a24: int, U: int, V: int):
+        """
+        Parameters:
+            p   (int): Prime number defining the underlying field.
+            A   (int): An element in the finite field GF(p), not equal to -2 or 2.
+            a24 (int): Constant for curve multiplication.
+            U   (int): The u-coordinate of the elliptic curve point P on a Montgomery curve.
+            V   (int): The v-coordinate of the elliptic curve point P on a Montgomery curve.
+        """
         self.p = p
         self.A = A
         self.a24 = a24
@@ -22,19 +50,29 @@ class MontgomeryCurve(object):
     def __repr__(self):
         return f"<MontgomeryCurve: p={self.p}, A={self.A}, U={self.U}, V={self.V}>"
 
-
     def __str__(self):
         return self.__repr__()
 
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
     
 
 
 class MontgomeryPoint(object):
-    def __init__(self, x, curve):
+    """
+    Point on a Montgomery Curve
+
+    Provides scalar multiplication.
+    """
+
+    def __init__(self, x: int, curve: MontgomeryCurve):
+        """
+        Parameters:
+            x                 (int): x-coordinate.
+            curve (MontgomeryCurve): The underlying curve.
+        """
         self.curve = curve
         self.x = x
 
@@ -42,18 +80,17 @@ class MontgomeryPoint(object):
     def __repr__(self):
         return f"<MontgomeryPoint: x={self.x}, curve={self.curve}>"
 
-
     def __str__(self):
         return self.__repr__()
 
     
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.x == other.x and self.curve == other.curve
 
 
-
-    def __mul__(self, other):
+    # https://tools.ietf.org/html/rfc7748#section-5
+    def __mul__(self, other: int) -> int:
         if type(other) != int:
             raise NotImplementedError("MontgomeryPoint multiplication is currently only implemented for scalars.")
 
@@ -107,7 +144,16 @@ class Curve25519(MontgomeryCurve):
         super().__init__(p=2**255 - 19, A=486662, a24=121665, U=9, V=1478161944758954479102059356840998688726460613461647528896488183775558623740)
     
 
-    def clamp_to_curve(self, x):
+    def clamp_to_curve(self, x: int) -> MontgomeryPoint:
+        """
+        Coerces `x` to a valid x-coordinate on Curve25519.
+
+        Parameters:
+            x (int): `x` value to coerce.
+
+        Returns:
+            MontgomeryPoint: Valid MontgomeryPoint.
+        """
         x &= ~7
         x &= ~(128 << 8 * 31)
         x |= 64 << 8 * 31
@@ -120,7 +166,16 @@ class Curve448(MontgomeryCurve):
         super().__init__(p=2**448 - 2**224 - 1, A=156326, a24=39081, U=5, V=355293926785568175264127502063783334808976399387714271831880898435169088786967410002932673765864550910142774147268105838985595290606362)
     
 
-    def clamp_to_curve(self, x):
+    def clamp_to_curve(self, x: int) -> MontgomeryPoint:
+        """
+        Coerces `x` to a valid x-coordinate on Curve448.
+
+        Parameters:
+            x (int): `x` value to coerce.
+
+        Returns:
+            MontgomeryPoint: Valid MontgomeryPoint.
+        """
         x &= ~3
         x |= 128 << 8 * 55
         return MontgomeryPoint(x, self)
@@ -128,8 +183,29 @@ class Curve448(MontgomeryCurve):
 
 
 # https://ed25519.cr.yp.to/python/ed25519.py
+# https://tools.ietf.org/html/rfc8032
 class TwistedEdwardsCurve(object):
-    def __init__(self, a, c, n, b, magic, q, l, d, B):
+    """
+    Twisted Edwards Curve
+
+    Provides general curve operations and parameter decoupling.
+    """
+
+    # https://tools.ietf.org/html/rfc8032#section-5
+    # https://tools.ietf.org/html/rfc8032#section-3
+    def __init__(self, a: int, c: int, n: int, b: int, magic: bytes, q: int, l: int, d: int, B: (int, int)):
+        """
+        Parameters:
+            a        (int): Twist parameter. a=1 is untwisted, the special case.
+            c        (int): Base 2 logarithm of cofactor
+            n        (int): Defines the number of bits in EdDSA scalars.
+            b        (int): Number of bits the curve can encode.
+            magic  (bytes): The magic byte-string (if any) of the curve.
+            q        (int): Modulus.
+            l        (int): Order of the curve.
+            d        (int): A non-zero element in the finite field GF(p), not equal to 1, in the case of an Edwards curve, or not equal to -1, in the case of a twisted Edwards curve
+            B ((int, int)): Base point.
+        """
         self.a = a
         self.c = c
         self.n = n
@@ -145,22 +221,42 @@ class TwistedEdwardsCurve(object):
     def __repr__(self):
         return f"<TwistedEdwardsCurve: b={self.b}, q={self.q}, l={self.l}>"
 
-
     def __str__(self):
         return self.__repr__()
 
     
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
     
-    def is_on_curve(self, P):
+
+    def is_on_curve(self, P: (int, int)) -> bool:
+        """
+        Determines if the point `P` is on the curve.
+
+        Parameters:
+            P (int, int): The point formatted as (x, y).
+
+        Returns:
+            bool: Whether or not the point is on the curve.
+        """
         x, y = P
         return (self.a * x*x + y*y - 1 - self.d * x*x*y*y) % self.q == 0
     
 
-    def recover_point_from_y(self, y):
+
+    def recover_point_from_y(self, y: int):
+        """
+        Recovers the full TwistedEdwardsPoint from the y-coordinate.
+
+        Parameters:
+            y (int): y-coordinate of a valid TwistedEdwardsPoint.
+        
+        Returns:
+            TwistedEdwardsPoint: Full TwistedEdwardsPoint.
+
+        """
         xx = (y*y-1) * mod_inv(self.d*y*y-self.a, self.q)
         if self.q % 8 == 5:
             x = pow(xx, (self.q+3)//8, self.q)
@@ -180,8 +276,22 @@ class TwistedEdwardsCurve(object):
 
 
 
+
 class TwistedEdwardsPoint(object):
-    def __init__(self, x, y, curve, validate=True):
+    """
+    Point on a Twisted Edwards Curve
+
+    Provides scalar multiplication and point addition.
+    """
+
+    def __init__(self, x: int, y: int, curve: TwistedEdwardsCurve, validate: bool=True):
+        """
+        Parameters:
+            x                     (int): x-coordinate.
+            y                     (int): y-coordinate.
+            curve (TwistedEdwardsCurve): Underlying curve.
+            validate             (bool): Whether or not to validate the point against the curve.
+        """
         self.curve = curve
         self.x = x % curve.q
         self.y = y % curve.q
@@ -190,15 +300,16 @@ class TwistedEdwardsPoint(object):
             raise ValueError(f"({x}, {y}) is not on {curve}")
 
 
+
     def __repr__(self):
         return f"<TwistedEdwardsPoint: x={self.x}, y={self.y}, curve={self.curve}>"
-
 
     def __str__(self):
         return self.__repr__()
     
 
-    def __eq__(self, other):
+
+    def __eq__(self, other) -> bool:
         return self.x == other.x and self.y == other.y and self.curve == other.curve
 
 

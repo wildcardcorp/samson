@@ -99,7 +99,7 @@ class MerkleDamgardConstruction(object):
             secret_len        (int): The length of the secret.
         
         Returns:
-            tuple: Result formatted as (crafted input, forged hash).
+            (Bytes, Bytes): Result formatted as (crafted input, forged hash).
         """
         glue = md_pad(message, len(message) + secret_len, self.endianness, bit_size=self.block_size)[len(message):]
 

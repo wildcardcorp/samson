@@ -32,7 +32,7 @@ class HashClashCollider(object):
             p2 (bytes): Second sample.
         
         Returns:
-            tuple: Tuple of bytes representing the collision as (p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)).
+            (bytes, bytes, bytes): Tuple of bytes representing the collision as (p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)).
         """
         tmp_dir = tempfile.TemporaryDirectory()
 

@@ -1,4 +1,4 @@
-from samson.utilities.analysis import chisquare, count_bytes
+from samson.utilities.analysis import chisquare, count_items
 from samson.utilities.bytes import Bytes
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 import string
@@ -122,7 +122,7 @@ class Vigenere(object):
                     tmp_vig = Vigenere(bytes([char]))
                     new_chunk = tmp_vig.decrypt(chunk)
 
-                    chunk_score = chisquare(count_bytes(new_chunk), expected_distribution)
+                    chunk_score = chisquare(count_items(new_chunk), expected_distribution)
                     curr_chunk_scores.append((char, chunk_score))
 
 

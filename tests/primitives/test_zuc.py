@@ -7,7 +7,7 @@ import unittest
 class ZUCTestCase(unittest.TestCase):
     def _run_test(self, key, iv, expected_keystream):
         zuc = ZUC(key, iv)
-        keystream = zuc.yield_state(256)
+        keystream = zuc.generate(256)
 
         self.assertEqual(keystream, expected_keystream)
     

@@ -9,4 +9,4 @@ class MerkleHellmanKnapsackTestCase(unittest.TestCase):
         ciphertext = knap.encrypt(plaintext)
 
         self.assertEqual(knap.decrypt(ciphertext), plaintext)
-        self.assertEqual(MerkleHellmanKnapsack.recover_plaintext(ciphertext[0], knap.pub), plaintext[0])
+        self.assertEqual(MerkleHellmanKnapsack.recover_plaintext(ciphertext[0], knap.pub), Bytes(plaintext[0]))

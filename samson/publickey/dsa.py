@@ -1,55 +1,109 @@
-import codecs
 from samson.utilities.math import mod_inv
-from samson.utilities.general import rand_bytes
-from samson.utilities.encoding import int_to_bytes
+from samson.utilities.bytes import Bytes
 
 class DSA(object):
-    def __init__(self, p=None, q=None, g=None, x=None):
-        self.p = p or int.from_bytes(codecs.decode(b'800000000000000089e1855218a0e7dac38136ffafa72eda7859f2171e25e65eac698c1702578b07dc2a1076da241c76c62d374d8389ea5aeffd3226a0530cc565f3bf6b50929139ebeac04f48c3c84afb796d61e5a4f9a8fda812ab59494232c7d2b4deb50aa18ee9e132bfa85ac4374d7f9091abc3d015efc871a584471bb1', 'hex_codec'), byteorder='big')
-        self.q = q or int.from_bytes(codecs.decode(b'f4f47f05794b256174bba6e9b396a7707e563c5b', 'hex_codec'), byteorder='big')
-        self.g = g or int.from_bytes(codecs.decode(b'5958c9d3898b224b12672c0b98e06c60df923cb8bc999d119458fef538b8fa4046c8db53039db620c094c9fa077ef389b5322a559946a71903f990f1f7e0e025e2d7f7cf494aff1a0470f5b64c36b625a097f1651fe775323556fe00b3608c887892878480e99041be601a62166ca6894bdd41a7054ec89f756ba9fc95302291', 'hex_codec'), byteorder='big')
+    """
+    Digital Signature Algorithm
+    """
+
+    def __init__(self, hash_obj: object, p: int=None, q: int=None, g: int=None, x: int=None):
+        """
+        Parameters:
+            hash_obj (object): Instantiated object with compatible hash interface.
+            p           (int): (Optional) Prime modulus.
+            q           (int): (Optional) Prime modulus.
+            g           (int): (Optional) Generator.
+            x           (int): (Optional) Private key.
+        """
+        self.p = p or 0x800000000000000089E1855218A0E7DAC38136FFAFA72EDA7859F2171E25E65EAC698C1702578B07DC2A1076DA241C76C62D374D8389EA5AEFFD3226A0530CC565F3BF6B50929139EBEAC04F48C3C84AFB796D61E5A4F9A8FDA812AB59494232C7D2B4DEB50AA18EE9E132BFA85AC4374D7F9091ABC3D015EFC871A584471BB1
+        self.q = q or 0xF4F47F05794B256174BBA6E9B396A7707E563C5B
+        self.g = g or 0x5958C9D3898B224B12672C0B98E06C60DF923CB8BC999D119458FEF538B8FA4046C8DB53039DB620C094C9FA077EF389B5322A559946A71903F990F1F7E0E025E2D7F7CF494AFF1A0470F5B64C36B625A097F1651FE775323556FE00B3608C887892878480E99041BE601A62166CA6894BDD41A7054EC89F756BA9FC95302291
         
-        self.x = x or int.from_bytes(rand_bytes(len(int_to_bytes(self.q))), byteorder='big') % self.q
+        self.x = x or Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q
         self.y = pow(self.g, self.x, self.p)
+        self.hash_obj = hash_obj
 
     
     def __repr__(self):
-        return f"<DSA: p={self.p}, q={self.q}, g={self.g}, x={self.x}, y={self.y}>"
+        return f"<DSA: hash_obj={self.hash_obj}, p={self.p}, q={self.q}, g={self.g}, x={self.x}, y={self.y}>"
 
 
     def __str__(self):
         return self.__repr__()
     
     
-    def sign(self, H, message, k=None):
-        k = k or max(1, int.from_bytes(rand_bytes(len(int_to_bytes(self.q))), byteorder='big') % self.q)
+    def sign(self, message: bytes, k: int=None) -> (int, int):
+        """
+        Signs a `message`.
+
+        Parameters:
+            message (bytes): Message to sign.
+            k         (int): (Optional) Ephemeral key.
+        
+        Returns:
+            (int, int): Signature formatted as (r, s).
+        """
+        k = k or max(1, Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q)
         inv_k = mod_inv(k, self.q)
         r = pow(self.g, k, self.p) % self.q
-        s = (inv_k * (H(message) + self.x * r)) % self.q
+        s = (inv_k * (self.hash_obj.hash(message) + self.x * r)) % self.q
         return (r, s)
     
     
-    def verify(self, H, message, sig):
+    def verify(self, message: bytes, sig: (int, int)) -> bool:
+        """
+        Verifies a `message` against a `sig`.
+
+        Parameters:
+            message  (bytes): Message.
+            sig ((int, int)): Signature of `message`.
+        
+        Returns:
+            bool: Whether the signature is valid or not.
+        """
         (r, s) = sig
         w = mod_inv(s, self.q)
-        u_1 = (H(message) * w) % self.q
+        u_1 = (self.hash_obj.hash(message) * w) % self.q
         u_2 = (r * w) % self.q
         v = (pow(self.g, u_1, self.p) * pow(self.y, u_2, self.p) % self.p) % self.q
         return v == r
 
     
     # Confirmed works on ECDSA as well
-    def derive_k_from_sigs(self, H, msgA, sigA, msgB, sigB):
-        (rA, sA) = sigA
-        (rB, sB) = sigB
-        assert rA == rB
+    def derive_k_from_sigs(self, msg_a: bytes, sig_a: (int, int), msg_b: bytes, sig_b: (int, int)) -> int:
+        """
+        Derives `k` from signatures that share an `r` value.
+
+        Parameters:
+            msg_a      (bytes): Message A.
+            msg_b      (bytes): Message B.
+            sig_a ((int, int)): Signature of `msg_a`.
+            sig_b ((int, int)): Signature of `msg_b`.
+
+        Returns:
+            int: Derived `k`.
+        """
+        (r_a, s_a) = sig_a
+        (r_b, s_b) = sig_b
+        assert r_a == r_b
         
-        s = (sA - sB) % self.q
-        m = (H(msgA) - H(msgB)) % self.q
+        s = (s_a - s_b) % self.q
+        m = (self.hash_obj.hash(msg_a) - self.hash_obj.hash(msg_b)) % self.q
         return mod_inv(s, self.q) * m % self.q
     
     
     # Confirmed works on ECDSA as well
-    def derive_x_from_k(self, H, message, k, sig):
+    def derive_x_from_k(self, message: bytes, k: int, sig: (int, int)) -> int:
+        """
+        Derives `x` from a known `k`.
+
+        Parameters:
+            message  (bytes): Message.
+            k          (int): `k` used in `message`'s signature.
+            sig ((int, int)): Signature of `message`.
+        
+        Returns:
+            int: Derived `x`.
+        """
         (r, s) = sig
-        return ((s * k) - H(message)) * mod_inv(r, self.q) % self.q
+        return ((s * k) - self.hash_obj.hash(message)) * mod_inv(r, self.q) % self.q

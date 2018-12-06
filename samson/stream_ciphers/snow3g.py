@@ -23,7 +23,18 @@ SQ = [
 # https://www.gsma.com/aboutus/wp-content/uploads/2014/12/snow3gspec.pdf
 # https://github.com/mitshell/CryptoMobile/blob/master/C_alg/SNOW_3G.c
 class SNOW3G(object):
-    def __init__(self, key, iv):
+    """
+    SNOW3G stream cipher
+
+    Used in 4G LTE encryption.
+    """
+
+    def __init__(self, key: bytes, iv: bytes):
+        """
+        Parameters:
+            key (bytes): Key.
+            iv  (bytes): Initialization vector.
+        """
         self.key = Bytes.wrap(key)
         self.iv = Bytes.wrap(iv)
 
@@ -68,22 +79,22 @@ class SNOW3G(object):
 
 
 
-    def MULx(self, V, c):
+    def MULx(self, V: int, c: int) -> int:
         if V >> 7:
             return ((V << 1) % 256) ^ c
         else:
             return V << 1
 
 
-    def MULa(self, c):
+    def MULa(self, c: int) -> int:
         return (self.MULxPOW(c, 23, 0xA9) << 24) + (self.MULxPOW(c, 245, 0xA9) << 16) + (self.MULxPOW(c, 48, 0xA9) << 8) + self.MULxPOW(c, 239, 0xA9)
 
     
-    def DIVa(self, c):
+    def DIVa(self, c: int) -> int:
         return (self.MULxPOW(c, 16, 0xA9) << 24) + (self.MULxPOW(c, 39, 0xA9) << 16) + (self.MULxPOW(c, 6, 0xA9) << 8) + self.MULxPOW(c, 64, 0xA9)
 
 
-    def MULxPOW(self, V, i, c):
+    def MULxPOW(self, V: int, i: int, c: int) -> int:
         if i == 0:
             return V
         else:
@@ -91,15 +102,15 @@ class SNOW3G(object):
     
 
 
-    def S1(self, w):
+    def S1(self, w: int) -> Bytes:
         return self._perform_sbox_transform(Bytes.wrap(w).zfill(4), RIJ_SBOX, 0x1B, True)
 
 
-    def S2(self, w):
+    def S2(self, w: int) -> Bytes:
         return self._perform_sbox_transform(Bytes.wrap(w).zfill(4), SQ, 0x69)
 
 
-    def _perform_sbox_transform(self, w, sbox, val, s2=False):
+    def _perform_sbox_transform(self, w: bytes, sbox: list, val: int, s2=False) -> Bytes:
         sqw0, sqw1, sqw2, sqw3 = [sbox[w_i] for w_i in w]
 
         r0 = self.MULx(sqw0, val) ^ sqw1 ^ sqw2 ^ self.MULx(sqw3, val) ^ sqw3
@@ -110,7 +121,13 @@ class SNOW3G(object):
         return Bytes([r0, r1, r2, r3]).to_int()
     
 
-    def clock_FSM(self):
+    def clock_FSM(self) -> int:
+        """
+        Used internally. Clocks the internal FSM.
+
+        Returns:
+            int: Next value of `F`.
+        """
         F = ((self.s[15] + self.R1) % (2 ** 32)) ^ self.R2
         r = (self.R2 + (self.R3 ^ self.s[5])) % (2 ** 32)
         self.R3 = self.S2(self.R2)
@@ -120,7 +137,13 @@ class SNOW3G(object):
         return F
 
 
-    def clock_lfsr(self, F=None):
+    def clock_lfsr(self, F: int=None):
+        """
+        Used internally. Clocks the LFSR and possibly combines with `F`.
+
+        Parameters:
+            F (int): Value of `F` to be clocked with.
+        """
         v = ((self.s[0] << 8) & 0xFFFFFF00) ^ self.MULa((self.s[0] >> 24) & 0xFF) ^ self.s[2] ^ ((self.s[11] >> 8) & 0x00FFFFFF) ^ self.DIVa(self.s[11] & 0xFF)
         if F:
             v^= F
@@ -131,13 +154,23 @@ class SNOW3G(object):
         self.s[15] = v
 
 
-    def yield_state(self, n):
+
+    def generate(self, length: int) -> Bytes:
+        """
+        Generates `length` of keystream.
+
+        Parameters:
+            length (int): Desired length of keystream in bytes.
+        
+        Returns:
+            Bytes: Keystream.
+        """
         _F = self.clock_FSM()
         self.clock_lfsr()
 
         ks = []
         
-        for _ in range(n):
+        for _ in range(length):
             F = self.clock_FSM()
             ks.append(F ^ self.s[0])
             self.clock_lfsr()

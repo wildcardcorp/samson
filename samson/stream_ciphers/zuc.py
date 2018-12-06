@@ -64,7 +64,18 @@ def ADD_M(a, b):
 
 # Reference: https://www.gsma.com/aboutus/wp-content/uploads/2014/12/eea3eia3zucv16.pdf
 class ZUC(object):
-    def __init__(self, key, iv):
+    """
+    ZUC stream cipher
+
+    Used in celluar encryption.
+    """
+
+    def __init__(self, key: bytes, iv: bytes):
+        """
+        Parameters:
+            key (bytes): Key.
+            iv  (bytes): Initialization vector.
+        """
         self.key         = Bytes.wrap(key)
         self.iv          = iv
         self.lfsr_states = [0] * 16
@@ -94,11 +105,11 @@ class ZUC(object):
         self.X[3] = ((self.lfsr_states[ 2] & 0xFFFF) << 16) | (self.lfsr_states[0] >> 15)
 
 
+
     def initialize(self):
         for i in range(16):
             self.lfsr_states[i] = (self.key[i] << 23) | (EK_d[i] << 8) | (self.iv[i])
         
-
         for i in range(32):
             self.reorganize_bits()
             w = self.F()
@@ -106,8 +117,7 @@ class ZUC(object):
 
 
 
-
-    def F(self):
+    def F(self) -> int:
         X_0, X_1, X_2, _ = self.X
         W   = ((X_0 ^ self.R[0]) + self.R[1]) & 0xFFFFFFFF
         W_1 = (self.R[0] + X_1) & 0xFFFFFFFF
@@ -122,14 +132,20 @@ class ZUC(object):
 
 
 
-    def shift_states(self, f):
+    def shift_states(self, f: int):
+        """
+        Used internally. Shifts the LFSR states over one.
+        """
         last_state = f
         for i in range(15, -1, -1):
             self.lfsr_states[i], last_state = last_state, self.lfsr_states[i]
 
 
 
-    def run_lfsr(self, u=None):
+    def run_lfsr(self, u: int=None):
+        """
+        Used internally. Runs the LFSR one iteration.
+        """
         f = self.lfsr_states[0]
         
         rotations = [(0, 8), (4, 20), (10, 21), (13, 17), (15, 15)]
@@ -146,7 +162,16 @@ class ZUC(object):
 
 
 
-    def yield_state(self, length):
+    def generate(self, length: int) -> Bytes:
+        """
+        Generates `length` of keystream.
+
+        Parameters:
+            length (int): Desired length of keystream in bytes.
+        
+        Returns:
+            Bytes: Keystream.
+        """
         keystream = Bytes(b'')
 
         for _ in range(math.ceil(length / 4)):

@@ -4,7 +4,7 @@ x, y, z, t = symbols('x y z t')
 k, m, n = symbols('k m n', integer=True)
 f, g, h = symbols('f g h', cls=Function)
 
-from samson import *
+from samson.all import *
 from fastecdsa.curve import *
 
 init_printing()
@@ -26,6 +26,9 @@ LOGO = """
                                                                 """
 
 def start_repl():
+    """
+    Executes the samson REPL.
+    """
     import IPython
     import sys
     from samson import VERSION

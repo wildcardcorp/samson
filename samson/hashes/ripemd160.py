@@ -104,7 +104,7 @@ class RIPEMD160(MerkleDamgardConstruction):
 
 
     def __repr__(self):
-        return f"<RIPEMD160: initial_state={self.initial_state}, block_size={self.block_size}, pad_func={self.pad_func}>"
+        return f"<RIPEMD160: initial_state={self.initial_state}, block_size={self.block_size}>"
 
 
     def __str__(self):

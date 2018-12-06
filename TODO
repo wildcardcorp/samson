@@ -41,7 +41,6 @@ X   Clean up code/make interfaces more uniform
     X   Decide whether to use functions or objects
     X   Everything should return Bytes
     X   Fix all "TODOs"
-    X   Clean up SHA2: turn into SHA224, SHA256, etc
 
 
 X   Add NTRU tests
@@ -52,7 +51,6 @@ X   Add FLFSR tests
 X   Add LFG tests
 X   Add PCG tests
 X   Add Merkle-Hellman Knapsack tests
-X   Add ViterbiDecoder tests
 X   Add ECHDE tests
 X   Add Dragonfly tests
 X   Add SRP tests
@@ -72,6 +70,8 @@ X   Revamp spec
 X   Implement reverse clock for FLFSR
 X   Make SRP compliant to https://tools.ietf.org/html/rfc5054
 
+X   Add expected key lengths to documentation and check during initialization
+
 
 
 0.2.0
@@ -85,3 +85,4 @@ X   UMAC
 X   More PRNG cracking (SAT)
 X   Timing attack framework
 X   Primitive analysis
+X   CAST

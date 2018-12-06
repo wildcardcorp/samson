@@ -37,7 +37,7 @@ class SRPClient(object):
         Creates the initial client request.
 
         Returns:
-            tuple: Formatted as (identity, client's challenge `A`).
+            (bytes, int): Formatted as (identity, client's challenge `A`).
         """
         return self.identity, self.A
 
@@ -74,7 +74,7 @@ class SRPClient(object):
         Crafts a malicious request by setting the initial challenge parameter to zero.
 
         Returns:
-            tuple: Formatted as (identity, 0).
+            (bytes, int): Formatted as (identity, 0).
         """
         return self.identity, 0
 

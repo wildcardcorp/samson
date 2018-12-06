@@ -45,7 +45,19 @@ E0_CHUNK = 5120
 POLY_SIZES = [25, 31, 33, 39]
 
 class E0(object):
-    def __init__(self, kc, addr, master_clk):
+    """
+    E0 stream cipher
+
+    Used in Bluetooth.
+    """
+
+    def __init__(self, kc: list, addr: list, master_clk: list):
+        """
+        Parameters:
+            kc         (list): Session key derived from master key.
+            addr       (list): Hardware address.
+            master_clk (list): Master clock values.
+        """
         self.lfsrs = [
             FLFSR(0, Poly(x**25 + x**20 + x**12 + x**8  + 1)),
             FLFSR(0, Poly(x**31 + x**24 + x**16 + x**12 + 1)),
@@ -71,6 +83,9 @@ class E0(object):
 
 
     def key_schedule(self):
+        """
+        Prepares the internal state for encryption.
+        """
         ks_input = [None] * 4
         ks_input[0] = ((self.master_clk[3] &  1) | (self.kc[0] << 1) | (self.kc[4] << 9) | (self.kc[8] << 17) | (self.kc[12] << 25) | (self.master_clk[1] << 33) | (self.addr[2] << 41)) & 0xFFFFFFFFFFFFFFFF
         ks_input[1] = (0x1 | (self.master_clk[0] << 3) | (self.kc[1] << 7) | (self.kc[5] << 15) | (self.kc[9] << 23) | (self.kc[13] << 31) | (self.addr[0] << 39) | (self.addr[3] << 47)) & 0xFFFFFFFFFFFFFFFF
@@ -119,11 +134,18 @@ class E0(object):
 
 
 
-    def get_output_bit(self):
+    def get_output_bit(self) -> int:
+        """
+        Returns the output bit from the summation generator.
+        """
         return ((self.lfsrs[0].state >> 23) & 1) | ((self.lfsrs[1].state >> 22) & 2) | ((self.lfsrs[2].state >> 29) & 4) | ((self.lfsrs[3].state >> 28) & 8)
 
 
+
     def shift(self):
+        """
+        Clocks the LFSRs and calculates the new state.
+        """
         for lfsr in self.lfsrs:
             _ = lfsr.clock()
 
@@ -135,9 +157,18 @@ class E0(object):
 
 
     
-    def yield_state(self, length):
+    def generate(self, length: int) -> Bytes:
+        """
+        Generates `length` of keystream.
+
+        Parameters:
+            length (int): Desired length of keystream in bytes.
+        
+        Returns:
+            Bytes: Keystream.
+        """
         bits = []
-        for _ in range(length):
+        for _ in range(length * 8):
             bits.append(str(self.key))
             self.shift()
 

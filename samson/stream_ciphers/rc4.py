@@ -1,7 +1,17 @@
 from samson.utilities.bytes import Bytes
 
 class RC4(object):
-    def __init__(self, key):
+    """
+    Rivest Cipher 4 (RC4)
+
+    Broken stream ciphers with large, initial-keystream biases.
+    """
+
+    def __init__(self, key: bytes):
+        """
+        Parameters:
+            key (bytes): Key.
+        """
         self.key = key
         self.S = self.key_schedule(key)
         self.i = 0
@@ -15,7 +25,17 @@ class RC4(object):
         return self.__repr__()
 
 
-    def key_schedule(self, key):
+
+    def key_schedule(self, key: bytes) -> list:
+        """
+        Prepares the internal state using the key.
+
+        Parameters:
+            key (bytes): Key.
+        
+        Returns:
+            list: State parameter `S`.
+        """
         key_length = len(key)
         S = []
         for i in range(256):
@@ -29,7 +49,16 @@ class RC4(object):
         return S
 
 
-    def yield_state(self, length):
+    def generate(self, length: int) -> Bytes:
+        """
+        Generates `length` of keystream.
+
+        Parameters:
+            length (int): Desired length of keystream in bytes.
+        
+        Returns:
+            Bytes: Keystream.
+        """
         keystream = Bytes(b'')
         
         for _ in range(length):

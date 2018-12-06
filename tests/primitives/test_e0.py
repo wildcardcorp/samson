@@ -10,7 +10,9 @@ import unittest
 class E0TestCase(unittest.TestCase):
     def _run_test(self, kc, addr, clk, expected_keystream):
         e0 = E0(kc=kc, addr=addr, master_clk=clk)
-        keystream = e0.yield_state(125)
+
+        # Need to generate 125 bits
+        keystream = Bytes(e0.generate(16).int() >> 3)
 
         self.assertEqual(keystream, expected_keystream)
 

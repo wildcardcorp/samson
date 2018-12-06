@@ -82,7 +82,7 @@ class ViterbiDecoder(object):
             max_word_len(int): Maximum token length.
         
         Returns:
-            tuple: Most probable decoding as (score, token_list).
+            (float, list): Most probable decoding as (score, token_list).
         """
         text = text.upper()
 

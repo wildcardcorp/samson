@@ -67,7 +67,7 @@ class NaiveMDCollider(object):
             p2 (bytes): Second sample.
         
         Returns:
-            tuple: Tuple of bytes representing the collision as (p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)).
+            (bytes, bytes, bytes): Tuple of bytes representing the collision as (p1_suffix, p2_suffix, self.hasher.hash(p1 + p1_suffix)).
         """
         input_for_p1 = b'\x00' * self.output_size
         state_to_collide = list(self.construction_func(p1, input_for_p1))[0]

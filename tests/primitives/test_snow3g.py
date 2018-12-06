@@ -68,7 +68,7 @@ class SNOW3GTestCase(unittest.TestCase):
             iv = sum([Bytes(part).zfill(4) for part in IVS[i]])
 
             snow = SNOW3G(key, iv)
-            snow.yield_state(START_LOCS[i])
-            ciphertext = snow.yield_state(16)
+            snow.generate(START_LOCS[i])
+            ciphertext = snow.generate(16)
 
             self.assertEqual([chunk.to_int() for chunk in ciphertext.chunk(4)], KNOWN_ANSWERS[i])

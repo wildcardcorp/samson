@@ -138,10 +138,10 @@ f3 e4 c0 a2  e0 2d 1d 01   f7 f0 a7 46  18 af 2b 48""".replace(b' ', b'').split(
 class RC4TestCase(unittest.TestCase):
     def _run_test(self, key, test_vec):
         rc4 = RC4(key)
-        key_stream = rc4.yield_state(4112)
+        keystream = rc4.generate(4112)
 
         for i, start in enumerate([0, 16, 240, 256, 496, 512, 752, 768, 1008, 1024, 1520, 1536, 2032, 2048, 3056, 3072, 4080, 4096]):
-            self.assertEqual(key_stream[start:start + 16], codecs.decode(test_vec[i], 'hex_codec'))
+            self.assertEqual(keystream[start:start + 16], codecs.decode(test_vec[i], 'hex_codec'))
 
 
     def test_vec0(self):

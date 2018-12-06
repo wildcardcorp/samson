@@ -1,5 +1,4 @@
 from samson.publickey.dsa import DSA
-from copy import deepcopy
 import hashlib
 import unittest
 
@@ -13,30 +12,32 @@ sig = (503181762231277455297502611450705228583240869840, 11485618768582580374343
 
 
 class DSATestCase(unittest.TestCase):
+    def hash(self, m):
+        return m
+
     def setUp(self):
-        dsa = DSA()
+        dsa = DSA(self)
         dsa.p, dsa.q, dsa.g = p, q, g
         dsa.x, dsa.y = x, y
 
         self.dsa = dsa
 
     def test_dsa_sign(self):
-        self.assertEqual(self.dsa.sign(H, message, k), sig)
+        self.assertEqual(self.dsa.sign(message, k), sig)
 
 
     def test_dsa_verify(self):
-        self.assertTrue(self.dsa.verify(H, message, sig))
+        self.assertTrue(self.dsa.verify(message, sig))
 
     
     def test_k_derivation(self):
         messageB = int.from_bytes(hashlib.sha1(b'deadbeef').digest(), byteorder='big')
-        sig_genB = self.dsa.sign(H, messageB, k)
-        found_k = self.dsa.derive_k_from_sigs(H, message, sig, messageB, sig_genB)
+        sig_genB = self.dsa.sign(messageB, k)
+        found_k = self.dsa.derive_k_from_sigs(message, sig, messageB, sig_genB)
         self.assertEqual(found_k, k)
 
 
     def test_x_derivation(self):
-        n_dsa = deepcopy(self.dsa)
-        n_dsa.x = 0
-        n_dsa.x = n_dsa.derive_x_from_k(H, message, k, sig)
-        self.assertEqual(n_dsa.x, x)
+        self.dsa.x = 0
+        self.dsa.x = self.dsa.derive_x_from_k(message, k, sig)
+        self.assertEqual(self.dsa.x, x)
