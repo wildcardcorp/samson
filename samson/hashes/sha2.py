@@ -1,6 +1,5 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.bytes import Bytes
-from samson.utilities.padding import md_pad
 from samson.utilities.manipulation import right_rotate, get_blocks
 
 # https://en.wikipedia.org/wiki/SHA-2
@@ -44,7 +43,21 @@ K_512 = [
 
 
 class SHA2(MerkleDamgardConstruction):
-    def __init__(self, initial_state, digest_size, state_size, block_size, rounds, rot, k):
+    """
+    SHA2 hash function base class.
+    """
+
+    def __init__(self, initial_state: list, digest_size: int, state_size: int, block_size: int, rounds: int, rot: list, k: list):
+        """
+        Parameters:
+            initial_state (list): Initial state as list of integers.
+            digest_size    (int): Output size in bytes.
+            state_size     (int): Number of elements in state.
+            block_size     (int): Amount of message to digest at a time.
+            rounds         (int): Number of compression rounds to perform.
+            rot           (list): Rotation constants.
+            k             (list): `k` constants.
+        """
         super().__init__(
             initial_state=Bytes(b''.join([int.to_bytes(h_i, state_size, 'big') for h_i in initial_state])),
             compression_func=None,
@@ -58,20 +71,40 @@ class SHA2(MerkleDamgardConstruction):
         self.k = k
 
 
-    def yield_state(self, message):
+
+    def yield_state(self, message: bytes):
+        """
+        Yields successive states while processing `message`.
+
+        Parameters:
+            message (bytes): Message to hash.
+        
+        Returns:
+            generator: Generator yielding states.
+        """
         for state in MerkleDamgardConstruction.yield_state(self, message):
             yield state[:self.digest_size]
     
 
+
     def __repr__(self):
         return "<SHA2: initial_state={}, block_size={}, digest_size={}>".format(self.initial_state, self.block_size, self.digest_size)
-
 
     def __str__(self):
         return self.__repr__()
 
 
-    def compression_func(self, block, state):
+    def compression_func(self, block: bytes, state: bytes) -> Bytes:
+        """
+        SHA-2 compression function.
+
+        Parameters:
+            block (bytes): Block being digested.
+            state (bytes): Current digest state.
+        
+        Returns:
+            Bytes: Hash output.
+        """
         bit_mask = 0xFFFFFFFF if self.state_size == 4 else 0xFFFFFFFFFFFFFFFF
         bit_size = self.state_size * 8
 
@@ -124,7 +157,11 @@ class SHA2(MerkleDamgardConstruction):
 
     
 class SHA224(SHA2):
-    def __init__(self, h=None):
+    def __init__(self, h: list=None):
+        """
+        Parameters:
+            h (list): Initial state as list of integers.
+        """
         super().__init__(
             initial_state=h or H_224,
             digest_size=224 // 8,
@@ -137,7 +174,11 @@ class SHA224(SHA2):
 
 
 class SHA256(SHA2):
-    def __init__(self, h=None):
+    def __init__(self, h: list=None):
+        """
+        Parameters:
+            h (list): Initial state as list of integers.
+        """
         super().__init__(
             initial_state=h or H_256,
             digest_size=256 // 8,
@@ -150,7 +191,11 @@ class SHA256(SHA2):
 
 
 class SHA384(SHA2):
-    def __init__(self, h=None):
+    def __init__(self, h: list=None):
+        """
+        Parameters:
+            h (list): Initial state as list of integers.
+        """
         super().__init__(
             initial_state=h or H_384,
             digest_size=384 // 8,
@@ -163,7 +208,11 @@ class SHA384(SHA2):
 
 
 class SHA512(SHA2):
-    def __init__(self, h=None):
+    def __init__(self, h: list=None):
+        """
+        Parameters:
+            h (list): Initial state as list of integers.
+        """
         super().__init__(
             initial_state=h or H_512,
             digest_size=512 // 8,

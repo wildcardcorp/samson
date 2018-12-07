@@ -10,7 +10,7 @@ class RC4(object):
     def __init__(self, key: bytes):
         """
         Parameters:
-            key (bytes): Key.
+            key (bytes): Key (40-2040 bits).
         """
         self.key = key
         self.S = self.key_schedule(key)

@@ -1,7 +1,18 @@
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
+from types import FunctionType
 
-def MGF1(seed, length):
+def MGF1(seed: bytes, length: int) -> Bytes:
+    """
+    Peforms the mask generation function v1 from RFC3447 B.2.1.
+
+    Parameters:
+        seed (bytes): Initial value.
+        length (int): Length of mask to produce.
+    
+    Returns:
+        Bytes: Mask.
+    """
     mask = b''
     sha1 = SHA1()
 
@@ -13,7 +24,20 @@ def MGF1(seed, length):
 
 # https://www.ietf.org/rfc/rfc3447.txt
 class OAEP(object):
-    def __init__(self, modulus_len, mgf=MGF1, hash_obj=SHA1(), label=b''):
+    """
+    Optimal Asymmetric Encryption Padding
+
+    Probablistic Feistel Network proven to be semantically secure under chosen plaintext attack.
+    """
+
+    def __init__(self, modulus_len: int, mgf: FunctionType=MGF1, hash_obj: object=SHA1(), label: bytes=b''):
+        """
+        Parameters:
+            modulus_len (int): Length of the RSA modulus, i.e. RSA bit strength.
+            mgf        (func): Mask generation function. Takes in `seed` and `length` and returns bytes.
+            hash_obj (object): Instantiated object with compatible hash interface.
+            label     (bytes): (Optional) 
+        """
         self.mgf = mgf
         self.hash_obj = hash_obj
         self.label = label
@@ -23,13 +47,22 @@ class OAEP(object):
     def __repr__(self):
         return f"<OAEP: mgf={self.mgf}, hash_obj={self.hash_obj}, label={self.label}>"
 
-
     def __str__(self):
         return self.__repr__()
 
         
 
-    def pad(self, plaintext, seed=None):
+    def pad(self, plaintext: bytes, seed: bytes=None) -> Bytes:
+        """
+        Pads the `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Plaintext to pad.
+            seed      (bytes): (Optional) Random seed for the MGF.
+        
+        Returns:
+            Bytes: Padded plaintext.
+        """
         plaintext = Bytes.wrap(plaintext)
         k = (self.modulus_len + 7) // 8
 
@@ -60,7 +93,18 @@ class OAEP(object):
 
 
 
-    def unpad(self, plaintext, allow_mangers=False, skip_label_check=False):
+    def unpad(self, plaintext: bytes, allow_mangers: bool=False, skip_label_check: bool=False) -> Bytes:
+        """
+        Unpads the `plaintext`.
+
+        Parameters:
+            plaintext         (bytes): Plaintext to pad.
+            allow_mangers      (bool): Whether or not to explicitly help Manger's attack.
+            skip_label_check   (bool): Whether or not to skip checking the label.
+        
+        Returns:
+            Bytes: Unpadded plaintext.
+        """
         k = (self.modulus_len + 7) // 8
         h_len = self.hash_obj.digest_size
         plaintext = Bytes.wrap(plaintext).zfill(k)

@@ -21,7 +21,7 @@ def _append_and_merge(new_a, new_b, intervals):
     intervals.append((new_a, new_b))
 
 
-class PKCS15PaddingOracleAttack(object):
+class PKCS1v15PaddingOracleAttack(object):
     """
     Performs a plaintext recovery attack.
 

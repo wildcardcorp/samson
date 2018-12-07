@@ -2,7 +2,7 @@
 import base64
 from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ecb import ECB
-
+from samson.padding.pkcs7 import PKCS7
 from samson.utilities.general import rand_bytes
 from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
 from samson.attacks.ecb_prepend_attack import ECBPrependAttack
@@ -29,5 +29,7 @@ class ECBPrependAttackTestCase(unittest.TestCase):
         attack = ECBPrependAttack(StatelessBlockEncryptionOracle(encrypt_rand_ecb))
         recovered_plaintext = attack.execute()
 
-        self.assertEqual(unknown_string, recovered_plaintext)
-        print(recovered_plaintext)
+        padder = PKCS7(block_size)
+        recovered_plaintext = padder.unpad(recovered_plaintext)
+
+        self.assertEqual(recovered_plaintext, unknown_string)

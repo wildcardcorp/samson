@@ -4,7 +4,7 @@ from samson.block_ciphers.modes.ecb import ECB
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.manipulation import get_blocks
-from samson.utilities.padding import pkcs7_pad
+from samson.padding import PKCS7
 
 key_size = 16
 block_size = 16
@@ -31,6 +31,8 @@ def login(cipherbytes):
     print(user)
     return user['role'] == 'admin'
 
+
+pkcs7 = PKCS7(block_size)
 
 if __name__ == '__main__':
     user = profile_for('foobar@email.com')
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     # Build exploit block
     injection_location = block_size - mask_location
 
-    exploit = exploit[:injection_location] + pkcs7_pad(injections[0], block_size) + exploit[injection_location:]
+    exploit = exploit[:injection_location] + pkcs7.pad(injections[0]) + exploit[injection_location:]
     diff_block_num += 1
 
 

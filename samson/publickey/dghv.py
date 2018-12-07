@@ -49,6 +49,7 @@ class DGHV(object):
     """
     The Dijk-Gentry-Halevi-Vaikuntanathan (DGHV) fully-homomorphic encryption scheme
     """
+    
     def __init__(self, p: int=None):
         """
         Parameters:

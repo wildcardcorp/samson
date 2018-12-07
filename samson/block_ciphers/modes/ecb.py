@@ -1,6 +1,6 @@
-from samson.utilities.padding import pkcs7_pad, pkcs7_unpad
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
+from samson.padding.pkcs7 import PKCS7
 from types import FunctionType
 
 
@@ -17,11 +17,11 @@ class ECB(object):
         self.encryptor = encryptor
         self.decryptor = decryptor
         self.block_size = block_size
+        self.padder = PKCS7(block_size)
 
 
     def __repr__(self):
         return f"<ECB: encryptor={self.encryptor}, decryptor={self.decryptor}, block_size={self.block_size}>"
-
 
     def __str__(self):
         return self.__repr__()
@@ -30,7 +30,6 @@ class ECB(object):
     def encrypt(self, plaintext: bytes, pad: bool=True) -> Bytes:
         """
         Encrypts `plaintext`.
-
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
             pad        (bool): Pads the plaintext with PKCS7.
@@ -39,9 +38,9 @@ class ECB(object):
             Bytes: Resulting ciphertext.
         """
         if pad:
-            plaintext = pkcs7_pad(plaintext, self.block_size)
+            plaintext = self.padder.pad(plaintext)
 
-        
+
         ciphertext = Bytes(b'')
         for block in get_blocks(plaintext, self.block_size):
             ciphertext += self.encryptor(block)
@@ -53,7 +52,6 @@ class ECB(object):
     def decrypt(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
         """
         Decrypts `ciphertext`.
-
         Parameters:
             ciphertext (bytes): Bytes-like object to be decrypted.
             unpad       (bool): Unpads the plaintext with PKCS7.
@@ -65,7 +63,8 @@ class ECB(object):
         for block in get_blocks(ciphertext, self.block_size):
             plaintext += self.decryptor(block)
         
+
         if unpad:
-            plaintext = pkcs7_unpad(plaintext)
-        
+            plaintext = self.padder.unpad(plaintext)
+
         return plaintext

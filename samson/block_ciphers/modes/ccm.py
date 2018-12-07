@@ -1,14 +1,12 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
+from samson.macs.cbc_mac import CBCMAC
 
 
 class CCM(object):
     """Counter with CBC-MAC block cipher mode."""
 
     def __init__(self, key: bytes, cipher: object, mac_len: int):
-        # Prevent circular dependencies in during __all__ imports
-        from samson.macs.cbc_mac import CBCMAC
-
         self.key = key
         self.cipher = cipher
         self.cmac = CBCMAC(self.key, self.cipher)

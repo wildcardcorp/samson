@@ -1,5 +1,4 @@
 from samson.utilities.manipulation import get_blocks
-from samson.utilities.padding import pkcs7_unpad
 from samson.utilities.bytes import Bytes
 from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
 import struct
@@ -28,7 +27,7 @@ class ECBPrependAttack(object):
         self.oracle = oracle
 
 
-    def execute(self, unpad: bool=True) -> Bytes:
+    def execute(self) -> Bytes:
         """
         Executes the attack.
 
@@ -64,9 +63,4 @@ class ECBPrependAttack(object):
                         break
 
             plaintexts.append(plaintext)
-
-        result = b''.join(plaintexts)
-        if unpad:
-            result = pkcs7_unpad(result, block_size=block_size)
-
-        return Bytes(result)
+        return Bytes(b''.join(plaintexts))

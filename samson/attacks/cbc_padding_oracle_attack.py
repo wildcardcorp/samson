@@ -1,4 +1,3 @@
-from samson.utilities.padding import pkcs7_unpad
 from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
 import struct
@@ -32,13 +31,12 @@ class CBCPaddingOracleAttack(object):
         self.block_size = block_size
 
 
-    def execute(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
+    def execute(self, ciphertext: bytes) -> Bytes:
         """
         Executes the attack.
 
         Parameters:
             ciphertext (bytes): Bytes-like ciphertext to be decrypted.
-            unpad       (bool): Whether or not to attempt to unpad the result.
 
         Returns:
             Bytes: Plaintext corresponding to the inputted ciphertext.
@@ -82,9 +80,4 @@ class CBCPaddingOracleAttack(object):
                 plaintext = last_working_char + plaintext
 
             plaintexts.append(plaintext)
-        
-        result = Bytes(b''.join(plaintexts[::-1]))
-
-        if unpad:
-            result = pkcs7_unpad(result, self.block_size)
-        return result
+        return Bytes(b''.join(plaintexts[::-1]))

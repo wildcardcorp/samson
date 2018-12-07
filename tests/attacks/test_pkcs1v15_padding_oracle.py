@@ -1,7 +1,7 @@
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.publickey.rsa import RSA
-from samson.utilities.padding import pkcs15_pad
-from samson.attacks.pkcs15_padding_oracle_attack import PKCS15PaddingOracleAttack, _ceil
+from samson.attacks.pkcs1v15_padding_oracle_attack import PKCS1v15PaddingOracleAttack
+from samson.padding.pkcs1v15 import PKCS1v15
 import unittest
 
 import logging
@@ -10,19 +10,25 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 key_length = 256
 rsa = RSA(key_length)
 
+padding = PKCS1v15(key_length)
+
 def oracle_func(ciphertext):
     plaintext = b'\x00' + rsa.decrypt(ciphertext)
-    return plaintext[:2] == b'\x00\x02' and len(plaintext) == _ceil(rsa.n.bit_length(), 8)
+    try:
+        padding.unpad(plaintext, allow_padding_oracle=True)
+        return True
+    except Exception as _:
+        return False
 
 
-class PKCS15PaddingOracleAttackTestCase(unittest.TestCase):
+class PKCS1v15PaddingOracleAttackTestCase(unittest.TestCase):
     def test_padding_oracle_attack(self):
         oracle = PaddingOracle(oracle_func)
 
-        m = pkcs15_pad(b'kick it, CC', key_length // 8)
+        m = padding.pad(b'kick it, CC')
         c = rsa.encrypt(m)
 
         assert oracle.check_padding(c)
 
-        attack = PKCS15PaddingOracleAttack(oracle)
+        attack = PKCS1v15PaddingOracleAttack(oracle)
         self.assertEqual(attack.execute(c, rsa.n, rsa.e, key_length), m)

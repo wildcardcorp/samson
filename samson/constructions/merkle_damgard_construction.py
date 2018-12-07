@@ -1,8 +1,24 @@
 from samson.utilities.manipulation import get_blocks
-from samson.utilities.padding import md_pad
 from samson.utilities.bytes import Bytes
 from types import FunctionType
 from copy import deepcopy
+
+
+def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int=64) -> bytes:
+    length = fakeLen or len(msg)
+    
+    # Append the bit '1' to the message
+    padding = b'\x80'
+    byte_size = bit_size // 8
+
+    # Append 0 <= k < 512 bits '0', so that the resulting message length (in bytes)
+    # as congruent to 56 (mod 64)
+    padding += b'\x00' * (((bit_size - byte_size) - (length + 1) % bit_size) % bit_size)
+
+    # Append length of message (before pre-processing), in bits, as 64-bit big-endian integer
+    message_bit_length = length * 8
+    padding += message_bit_length.to_bytes(byte_size, byteorder=byteorder)
+    return msg + padding
 
 
 class MerkleDamgardConstruction(object):

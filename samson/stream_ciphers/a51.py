@@ -13,8 +13,8 @@ class A51(object):
     def __init__(self, key: bytes, frame_num: int):
         """
         Parameters:
-            key     (bytes): Key.
-            frame_num (int): Current frame number.
+            key     (bytes): Key (64 bits).
+            frame_num (int): Current frame number (22 bits).
         """
         self.key = key
         self.frame_num = frame_num

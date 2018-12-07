@@ -1,4 +1,6 @@
 from samson.utilities.manipulation import get_blocks
+from sympy import Poly, GF
+from sympy.abc import x
 import base64
 import re
 
@@ -139,3 +141,31 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70) -> bytes:
     """
     data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
     return f"-----BEGIN {marker}-----\n".encode('utf-8') + data + f"\n-----END {marker}-----".encode('utf-8')
+
+
+
+def int_to_poly(integer: int) -> Poly:
+    """
+    Encodes an integer as a polynomial.
+
+    Parameters:
+        integer (int): Integer to encode.
+    
+    Returns:
+        Poly: Polynomial representation.
+    """
+    return Poly(sum([int(bit) * x ** i for i, bit in enumerate(bin(integer)[2:][::-1])][::-1]) + x, domain=GF(2)) - Poly(x, domain=GF(2))
+
+
+
+def poly_to_int(poly: Poly) -> int:
+    """
+    Encodes an polynomial as a integer.
+
+    Parameters:
+        poly (Poly): Polynomial to encode.
+    
+    Returns:
+        int: Integer representation.
+    """
+    return int(''.join([str(bit) for bit in poly.all_coeffs()]), 2)

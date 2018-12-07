@@ -37,10 +37,10 @@ class ChaCha(Salsa):
     def __init__(self, key: bytes, nonce: bytes, rounds: int=20, constant: bytes=b"expand 32-byte k"):
         """
         Parameters:
-            key      (bytes): Key.
-            nonce    (bytes): Nonce.
+            key      (bytes): Key (128 or 256 bits).
+            nonce    (bytes): Nonce (8 bytes).
             rounds     (int): Number of rounds to perform.
-            constant (bytes): Constant used in generating the keystream.
+            constant (bytes): Constant used in generating the keystream (16 bytes).
         """
         self.key = key
         self.nonce = nonce

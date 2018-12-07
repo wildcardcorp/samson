@@ -5,6 +5,7 @@ from samson.protocols.diffie_hellman import DiffieHellman
 from types import FunctionType
 
 # https://asecuritysite.com/encryption/dragonfly
+# https://tools.ietf.org/html/draft-harkins-tls-dragonfly-04
 class Dragonfly(object):
     """
     Dragonfly zero-knowledge proof.

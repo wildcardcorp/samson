@@ -20,7 +20,6 @@ class DH25519(object):
     def __repr__(self):
         return f"<DH25519: key={self.key}, base={self.base}>"
 
-
     def __str__(self):
         return self.__repr__()
 

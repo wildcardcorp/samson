@@ -46,16 +46,11 @@ X   Clean up code/make interfaces more uniform
 X   Add NTRU tests
 X   Add ECB-CTS tests
 X   Add DualEC tests
-X   Add GLFSR tests
 X   Add FLFSR tests
 X   Add LFG tests
 X   Add PCG tests
-X   Add Merkle-Hellman Knapsack tests
 X   Add ECHDE tests
 X   Add Dragonfly tests
-X   Add SRP tests
-
-X   Decouple padding from ECB, CBC, etc
 
 X   Nostradamus attack
     OK  Works with prefixes
@@ -68,7 +63,6 @@ X   Nostradamus attack
 X   Spiff up README
 X   Revamp spec
 X   Implement reverse clock for FLFSR
-X   Make SRP compliant to https://tools.ietf.org/html/rfc5054
 
 X   Add expected key lengths to documentation and check during initialization
 
@@ -78,6 +72,7 @@ X   Add expected key lengths to documentation and check during initialization
 ===============
 X   scrypt
 X   EAX
+X   SIV
 X   RC6
 X   Reporting backends (tqdm)
 X   OMAC

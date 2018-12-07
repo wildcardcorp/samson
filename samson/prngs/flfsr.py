@@ -1,5 +1,5 @@
 from sympy import Poly
-from samson.utilities.math import poly_to_int
+from samson.utilities.encoding import poly_to_int
 from samson.prngs.glfsr import GLFSR
 
 class FLFSR(GLFSR):

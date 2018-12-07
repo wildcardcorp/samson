@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
+from samson.padding.pkcs7 import PKCS7
 from samson.utilities.general import rand_bytes
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
@@ -18,6 +19,7 @@ iv = rand_bytes(block_size)
 
 aes = Rijndael(key)
 cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+padder = PKCS7(block_size)
 
 plaintext_strings = [
     'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
@@ -41,7 +43,8 @@ def encrypt_data():
 
 def decrypt_data(data):
     try:
-        cbc.decrypt(bytes(data))
+        plaintext = cbc.decrypt(bytes(data), unpad=False)
+        padder.unpad(plaintext, allow_padding_oracle=True)
         return True
     except Exception as e:
         if 'Invalid padding' in str(e):
@@ -56,6 +59,8 @@ class CBCPaddingOracleTestCase(unittest.TestCase):
 
         attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv, block_size=block_size)
         recovered_plaintext = attack.execute(bytes(ciphertext))
+
+        recovered_plaintext = padder.unpad(recovered_plaintext)
 
         print(recovered_plaintext)
         self.assertEqual(base64.b64decode(chosen_plaintext.encode()), recovered_plaintext)

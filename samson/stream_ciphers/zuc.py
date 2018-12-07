@@ -73,8 +73,8 @@ class ZUC(object):
     def __init__(self, key: bytes, iv: bytes):
         """
         Parameters:
-            key (bytes): Key.
-            iv  (bytes): Initialization vector.
+            key (bytes): Key (128 bits).
+            iv  (bytes): Initialization vector (16 bytes).
         """
         self.key         = Bytes.wrap(key)
         self.iv          = iv
