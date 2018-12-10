@@ -19,6 +19,7 @@ tests_require = [
 ]
 
 setup(name='samson-crypto',
+      data_files=['VERSION'],
       version=__import__('samson').VERSION,
       description='Cryptanalysis and attack framework',
       scripts=['scripts/samson'],

@@ -30,9 +30,7 @@ Goals:
     * Document everything
     * Test everything
 
-X   Finish PCG
-X   Clean up the organization of padding schemes
-X   Add documentation comments
+
 X   Fix CRIME/BREACH (clean up and better results)
 X   Make Bitstring sane... (use something like TDD)
 
@@ -43,13 +41,9 @@ X   Clean up code/make interfaces more uniform
     X   Fix all "TODOs"
 
 
-X   Add NTRU tests
 X   Add ECB-CTS tests
-X   Add DualEC tests
 X   Add FLFSR tests
 X   Add LFG tests
-X   Add PCG tests
-X   Add ECHDE tests
 X   Add Dragonfly tests
 
 X   Nostradamus attack
@@ -64,7 +58,7 @@ X   Spiff up README
 X   Revamp spec
 X   Implement reverse clock for FLFSR
 
-X   Add expected key lengths to documentation and check during initialization
+X   samson must install properly from PyPi/pip
 
 
 

@@ -104,7 +104,7 @@ class NTRU(object):
         self.N = N
         self.p = p
         self.q = q
-        self.R_poly = Poly(x ** N - 1, x).set_domain(ZZ)
+        self.R_poly = Poly(x**N - 1, x).set_domain(ZZ)
 
         self.f_poly = f_poly
         self.g_poly = g_poly
@@ -180,8 +180,7 @@ class NTRU(object):
         random_poly = random_poly or rand_poly(self.N, int(math.sqrt(self.q)))
 
         # Convert plaintext into polynomial
-        pt_poly = Poly([int(bit) for bit in bin(int.from_bytes(plaintext, 'big'))[2:]][::-1], x).set_domain(ZZ)
-
+        pt_poly = Poly([int(bit) for bit in bin(int.from_bytes(plaintext, 'big'))[2:].zfill(len(plaintext) * 8)][::-1], x).set_domain(ZZ)
         rhm = (random_poly * self.h_poly).trunc(self.q) + pt_poly
         ct_poly = (rhm % self.R_poly).trunc(self.q)
 
@@ -208,5 +207,6 @@ class NTRU(object):
 
         pt_poly = ((self.f_p_poly * b_poly) % self.R_poly).trunc(self.p)
 
-        pt_bitstring = ''.join([str(bit) for bit in pt_poly.all_coeffs()[::-1]])
-        return Bytes(int(pt_bitstring, 2))
+        bit_length = math.ceil(len(pt_poly.all_coeffs()) / 8) * 8
+        pt_bitstring = ''.join([str(bit) for bit in pt_poly.all_coeffs()]).zfill(bit_length)[::-1]
+        return Bytes(int(pt_bitstring, 2)).zfill(bit_length // 8)

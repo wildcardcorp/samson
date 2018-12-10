@@ -1,6 +1,15 @@
 from sympy import GF
 from samson.utilities.math import mod_inv
+from fastecdsa.curve import P192, P224, P256, P384, P521
 import math
+
+# Convenience aliases
+secp192r1 = P192
+secp224r1 = P224
+secp256r1 = P256
+secp384r1 = P384
+secp521r1 = P521
+
 
 # https://tools.ietf.org/html/rfc7748
 def cswap(swap: int, x_2: int, x_3: int) -> (int, int):

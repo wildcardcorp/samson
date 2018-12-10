@@ -1,8 +1,10 @@
 from samson.utilities.manipulation import xor_buffs
 from samson.analyzers.analyzer import Analyzer
 
+import logging
+log = logging.getLogger(__name__)
+
 # TODO: Make work with more than two ciphertexts.
-# TODO: Implement logging
 class XORDictionaryAttack(object):
     """
     Preforms a plaintext recovery attack.
@@ -28,7 +30,7 @@ class XORDictionaryAttack(object):
         self.wordlist = wordlist
         
     
-    def execute(self, ciphertexts: list, word_ranges: list=[2,3,4]) -> list:
+    def execute(self, ciphertexts: list, word_ranges: list=[2,3,4], delimiter: str=' ') -> list:
         """
         Executes the attack.
         
@@ -37,13 +39,14 @@ class XORDictionaryAttack(object):
             word_ranges (list): List of numbers of words to try. E.G. [2, 3, 4] means
                                 try the Cartesian product of 2, 3,
                                 and 4-tuple word combinations.
+            delimiter    (str): Delimiter to use between word combinations.
         
         Returns:
             list: Top 10 possible plaintexts.
         """
 
         if len(ciphertexts) != 2:
-            raise ValueError('`ciphertexts` MUST contain at least two samples.')
+            raise ValueError('`ciphertexts` MUST contain two samples.')
 
         two_time = xor_buffs(*ciphertexts)
 
@@ -55,11 +58,13 @@ class XORDictionaryAttack(object):
         results = []
 
         for j in word_ranges:
+            log.debug(f"Starting word range {j}")
+
             for i in range(j - last_num_processed):
                 word_scores = []
                 for prepend in prepend_list:
                     for word in trimmed_list:
-                        mod_word = (prepend + ' ' + word).strip()
+                        mod_word = (prepend + delimiter + word).strip()
                         xor_result = xor_buffs((bytes(mod_word, 'utf-8') + b'\x00' * cipher_len)[:cipher_len], two_time)[:len(two_time)]
                         analysis = self.analyzer.analyze(xor_result)
                         word_scores.append((mod_word, analysis / (len(word) ** 2)))

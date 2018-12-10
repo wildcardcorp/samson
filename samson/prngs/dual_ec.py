@@ -41,7 +41,7 @@ class DualEC(object):
         self.t = s
         self.r = (s * self.Q).x
 
-        return Bytes(int.to_bytes(self.r, 32, 'big')[2:])
+        return Bytes(int.to_bytes(self.r, 32, 'big')).zfill(32)[2:]
 
 
     @staticmethod
