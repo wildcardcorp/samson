@@ -42,7 +42,17 @@ TEST_VECS = [
 
 
 class BlowfishTestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = Blowfish(Bytes(0x8000000000000000))
+        plaintext = Bytes(b'').zfill(8)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
     
+
     # https://www.schneier.com/code/vectors.txt
     def test_all_vecs(self):
         for key, plaintext, expected_ct in TEST_VECS:

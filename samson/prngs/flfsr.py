@@ -37,13 +37,13 @@ class FLFSR(GLFSR):
         self.mask -= 1
 
 
+
     def __repr__(self):
         return f"<FLFSR: state={self.state}, polynomial={self.polynomial}, mask={self.mask}>"
     
-
     def __str__(self):
         return self.__repr__()
-
+        
 
 
     def clock(self) -> int:

@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 # https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
 class CBCPaddingOracleAttack(object):
     """
-    Performs a CBC padding oracle.
+    Performs a CBC padding oracle attack.
 
     Currently only works with PKCS7.
 
@@ -17,6 +17,7 @@ class CBCPaddingOracleAttack(object):
         * The system leaks whether the plaintext's padding was correct or not
         * The user has access to an oracle that attempts to decrypt arbitrary ciphertext
     """
+    
     def __init__(self, oracle: PaddingOracle, iv: bytes, block_size: int=16):
         """
         Parameters:

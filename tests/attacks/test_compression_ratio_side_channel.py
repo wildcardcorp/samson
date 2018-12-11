@@ -37,7 +37,7 @@ Host: hapless.com
 {}
 Content-Length: {}
 {}
-""".format(secret.decode(), len(message), message).encode()
+""".format(secret.decode(), len(message), message.decode()).encode()
 
 
 class CompressionRatioSideChannelTestCase(unittest.TestCase):
@@ -58,7 +58,7 @@ class CompressionRatioSideChannelTestCase(unittest.TestCase):
         known_plaintext = b'Cookie: '
         attack = CRIMEAttack(self)
 
-        recovered_plaintext = attack.execute(known_plaintext)
+        recovered_plaintext = attack.execute(known_plaintext, 54)
 
         print(recovered_plaintext)
         self.assertEqual(recovered_plaintext, secret)

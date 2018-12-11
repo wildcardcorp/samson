@@ -4,23 +4,26 @@ import unittest
 
 
 class RC5TestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = RC5(key=Bytes(0x8000000000000000).zfill(8), num_rounds=16, block_size=32)
+        plaintext = Bytes(b'').zfill(4)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+
+
     def _run_test(self, key, plaintext, num_rounds, block_size, test_vector, iterations=1):
         rc5 = RC5(key=key, num_rounds=num_rounds, block_size=block_size)
         ct = rc5.encrypt(plaintext)
 
-        #self.assertEqual(rc5.decrypt(ct), plaintext)
+        self.assertEqual(rc5.decrypt(ct), plaintext)
         self.assertEqual(ct, Bytes.wrap(test_vector))
         
 
     
-
-    # def test_vec0(self):
-    #     key = 0x00010203
-    #     plaintext = 0x0001
-    #     test_vector = 0x212A
-        
-    #     self._run_test(key=key, plaintext=plaintext, test_vector=test_vector, block_size=8, num_rounds=12)
-
 
     def test_vec1(self):
         key = Bytes.wrap(0x0001020304050607).zfill(8)

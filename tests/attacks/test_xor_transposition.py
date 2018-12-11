@@ -23,7 +23,7 @@ def encrypt_ctr(secret):
 
 def encrypt_rc4(secret):
     cipher = RC4(key)
-    return cipher.yield_state(len(secret)) ^ secret
+    return cipher.generate(len(secret)) ^ secret
 
 
 class XORTranspositionTestCase(unittest.TestCase):

@@ -90,6 +90,6 @@ class XORTranspositionAttack(object):
                 best_char = sorted(all_chars.items(), key=lambda kv: kv[1][0], reverse=True)[0][1][1]
                 differential_mask += struct.pack('B', best_char)
                 
-            retransposed_plaintexts = [xor_buffs(cipher, differential_mask) for cipher in retransposed_plaintexts]
+            retransposed_plaintexts = [Bytes.wrap(cipher) ^ differential_mask for cipher in retransposed_plaintexts]
 
         return retransposed_plaintexts

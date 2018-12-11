@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.math import mod_inv
-from samson.hashes.md5 import MD5
+from samson.hashes.sha2 import SHA256
 from samson.protocols.diffie_hellman import DiffieHellman
 from types import FunctionType
 
@@ -13,7 +13,7 @@ class Dragonfly(object):
     Used in WPA3.
     """
 
-    def __init__(self, key: bytes, H: FunctionType=lambda m: MD5().hash(m), q: int=DiffieHellman.MODP_2048):
+    def __init__(self, key: bytes, H: FunctionType=SHA256().hash, q: int=DiffieHellman.MODP_2048):
         """
         Parameters:
             key (bytes): Bytes-like object shared by both parties to authenticate each other.
@@ -34,29 +34,30 @@ class Dragonfly(object):
         return self.__repr__()
 
 
-    def get_challenge(self) -> int:
+    def get_challenge(self) -> (int, int):
         """
         Gets the challenge.
 
         Returns:
-            int: The challenge.
+            (int, int): The challenge.
         """
         sA = self.a + self.A
 
-        PE = int.from_bytes(self.H(self.key)[:8], 'big')
+        PE = self.H(self.key).int()
         eA = mod_inv(pow(PE, self.A, self.q), self.q)
         return pow(PE, sA, self.q), eA
 
 
-    def derive_key(self, challenge: int) -> int:
+
+    def derive_key(self, challenge: (int, int)) -> int:
         """
         Derives the shared key from the other instance's challenge.
 
         Parameters:
-            challenge (int): The other instance's challenge.
+            challenge (int, int): The other instance's challenge.
         
         Returns:
             int: Shared key.
         """
-        PEsA, eA = challenge
-        return pow(PEsA * eA, self.a, self.q)
+        PEsB, eB = challenge
+        return pow(PEsB * eB, self.a, self.q)

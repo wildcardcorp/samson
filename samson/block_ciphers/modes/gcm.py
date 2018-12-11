@@ -9,6 +9,10 @@ GCM_REDUCTION_TABLE = [
     0xe100, 0xfd20, 0xd940, 0xc560, 0x9180, 0x8da0, 0xa9c0, 0xb5e0,
 ]
 
+    
+def reverse_bits(int16: int) -> int:
+    return int(bin(int16)[2:].zfill(4)[::-1], 2)
+
 
 class GCM(object):
     """Galois counter mode (GCM) block cipher mode"""
@@ -23,13 +27,12 @@ class GCM(object):
         self.ctr = CTR(self.encryptor, b'\x00' * 8, 16)
 
         # Precompute the product table
-        # TODO: Replace with more understandable GF implementation
         self.product_table = [0] * 16
-        self.product_table[self._reverse_bits(1)] = self.H
+        self.product_table[reverse_bits(1)] = self.H
 
         for i in range(2, 16, 2):
-            self.product_table[self._reverse_bits(i)] = self._gcm_shift(self.product_table[self._reverse_bits(i // 2)])
-            self.product_table[self._reverse_bits(i + 1)] = self.product_table[self._reverse_bits(i)] ^ self.H
+            self.product_table[reverse_bits(i)] = self.gcm_shift(self.product_table[reverse_bits(i // 2)])
+            self.product_table[reverse_bits(i + 1)] = self.product_table[reverse_bits(i)] ^ self.H
 
 
     def __repr__(self):
@@ -40,7 +43,7 @@ class GCM(object):
         return self.__repr__()
     
 
-    def _clock_ctr(self, nonce: bytes) -> Bytes:
+    def clock_ctr(self, nonce: bytes) -> Bytes:
         nonce = Bytes.wrap(nonce)
         if len(nonce) == 12:
             self.ctr.nonce = nonce
@@ -67,7 +70,7 @@ class GCM(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        tag_mask = self._clock_ctr(nonce)
+        tag_mask = self.clock_ctr(nonce)
         data = Bytes.wrap(data)
 
         ciphertext = self.ctr.encrypt(plaintext)
@@ -91,7 +94,7 @@ class GCM(object):
         """
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
         
-        tag_mask = self._clock_ctr(nonce)
+        tag_mask = self.clock_ctr(nonce)
         data = Bytes.wrap(data)
         tag = self.auth(ciphertext, data, tag_mask)
 
@@ -102,7 +105,7 @@ class GCM(object):
         return self.ctr.decrypt(ciphertext)
 
 
-    def _gcm_shift(self, x: int) -> int:
+    def gcm_shift(self, x: int) -> int:
         high_bit_set = x & 1
         x >>= 1
 
@@ -112,11 +115,7 @@ class GCM(object):
         return x
 
     
-    def _reverse_bits(self, int16: int) -> int:
-        return int(bin(int16)[2:].zfill(4)[::-1], 2)
-
-    
-    def _mul(self, y):
+    def mul(self, y):
         ret = 0
 
         for _ in range(0, 128, 4):
@@ -134,7 +133,7 @@ class GCM(object):
         y = self.update(y, ad)
         y = self.update(y, ciphertext)
         y ^= (len(ad) << (3 + 64)) | (len(ciphertext) << 3)
-        y = self._mul(y)
+        y = self.mul(y)
         y ^= tag_mask.int()
         return Bytes(int.to_bytes(y, 16, 'big'))
 
@@ -143,7 +142,7 @@ class GCM(object):
     def update(self, y: int, data: Bytes) -> int:
         for chunk in data.chunk(16):
             y ^= chunk.int()
-            y = self._mul(y)
+            y = self.mul(y)
 
         extra = len(data) % 16
         
@@ -151,5 +150,5 @@ class GCM(object):
             block = bytearray(16)
             block[:extra] = data[-extra:]
             y ^= int.from_bytes(block, 'big')
-            y = self._mul(y)
+            y = self.mul(y)
         return y

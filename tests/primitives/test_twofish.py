@@ -4,6 +4,18 @@ import unittest
 
 # https://www.schneier.com/academic/paperfiles/paper-twofish-paper.pdf
 class TwofishTestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = Twofish(Bytes(0x8000000000000000).zfill(16))
+        plaintext = Bytes(b'').zfill(16)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+
+
+
     def _run_test(self, key, plaintext, expected_ciphertext):
         twofish = Twofish(key)
         ciphertext = twofish.encrypt(plaintext)

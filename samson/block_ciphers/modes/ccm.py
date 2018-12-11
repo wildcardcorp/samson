@@ -1,6 +1,7 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
 from samson.macs.cbc_mac import CBCMAC
+import hmac
 
 
 class CCM(object):
@@ -112,8 +113,7 @@ class CCM(object):
 
         T = self._generate_mac(nonce, plaintext, data)[:self.mac_len]
 
-        # TODO: Need constant time
-        if T != mac:
+        if not hmac.compare_digest(T, mac):
             raise Exception("Authentication of data failed: MACs not equal")
 
         return plaintext

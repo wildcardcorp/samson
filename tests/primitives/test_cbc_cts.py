@@ -1,15 +1,27 @@
 from samson.block_ciphers.modes.cbc_cts import CBCCTS
-from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
 import unittest
 
 # Test vectors from https://www.ietf.org/rfc/rfc3962.txt
 class CBCCTSTestCase(unittest.TestCase):
+    def test_gauntlet(self):
+        rij = Rijndael(Bytes(0x0).zfill(32))
+        cts = CBCCTS(rij.encrypt, rij.decrypt, block_size=16, iv=b'\x00' * 16)
+
+        for _ in range(100):
+            plaintext = Bytes.random(Bytes.random(1).int() + 17)
+            
+            if len(plaintext) < 17:
+                plaintext = plaintext.zfill(17)
+
+            ciphertext = cts.encrypt(plaintext)
+            self.assertEqual(cts.decrypt(ciphertext), plaintext)
+
+
     def _run_test(self, plaintext, expected_ciphertext):
         rij = Rijndael(0x636869636b656e207465726979616b69)
-        cbc = CBC(rij.encrypt, rij.decrypt, block_size=16, iv=b'\x00' * 16)
-        cts = CBCCTS(cbc)
+        cts = CBCCTS(rij.encrypt, rij.decrypt, block_size=16, iv=b'\x00' * 16)
 
         ciphertext = cts.encrypt(plaintext)
         self.assertEqual(ciphertext, expected_ciphertext)

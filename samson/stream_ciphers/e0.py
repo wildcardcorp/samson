@@ -172,4 +172,4 @@ class E0(object):
             bits.append(str(self.key))
             self.shift()
 
-        return Bytes(int(''.join(bits), 2))
+        return Bytes(int(''.join(bits), 2)).zfill(length)

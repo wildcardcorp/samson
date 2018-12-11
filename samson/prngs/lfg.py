@@ -1,4 +1,5 @@
 from types import FunctionType
+from copy import deepcopy
 
 class LFG(object):
     """
@@ -8,16 +9,16 @@ class LFG(object):
     ADD_OP = lambda a, b: a + b
     SUB_OP = lambda a, b: a - b
 
-    def __init__(self, state: int, tap: int, feed: int, length: int, operation: FunctionType=ADD_OP):
+    def __init__(self, state: list, tap: int, feed: int, length: int, operation: FunctionType=ADD_OP):
         """
         Parameters:
-            state     (int): Initial state.
-            tap       (int): Initial tap position.
-            feed      (int): Initial feed position.
-            length    (int): Length of internal state (modulus).
-            operation (int): The operation the LFG performs. Function that takes in an integer and returns an integer.
+            state     (list): Initial state.
+            tap        (int): Initial tap position.
+            feed       (int): Initial feed position.
+            length     (int): Length of internal state (modulus).
+            operation  (int): The operation the LFG performs. Function that takes in an integer and returns an integer.
         """
-        self.state = state
+        self.state = deepcopy(state)
         self.tap = tap
         self.feed = feed
         self.length = length

@@ -1,9 +1,21 @@
 from samson.block_ciphers.des import DES
+from samson.utilities.bytes import Bytes
 import codecs
 import unittest
 
 
 class DESTestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        des = DES(Bytes(0x8000000000000000))
+        plaintext = Bytes(b'').zfill(8)
+        ciphertext1 = des.encrypt(plaintext)
+        ciphertext2 = des.decrypt(plaintext)
+
+        self.assertTrue(des.decrypt(ciphertext1), plaintext)
+        self.assertTrue(des.encrypt(ciphertext2), plaintext)
+
+
     def _run_test(self, key, plaintext, test_vector):
         des = DES(key)
         ciphertext = des.encrypt(plaintext)

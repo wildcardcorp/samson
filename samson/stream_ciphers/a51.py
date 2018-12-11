@@ -69,4 +69,4 @@ class A51(object):
             self.clock()
             bitstring += str(self.lfsr_regs[0].value() ^ self.lfsr_regs[1].value() ^ self.lfsr_regs[2].value())
         
-        return Bytes(int(bitstring, 2))
+        return Bytes(int(bitstring, 2)).zfill(length)

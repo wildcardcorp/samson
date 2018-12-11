@@ -1,9 +1,22 @@
 from samson.block_ciphers.kasumi import KASUMI
+from samson.utilities.bytes import Bytes
 from samson.utilities.encoding import int_to_bytes
 import unittest
 
 
 class KASUMITestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = KASUMI(Bytes(0x8000000000000000).zfill(16))
+        plaintext = Bytes(b'').zfill(8)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+
+
+
     def _run_test(self, key, plaintext, test_vector, iterations=1):
         kasumi = KASUMI(key)
 

@@ -1,9 +1,21 @@
 from samson.block_ciphers.rijndael import Rijndael
+from samson.utilities.bytes import Bytes
 import codecs
 import unittest
 
 
 class RijndaelTestCase(unittest.TestCase):
+     # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = Rijndael(Bytes(0x8000000000000000).zfill(16))
+        plaintext = Bytes(b'').zfill(16)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+
+
     def _run_test(self, key, plaintext, block_size, test_vector, iterations=1):
         rijndael = Rijndael(key, block_size=block_size)
 

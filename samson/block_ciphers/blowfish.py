@@ -321,7 +321,7 @@ class Blowfish(object):
 
         R_i, L_i = self.enc_L_R(L_i, R_i)
 
-        return Bytes(L_i) + Bytes(R_i)
+        return (Bytes(L_i) + Bytes(R_i)).zfill(8)
 
 
     

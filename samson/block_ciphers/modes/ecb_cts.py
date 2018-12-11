@@ -37,6 +37,8 @@ class ECBCTS(object):
         plaintext = Bytes.wrap(plaintext)
         block_size = self.underlying_mode.block_size
         pt_len = len(plaintext)
+        
+        assert pt_len > block_size
         pt_chunks = plaintext.chunk(block_size, allow_partials=True)
 
         padding_len = (block_size - (pt_len % block_size)) % block_size

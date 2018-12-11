@@ -4,6 +4,18 @@ import unittest
 
 # http://www.cs.technion.ac.il/~biham/Reports/Serpent/Serpent-256-128.verified.test-vectors
 class SerpentTestCase(unittest.TestCase):
+    # Ensures the cipher always outputs its block size
+    def test_zfill(self):
+        cipher_obj = Serpent(Bytes(0x8000000000000000).zfill(16))
+        plaintext = Bytes(b'').zfill(16)
+        ciphertext1 = cipher_obj.encrypt(plaintext)
+        ciphertext2 = cipher_obj.decrypt(plaintext)
+
+        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+
+
+
     def _run_test(self, key, plaintext, expected_ciphertext, iter_100):
         serpent = Serpent(key)
         ciphertext = serpent.encrypt(plaintext)
