@@ -2,14 +2,14 @@ from samson.analyzers.analyzer import Analyzer
 from samson.utilities.analysis import count_items, chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
+from samson.auxiliary.cracklib_wordlist import CRACKLIB_WORDLIST
 import string
 import os
 import re
 
 ascii_range = [10, 13] + list(range(20, 127))
 
-with open(os.path.join(os.path.dirname(__file__), 'cracklib-small'), 'r') as f:
-    wordlist = {word.strip(): 0 for word in f.readlines()}
+wordlist = {word.strip(): 0 for word in CRACKLIB_WORDLIST}
 
 first_letter_frequencies = {
     't': .15978,

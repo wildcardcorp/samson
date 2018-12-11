@@ -13,8 +13,6 @@ top_1000 = ['a', 'ability', 'able', 'about', 'above', 'accept', 'according', 'ac
 
 class XORDictionaryAttackTestCase(unittest.TestCase):
     def test_xor_dictionary_attack(self):
-        # ciphertexts = [bytearray(b"\xedq`\xc81r1\x97\xee\'\x91\xd6{j2W"), bytearray(b'\xeapn\xd5xy7\x82\xe6,\xc5\x85|`*O')]
-
         key = rand_bytes(16)
         msgA = b'significant risk'
         msgB = b'this movie sucks'
