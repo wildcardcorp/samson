@@ -1,8 +1,8 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import pem_encode, pem_decode
+from samson.utilities.encoding import export_der, bytes_to_der_sequence
 from samson.utilities.bytes import Bytes
-from pyasn1.codec.der import encoder, decoder
-from pyasn1.type.univ import Sequence, Integer
+from pyasn1.codec.der import decoder
+from pyasn1.type.univ import BitString
 import random
 
 class RSA(object):
@@ -98,30 +98,38 @@ class RSA(object):
 
 
 
-    def export_key(self, encode_pem: bool=True) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, marker: str='RSA PRIVATE KEY') -> bytes:
         """
-        Exports the RSA instance into DER-encoded bytes.
+        Exports the full RSA instance into DER-encoded bytes.
+        See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
+            marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
             bytes: DER-encoding of RSA instance.
         """
-        seq = Sequence()
+        return export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)], encode_pem, marker)
 
-        for x in [0, self.n, self.e, self.d, self.p, self.q]:
-            seq.setComponentByPosition(len(seq), Integer(x))
+
+
+    def export_public_key(self, encode_pem: bool=True, marker: str='RSA PUBLIC KEY') -> bytes:
+        """
+        Exports the only the public parameters of the RSA instance into DER-encoded bytes.
+        See https://tools.ietf.org/html/rfc2313#section-7.2.
+
+        Parameters:
+            encode_pem (bool): Whether or not to PEM-encode as well.
+            marker      (str): Marker to use in PEM formatting (if applicable).
         
-        der_encoded = encoder.encode(seq)
-
-        if encode_pem:
-            der_encoded = pem_encode(der_encoded, 'RSA PRIVATE KEY')
-
-        return der_encoded
-
+        Returns:
+            bytes: DER-encoding of RSA instance.
+        """
+        return export_der([self.n, self.e], encode_pem, marker)
 
     
+
     @staticmethod
     def import_key(buffer: bytes):
         """
@@ -133,15 +141,28 @@ class RSA(object):
         Returns:
             RSA: RSA instance.
         """
-        try:
-            buffer = pem_decode(buffer)
-        except ValueError as _:
-            pass
-        
+        items = bytes_to_der_sequence(buffer)
 
-        seq = decoder.decode(buffer)
-        _n, e, _d, p, q = [int(item) for item in seq[0][1:]]
-        rsa = RSA(0, p=p, q=q, e=e)
+        # PKCS#1
+        if len(items) == 9 and int(items[0]) == 0:
+            items = [int(item) for item in items]
+            del items[6:]
+            del items[0]
+            n, e, _d, p, q, = items
+            rsa = RSA(0, p=p, q=q, e=e)
+
+        elif len(items) == 2:
+            if type(items[1]) is BitString:
+                if str(items[0][0]) == '1.2.840.113549.1.1.1':
+                    bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
+                    items = list(bitstring_seq)
+                else:
+                    raise ValueError('Unable to decode RSA key.')
+
+            n, e = [int(item) for item in items]
+            rsa = RSA(2, e=e)
+            rsa.n = n
+
         rsa.bits = rsa.n.bit_length()
         return rsa
     

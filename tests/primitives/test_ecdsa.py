@@ -5,8 +5,45 @@ from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 import unittest
 
 
-# https://tools.ietf.org/html/rfc6979#appendix-A.2.5
+# TEST_PRIV = b"""-----BEGIN EC PRIVATE KEY-----
+# MHcCAQEEIE13oiYnyngAxhfBsmhPDQSFwKd2s4OQgUr5RW9lLxp5oAoGCCqGSM49
+# AwEHoUQDQgAESFAUN0qXA0Wn70eLRdOsxCoL3BLBvSpy10qtn24isycOfs91e4zv
+# qglW9UvvP2Q3jYtv2tN90vpu9ZJ3FYSfdQ==
+# -----END EC PRIVATE KEY-----"""
+
+# Generated using OpenSSL
+# https://crypto.stackexchange.com/questions/50019/public-key-format-for-ecdsa-as-in-fips-186-4
+# openssl ecparam -genkey -out testsk.pem -name prime256v1
+# openssl ec -in testsk.pem -text
+# openssl ec -in testsk.pem -pubout -text
+
+TEST_PRIV = b"""-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIFZQaZr7MxnTh2+gvCP+JDuWddZaH7JhCpkjZ8xVSGNgoAoGCCqGSM49
+AwEHoUQDQgAE5bLfAOLXjroa/NMSBQ+xpUzBVK/yhfSkc0xXL82gIeT7HA1OT8zP
+eGYg/FpbROz9w9iC+4h5lcvgR7Q7r+qFHQ==
+-----END EC PRIVATE KEY-----"""
+
+TEST_PUB = b"""-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5bLfAOLXjroa/NMSBQ+xpUzBVK/y
+hfSkc0xXL82gIeT7HA1OT8zPeGYg/FpbROz9w9iC+4h5lcvgR7Q7r+qFHQ==
+-----END PUBLIC KEY-----"""
+
+EXPECTED_CURVE = P256
+EXPECTED_PRIV = 0x5650699afb3319d3876fa0bc23fe243b9675d65a1fb2610a992367cc55486360
+EXPECTED_PUB = 0x04e5b2df00e2d78eba1afcd312050fb1a54cc154aff285f4a4734c572fcda021e4fb1c0d4e4fcccf786620fc5a5b44ecfdc3d882fb887995cbe047b43bafea851d
+
+
 class ECDSATestCase(unittest.TestCase):
+
+    def test_import_export_private(self):
+        ecdsa = ECDSA.import_key(TEST_PRIV)
+        der_bytes = ecdsa.export_private_key()
+        new_ecdsa = ECDSA.import_key(der_bytes)
+        
+        self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
+
+
+    # https://tools.ietf.org/html/rfc6979#appendix-A.2.5
     def _run_test(self, curve, x, message, H, k, expected_sig):
         ecdsa = ECDSA(curve.G, H, d=x)
         sig = ecdsa.sign(message, k=k)

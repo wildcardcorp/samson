@@ -2,3 +2,4 @@ scipy
 fastecdsa
 sympy
 pyasn1
+ipython

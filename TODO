@@ -31,6 +31,7 @@ Goals:
 
 
 X   Make Bitstring sane... (use something like TDD)
+X   Clean up IteratedHashMulticollision
 
 X   Clean up code/make interfaces more uniform
     X   Choose bitlength or bytelength convention (look at Rijndael)
@@ -39,8 +40,8 @@ X   Clean up code/make interfaces more uniform
     X   Fix all "TODOs"
 
 
-X   Add DER decoding support for (and test with ssh-keygen)
-    X   RSA
+X   Add DER decoding support
+    OK  RSA
     X   DSA
     X   ECDSA
     X   ED25519
@@ -64,6 +65,7 @@ X   samson must install properly from PyPi/pip
 
 0.2.0
 ===============
+X   SSH key support for import/export
 X   scrypt
 X   EAX
 X   SIV

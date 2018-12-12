@@ -1,5 +1,7 @@
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
+from samson.utilities.encoding import export_der, bytes_to_der_sequence
+from base64 import b64decode
 
 class DSA(object):
     """
@@ -24,14 +26,15 @@ class DSA(object):
         self.hash_obj = hash_obj
 
     
+
     def __repr__(self):
         return f"<DSA: hash_obj={self.hash_obj}, p={self.p}, q={self.q}, g={self.g}, x={self.x}, y={self.y}>"
-
 
     def __str__(self):
         return self.__repr__()
     
     
+
     def sign(self, message: bytes, k: int=None) -> (int, int):
         """
         Signs a `message`.
@@ -50,6 +53,7 @@ class DSA(object):
         return (r, s)
     
     
+
     def verify(self, message: bytes, sig: (int, int)) -> bool:
         """
         Verifies a `message` against a `sig`.
@@ -67,6 +71,7 @@ class DSA(object):
         u_2 = (r * w) % self.q
         v = (pow(self.g, u_1, self.p) * pow(self.y, u_2, self.p) % self.p) % self.q
         return v == r
+
 
     
     # Confirmed works on ECDSA as well
@@ -92,6 +97,7 @@ class DSA(object):
         return mod_inv(s, self.q) * m % self.q
     
     
+
     # Confirmed works on ECDSA as well
     def derive_x_from_k(self, message: bytes, k: int, sig: (int, int)) -> int:
         """
@@ -107,3 +113,61 @@ class DSA(object):
         """
         (r, s) = sig
         return ((s * k) - self.hash_obj.hash(message)) * mod_inv(r, self.q) % self.q
+
+
+
+    @staticmethod
+    def import_key(buffer: bytes):
+        """
+        Builds an DSA instance from DER and/or PEM-encoded bytes.
+
+        Parameters:
+            buffers (bytes): DER and/or PEM-encoded bytes.
+        
+        Returns:
+            DSA: DSA instance.
+        """
+        items = bytes_to_der_sequence(buffer)
+
+        if len(items) == 6 and int(items[0]) == 0:
+            p, q, g, _y, x = [int(item) for item in items[1:6]]
+            y = None
+        elif len(items) == 4:
+            p, q, g, y = [int(item) for item in items]
+            x = 0
+        
+        dsa = DSA(None, p=p, q=q, g=g, x=x)
+        if y:
+            dsa.y = y
+
+        return dsa
+
+
+
+    def export_private_key(self, encode_pem: bool=True, marker: str='DSA PRIVATE KEY') -> bytes:
+        """
+        Exports the full DSA instance into DER-encoded bytes.
+
+        Parameters:
+            encode_pem (bool): Whether or not to PEM-encode as well.
+            marker      (str): Marker to use in PEM formatting (if applicable).
+        
+        Returns:
+            bytes: DER-encoding of DSA instance.
+        """
+        return export_der([0, self.p, self.q, self.g, self.y, self.x], encode_pem, marker)
+
+
+
+    def export_public_key(self, encode_pem: bool=True, marker: str='DSA PUBLIC KEY') -> bytes:
+        """
+        Exports the only the public parameters of the DSA instance into DER-encoded bytes.
+
+        Parameters:
+            encode_pem (bool): Whether or not to PEM-encode as well.
+            marker      (str): Marker to use in PEM formatting (if applicable).
+        
+        Returns:
+            bytes: DER-encoding of DSA instance.
+        """
+        return export_der([self.p, self.q, self.g, self.y], encode_pem, marker)

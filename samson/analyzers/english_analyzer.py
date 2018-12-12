@@ -199,6 +199,7 @@ class EnglishAnalyzer(Analyzer):
     """
     Analyzer for English text.
     """
+    
     def __init__(self):
         pass
 

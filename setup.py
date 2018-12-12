@@ -12,7 +12,8 @@ requires = [
     "scipy",
     "fastecdsa",
     "sympy",
-    "pyasn1"
+    "pyasn1",
+    "ipython"
 ]
 
 tests_require = [
@@ -39,6 +40,7 @@ setup(name='samson-crypto',
           "samson/attacks",
           "samson/auxiliary",
           "samson/block_ciphers",
+          "samson/block_ciphers/modes",
           "samson/classical",
           "samson/constructions",
           "samson/kdfs",

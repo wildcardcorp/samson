@@ -1,6 +1,9 @@
 from samson.utilities.manipulation import get_blocks
 from sympy import Poly, GF
 from sympy.abc import x
+from pyasn1.codec.der import encoder, decoder
+from pyasn1.type.univ import Sequence, Integer
+import math
 import base64
 import re
 
@@ -141,6 +144,86 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70) -> bytes:
     """
     data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
     return f"-----BEGIN {marker}-----\n".encode('utf-8') + data + f"\n-----END {marker}-----".encode('utf-8')
+
+
+
+def export_der(items: list, encode_pem: bool, marker: str, item_types: list=None) -> bytes:
+    """
+    Converts items (in order) to DER-encoded bytes.
+
+    Parameters:
+        items      (list): Items to be encoded.
+        encode_pem (bool): Whether or not to PEM-encode as well.
+        marker      (str): Marker to use in PEM formatting (if applicable).
+    
+    Returns:
+        bytes: DER-encoded sequence bytes.
+    """
+    seq = Sequence()
+
+    if not item_types:
+        item_types = [Integer] * len(items)
+
+    for x, item_type in zip(items, item_types):
+        seq.setComponentByPosition(len(seq), item_type(x))
+    
+    der_encoded = encoder.encode(seq)
+
+    if encode_pem:
+        der_encoded = pem_encode(der_encoded, marker)
+
+    return der_encoded
+
+
+
+def bytes_to_der_sequence(buffer: bytes) -> Sequence:
+    """
+    Attempts to PEM-decode `buffer` then decodes the result to a DER sequence.
+
+    Parameters:
+        buffer (bytes): The bytes to DER-decode.
+    
+    Returns:
+        Sequence: DER sequence.
+    """
+    try:
+        buffer = pem_decode(buffer)
+    except ValueError as _:
+        pass
+
+    seq = decoder.decode(buffer)
+    items = seq[0]
+
+    return items
+
+
+
+def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
+    """
+    BER-encodes an OID tuple.
+
+    Parameters:
+        oid_tuple: OID tuple to encode.
+    
+    Returns:
+        bytes: BER-encoded OID.
+    """
+    oid_bytes = bytes([oid_tuple[0] * 40 + oid_tuple[1]])
+
+    for next_int in oid_tuple[2:]:
+        if next_int < 256:
+            oid_bytes += bytes([next_int])
+        else:
+            as_bin = bin(next_int)[2:]
+            as_bin = as_bin.zfill(math.ceil(len(as_bin) / 7) * 7)
+
+            bin_blocks = get_blocks(as_bin, 7)
+            new_bin_blocks = ['1' + block for block in bin_blocks[:-1]]
+            new_bin_blocks.append('0' + bin_blocks[-1])
+
+            oid_bytes += bytes([int(block, 2) for block in new_bin_blocks])
+    
+    return oid_bytes
 
 
 

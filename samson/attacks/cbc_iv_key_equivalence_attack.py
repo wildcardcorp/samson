@@ -14,6 +14,7 @@ class CBCIVKeyEquivalenceAttack(object):
         * The IV and the key are equivalent
         * The user has access to an oracle that returns the decrypted plaintext
     """
+    
     def __init__(self, oracle: DefaultOracle, block_size: int=16):
         """
         Parameters:

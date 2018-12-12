@@ -51,7 +51,6 @@ Includes:
 RHEL derivatives
 ```bash
 sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
-pip3 install ipython
 pip3 install samson-crypto
 ```
 

@@ -16,10 +16,11 @@ def gcd(a: int, b: int) -> int:
     Returns:
         int: GCD of `a` and `b`.
     """
-    if b == 0:
-        return a
-    else:
-        return gcd(b, a % b)
+    while True:
+        if b == 0:
+            return a
+        else:
+            a, b = b, a % b
 
 
 # https://anh.cs.luc.edu/331/notes/xgcd.pdf
