@@ -55,7 +55,7 @@ def compression_func(message, state):
     new_state = []
     for i,v in enumerate(h):
         new_state.append((v + last_state[i]) % 2**32)
-    
+
     return Bytes(state_to_bytes(new_state))
 
 

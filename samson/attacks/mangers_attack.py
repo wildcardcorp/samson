@@ -52,14 +52,14 @@ class MangersAttack(object):
         e = self.rsa.e
 
         log.debug(f"k: {k}, B: {B}, n: {n}, e: {e}")
-        
+
         # Step 1
         f1 = 2
         log.info("Starting step 1")
 
         while not self._greater_equal_B(f1, ct_int, e, n):
             f1 *= 2
-        
+
         f1 //= 2
         log.debug(f"Found f1: {f1}")
 
@@ -72,7 +72,7 @@ class MangersAttack(object):
         log.info("Starting step 2")
         while self._greater_equal_B(f2, ct_int, e, n):
             f2 += f1
-        
+
 
         log.debug(f"Found f2: {f2}")
 
@@ -89,7 +89,7 @@ class MangersAttack(object):
         while diff > 0:
             if ctr % 100 == 0:
                 log.debug(f"Iteration {ctr} difference: {diff}")
-            
+
             f = BB // diff
             f_min = f * m_min
             i = f_min // n
@@ -104,7 +104,7 @@ class MangersAttack(object):
                 m_min = iNB // f3 + div_mod
             else:
                 m_max = iNB // f3
-            
+
             diff = m_max - m_min
             ctr += 1
 

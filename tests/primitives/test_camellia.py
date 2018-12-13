@@ -23,15 +23,15 @@ class CamelliaTestCase(unittest.TestCase):
 
         for _ in range(99):
             ciphertext = camellia.encrypt(ciphertext)
-        
+
         self.assertEqual(ciphertext, expected_100_times)
 
         decypted = ciphertext
         for _ in range(100):
             decypted = camellia.decrypt(decypted)
-        
+
         self.assertEqual(decypted, plaintext)
-        
+
 
 
     # https://www.cosic.esat.kuleuven.be/nessie/testvectors/bc/camellia/Camellia-128-128.verified.test-vectors

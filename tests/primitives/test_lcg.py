@@ -21,7 +21,7 @@ class LCGTestCase(unittest.TestCase):
 
             self.assertTrue(all([ref_lcg.generate() == cracked_lcg.generate() for _ in range(10000)]))
 
-    
+
     def test_truncated_crack(self):
         for trunc_amount in range(1, 20, 2):
             seed = Bytes.random(16).int() % 2**31

@@ -7,7 +7,7 @@ class SalsaTestCase(unittest.TestCase):
     def _run_test(self, key, nonce, expected_ciphertext):
         salsa = Salsa(key, nonce)
         keystream_chunks = list(salsa.yield_state(0,  5))
-        
+
         self.assertEqual(keystream_chunks[0], expected_ciphertext[0])
 
         if len(expected_ciphertext) > 1:
@@ -74,5 +74,5 @@ class SalsaTestCase(unittest.TestCase):
 
         salsa = Salsa(key, nonce)
         keystream_chunks = list(salsa.yield_state(1023,  1))
-        
+
         self.assertEqual(keystream_chunks[0], expected_ciphertext)

@@ -28,16 +28,16 @@ class GLFSR(object):
         while poly_mask:
             if poly_mask & self.mask:
                 poly_mask ^= self.mask
-            
+
             if not poly_mask:
                 break
-            
+
             self.mask <<= 1
 
 
     def __repr__(self):
         return f"<GLFSR: state={self.state}, polynomial={self.polynomial}, mask={self.mask}>"
-    
+
 
     def __str__(self):
         return self.__repr__()
@@ -60,8 +60,8 @@ class GLFSR(object):
 
         else:
             return 0
-        
-        
+
+
 
     def generate(self) -> int:
         """
@@ -72,8 +72,8 @@ class GLFSR(object):
         """
         return self.clock()
 
-    
-    
+
+
     def reverse_clock(self, output: int):
         """
         Clocks the state in reverse given the previous output.
@@ -84,7 +84,7 @@ class GLFSR(object):
         for item in output:
             if item:
                 self.state ^= self.polynomial
-            
+
             self.state >>=1
             self.state &= self.wrap_around_mask
 

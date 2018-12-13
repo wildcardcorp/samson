@@ -18,8 +18,8 @@ class ElGamal(object):
         self.g = g
         self.p = p
         self.pub = pow(self.g, self.key, self.p)
-    
-    
+
+
     def __repr__(self):
         return f"<ElGamal: key={self.key}, g={self.g}, p={self.p}, pub={self.pub}>"
 
@@ -45,7 +45,7 @@ class ElGamal(object):
         s = pow(self.pub, K_e, self.p)
         plaintext = Bytes.wrap(plaintext)
         return c_1, (s * plaintext.int()) % self.p
-    
+
 
 
     def decrypt(self, key_and_ciphertext: (int ,int)) -> Bytes:

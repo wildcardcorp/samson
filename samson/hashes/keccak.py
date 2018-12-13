@@ -44,14 +44,14 @@ class Keccak(SpongeConstruction):
         self.digest_size = (digest_bit_size // 8)
         self.auto_reset_state = auto_reset_state
 
-    
+
 
     def __repr__(self):
         return f"<Keccak r={self.r}, c={self.c}, n={self.n}, w={self.w}, digest_size={self.digest_size}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()
-        
+
 
     def pad(self, in_bytes: bytes) -> bytes:
         bit_rate_bytes = (self.r + 7) // 8
@@ -100,7 +100,7 @@ class Keccak(SpongeConstruction):
         A[0][0] ^= rc
 
         return A
-    
+
 
 
     def hash(self, message: bytes) -> Bytes:
@@ -115,6 +115,6 @@ class Keccak(SpongeConstruction):
         """
         if self.auto_reset_state:
             self.reset()
-            
+
         self.absorb(Bytes.wrap(message))
         return sum(self.squeeze(self.digest_size))[:self.digest_size]

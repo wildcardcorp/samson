@@ -45,6 +45,7 @@ class DiffieHellman(object):
         return pow(self.g, self.key, self.p)
 
 
+
     def derive_key(self, challenge: int) -> int:
         """
         Derives the shared key from the other instance's challenge.
@@ -56,7 +57,8 @@ class DiffieHellman(object):
             int: Shared key.
         """
         return pow(challenge, self.key, self.p)
-    
+
+
 
     def factor_key_from_smooth_p(self, challenge: int) -> int:
         """

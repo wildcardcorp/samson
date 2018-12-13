@@ -17,7 +17,7 @@ class CBCPaddingOracleAttack(object):
         * The system leaks whether the plaintext's padding was correct or not
         * The user has access to an oracle that attempts to decrypt arbitrary ciphertext
     """
-    
+
     def __init__(self, oracle: PaddingOracle, iv: bytes, block_size: int=16):
         """
         Parameters:

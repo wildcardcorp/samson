@@ -31,7 +31,7 @@ class DGHVBit(int):
     def __invert__(self):
         return self.NOT()
 
-    
+
     def __or__(self, b: int):
         return self.OR(b)
 
@@ -39,17 +39,17 @@ class DGHVBit(int):
     def __and__(self, b: int):
         return self.AND(b)
 
-    
+
     def __xor__(self, b: int):
         return self.XOR(b)
-    
+
 
 
 class DGHV(object):
     """
     The Dijk-Gentry-Halevi-Vaikuntanathan (DGHV) fully-homomorphic encryption scheme
     """
-    
+
     def __init__(self, p: int=None):
         """
         Parameters:
@@ -81,7 +81,7 @@ class DGHV(object):
         return DGHVBit(self.p * q + 2 * r + m)
 
 
-    
+
     def decrypt(self, c: int) -> int:
         """
         Decrypts a number `c` into a plaintext bit.

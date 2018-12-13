@@ -11,7 +11,7 @@ class TDESTestCase(unittest.TestCase):
         tdes = TDES(key)
         cbc = CBC(tdes.encrypt, tdes.decrypt, iv, tdes.block_size)
         ciphertext  = cbc.encrypt(plaintext, pad=False)
-        
+
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(cbc.decrypt(ciphertext, unpad=False), plaintext)
 
@@ -20,7 +20,7 @@ class TDESTestCase(unittest.TestCase):
         tdes = TDES(key)
         ecb = ECB(tdes.encrypt, tdes.decrypt, tdes.block_size)
         ciphertext = ecb.encrypt(plaintext, pad=False)
-        
+
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(ecb.decrypt(ciphertext, unpad=False), plaintext)
 
@@ -51,7 +51,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0xDD7F121CA5015619).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec3(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -59,7 +59,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x2E8653104F3834EA).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec4(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -67,7 +67,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x4BD388FF6CD81D4F).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec5(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -75,7 +75,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x20B9E767B2FB1456).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec6(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -83,7 +83,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x55579380D77138EF).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec7(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -91,7 +91,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x6CC5DEFAAF04512F).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec8(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -99,7 +99,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x0D9F279BA5D87260).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec9(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -107,7 +107,7 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0xD9031B0271BD5A0A).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        
+
 
     def test_vec10(self):
         key                 = Bytes(0x0101010101010101).stretch(24)
@@ -115,4 +115,3 @@ class TDESTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(0x424250B37C3DD951).zfill(8)
 
         self._run_ecb_test(key, plaintext, expected_ciphertext)
-        

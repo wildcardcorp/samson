@@ -22,7 +22,7 @@ class TwofishTestCase(unittest.TestCase):
 
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(twofish.decrypt(ciphertext), plaintext)
-    
+
 
     def test_vec0(self):
         key =                   Bytes(0x00000000000000000000000000000000).zfill(16)
@@ -41,7 +41,7 @@ class TwofishTestCase(unittest.TestCase):
         self._run_test(key, plaintext, expected_ciphertext)
 
 
-    
+
     def test_vec2(self):
         key =                   Bytes(0x0123456789ABCDEFFEDCBA987654321000112233445566778899AABBCCDDEEFF).zfill(32)
         plaintext =             Bytes(0x00000000000000000000000000000000, 'little').zfill(16)[::-1]
@@ -50,7 +50,7 @@ class TwofishTestCase(unittest.TestCase):
         self._run_test(key, plaintext, expected_ciphertext)
 
 
-    
+
     def test_vec3(self):
         key =                   Bytes(0xD43BB7556EA32E46F2A282B7D45B4E0D57FF739D4DC92C1BD7FC01700CC8216F).zfill(32)
         plaintext =             Bytes(0x90AFE91BB288544F2C32DC239B2635E6, 'little').zfill(16)[::-1]

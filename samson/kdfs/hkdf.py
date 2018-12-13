@@ -25,7 +25,7 @@ class HKDF(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def derive(self, key: bytes, salt: bytes, info: bytes=b'') -> Bytes:
         """
         Derives a key.

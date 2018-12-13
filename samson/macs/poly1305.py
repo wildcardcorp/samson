@@ -8,7 +8,7 @@ class Poly1305(object):
     """
 
     P1305 = (1 << 130) - 5
-    
+
     def __init__(self, key: bytes, nonce: bytes, r: bytes, cipher=Rijndael):
         """
         Parameters:
@@ -30,7 +30,7 @@ class Poly1305(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def generate(self, message: bytes) -> Bytes:
         """
         Generates a keyed MAC for `message`.
@@ -47,7 +47,7 @@ class Poly1305(object):
         for chunk in pt_chunks:
             total += chunk.to_int()
             total *= self.r
-        
+
         total %= Poly1305.P1305
         enc = self.cipher(self.key).encrypt(self.nonce)
         enc.byteorder = 'little'

@@ -43,7 +43,7 @@ class ECBPrependAttack(object):
         plaintexts = []
         for curr_block in range(baseline // block_size):
             log.debug("Starting iteration {}".format(curr_block))
-            
+
             plaintext = b''
             for curr_byte in range(block_size):
                 if curr_block == 0:

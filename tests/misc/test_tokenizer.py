@@ -67,5 +67,3 @@ class TokenizerTestCase(unittest.TestCase):
         self.assertEqual(chain.transitions['abc'].transitions['hiya'].probability, 0.5)
         self.assertEqual(chain.transitions['abc'].transitions['adam'].probability, 0.5)
         self.assertEqual(chain.transitions['hello'].transitions['adam'].probability, 1.0)
-
-    

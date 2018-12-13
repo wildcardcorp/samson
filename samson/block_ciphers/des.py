@@ -190,14 +190,14 @@ class DES(FeistelNetwork):
         self.key = key
         self.block_size = 8
 
-    
+
     def __repr__(self):
         return f"<DES: key={self.key}>"
 
     def __str__(self):
         return self.__repr__()
 
-    
+
     def process_plaintext(self, plaintext):
         plaintext_bitstring = bytes_to_bitstring(plaintext)
         return int.to_bytes(int(''.join([plaintext_bitstring[IP[i] - 1] for i in range(64)]), 2), 8, 'big')
@@ -206,7 +206,7 @@ class DES(FeistelNetwork):
     def process_ciphertext(self, ciphertext):
         ciphertext_bitstring = bytes_to_bitstring(ciphertext)
         return int.to_bytes(int(''.join([ciphertext_bitstring[FP[i] - 1] for i in range(64)]), 2), 8, 'big')
-    
+
 
     def encrypt(self, plaintext: bytes) -> Bytes:
         """

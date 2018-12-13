@@ -17,7 +17,7 @@ TEST_VECS = [
 
 
 class CTRTestCase(unittest.TestCase):
-    
+
     # https://boringssl.googlesource.com/boringssl/+/2214/crypto/cipher/cipher_test.txt
     def test_all_vecs(self):
         for unparsed_vec in TEST_VECS:
@@ -29,7 +29,7 @@ class CTRTestCase(unittest.TestCase):
             ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
             ctr.counter = 1
             ciphertext = ctr.encrypt(plaintext)
-            
+
             ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
             ctr.counter = 1
             self.assertEqual(ciphertext, expected_ciphertext)

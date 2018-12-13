@@ -22,16 +22,16 @@ class TDES(object):
         self.key = key
         self.des_arr = [DES(subkey.zfill(8)) for subkey in key.chunk(8)]
         self.block_size = 8
-        
 
-    
+
+
     def __repr__(self):
         return f"<TDES: key={self.key}, des_arr={self.des_arr}>"
 
     def __str__(self):
         return self.__repr__()
 
-    
+
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.

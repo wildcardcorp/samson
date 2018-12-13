@@ -43,7 +43,7 @@ class SRPClient(object):
         """
         return Bytes.wrap(in_bytes).zfill((self.N.bit_length() + 7) // 8)
 
-    
+
 
     def make_request(self) -> (bytes, int):
         """

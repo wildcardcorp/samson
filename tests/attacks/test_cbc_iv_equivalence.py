@@ -38,7 +38,7 @@ class CBCIVEquivalenceTestCase(unittest.TestCase):
 
         self.assertEqual(key_iv, key)
         recovered_plaintext = CBC(None, Rijndael(key).decrypt, key_iv, 16).decrypt(bytes(ciphertext))
-        
+
         print(recovered_plaintext)
         self.assertEqual(plaintext, recovered_plaintext)
 

@@ -22,7 +22,7 @@ class HashClashCollider(object):
         self.hasher.pad_func = lambda x: x
 
 
-    
+
     def find_collision(self, p1: bytes, p2: bytes) -> (bytes, bytes, bytes):
         """
         Finds a collision using HashClash.

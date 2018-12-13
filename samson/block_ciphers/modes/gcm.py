@@ -9,7 +9,7 @@ GCM_REDUCTION_TABLE = [
     0xe100, 0xfd20, 0xd940, 0xc560, 0x9180, 0x8da0, 0xa9c0, 0xb5e0,
 ]
 
-    
+
 def reverse_bits(int16: int) -> int:
     return int(bin(int16)[2:].zfill(4)[::-1], 2)
 
@@ -41,7 +41,7 @@ class GCM(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def clock_ctr(self, nonce: bytes) -> Bytes:
         nonce = Bytes.wrap(nonce)
@@ -53,7 +53,7 @@ class GCM(object):
             J_0 = Bytes(self.update(0, payload)).zfill(16)
             self.ctr.nonce = J_0[:15]
             self.ctr.counter = J_0[-1]
-            
+
         return self.ctr.encrypt(Bytes(b'').zfill(16))
 
 
@@ -77,7 +77,7 @@ class GCM(object):
         tag = self.auth(ciphertext, data, tag_mask)
 
         return ciphertext + tag
-    
+
 
 
     def decrypt(self, nonce: bytes, authed_ciphertext: bytes, data: bytes) -> Bytes:
@@ -93,7 +93,7 @@ class GCM(object):
             Bytes: Resulting plaintext.
         """
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
-        
+
         tag_mask = self.clock_ctr(nonce)
         data = Bytes.wrap(data)
         tag = self.auth(ciphertext, data, tag_mask)
@@ -114,7 +114,7 @@ class GCM(object):
 
         return x
 
-    
+
     def mul(self, y):
         ret = 0
 
@@ -145,7 +145,7 @@ class GCM(object):
             y = self.mul(y)
 
         extra = len(data) % 16
-        
+
         if extra != 0:
             block = bytearray(16)
             block[:extra] = data[-extra:]

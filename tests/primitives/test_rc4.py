@@ -154,7 +154,7 @@ class RC4TestCase(unittest.TestCase):
 
     def test_vec2(self):
         self._run_test(TEST_KEY_2, TEST_VEC_2)
-    
+
 
     def test_vec3(self):
         self._run_test(TEST_KEY_3, TEST_VEC_3)

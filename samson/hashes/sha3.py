@@ -28,7 +28,7 @@ class SHA3(object):
             else:
                 return in_bytes + bytes([padding] + ([0] * (pad_len - 2)) + [0x80])
 
-        
+
         k.pad_func = pad
         return k
 

@@ -46,7 +46,7 @@ class ECB(object):
             ciphertext += self.encryptor(block)
 
         return ciphertext
-        
+
 
 
     def decrypt(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
@@ -62,7 +62,7 @@ class ECB(object):
         plaintext = Bytes(b'')
         for block in get_blocks(ciphertext, self.block_size):
             plaintext += self.decryptor(block)
-        
+
 
         if unpad:
             plaintext = self.padder.unpad(plaintext)

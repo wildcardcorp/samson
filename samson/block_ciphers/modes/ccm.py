@@ -16,7 +16,7 @@ class CCM(object):
         self.enc_obj = self.cipher(key)
         self.ctr = CTR(self.enc_obj.encrypt, b'\x00' * 16, 16)
 
-    
+
     def __repr__(self):
         return f"<CCM: enc_obj={self.enc_obj}, key={self.key}, ctr={self.ctr}>"
 
@@ -24,7 +24,7 @@ class CCM(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def _calculate_formattting_params(self, nonce: bytes, plaintext: bytes, data: bytes):
         data_len = len(data)
         q = 15 - len(nonce)
@@ -52,9 +52,9 @@ class CCM(object):
             else:
                 data_len_encoded = b'\xFF\xFF'
                 size = 8
-            
+
             data_len_encoded += int.to_bytes(data_len, size, 'big')
-        
+
         padded_data = self._pad_to_16(data_len_encoded + data)
         padded_plaintext = self._pad_to_16(plaintext)
 

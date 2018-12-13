@@ -13,13 +13,13 @@ class ECDHETestCase(unittest.TestCase):
             ch2 = ecdhe2.get_challenge()
 
             self.assertEqual(ecdhe1.derive_key(ch2), ecdhe2.derive_key(ch1))
-    
+
 
     # Tests manually generated from http://www-cs-students.stanford.edu/~tjw/jsbn/ecdh.html
     def _run_correctness_test(self, key_a, key_b, G, expected_chall_a, expected_chall_b, expected_secret):
         echde_a = ECDHE(key=key_a, G=G)
         echde_b = ECDHE(key=key_b, G=G)
-        
+
         chall_a = echde_a.get_challenge()
         chall_b = echde_b.get_challenge()
 
@@ -31,8 +31,8 @@ class ECDHETestCase(unittest.TestCase):
 
         self.assertEqual(S_a, expected_secret)
         self.assertEqual(S_b, expected_secret)
-    
-    
+
+
 
     # P192
     def test_vec0(self):

@@ -37,7 +37,7 @@ class EdDSA(DSA):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def encode_point(self, P: TwistedEdwardsPoint) -> Bytes:
         """
@@ -51,7 +51,7 @@ class EdDSA(DSA):
         """
         x, y = P.x, P.y
         return Bytes(((x & 1) << self.curve.b-1) + ((y << 1) >> 1), 'little').zfill(self.curve.b // 8)
-    
+
 
 
     def decode_point(self, in_bytes: Bytes) -> TwistedEdwardsPoint:
@@ -71,9 +71,9 @@ class EdDSA(DSA):
 
         if (x & 1) != bit(in_bytes, self.curve.b-1):
             x = self.curve.q - x
-        
+
         return TwistedEdwardsPoint(x, y, self.curve)
-        
+
 
 
     def sign(self, message: bytes) -> (int, int):
@@ -93,8 +93,8 @@ class EdDSA(DSA):
         k = self.H.hash(self.curve.magic + eR + self.encode_point(self.A) + message)[::-1].int()
         S = (r + (k % self.curve.l) * self.a) % self.curve.l
         return eR + Bytes(S, 'little').zfill(self.curve.b//8)
-    
-    
+
+
 
     def verify(self, message: bytes, sig: (int, int)) -> bool:
         """
@@ -111,7 +111,7 @@ class EdDSA(DSA):
 
         if len(sig) != self.curve.b // 4:
             raise ValueError("`sig` length is wrong.")
-        
+
         R = self.decode_point(sig[:self.curve.b//8])
         S = sig[self.curve.b//8:].int()
 

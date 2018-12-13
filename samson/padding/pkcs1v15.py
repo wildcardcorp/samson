@@ -13,7 +13,7 @@ class PKCS1v15(object):
             key_bit_length (int): Length of the RSA modulus in bits.
         """
         self.key_byte_length = math.ceil(key_bit_length / 8)
-    
+
 
     def __repr__(self):
         return f"<PKCS1v15: key_byte_length={self.key_byte_length}>"

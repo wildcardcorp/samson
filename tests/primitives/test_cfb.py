@@ -12,7 +12,7 @@ class CFBTestCase(unittest.TestCase):
 
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(cfb.decrypt(ciphertext), plaintext)
-    
+
 
 
     def test_vec0(self):

@@ -26,7 +26,7 @@ class Dragonfly(object):
         self.a = Bytes.random(16).to_int()
         self.H = H
 
-    
+
     def __repr__(self):
         return f"<Dragonfly: key={self.key}, H={self.H}, A={self.A}, a={self.a}, q={self.q}>"
 

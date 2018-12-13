@@ -12,7 +12,7 @@ class TokenListHandler(TokenizerHandler):
     def reset(self):
         pass
 
-    
+
     def handle_token(self, token: str):
         """
         Handles tokens found by a Tokenizer.

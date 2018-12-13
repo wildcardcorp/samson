@@ -51,7 +51,7 @@ class SRPServer(object):
         self.accounts[identity] = v
 
 
-    
+
     def respond_with_challenge(self, identity: bytes, A: int) -> (bytes, int):
         """
         Receives the client's challenge and returns the server's challenge.
@@ -66,7 +66,7 @@ class SRPServer(object):
         v = self.accounts[identity]
         B = (self.k * v + modexp(self.g, self.b, self.N)) % self.N
         self.requests[identity] = {'A': A, 'B': B}
-        
+
         return self.salt, B
 
 

@@ -101,7 +101,7 @@ class Tokenizer(object):
                         if last_largest_substring != '':
                             token_handler.handle_token(last_largest_substring)
                             substring_mod = len(last_largest_substring) - 1
-                            
+
 
                         char_counter -= len(token) - substring_mod
                         token = ''

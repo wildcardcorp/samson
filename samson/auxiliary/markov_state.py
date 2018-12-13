@@ -4,7 +4,7 @@ class MarkovState(object):
     """
     Represents a state in a Markov chain.
     """
-    
+
     def __init__(self, count: int, probability: float, transitions: dict):
         """
         Parameters:
@@ -48,7 +48,7 @@ class MarkovState(object):
         if distance > 0:
             rand_num = int.from_bytes(rand_bytes(1), 'big')
             winning_probability = rand_num / 256
-            
+
             prob_accumulator = 0.0
 
             for token, subchain in self.transitions.items():

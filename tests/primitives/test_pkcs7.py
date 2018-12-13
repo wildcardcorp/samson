@@ -10,7 +10,7 @@ class PKCS7TestCase(unittest.TestCase):
             for _ in range(1000):
                 plaintext = Bytes.random(Bytes.random(1).int() % block_size)
                 self.assertEqual(pkcs.unpad(pkcs.pad(plaintext)), plaintext)
-    
+
 
     def test_correctness(self):
         for block_size in range(8, 32):

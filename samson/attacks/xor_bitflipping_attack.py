@@ -49,8 +49,8 @@ class XORBitflippingAttack(object):
         Executes the attack.
 
         Parameters:
-            desired_injection (bytes): 
-            index               (int): 
+            desired_injection (bytes): Bytes to inject at `index`.
+            index               (int): Index to inject the bytes.
         
         Return:
             Bytes: The manipulated ciphertext.

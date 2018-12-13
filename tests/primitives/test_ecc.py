@@ -9,7 +9,7 @@ class ECCTestCase(unittest.TestCase):
         for _ in range(iterations):
             k, u = clamped_k * u, k
             clamped_k = curve.clamp_to_curve(k)
-        
+
 
         self.assertEqual(k, expected_result)
 
@@ -21,7 +21,7 @@ class ECCTestCase(unittest.TestCase):
 
     def test_curve25519_vec1000(self):
         self._run_test(Curve25519(), 1000, Bytes(0x684CF59BA83309552800EF566F2F4D3C1C3887C49360E3875F2EB94D99532C51)[::-1].int())
-    
+
 
     def test_curve448_vec1(self):
         self._run_test(Curve448(), 1, Bytes(0x3F482C8A9F19B01E6C46EE9711D9DC14FD4BF67AF30765C2AE2B846A4D23A8CD0DB897086239492CAF350B51F833868B9BC2B3BCA9CF4113)[::-1].int())

@@ -41,7 +41,7 @@ class FeistelNetwork(object):
         half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)
         L_i, R_i = plaintext[:half], plaintext[half:]
-        
+
         round_keys = list(self.key_schedule(key))
 
         for subkey in round_keys:
@@ -86,7 +86,7 @@ class FeistelNetwork(object):
         """
         return Bytes(b''.join(list(self.yield_encrypt(key, plaintext))[-1]))
 
-    
+
 
     def decrypt(self, key: bytes, ciphertext: bytes) -> Bytes:
         """

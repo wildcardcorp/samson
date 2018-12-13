@@ -11,7 +11,7 @@ class PKCS7(object):
             block_size (int): Block size of the cipher.
         """
         self.block_size = block_size
-    
+
 
     def __repr__(self):
         return f"<PKCS7: block_size={self.block_size}>"

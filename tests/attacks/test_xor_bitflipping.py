@@ -50,7 +50,7 @@ class XORBitFlipTestCase(unittest.TestCase):
 
         if(login_cbc(bytes(forged_request))):
             print('Success! We\'re admin!')
-        
+
         self.assertTrue(login_cbc(bytes(forged_request)))
 
 

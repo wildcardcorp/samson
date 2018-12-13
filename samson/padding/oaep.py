@@ -18,7 +18,7 @@ def MGF1(seed: bytes, length: int) -> Bytes:
 
     for i in range((length + 19) // 20):
         mask += sha1.hash(seed + Bytes(i).zfill(4))
-    
+
     return mask[:length]
 
 
@@ -50,7 +50,7 @@ class OAEP(object):
     def __str__(self):
         return self.__repr__()
 
-        
+
 
     def pad(self, plaintext: bytes, seed: bytes=None) -> Bytes:
         """
@@ -73,7 +73,7 @@ class OAEP(object):
 
         if ps_len < 0:
             raise ValueError("Plaintext is too long")
-        
+
 
         # Step 2: EME-OAEP encoding
         l_hash = self.hash_obj.hash(self.label)
@@ -112,7 +112,7 @@ class OAEP(object):
         if allow_mangers:
             if plaintext[0] != 0:
                 raise ValueError("First byte is not zero! ;)")
-        
+
         masked_seed, masked_db = plaintext[1:(h_len + 1)], plaintext[(h_len + 1):]
 
         seed_mask = self.mgf(masked_db, h_len)

@@ -49,4 +49,3 @@ class RailFence(object):
         """
         enc_pos = self._fence(range(len(ciphertext)))
         return ''.join([ciphertext[enc_pos.index(i)] for i in range(len(ciphertext))])
-        

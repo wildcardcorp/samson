@@ -34,7 +34,7 @@ class GCMTestCase(unittest.TestCase):
             key = Bytes(key_bytes).zfill(len(key_bytes))
             gcm = GCM(Rijndael(key).encrypt)
             authed_ct = gcm.encrypt(Bytes(nonce), Bytes(plaintext), data)
-            
+
             self.assertEqual(authed_ct[:-16], expected_ciphertext)
             self.assertEqual(authed_ct[-16:], expected_tag)
             self.assertEqual(plaintext, gcm.decrypt(nonce, authed_ct, data))

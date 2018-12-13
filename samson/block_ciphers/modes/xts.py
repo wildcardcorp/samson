@@ -24,7 +24,7 @@ class XTS(object):
         self.decryptor = decryptor
         self.sector_encryptor = sector_encryptor
 
-    
+
 
     def __repr__(self):
         return f"<XTS: encryptor={self.encryptor}, decryptor={self.decryptor}, sector_encryptor={self.sector_encryptor}>"
@@ -39,7 +39,7 @@ class XTS(object):
         tweak_bytes = Bytes(tweak)
 
         X = self.sector_encryptor(tweak_bytes + b'\x00' * (16 - len(tweak_bytes)))[::-1].int()
-        
+
         out_bytes = Bytes(b'')
         byte_chunks = in_bytes.chunk(16, allow_partials=True)
 
@@ -68,15 +68,15 @@ class XTS(object):
                     X = curr_X >> 1
                 else:
                     out_bytes, last_chunk = out_bytes[:-16], out_bytes[-16:]
-                
+
                 stolen, left_over = last_chunk[len(block):], last_chunk[:len(block)]
                 padded_block = block + stolen
                 X = Bytes(X, 'little').zfill(16)
                 out_bytes += (func(padded_block ^ X) ^ X) + left_over
-                
+
 
         return out_bytes
-    
+
 
 
     def encrypt(self, plaintext: bytes, tweak: int) -> Bytes:

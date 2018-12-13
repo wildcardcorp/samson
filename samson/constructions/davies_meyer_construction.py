@@ -16,7 +16,7 @@ class DaviesMeyerConstruction(object):
         self.initial_state = Bytes.wrap(initial_state)
         self.block_size = len(self.initial_state)
         self.encryptor = encryptor
-    
+
 
     def __repr__(self):
         return f"<DaviesMeyerConstruction initial_state={self.initial_state}, encryptor={self.encryptor}, block_size={self.block_size}>"

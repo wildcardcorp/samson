@@ -6,7 +6,7 @@ from copy import deepcopy
 
 def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int=64) -> bytes:
     length = fakeLen or len(msg)
-    
+
     # Append the bit '1' to the message
     padding = b'\x80'
     byte_size = bit_size // 8
@@ -98,7 +98,7 @@ class MerkleDamgardConstruction(object):
         final_state = list(self.yield_state(message))[-1]
         return final_state
 
-    
+
 
     def length_extension(self, observed_output: bytes, message: bytes, bytes_to_append: bytes, secret_len: int) -> (Bytes, Bytes):
         """

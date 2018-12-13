@@ -21,15 +21,15 @@ class RC5TestCase(unittest.TestCase):
 
         self.assertEqual(rc5.decrypt(ct), plaintext)
         self.assertEqual(ct, Bytes.wrap(test_vector))
-        
 
-    
+
+
 
     def test_vec1(self):
         key = Bytes.wrap(0x0001020304050607).zfill(8)
         plaintext = int.to_bytes(0x00010203, 4, 'little')
         test_vector = Bytes.wrap(0x23A8D72E).zfill(4)
-        
+
         self._run_test(key=key, plaintext=plaintext, test_vector=test_vector, block_size=32, num_rounds=16)
 
 
@@ -38,7 +38,7 @@ class RC5TestCase(unittest.TestCase):
         key = Bytes.wrap(0x000102030405060708090A0B0C0D0E0F, 'big').zfill(16)
         plaintext = int.to_bytes(0x0001020304050607, 8, 'little')
         test_vector = Bytes.wrap(0x2A0EDC0E9431FF73).zfill(8)
-        
+
         self._run_test(key=key, plaintext=plaintext, test_vector=test_vector, block_size=64, num_rounds=20)
 
 
@@ -47,6 +47,5 @@ class RC5TestCase(unittest.TestCase):
         key = Bytes.wrap(0x000102030405060708090A0B0C0D0E0F1011121314151617, 'big').zfill(24)
         plaintext = int.to_bytes(0x000102030405060708090A0B0C0D0E0F, 16, 'little')
         test_vector = Bytes.wrap(0xA46772820EDBCE0235ABEA32AE7178DA).zfill(16)
-        
+
         self._run_test(key=key, plaintext=plaintext, test_vector=test_vector, block_size=128, num_rounds=24)
-    

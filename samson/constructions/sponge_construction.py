@@ -32,7 +32,7 @@ class SpongeConstruction(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def reset(self):
         """
@@ -40,7 +40,7 @@ class SpongeConstruction(object):
         """
         self.S = [[0] * 5 for _ in range(5)]
 
-    
+
 
     def absorb(self, in_bytes: bytes):
         """
@@ -50,7 +50,7 @@ class SpongeConstruction(object):
             in_bytes (bytes): Bytes to absorb.
         """
         padded = self.pad_func(in_bytes)
-        
+
         for block in padded.chunk(self.block_size):
             curr = 0
             for y in range(5):
@@ -60,7 +60,7 @@ class SpongeConstruction(object):
 
             self.S = self.perm_func(self.S)
 
-    
+
 
     def squeeze(self, amount: int):
         """

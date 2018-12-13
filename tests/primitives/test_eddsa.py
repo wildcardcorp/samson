@@ -19,7 +19,7 @@ class EdDSATestCase(unittest.TestCase):
 
         self.assertTrue(eddsa.verify(message, sig))
 
-    
+
     def _run_25519_test(self, message, d, expected_public_key=None, expected_sig=None):
         curve    = EdwardsCurve25519
         hash_alg = SHA512()

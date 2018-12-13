@@ -11,7 +11,7 @@ class CBCCTSTestCase(unittest.TestCase):
 
         for _ in range(100):
             plaintext = Bytes.random(Bytes.random(1).int() + 17)
-            
+
             if len(plaintext) < 17:
                 plaintext = plaintext.zfill(17)
 

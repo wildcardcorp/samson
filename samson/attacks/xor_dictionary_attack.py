@@ -28,8 +28,8 @@ class XORDictionaryAttack(object):
         """
         self.analyzer = analyzer
         self.wordlist = wordlist
-        
-    
+
+
     def execute(self, ciphertexts: list, word_ranges: list=[2,3,4], delimiter: str=' ') -> list:
         """
         Executes the attack.
@@ -73,5 +73,5 @@ class XORDictionaryAttack(object):
             last_num_processed = j
 
             results.append(sorted(prepend_list, key=lambda word: self.analyzer.analyze(xor_buffs((bytes(word, 'utf-8') + b'\x00' * cipher_len)[:cipher_len], two_time)), reverse=True)[:10])
-            
+
         return results

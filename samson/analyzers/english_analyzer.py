@@ -4,7 +4,6 @@ from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
 from samson.auxiliary.cracklib_wordlist import CRACKLIB_WORDLIST
 import string
-import os
 import re
 
 ascii_range = [10, 13] + list(range(20, 127))
@@ -199,7 +198,7 @@ class EnglishAnalyzer(Analyzer):
     """
     Analyzer for English text.
     """
-    
+
     def __init__(self):
         pass
 
@@ -245,7 +244,7 @@ class EnglishAnalyzer(Analyzer):
         return ((_num_common_letters(as_str.lower()) + 1) * (word_freq * 2 + 1)) * (((alphabet_ratio + 1) ** 5 - 1) * 60) * ((ascii_ratio + 1) ** 2 - 1) * (common_words + 1) * (first_letter_freq + 1) * (bigrams * 25 + 1) * (found_words + 1) * chisquared_analysis
 
 
-    
+
     def preprocess(self, in_bytes: bytes, in_ciphers: bytes=None) -> dict:
         """
         Takes in a bytes-like object and returns the processed feature-space used in scoring.

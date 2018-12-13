@@ -56,7 +56,7 @@ class CBC(object):
             enc_block = self.encryptor(bytes(last_block ^ block))
             ciphertext += enc_block
             last_block = enc_block
-        
+
         return ciphertext
 
 
@@ -83,5 +83,5 @@ class CBC(object):
 
         if unpad:
             plaintext = self.padder.unpad(plaintext)
-            
+
         return plaintext

@@ -55,7 +55,7 @@ class Salsa(object):
         return self.__repr__()
 
 
-    
+
     def full_round(self, block_num: int, state: list=None) -> Bytes:
         """
         Performs a full round of Salsa.

@@ -51,7 +51,7 @@ class Xoroshiro(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def generate(self) -> int:
         """

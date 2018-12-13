@@ -11,7 +11,7 @@ class TokenizerHandler(object):
         """Resets the internal for the next sample."""
         raise NotImplementedError()
 
-    
+
     def handle_token(self, token: str):
         """Handles a new token being found."""
         raise NotImplementedError()

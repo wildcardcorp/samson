@@ -23,7 +23,7 @@ class NTRUTestCase(unittest.TestCase):
                 ciphertext = ntru.encrypt(plaintext)
 
                 self.assertEqual(ntru.decrypt(ciphertext), plaintext)
-    
+
 
     # Tests generated manually using https://github.com/jkrauze/ntru
     # Commands generally of the form:
@@ -43,7 +43,7 @@ class NTRUTestCase(unittest.TestCase):
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(ntru.decrypt(ciphertext), plaintext)
 
-    
+
 
     def test_vec0(self):
         N, q, p  = PARAM_SETS[0]

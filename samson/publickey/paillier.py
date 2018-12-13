@@ -56,7 +56,7 @@ class Paillier(object):
         n_sqr = self.n ** 2
         return pow(self.g, m, n_sqr) * pow(r, self.n, n_sqr)
 
-    
+
 
     def decrypt(self, ciphertext: int) -> Bytes:
         """

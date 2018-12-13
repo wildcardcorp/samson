@@ -5,7 +5,7 @@ from types import FunctionType
 
 class CTR(object):
     """Counter block cipher mode."""
-    
+
     def __init__(self, encryptor: FunctionType, nonce: bytes, block_size: int):
         """
         Parameters:

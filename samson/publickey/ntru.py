@@ -81,7 +81,7 @@ def invert_poly(f_poly: Poly, R_poly: Poly, p: int) -> Poly:
             inv_poly = (inv_poly % R_poly).trunc(p)
     else:
         raise Exception(f"Polynomial not invertible in Z_{p}. NTRU: p and q must be prime or power of two.")
-    
+
     return inv_poly
 
 
@@ -133,7 +133,7 @@ class NTRU(object):
         return self.__repr__()
 
 
-    
+
     def generate_random_keys(self):
         """
         Generates random private and public keys.
@@ -149,7 +149,7 @@ class NTRU(object):
                 inversion_successful = True
             except NotInvertible as _:
                 pass
-    
+
 
 
     def generate_public_key(self):
@@ -185,7 +185,7 @@ class NTRU(object):
         ct_poly = (rhm % self.R_poly).trunc(self.q)
 
         return encode_bytes(ct_poly.all_coeffs()[::-1])
-    
+
 
 
     def decrypt(self, ciphertext: bytes) -> Bytes:

@@ -12,7 +12,7 @@ class DragonflyTestCase(unittest.TestCase):
             ch2 = df2.get_challenge()
 
             self.assertEqual(df1.derive_key(ch2), df2.derive_key(ch1))
-    
+
 
     # Tested manually using https://asecuritysite.com/encryption/dragonfly as reference
     # The sample run at the bottom the site is incorrect.
@@ -33,7 +33,7 @@ class DragonflyTestCase(unittest.TestCase):
         self.assertEqual(df1.derive_key(ch2), df2.derive_key(ch1))
         self.assertEqual(df1.derive_key(ch2), expected_secret)
 
-    
+
 
     def test_vec0(self):
         key             = Bytes(0xfdee07ef88aca880d4271162b17f5d33)

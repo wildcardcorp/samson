@@ -99,7 +99,7 @@ class NostradamusAttack(object):
             for p1_init, p2_init, p1_msg, p2_msg, result in layer:
                 self.hash_tree[p1_init] = (p1_init, p2_init, p1_msg, p2_msg, result)
                 self.hash_tree[p2_init] = (p1_init, p2_init, p1_msg, p2_msg, result)
-        
+
         self.crafted_hash = solution_tree[-1][0][-1]
 
 

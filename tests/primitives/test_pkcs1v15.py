@@ -9,7 +9,7 @@ class PKCS1v15TestCase(unittest.TestCase):
         for _ in range(1000):
             plaintext = Bytes.random(8)
             self.assertEqual(pkcs.unpad(pkcs.pad(plaintext)), plaintext)
-    
+
 
     def test_input_too_big(self):
         pkcs = PKCS1v15(88)
@@ -17,7 +17,7 @@ class PKCS1v15TestCase(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             pkcs.pad(plaintext)
-    
+
 
     def test_nonzero_padding(self):
         pkcs = PKCS1v15(1024)

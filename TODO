@@ -32,19 +32,12 @@ Goals:
 
 X   Make Bitstring sane... (use something like TDD)
 X   Clean up IteratedHashMulticollision
+X   Make XORDictionaryAttack work with larger bytestrings
 
 X   Clean up code/make interfaces more uniform
     X   Choose bitlength or bytelength convention (look at Rijndael)
     X   Decide whether to use functions or objects
-    X   Everything should return Bytes
     X   Fix all "TODOs"
-
-
-X   Add DER decoding support
-    OK  RSA
-    X   DSA
-    X   ECDSA
-    X   ED25519
 
 
 X   Nostradamus attack
@@ -66,6 +59,11 @@ X   samson must install properly from PyPi/pip
 0.2.0
 ===============
 X   SSH key support for import/export
+    X   RSA
+    X   DSA
+    X   ECDSA
+    X   EdDSA
+
 X   scrypt
 X   EAX
 X   SIV

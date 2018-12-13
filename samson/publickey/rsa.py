@@ -1,8 +1,9 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import export_der, bytes_to_der_sequence
+from samson.utilities.encoding import export_der, bytes_to_der_sequence, pem_encode
+from pyasn1.codec.der import encoder, decoder
+from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes
-from pyasn1.codec.der import decoder
-from pyasn1.type.univ import BitString
+import math
 import random
 
 class RSA(object):
@@ -36,7 +37,7 @@ class RSA(object):
             while gcd(self.e, phi) != 1:
                 if not p:
                     next_p = find_prime(bits // 2)
-                
+
                 if not q:
                     next_q = find_prime(bits // 2)
 
@@ -67,7 +68,7 @@ class RSA(object):
         return self.__repr__()
 
 
-        
+
     def encrypt(self, plaintext: bytes) -> int:
         """
         Encrypts `plaintext`.
@@ -114,7 +115,7 @@ class RSA(object):
 
 
 
-    def export_public_key(self, encode_pem: bool=True, marker: str='RSA PUBLIC KEY') -> bytes:
+    def export_public_key(self, encode_pem: bool=True, marker: str='PUBLIC KEY') -> bytes:
         """
         Exports the only the public parameters of the RSA instance into DER-encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
@@ -126,9 +127,30 @@ class RSA(object):
         Returns:
             bytes: DER-encoding of RSA instance.
         """
-        return export_der([self.n, self.e], encode_pem, marker)
+        seq = Sequence()
+        seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
+        seq.setComponentByPosition(1, Null())
 
-    
+        param_seq = SequenceOf()
+        param_seq.append(Integer(self.n))
+        param_seq.append(Integer(self.e))
+
+        param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
+        param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
+        param_bs = BitString(param_bs)
+
+        top_seq = Sequence()
+        top_seq.setComponentByPosition(0, seq)
+        top_seq.setComponentByPosition(1, param_bs)
+
+        der_encoded = encoder.encode(top_seq)
+
+        if encode_pem:
+            der_encoded = pem_encode(der_encoded, marker)
+
+        return der_encoded
+
+
 
     @staticmethod
     def import_key(buffer: bytes):
@@ -162,10 +184,12 @@ class RSA(object):
             n, e = [int(item) for item in items]
             rsa = RSA(2, e=e)
             rsa.n = n
+        else:
+            raise ValueError("Unable to parse provided RSA key.")
 
         rsa.bits = rsa.n.bit_length()
         return rsa
-    
+
 
 
 
@@ -242,5 +266,5 @@ class RSA(object):
                     p = gcd(x - 1, n)
                     q = n // p
                     break
-            
+
         return RSA(0, p=p, q=q, e=e)

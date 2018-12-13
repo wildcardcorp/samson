@@ -2,7 +2,7 @@ from samson.utilities.manipulation import get_blocks
 from sympy import Poly, GF
 from sympy.abc import x
 from pyasn1.codec.der import encoder, decoder
-from pyasn1.type.univ import Sequence, Integer
+from pyasn1.type.univ import Sequence, Integer, SequenceOf
 import math
 import base64
 import re
@@ -22,9 +22,9 @@ def to_NAF(input_arg: bytes) -> list:
         E = input_arg
     else:
         E = int.from_bytes(input_arg, 'big')
-    
+
     z = []
-    
+
     i = 0
     while E > 0:
         if E % 2 == 1:
@@ -32,7 +32,7 @@ def to_NAF(input_arg: bytes) -> list:
             E -= z[-1]
         else:
             z.append(0)
-        
+
         E /= 2
         i += 1
     return z[::-1]
@@ -52,7 +52,7 @@ def from_NAF(naf: list) -> int:
     reversed_naf = naf[::-1]
     for i in range(len(naf)):
         total += 2 ** i * reversed_naf[i]
-    
+
     return total
 
 
@@ -164,9 +164,15 @@ def export_der(items: list, encode_pem: bool, marker: str, item_types: list=None
     if not item_types:
         item_types = [Integer] * len(items)
 
-    for x, item_type in zip(items, item_types):
-        seq.setComponentByPosition(len(seq), item_type(x))
-    
+    for val, item_type in zip(items, item_types):
+        if item_type == SequenceOf:
+            item = item_type()
+            item.extend(val)
+        else:
+            item = item_type(val)
+
+        seq.setComponentByPosition(len(seq), item)
+
     der_encoded = encoder.encode(seq)
 
     if encode_pem:
@@ -222,7 +228,7 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
             new_bin_blocks.append('0' + bin_blocks[-1])
 
             oid_bytes += bytes([int(block, 2) for block in new_bin_blocks])
-    
+
     return oid_bytes
 
 

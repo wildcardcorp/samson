@@ -5,7 +5,7 @@ class XoroshiroTestCase(unittest.TestCase):
     def _run_test(self, seed, variant, expected_outputs, modifier):
         xs = Xoroshiro(seed, variant=variant)
         self.assertEqual([xs.generate() + modifier for _ in range(len(expected_outputs))], expected_outputs)
-    
+
 
     # Test vectors manually generated from reference code
     # http://vigna.di.unimi.it/xorshift/xoroshiro128plus.c
@@ -26,7 +26,7 @@ class XoroshiroTestCase(unittest.TestCase):
     # > 1..1000 |> Enum.map(fn _ -> :rand.uniform(288230376151711744) end) |> IO.inspect(limit: :infinity)
     def test_116_plus(self):
         seed = [31396631805740656, 224097544921297400]
-        
+
         variant = V116_PLUS
         modifier = 1
         expected_outputs = [

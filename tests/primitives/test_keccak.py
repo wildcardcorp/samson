@@ -17,7 +17,7 @@ class KeccakTestCase(unittest.TestCase):
             keccak = Keccak(*PARAMS[i])
             self.assertEqual(keccak.hash(plaintext), expected_hash)
 
-    
+
     def test_vec0(self):
         plaintext = Bytes(b'')
         expected_hashes = [

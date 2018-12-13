@@ -39,7 +39,7 @@ class Bytes(bytearray):
         else:
             return Bytes(bytes_like, byteorder=byteorder)
 
-    
+
     @staticmethod
     def random(size: int=16, byteorder: str='big'):
         """
@@ -81,7 +81,7 @@ class Bytes(bytearray):
             return result
         else:
             return Bytes(result, self.byteorder)
-        
+
 
     def __and__(self, other):
         other_as_int = other
@@ -234,7 +234,7 @@ class Bytes(bytearray):
         """
         return Bytes(stretch_key(self, size, offset), self.byteorder)
 
-    
+
 
     # Conversions
     def to_int(self) -> int:
@@ -256,7 +256,7 @@ class Bytes(bytearray):
         """
         return self.to_int()
 
-    
+
     def to_hex(self):
         """
         Converts to an hex representation.
@@ -266,7 +266,7 @@ class Bytes(bytearray):
         """
         return Bytes(codecs.encode(self, 'hex_codec'), self.byteorder)
 
-    
+
     def hex(self):
         """
         Converts to an hex representation.
@@ -297,7 +297,7 @@ class Bytes(bytearray):
         from samson.utilities.bitstring import Bitstring
         return Bitstring(self, byteorder=self.byteorder).zfill(len(self) * 8)
 
-    
+
     def bin(self):
         """
         Converts to a Bitstring representation.
@@ -307,7 +307,7 @@ class Bytes(bytearray):
         """
         return self.to_bin()
 
-    
+
     def to_bits(self):
         """
         Converts to a Bitstring representation.
@@ -316,8 +316,8 @@ class Bytes(bytearray):
             Bitstring: Bitstring representation.
         """
         return self.to_bin()
-    
-    
+
+
     def bits(self):
         """
         Converts to a Bitstring representation.

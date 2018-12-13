@@ -65,7 +65,7 @@ class RijndaelTestCase(unittest.TestCase):
 
 
 
-    
+
     # Unverified Rijndael Tests
     # https://www.cosic.esat.kuleuven.be/nessie/testvectors/bc/rijndael/Rijndael-256-192.unverified.test-vectors
     def test_k256_b192(self):

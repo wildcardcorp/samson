@@ -68,7 +68,7 @@ class CRIMEAttack(object):
                 plaintext += sorted_sizes[0][0]
 
             ctr += 1
-        
+
         return Bytes(plaintext)
 
 
@@ -90,4 +90,3 @@ class CRIMEAttack(object):
                 padding = padding[:-1]
                 log.debug('Found suitable padding "{}"'.format(padding.decode()))
                 return padding
-        

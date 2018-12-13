@@ -72,7 +72,7 @@ def V1024_STAR(state):
     p = (p + 1) & 15
     s1 = s[p]
 
-    s1 ^= (s1 << 31) & MASK64   
+    s1 ^= (s1 << 31) & MASK64
     s[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30)
     return [p, s], (s[p] * 1181783497276652981) & MASK64
 
@@ -93,7 +93,7 @@ class Xorshift(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def generate(self) -> int:
         """

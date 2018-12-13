@@ -18,7 +18,7 @@ class CBCMAC(object):
         self.iv = iv
         self.cipher = cipher
 
-    
+
     def __repr__(self):
         return f"<CBCMAC: key={self.key}, iv={self.iv}, cipher={self.cipher}>"
 
@@ -26,7 +26,7 @@ class CBCMAC(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def generate(self, message: bytes, pad: bool=True) -> Bytes:
         """
         Generates a keyed MAC for `message`.

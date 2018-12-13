@@ -325,7 +325,7 @@ class Serpent(object):
 
     def _stretch_key(self):
         if len(self.key) != 32:
-            self.key = Bitstring('1', 'big').zfill((32 - len(self.key)) * 8).bytes() + self.key
+            self.key = Bitstring('1', 'big', auto_fill=False).zfill((32 - len(self.key)) * 8).bytes() + self.key
 
 
     def make_subkeys(self):
@@ -336,18 +336,18 @@ class Serpent(object):
 
         for i in range(132):
             w[i] = (left_rotate(w[i-8] ^ w[i-5] ^ w[i-3] ^ w[i-1] ^ PHI ^ i, 11))
-        
-        w = {i: Bitstring(val, 'little')[::-1] for i, val in w.items()}
-        
+
+        w = {i: Bitstring(val, 'little', auto_fill=False)[::-1] for i, val in w.items()}
+
         k = {}
         for i in range(ROUNDS + 1):
             sbox = (ROUNDS + 3 - i) % ROUNDS
             for h in range(4):
-                k[h + 4 * i] = Bitstring("", 'little')
+                k[h + 4 * i] = Bitstring("", 'little', auto_fill=False)
 
             for j in range(ROUNDS):
-                s_in = ''.join([str(Bitstring(w[h+4*i], 'little').zfill(32)[j]) for h in range(4)])
-                s_out = Bitstring(SBOX[sbox % len(SBOX)][s_in], 'little')
+                s_in = ''.join([str(Bitstring(w[h+4*i], 'little', auto_fill=False).zfill(32)[j]) for h in range(4)])
+                s_out = Bitstring(SBOX[sbox % len(SBOX)][s_in], 'little', auto_fill=False)
 
                 for h in range(4):
                     k[h + 4 * i] += s_out[h]
@@ -355,7 +355,7 @@ class Serpent(object):
         K = []
         for i in range(ROUNDS + 1):
             K.append(k[4*i] + k[4*i+1] + k[4*i+2] + k[4*i+3])
-        
+
 
         K_hat = []
         for i in range(ROUNDS + 1):
@@ -373,7 +373,7 @@ class Serpent(object):
 
     def S_hat(self, box_num, bitstring):
         return self._apply_sbox(box_num, bitstring, SBOX)
-    
+
 
     def S_hat_inv(self, box_num, bitstring):
         return self._apply_sbox(box_num, bitstring, SBOX_INV)
@@ -382,7 +382,7 @@ class Serpent(object):
     def _apply_LT(self, bitstring, lt_table):
         result = ""
         for i in range(len(lt_table)):
-            outbit = Bitstring('0', 'little')
+            outbit = Bitstring('0', 'little', auto_fill=False)
 
             for j in lt_table[i]:
                 outbit ^= bitstring[j]
@@ -407,7 +407,7 @@ class Serpent(object):
             B_hat_i_1 = self.LT(S_hat_i)
         else:
             B_hat_i_1 = S_hat_i ^ self.K_hat[ROUNDS]
-        
+
         return B_hat_i_1
 
 
@@ -417,7 +417,7 @@ class Serpent(object):
             S_hat_i = self.LT_inv(B_hat_i_1)
         else:
             S_hat_i = B_hat_i_1 ^ self.K_hat[ROUNDS]
-        
+
         B_hat_i = self.S_hat_inv(i, S_hat_i) ^ self.K_hat[i]
         return B_hat_i
 
@@ -426,7 +426,7 @@ class Serpent(object):
         result = ""
         for i in range(len(perm_table)):
             result += bitstring[perm_table[i]]
-        
+
         return result
 
 
@@ -449,18 +449,18 @@ class Serpent(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext_formatted = Bitstring.wrap(plaintext, 'little')[::-1].zfill(128)
+        plaintext_formatted = Bitstring.wrap(plaintext, 'little', auto_fill=False)[::-1].zfill(128)
         B_hat = self.IP(plaintext_formatted)
 
         for i in range(ROUNDS):
             B_hat = self.R(i, B_hat)
-        
+
         # Attempt to preserve the user's sanity
         little_endian_ct = self.FP(B_hat)[::-1]
         return Bytes(little_endian_ct.int(), 'big')
 
 
-    
+
     def decrypt(self, ciphertext: bytes) -> Bytes:
         """
         Decrypts `ciphertext`.
@@ -471,12 +471,12 @@ class Serpent(object):
         Returns:
             Bytes: Resulting plaintext.
         """
-        ciphertext_formatted = Bitstring.wrap(ciphertext, 'little')[::-1].zfill(128)
+        ciphertext_formatted = Bitstring.wrap(ciphertext, 'little', auto_fill=False)[::-1].zfill(128)
         B_hat = self.IP(ciphertext_formatted)
 
         for i in range(ROUNDS - 1, -1, -1):
             B_hat = self.R_inv(i, B_hat)
-        
+
         # Attempt to preserve the user's sanity
-        little_endian_pt = Bitstring(self.FP(B_hat)[::-1], 'little')
+        little_endian_pt = Bitstring(self.FP(B_hat)[::-1], 'little', auto_fill=False)
         return Bytes(little_endian_pt.int(), 'big')

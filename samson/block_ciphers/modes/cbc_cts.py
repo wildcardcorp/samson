@@ -16,7 +16,7 @@ class CBCCTS(object):
             block_size (int): Block size of the underlying encryption algorithm.
         """
         self.underlying_mode = CBC(encryptor, decryptor, iv, block_size)
-    
+
 
     def __repr__(self):
         return f"<CBCCTS: underlying_mode={self.underlying_mode}>"

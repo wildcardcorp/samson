@@ -5,28 +5,52 @@ import unittest
 
 
 TEST_PRIV = b"""-----BEGIN DSA PRIVATE KEY-----
-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
+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
 -----END DSA PRIVATE KEY-----"""
 
+TEST_PUB = b"""-----BEGIN PUBLIC KEY-----
+MIIDRzCCAjkGByqGSM44BAEwggIsAoIBAQCv1A7OYuZ+QSO8HjG3d0GfIYtIqsum
+nVYBWRl4SXKAj4KRtHyHh9O5pQe4IVfvTD+rt6Ce7lPAb8NkY9xOGDoUp7yLqZEP
+CcPnLqz8u7c2KiOGuu8JTGzfIkli/KOs/Ap20yR5WSiJNl4UR5YFeGuDEXqsRaQk
+EqWhk0bfY1epb2Byl/J5wni/TJ9+5laN+1TSc77dijVVCwaJjR8DyYV9hc0ZcJss
+Q0XyNyVbtCm4p1wdeQF14qh9lGP7qdX924tNYvqE4+qoQFzfgHgCl4Z8UCKyw3km
+5/Q3OS7coiSnbeEdm1akfRwfPgmkBIODdjeCuFwPLSaO5a32LJijZi4jAiEAkPi+
+z1jY6j4js9EUWi4rpbMK07jgkqUAOjhzimgUYVsCggEAWDEbxho3NbIV/Wwm4xsF
+nU+rpI59n7sDxsfVBHDR3cOdPx8iQPLi7CZgq2raUPHIZ34fIly/NVW226mF+Ayj
+oN69PwOmJwoCYYDvL//Q08IC3V4fHlpggQvFkZ+GN0xqdvo3yGFSaHPMnUmqqsqP
+g/rT8lnDNiUh+e2Qik+Cxcq4A5bdZ//eznl2eC43CtEcPnbnGL2qKwFdpQEotWIq
+YQfSVWMQ35GYHZ8SO3ULrEnHgIpB3uFmsGd5fPzMullzmkJoRK1xilzjXUhldBOX
+dLAyIDsh2VhM3WiRdAGg9qXjnfPVyi/x7GDd6t+zY6RYEf8kswWywgK4Y8BUnsJ6
+wAOCAQYAAoIBAQCFOflKTTjuq37zc73jRp4q6hM2E2tsNLhFhLp+Hf7dI4cQyN+L
+0juswOaBcGmeARbLsU1c1QCheaEmisNht6rEOEC6/PVTv0B5G560S75AmtXD2W2O
+HqjxszJULC06wQm9c8B/Bm6cfoHElQMBMjnaLaEvFVrVESTSPyWok0Debnmba7Sn
+OKyUYP6B78YA6wxGqgLgGpG69tN/mSwoprF1Rg6VWKFLvotbLuz/ZLC7lSRNPLoH
+JlZmU0iVEZ2qOeAMzolcUBN3R4YOgdyXeutWmrTyTUV8mARU0eVxx/MHJQI8W3TE
+6q7v3fCIOswMzWbpQm2wcnWsIbWUgCqU9XPk
+-----END PUBLIC KEY-----"""
 
-TEST_PUB = b"ssh-dss AAAAB3NzaC1kc3MAAAEBAI95Ndm5qum/q+2Ies9JUbbzLsWeO683GOjqxJYfPv02BudDUanEGDM5uAnnwq4cU5unR1uF0BGtuLR5h3VJhGlcrA6PFLM2CCiiL/onEQo9YqmTRTQJoP5pbEZY+EvdIIGcNwmgEFexla3NACM9ulSEtikfnWSO+INEhneXnOwEtDSmrC516Zhd4j2wKS/BEYyf+p2BgeczjbeStzDXueNJWS9oCZhyFTkV6j1ri0ZTxjNFj4A7MqTC4PJykCVuTj+KOwg4ocRQ5OGMGimjfd9eoUPeS2b/BJA+1c8WI+FY1IfGCOl/IRzYHcojy244B2X4IuNCvkhMBXY5OWAc1mcAAAAdALr2lqaFePff3uf6Z8l3x4XvMrIzuuWAwLzVaV0AAAEAFqZcWCBIUHBOdQKjl1cEDTTaOjR4wVTU5KXALSQu4E+W5h5L0JBKvayPN+6x4J8xgtI8kEPLZC+IAEFg7fnKCbMgdqecMqYn8kc+kYebosTnRL0ggVRMtVuALDaNH6g+1InpTg+gaI4yQopceMR4xo0FJ7ccmjq7CwvhLERoljnn08502xAaZaorh/ZMaCbbPscvS1WZg0u07bAvfJDppJbTpV1TW+v8RdT2GfY/Pe27hzklwvIk4HcxKW2oh+weR0j4fvtf3rdUhDFrIjLe5VPdrwIRKw0fAtowlzIk/ieu2oudSyki2bqL457Z4QOmPFKBC8aIt+LtQxbh7xfb3gAAAQBW8DU/53O9vfPP/OsiljfZVSqRNE21df0bReIZ0hzATr56mNvlDJhbWWfkvLslbj19yvqry+qvodXqs8xiNvrsUOxQ30vET6crIxWW0hnNtnuwnEB99aHPpNffHbIsGlzCXA1i+A/lIDo7GeVnIt+thpXxrzJCIAicBivVApRMbgSmJYPG2/N0HXwB0OFEakw8QN0cGZAdnTM6vNK2nV/kTbaHqcLoZfR6qoLLH2xWiLT5+2a16jeDxndp6rFTYUeGu3WMRozV2ikhIAdexEHmnJLaF7LWhU9xfsZh5mkA9IGRxupJX79YnYiVXs5Taw96X8t51TCTp3eLAG4TYQV2"
+# openssl dsaparam -out dsaparam.pem 2048
+# openssl gendsa -out test_dsa.pem dsaparam.pem
+# openssl dsa -in test_dsa.pem -text
+# openssl dsa -in test_dsa.pem -pubout -text
+# openssl dsa -pubin -in test_dsa.pub -pubout -text
 
 
 # Test values and Known Answers
@@ -56,7 +80,7 @@ class DSATestCase(unittest.TestCase):
     def test_dsa_verify(self):
         self.assertTrue(self.dsa.verify(message, sig))
 
-    
+
     def test_k_derivation(self):
         messageB = int.from_bytes(hashlib.sha1(b'deadbeef').digest(), byteorder='big')
         sig_genB = self.dsa.sign(messageB, k)
@@ -68,7 +92,7 @@ class DSATestCase(unittest.TestCase):
         self.dsa.x = 0
         self.dsa.x = self.dsa.derive_x_from_k(message, k, sig)
         self.assertEqual(self.dsa.x, x)
-    
+
 
 
     def test_der_encode(self):
@@ -88,21 +112,18 @@ class DSATestCase(unittest.TestCase):
         dsa = DSA.import_key(TEST_PRIV)
         der_bytes = dsa.export_private_key()
         new_dsa = DSA.import_key(der_bytes)
-        
+
         self.assertEqual((dsa.p, dsa.q, dsa.g, dsa.x), (new_dsa.p, new_dsa.q, new_dsa.g, new_dsa.x))
-        self.assertEqual(TEST_PRIV.replace(b'\n', b''), der_bytes.replace(b'\n', b''))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PRIV.replace(b'\n', b''))
 
 
-
-    # TODO: Test with actual public key.
     def test_import_export_public(self):
-        dsa_pub = DSA.import_key(TEST_PRIV)
-        # dsa_pub  = DSA.import_key(TEST_PUB)
+        dsa_pub  = DSA.import_key(TEST_PUB)
         dsa_priv = DSA.import_key(TEST_PRIV)
 
         der_bytes = dsa_pub.export_public_key()
         new_pub  = DSA.import_key(der_bytes)
 
-
         self.assertEqual((dsa_pub.p, dsa_pub.q, dsa_pub.g, dsa_pub.y), (dsa_priv.p, dsa_priv.q, dsa_priv.g, dsa_priv.y))
         self.assertEqual((new_pub.p, new_pub.q, new_pub.g, new_pub.y), (dsa_priv.p, dsa_priv.q, dsa_priv.g, dsa_priv.y))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PUB.replace(b'\n', b''))

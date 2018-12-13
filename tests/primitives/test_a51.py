@@ -14,7 +14,7 @@ class A51TestCase(unittest.TestCase):
 
         self.assertEqual(keystream_a, expected_keystream_a)
         self.assertEqual(keystream_b, expected_keystream_b)
-    
+
 
 
     def test_vec0(self):

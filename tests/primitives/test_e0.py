@@ -16,7 +16,7 @@ class E0TestCase(unittest.TestCase):
 
         self.assertEqual(keystream, expected_keystream)
 
-    
+
 
     def test_vec0(self):
         kc   =  [0x0] * 16

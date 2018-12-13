@@ -11,7 +11,7 @@ class ViterbiDecoder(object):
         self.Pw = {}
         with open(os.path.join(os.path.dirname(__file__), 'count_1w.txt'), 'r') as f:
             for line in f.readlines():
-                key, count = line.split('\t') 
+                key, count = line.split('\t')
 
                 self.Pw[key.upper()] = self.Pw.get(key.upper(), 0) + int(count)
 
@@ -23,11 +23,11 @@ class ViterbiDecoder(object):
             self.Pw[key] = log10(float(self.Pw[key]) / self.N)
 
 
-        # Get second order word model 
+        # Get second order word model
         self.Pw2 = {}
         with open(os.path.join(os.path.dirname(__file__), 'count_2w.txt'), 'r') as f:
             for line in f.readlines():
-                key, count = line.split('\t') 
+                key, count = line.split('\t')
 
                 self.Pw2[key.upper()] = self.Pw2.get(key.upper(), 0) + int(count)
 
@@ -36,16 +36,16 @@ class ViterbiDecoder(object):
         for key in self.Pw2.keys():
             word1, _word2 = key.split()
 
-            if word1 not in self.Pw: 
+            if word1 not in self.Pw:
                 self.Pw2[key] = log10(float(self.Pw2[key]) / self.N)
-            else: 
+            else:
                 self.Pw2[key] = log10(float(self.Pw2[key]) / self.N) - self.Pw[word1]
 
 
         # Precalculate the probabilities we assign to words not in our dict, L is length of word
-        self.unseen = [log10(10. / (self.N * 10**L)) for L in range(50)]        
-        
-        
+        self.unseen = [log10(10. / (self.N * 10**L)) for L in range(50)]
+
+
 
 
     def cPw(self, word: str, prev: str='<UNK>') -> float:
@@ -61,15 +61,15 @@ class ViterbiDecoder(object):
         """
         second_order_word = (prev + ' ' + word)
 
-        if word not in self.Pw: 
+        if word not in self.Pw:
             return self.unseen[len(word)]
 
-        elif second_order_word not in self.Pw2: 
+        elif second_order_word not in self.Pw2:
             return self.Pw[word]
 
-        else: 
+        else:
             return self.Pw2[second_order_word]
-    
+
 
 
 
@@ -100,6 +100,6 @@ class ViterbiDecoder(object):
                                strs[i-k-1][k] + [text[i: i+j+1]]) for k in range(min(i, max_word_len))]
 
                 prob[i][j], strs[i][j] = max(candidates)
-                
+
         ends = [(prob[-i-1][i], strs[-i-1][i]) for i in range(min(len(text), max_word_len))]
         return max(ends)

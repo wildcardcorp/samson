@@ -17,14 +17,14 @@ class DualECTestCase(unittest.TestCase):
             cracked_outputs = [[possible_crack.generate() for _ in range(5)] for possible_crack in derived_dual_ecs]
 
             self.assertTrue(any([expected_output in cracked_outputs]))
-    
+
 
 
     # Correctness tests manually generated using https://github.com/AntonKueltz/dual-ec-poc
     def _run_correctness_test(self, seed, e, expected_outputs):
         dual_ec = DualEC(P256.G, P256.G * e, seed)
         self.assertEqual([dual_ec.generate().int() for _ in range(len(expected_outputs))], expected_outputs)
-    
+
 
 
     def test_vec0(self):

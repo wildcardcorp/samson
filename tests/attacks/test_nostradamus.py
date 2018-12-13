@@ -34,7 +34,7 @@ class NostradamusAttackTestCase(unittest.TestCase):
     def test_nostradamus(self):
         collider = NaiveMDCollider(construction_func=construction_func, output_size=hash_size)
         attack = NostradamusAttack(k=2, collision_func=collider.find_collision, output_size=hash_size)
-        
+
         attempt_hash = [item for item in attack.hash_tree.items()][0][0]
         new_message = attack.execute(attempt_hash)
 

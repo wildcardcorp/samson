@@ -22,6 +22,6 @@ class DGHVTestCase(unittest.TestCase):
 
             a_c = [dghv.encrypt(a_int) for a_int in a_bin]
             b_c = [dghv.encrypt(b_int) for b_int in b_bin]
-            
+
             xord = [a_int + b_int for a_int, b_int in zip(a_c, b_c)]
             assert int(''.join([str(dghv.decrypt(x_int)) for x_int in xord]), 2) == (a ^ b)

@@ -39,5 +39,5 @@ class PBKDF1(object):
         last_result = password + salt
         for _ in range(self.num_iters):
             last_result = self.hash_fn(last_result)
-        
+
         return last_result[:self.desired_len]

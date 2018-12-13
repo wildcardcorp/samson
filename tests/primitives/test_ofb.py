@@ -12,7 +12,7 @@ class OFBTestCase(unittest.TestCase):
 
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(ofb.decrypt(ciphertext), plaintext)
-    
+
 
 
     def test_vec0(self):

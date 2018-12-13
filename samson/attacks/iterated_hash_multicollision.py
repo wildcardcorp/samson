@@ -20,7 +20,7 @@ class IteratedHashMulticollisionAttack(object):
             else:
                 hash_dict[digest] = attempt
 
-    
+
     def execute(self, iv, num):
         self._collisions = {}
 
@@ -28,10 +28,10 @@ class IteratedHashMulticollisionAttack(object):
             digest, inputs = self._find_collision(iv)
             key = (iv, digest)
             iv = digest
-            
+
             if digest in self._collisions:
                 self._collisions[key] = list(set(self._collisions[key] + inputs))
             else:
                 self._collisions[key] = inputs
-                
+
         return self._collisions

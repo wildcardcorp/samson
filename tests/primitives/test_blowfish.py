@@ -51,7 +51,7 @@ class BlowfishTestCase(unittest.TestCase):
 
         self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
         self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
-    
+
 
     # https://www.schneier.com/code/vectors.txt
     def test_all_vecs(self):

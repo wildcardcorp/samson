@@ -148,8 +148,8 @@ class Camellia(object):
 
         self.key_schedule()
 
-    
-    
+
+
     def __repr__(self):
         return f"<Camellia: key={self.key}, key_len={len(self.key)}>"
 
@@ -202,8 +202,8 @@ class Camellia(object):
         else:
             KL = (K >> 128) & MASK128
             KR = K & MASK128
-        
-        
+
+
         D1 = (KL ^ KR) >> 64
         D2 = (KL ^ KR) & MASK64
         D2 = D2 ^ self.F(D1, SIGMA1)
@@ -290,7 +290,7 @@ class Camellia(object):
 
 
 
-        
+
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.
@@ -326,7 +326,7 @@ class Camellia(object):
 
         return Bytes(((D2  & MASK64) << 64) | (D1 & MASK64)).zfill(16)
 
-    
+
 
     def decrypt(self, ciphertext: bytes) -> Bytes:
         """

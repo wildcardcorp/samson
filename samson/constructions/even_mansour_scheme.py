@@ -24,7 +24,7 @@ class EvenMansourScheme(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
 
     def encrypt(self, plaintext: bytes) -> Bytes:

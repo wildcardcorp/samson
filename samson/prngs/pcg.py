@@ -33,7 +33,7 @@ class PCG(object):
         return self.__repr__()
 
 
-    
+
     def generate(self) -> int:
         """
         Generates the next psuedorandom output.

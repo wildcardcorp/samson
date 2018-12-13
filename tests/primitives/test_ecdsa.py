@@ -1,4 +1,6 @@
 from fastecdsa.curve import P192, P224, P256, P521
+from fastecdsa.point import Point
+from samson.utilities.bytes import Bytes
 from samson.publickey.ecdsa import ECDSA
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
@@ -29,8 +31,34 @@ hfSkc0xXL82gIeT7HA1OT8zPeGYg/FpbROz9w9iC+4h5lcvgR7Q7r+qFHQ==
 -----END PUBLIC KEY-----"""
 
 EXPECTED_CURVE = P256
-EXPECTED_PRIV = 0x5650699afb3319d3876fa0bc23fe243b9675d65a1fb2610a992367cc55486360
-EXPECTED_PUB = 0x04e5b2df00e2d78eba1afcd312050fb1a54cc154aff285f4a4734c572fcda021e4fb1c0d4e4fcccf786620fc5a5b44ecfdc3d882fb887995cbe047b43bafea851d
+EXPECTED_PRIV  = 0x5650699afb3319d3876fa0bc23fe243b9675d65a1fb2610a992367cc55486360
+EXPECTED_PUB   = Bytes(0xe5b2df00e2d78eba1afcd312050fb1a54cc154aff285f4a4734c572fcda021e4fb1c0d4e4fcccf786620fc5a5b44ecfdc3d882fb887995cbe047b43bafea851d)
+PUB_POINT = Point(EXPECTED_PUB[:len(EXPECTED_PUB) // 2].int(), EXPECTED_PUB[len(EXPECTED_PUB) // 2:].int(), EXPECTED_CURVE)
+
+
+# openssl ecparam -genkey -out testsk521.pem -name secp521r1
+TEST_PRIV_521 = b"""-----BEGIN EC PRIVATE KEY-----
+MIHcAgEBBEIAqj9wsNV/s+i0RFbY3Hcj0kkPWHpFpqexgPygAH/9pgd4zfl77qQH
+6ytwc2KI/I9Q2m0W5xqpjXawagnwBigRxmOgBwYFK4EEACOhgYkDgYYABAA1ZdYy
+HpsWrOnctAEeRia53sFSHhuZIID1oTrv0stwT4RlLT93/pvybEjyRDCVc40dT5gS
+aFzSZ92LFXb8tdFf9AHUtKQCulKQFTk7aubPJv7UCxysMuIs6Lw9oPV+90VvGaGI
++yKcEagNS++ASqYNqMPzRcjjWaL/EIBhB+auMcT1Pw==
+-----END EC PRIVATE KEY-----
+"""
+
+TEST_PUB_521 = b"""-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQANWXWMh6bFqzp3LQBHkYmud7BUh4b
+mSCA9aE679LLcE+EZS0/d/6b8mxI8kQwlXONHU+YEmhc0mfdixV2/LXRX/QB1LSk
+ArpSkBU5O2rmzyb+1AscrDLiLOi8PaD1fvdFbxmhiPsinBGoDUvvgEqmDajD80XI
+41mi/xCAYQfmrjHE9T8=
+-----END PUBLIC KEY-----"""
+
+
+EXPECTED_CURVE_521 = P521
+EXPECTED_PRIV_521  = 0x00aa3f70b0d57fb3e8b44456d8dc7723d2490f587a45a6a7b180fca0007ffda60778cdf97beea407eb2b70736288fc8f50da6d16e71aa98d76b06a09f0062811c663
+EXPECTED_PUB_521   = Bytes(0x003565d6321e9b16ace9dcb4011e4626b9dec1521e1b992080f5a13aefd2cb704f84652d3f77fe9bf26c48f2443095738d1d4f9812685cd267dd8b1576fcb5d15ff401d4b4a402ba529015393b6ae6cf26fed40b1cac32e22ce8bc3da0f57ef7456f19a188fb229c11a80d4bef804aa60da8c3f345c8e359a2ff10806107e6ae31c4f53f)
+PUB_POINT_521 = Point(EXPECTED_PUB_521[:len(EXPECTED_PUB_521) // 2].int(), EXPECTED_PUB_521[len(EXPECTED_PUB_521) // 2:].int(), EXPECTED_CURVE_521)
+
 
 
 class ECDSATestCase(unittest.TestCase):
@@ -39,15 +67,41 @@ class ECDSATestCase(unittest.TestCase):
         ecdsa = ECDSA.import_key(TEST_PRIV)
         der_bytes = ecdsa.export_private_key()
         new_ecdsa = ECDSA.import_key(der_bytes)
-        
+
         self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
+        self.assertEqual((ecdsa.G.curve, ecdsa.d, ecdsa.Q), (EXPECTED_CURVE, EXPECTED_PRIV, PUB_POINT))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PRIV.replace(b'\n', b''))
+
+
+    def test_import_export_private_521(self):
+        ecdsa = ECDSA.import_key(TEST_PRIV_521)
+        der_bytes = ecdsa.export_private_key()
+        new_ecdsa = ECDSA.import_key(der_bytes)
+
+        self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
+        self.assertEqual((ecdsa.G.curve, ecdsa.d, ecdsa.Q), (EXPECTED_CURVE_521, EXPECTED_PRIV_521, PUB_POINT_521))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PRIV_521.replace(b'\n', b''))
+
+
+
+    def test_import_export_public(self):
+        ecdsa_pub  = ECDSA.import_key(TEST_PUB)
+        ecdsa_priv = ECDSA.import_key(TEST_PRIV)
+
+        der_bytes = ecdsa_pub.export_public_key()
+        new_pub  = ECDSA.import_key(der_bytes)
+
+        self.assertEqual(ecdsa_pub.Q, ecdsa_priv.Q)
+        self.assertEqual(new_pub.Q, ecdsa_priv.Q)
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PUB.replace(b'\n', b''))
+
 
 
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5
     def _run_test(self, curve, x, message, H, k, expected_sig):
         ecdsa = ECDSA(curve.G, H, d=x)
         sig = ecdsa.sign(message, k=k)
-        
+
         self.assertEqual(sig, expected_sig)
         self.assertTrue(ecdsa.verify(message, sig))
 
@@ -80,7 +134,7 @@ class ECDSATestCase(unittest.TestCase):
         self._run_test(curve, x, message, H, k, expected_sig)
 
 
-    
+
     def test_vec0(self):
         message = b'sample'
         H = SHA1()
@@ -100,7 +154,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_192(message, H, k, (r, s))
 
-    
+
     def test_vec2(self):
         message = b'sample'
         H = SHA256()
@@ -150,7 +204,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_192(message, H, k, (r, s))
 
-    
+
     def test_vec7(self):
         message = b'test'
         H = SHA256()
@@ -202,7 +256,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_224(message, H, k, (r, s))
 
-    
+
     def test_vec12(self):
         message = b'sample'
         H = SHA256()
@@ -252,7 +306,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_224(message, H, k, (r, s))
 
-    
+
     def test_vec17(self):
         message = b'test'
         H = SHA256()
@@ -302,7 +356,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_256(message, H, k, (r, s))
 
-    
+
     def test_vec22(self):
         message = b'sample'
         H = SHA256()
@@ -352,7 +406,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_256(message, H, k, (r, s))
 
-    
+
     def test_vec27(self):
         message = b'test'
         H = SHA256()
@@ -403,7 +457,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_521(message, H, k, (r, s))
 
-    
+
     def test_vec32(self):
         message = b'sample'
         H = SHA256()
@@ -453,7 +507,7 @@ class ECDSATestCase(unittest.TestCase):
 
         self._run_521(message, H, k, (r, s))
 
-    
+
     def test_vec37(self):
         message = b'test'
         H = SHA256()

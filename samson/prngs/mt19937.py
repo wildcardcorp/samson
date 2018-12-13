@@ -95,7 +95,7 @@ class MT19937:
 
     def __str__(self):
         return self.__repr__()
-        
+
 
     def twist(self):
         """

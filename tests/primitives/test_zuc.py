@@ -10,7 +10,7 @@ class ZUCTestCase(unittest.TestCase):
         keystream = zuc.generate(256)
 
         self.assertEqual(keystream, expected_keystream)
-    
+
 
     def test_vec0(self):
         key                 = Bytes(0x00000000000000000000000000000000).zfill(16)

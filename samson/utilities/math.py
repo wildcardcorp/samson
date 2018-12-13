@@ -79,12 +79,12 @@ def mod_inv(a: int, n: int) -> int:
 
     if (a * x) % n != 1:
         raise Exception("'a' is not invertible")
-    
+
     if x < 0:
         x = x + n
 
     return x
-    
+
 
 def modexp (g: int, u: int, p: int) -> int:
     """
@@ -321,7 +321,7 @@ def next_prime(start_int: int) -> int:
     start_int |= 1
     while not isprime(start_int):
         start_int += 2
-    
+
     return start_int
 
 
@@ -356,14 +356,14 @@ def berlekamp_massey(output_list: list) -> Poly:
             for j in range(L):
                 if b[j] == 1:
                     p[j + i - m] = 1
-            
+
             c = [(c_x + p_x) % 2 for c_x, p_x in zip(c, p)]
 
             if L <= i / 2:
                 L = i + 1 - L
                 m = i
                 b = t
-        
+
         i += 1
 
     return Poly(c[:L + 1], x)

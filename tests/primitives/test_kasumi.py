@@ -23,14 +23,14 @@ class KASUMITestCase(unittest.TestCase):
         to_enc = plaintext
         for _ in range(iterations):
             to_enc = kasumi.encrypt(to_enc)
-        
+
         ciphertext = to_enc
         self.assertEqual(ciphertext, test_vector)
 
         to_dec = ciphertext
         for _ in range(iterations):
             to_dec = kasumi.decrypt(to_dec)
-        
+
         self.assertEqual(to_dec, plaintext)
 
 

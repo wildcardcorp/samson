@@ -74,7 +74,7 @@ class E0(object):
         self.key_schedule()
 
 
-        
+
     def __repr__(self):
         return f"<E0: key={self.key}, state={self.state}, kc={self.kc}, addr={self.addr}, master_clk={self.master_clk}>"
 
@@ -101,7 +101,7 @@ class E0(object):
                 self.state = 0
             elif i == 238:
                 sv_state = self.state
-            
+
             self.shift()
 
             # 'Disable' LFSRs until they're full
@@ -115,7 +115,7 @@ class E0(object):
 
             for j in range(4):
                 ks_input[j] >>= 1
-            
+
 
             if i >= 111 and i < 239:
                 z[(z_i // 8)] >>= 1
@@ -156,7 +156,7 @@ class E0(object):
         self.key = OUTPUT_MATRIX[old_state][reg_output] & 1
 
 
-    
+
     def generate(self, length: int) -> Bytes:
         """
         Generates `length` of keystream.

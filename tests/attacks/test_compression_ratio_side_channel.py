@@ -5,7 +5,6 @@ from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.ctr import CTR
 
 from samson.utilities.general import rand_bytes
-from samson.attacks.compression_ratio_side_channel_attack import CompressionRatioSideChannelAttack
 from samson.attacks.crime_attack import CRIMEAttack
 import unittest
 
@@ -48,7 +47,7 @@ class CompressionRatioSideChannelTestCase(unittest.TestCase):
         self.request = lambda msg: aes_ctr_oracle(format_req(msg))
         self._execute()
 
-    
+
     def test_cbc(self):
         self.request = lambda msg: aes_cbc_oracle(format_req(msg))
         self._execute()

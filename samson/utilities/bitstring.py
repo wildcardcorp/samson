@@ -4,13 +4,25 @@ from samson.utilities.bytes import Bytes
 import math
 from collections import UserString
 
+def _zfill(bs, size, byteorder):
+    zeroes = max(size - len(bs), 0) * '0'
+    if byteorder == 'big':
+        new_bitstring = zeroes + bs
+    else:
+        new_bitstring = bs + zeroes
+
+    return new_bitstring
+
+
 class Bitstring(UserString):
-    def __init__(self, value, byteorder='big'):
+    def __init__(self, value, byteorder='big', auto_fill=True):
         if type(value) is bytes or type(value) is bytearray or type(value) is Bytes:
             value = int.from_bytes(value, byteorder)
-        
+
         if type(value) is int:
             value = bin(value)[2:]
+            if auto_fill:
+                value = _zfill(value, math.ceil(len(value) / 8) * 8, byteorder)
 
 
         if not all([bit in ['0', '1'] for bit in str(value)]):
@@ -18,20 +30,21 @@ class Bitstring(UserString):
 
         super().__init__(value)
         self.byteorder = byteorder
+        self.auto_fill = auto_fill
 
 
     def _format_return(self, value):
-        return Bitstring(str(Bitstring(value, 'big').zfill(len(self))), self.byteorder)#.zfill(len(self))
+        return Bitstring(str(Bitstring(value, 'big', auto_fill=self.auto_fill).zfill(len(self))), self.byteorder, auto_fill=self.auto_fill)
 
 
     @staticmethod
-    def wrap(str_like, byteorder='big'):
+    def wrap(str_like, byteorder='big', auto_fill=True):
         if isinstance(str_like, Bitstring):
             return str_like
         else:
-            return Bitstring(str_like, byteorder=byteorder)
+            return Bitstring(str_like, byteorder=byteorder, auto_fill=auto_fill)
 
-    
+
     @staticmethod
     def random(size=16, byteorder='big'):
         return Bitstring(rand_bytes(math.ceil(size / 8)), byteorder=byteorder)[:size]
@@ -49,7 +62,7 @@ class Bitstring(UserString):
 
 
     def __xor__(self, other):
-        other = Bitstring.wrap(other, self.byteorder).bytes()
+        other = Bitstring.wrap(other, self.byteorder, auto_fill=self.auto_fill).bytes()
         result = self._clean_byteorder(self.bytes() ^ other)
         return self._format_return(result)
 
@@ -60,10 +73,10 @@ class Bitstring(UserString):
 
     def __getitem__(self, index):
         return Bitstring(UserString.__getitem__(self, index), self.byteorder)
-        
+
 
     def __and__(self, other):
-        other = Bitstring.wrap(other, self.byteorder).bytes()
+        other = Bitstring.wrap(other, self.byteorder, auto_fill=self.auto_fill).bytes()
         result = self._clean_byteorder(self.bytes() & other)
         return self._format_return(result)
 
@@ -73,7 +86,7 @@ class Bitstring(UserString):
 
 
     def __or__(self, other):
-        other = Bitstring.wrap(other, self.byteorder).bytes()
+        other = Bitstring.wrap(other, self.byteorder, auto_fill=self.auto_fill).bytes()
         result = self._clean_byteorder(self.bytes() | other)
         return self._format_return(result)
 
@@ -83,11 +96,11 @@ class Bitstring(UserString):
 
 
     def __add__(self, other):
-        return Bitstring(UserString.__add__(self, other), self.byteorder)
+        return Bitstring(UserString.__add__(self, other), self.byteorder, auto_fill=self.auto_fill)
 
 
     def __radd__(self, other):
-        return Bitstring(UserString(other).__add__(self), self.byteorder)
+        return Bitstring(UserString(other).__add__(self), self.byteorder, auto_fill=self.auto_fill)
 
 
     def __lshift__(self, num):
@@ -107,7 +120,6 @@ class Bitstring(UserString):
         return self._format_return(self.bytes().lrot(amount, bits=bits))
 
 
-
     def rrot(self, amount, bits=None):
         return self._format_return(self.bytes().rrot(amount, bits=bits))
 
@@ -121,20 +133,13 @@ class Bitstring(UserString):
 
 
     def zfill(self, size):
-        zeroes = max(size - len(self), 0) * '0'
-        if self.byteorder == 'big':
-            new_bitstring = zeroes + self
-        else:
-            new_bitstring = self + zeroes
-
-        return Bitstring(new_bitstring, self.byteorder)
-
+        return _zfill(self, size, self.byteorder)
 
 
     def stretch(self, size, offset=0):
         return self._format_return(stretch_key(self, size, offset))
 
-    
+
     def to_int(self):
         return self.bytes().int()
 
@@ -142,11 +147,11 @@ class Bitstring(UserString):
     def int(self):
         return self.to_int()
 
-    
+
     def to_bytes(self):
         return Bytes([int(str(chunk), 2) for chunk in self.zfill(self.byte_length()).chunk(8, allow_partials=True)], self.byteorder)
 
-    
+
     def bytes(self):
         return self.to_bytes()
 

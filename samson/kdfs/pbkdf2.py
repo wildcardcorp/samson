@@ -44,7 +44,7 @@ class PBKDF2(object):
             for _ in range(self.num_iters):
                 last = self.hash_fn(password, last)
                 xor_sum ^= last
-            
+
             output += xor_sum
-        
+
         return output[:self.desired_len]

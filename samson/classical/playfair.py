@@ -59,7 +59,7 @@ class Playfair(object):
         for i in range(0, len(plaintext), 2):
             if plaintext[i] == plaintext[i + 1]:
                 plaintext = plaintext[:i + 1] + 'x' + plaintext[i + 2:]
-        
+
 
         ciphertext = ''
         for i in range(0, len(plaintext), 2):

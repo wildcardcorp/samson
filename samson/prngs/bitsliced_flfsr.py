@@ -4,7 +4,7 @@ class BitslicedFLFSR(object):
     """
     An implementation of an FLFSR using an internal bitstring rather than an integer.
     """
-    
+
     def __init__(self, length: int, clock_bit: int, taps: list, seed: int=0):
         """
         Parameters:
@@ -51,7 +51,7 @@ class BitslicedFLFSR(object):
         for tap in self.taps:
             position = self.length - tap - 1
             bit ^= int(self.state[position])
-        
+
         self.state += '0'
         self.state = self.state[1:]
         self.state = (self.state[:self.length - 1] + str(bit))
@@ -66,7 +66,7 @@ class BitslicedFLFSR(object):
         """
         return int(self.state[0])
 
-    
+
     def clock_value(self) -> int:
         """
         Retrives the value in state[clock_bit].
@@ -77,7 +77,7 @@ class BitslicedFLFSR(object):
         return int(self.state[self.clock_bit])
 
 
-    
+
     def generate(self) -> int:
         """
         Calls self.clock(). Here for interface uniformity.

@@ -84,7 +84,7 @@ class BLAKE2(object):
             V[1], V[6], V[11], V[12] = self.mix(V[1], V[6], V[11], V[12], m[S[10]], m[S[11]])
             V[2], V[7], V[8], V[13] = self.mix(V[2], V[7], V[8], V[13], m[S[12]], m[S[13]])
             V[3], V[4], V[9], V[14] = self.mix(V[3], V[4], V[9], V[14], m[S[14]], m[S[15]])
-        
+
         h = [x ^ y for x, y in zip(h, V[:8])]
         h = [x ^ y for x, y in zip(h, V[8:])]
 
@@ -125,7 +125,7 @@ class BLAKE2(object):
             is_last_block = i == (len(msg_chunks) - 1)
             bytes_compressed += last_block_size if is_last_block else self.BLOCK_SIZE
             state = self.compress(state, self.IV, chunk, bytes_compressed, is_last_block)
-            
+
 
         return sum([Bytes(h, byteorder='little').zfill(self.WORD_SIZE // 8) for h in state])[:self.digest_size]
 

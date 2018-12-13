@@ -54,7 +54,7 @@ class Vigenere(object):
         self.key = key
         self.alphabet = alphabet
 
-    
+
     def __repr__(self):
         return "<Vigenere: key={}, alphabet={}>".format(self.key, self.alphabet)
 
@@ -81,7 +81,7 @@ class Vigenere(object):
 
         return Bytes(bytes(result))
 
-    
+
     def decrypt(self, ciphertext: bytes) -> Bytes:
         """
         Decrypts `ciphertext`.
@@ -130,7 +130,7 @@ class Vigenere(object):
 
             for chunk_score in top_chunk_scores:
                 total_key_score += chunk_score[1]
-                
+
             cipher_scores.append((total_key_score, top_chunk_scores))
 
         analyzer_scores = []

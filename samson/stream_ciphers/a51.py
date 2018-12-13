@@ -32,8 +32,8 @@ class A51(object):
         for _ in range(100):
             self.clock()
 
-       
-       
+
+
     def __repr__(self):
         return f"<A51: key={self.key}, frame_num={self.frame_num}, lfsr_regs={self.lfsr_regs}>"
 
@@ -53,7 +53,7 @@ class A51(object):
                 lfsr.clock()
 
 
-    
+
     def generate(self, length: int) -> Bytes:
         """
         Generates `length` of keystream.
@@ -68,5 +68,5 @@ class A51(object):
         for _ in range(length * 8):
             self.clock()
             bitstring += str(self.lfsr_regs[0].value() ^ self.lfsr_regs[1].value() ^ self.lfsr_regs[2].value())
-        
+
         return Bytes(int(bitstring, 2)).zfill(length)

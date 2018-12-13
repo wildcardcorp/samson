@@ -36,7 +36,7 @@ class RC4PrependAttack(object):
         """
         self.oracle = oracle
         self.strongest_biases = [1, 15, 31]
-        
+
 
     def _encrypt_chunk(self, payload: bytes, chunk_size: int):
         return [self.oracle.encrypt(payload) for _ in range(chunk_size)]

@@ -12,7 +12,7 @@ class SHA3TestCase(unittest.TestCase):
                     in_bytes = Bytes.random(i * 32)
                     self.assertEqual(sha3.hash(in_bytes), reference_method(in_bytes).digest())
 
-    
+
     def test_shake(self):
         for hash_type, reference_method, length in [(SHA3.SHAKE128, hashlib.shake_128, 256), (SHA3.SHAKE256, hashlib.shake_256, 512)]:
             shake = hash_type(length)

@@ -66,7 +66,7 @@ class MontgomeryCurve(object):
     def __eq__(self, other) -> bool:
         return self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
-    
+
 
 
 class MontgomeryPoint(object):
@@ -92,7 +92,7 @@ class MontgomeryPoint(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
 
     def __eq__(self, other) -> bool:
         return self.x == other.x and self.curve == other.curve
@@ -141,7 +141,7 @@ class MontgomeryPoint(object):
         z_2, z_3 = cswap(swap, z_2, z_3)
         return int(x_2 * (z_2**(self.curve.p - 2))) % self.curve.p
 
-    
+
     def __rmul__(self, other):
         return self.__mul__(other)
 
@@ -151,7 +151,7 @@ class MontgomeryPoint(object):
 class Curve25519(MontgomeryCurve):
     def __init__(self):
         super().__init__(p=2**255 - 19, A=486662, a24=121665, U=9, V=1478161944758954479102059356840998688726460613461647528896488183775558623740)
-    
+
 
     def clamp_to_curve(self, x: int) -> MontgomeryPoint:
         """
@@ -173,7 +173,7 @@ class Curve25519(MontgomeryCurve):
 class Curve448(MontgomeryCurve):
     def __init__(self):
         super().__init__(p=2**448 - 2**224 - 1, A=156326, a24=39081, U=5, V=355293926785568175264127502063783334808976399387714271831880898435169088786967410002932673765864550910142774147268105838985595290606362)
-    
+
 
     def clamp_to_curve(self, x: int) -> MontgomeryPoint:
         """
@@ -233,12 +233,12 @@ class TwistedEdwardsCurve(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
 
     def __eq__(self, other) -> bool:
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
-    
+
 
     def is_on_curve(self, P: (int, int)) -> bool:
         """
@@ -252,7 +252,7 @@ class TwistedEdwardsCurve(object):
         """
         x, y = P
         return (self.a * x*x + y*y - 1 - self.d * x*x*y*y) % self.q == 0
-    
+
 
 
     def recover_point_from_y(self, y: int):
@@ -315,7 +315,7 @@ class TwistedEdwardsPoint(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
 
     def __eq__(self, other) -> bool:
@@ -325,7 +325,7 @@ class TwistedEdwardsPoint(object):
     def __add__(self, other):
         if type(other) != TwistedEdwardsPoint:
             raise TypeError("TwistedEdwardsPoint addition only defined between points.")
-        
+
         assert self.curve == other.curve
 
         x1, y1 = self.x, self.y
@@ -334,7 +334,7 @@ class TwistedEdwardsPoint(object):
         y3 = (y1*y2 - self.curve.a*x1*x2) * mod_inv(1-self.curve.d * x1*x2*y1*y2, self.curve.q)
 
         return TwistedEdwardsPoint(x3, y3, self.curve)
-    
+
 
     def __mul__(self, scalar: int):
         if type(scalar) != int:
@@ -348,7 +348,7 @@ class TwistedEdwardsPoint(object):
 
             if (scalar >> i) & 1:
                 Q = Q + self
-        
+
         return Q
 
 

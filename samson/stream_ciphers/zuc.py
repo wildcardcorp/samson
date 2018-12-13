@@ -87,7 +87,7 @@ class ZUC(object):
         self.F()
         self.run_lfsr()
 
-    
+
 
 
     def __repr__(self):
@@ -109,7 +109,7 @@ class ZUC(object):
     def initialize(self):
         for i in range(16):
             self.lfsr_states[i] = (self.key[i] << 23) | (EK_d[i] << 8) | (self.iv[i])
-        
+
         for i in range(32):
             self.reorganize_bits()
             w = self.F()
@@ -147,13 +147,13 @@ class ZUC(object):
         Used internally. Runs the LFSR one iteration.
         """
         f = self.lfsr_states[0]
-        
+
         rotations = [(0, 8), (4, 20), (10, 21), (13, 17), (15, 15)]
 
         for state_idx, rot_amount in rotations:
             v = left_rotate(self.lfsr_states[state_idx], rot_amount, bits=31)
             f = ADD_M(f, v)
-    
+
         if u:
             f = ADD_M(f, u)
 
@@ -178,6 +178,6 @@ class ZUC(object):
             self.reorganize_bits()
             keystream += Bytes(self.F() ^ self.X[3])
             self.run_lfsr()
-        
+
 
         return keystream.zfill(length)[:length]

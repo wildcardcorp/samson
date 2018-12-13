@@ -14,7 +14,7 @@ class ECBCTS(object):
             block_size (int): Block size of the underlying encryption algorithm.
         """
         self.underlying_mode = ECB(encryptor, decryptor, block_size)
-    
+
 
     def __repr__(self):
         return f"<ECBCTS: underlying_mode={self.underlying_mode}>"
@@ -23,7 +23,7 @@ class ECBCTS(object):
         return self.__repr__()
 
 
-    
+
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.
@@ -37,7 +37,7 @@ class ECBCTS(object):
         plaintext = Bytes.wrap(plaintext)
         block_size = self.underlying_mode.block_size
         pt_len = len(plaintext)
-        
+
         assert pt_len > block_size
         pt_chunks = plaintext.chunk(block_size, allow_partials=True)
 

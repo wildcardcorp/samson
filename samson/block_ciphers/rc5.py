@@ -62,7 +62,7 @@ class RC5(object):
 
         for i in range(b - 1, -1, -1):
             L[i // u] = Bytes.wrap(L[i // u] << 8).int() + self.key[i]
-        
+
         S = [(P_w[const_idx] + (Q_w[const_idx] * i)) % self.mod for i in range(t)]
 
         i = j = 0
@@ -73,7 +73,7 @@ class RC5(object):
             B = L[j] = left_rotate((L[j] + A + B), (A + B) % self.block_size, bits=self.block_size)
             i = (i + 1) % t
             j = (j + 1) % c
-        
+
         return S
 
 
@@ -122,7 +122,7 @@ class RC5(object):
         for i in range(self.num_rounds, 0, -1):
             B = right_rotate((B - self.S[2*i + 1]) % self.mod, A % self.block_size, bits=self.block_size) ^ A
             A = right_rotate((A - self.S[2*i]) % self.mod, B % self.block_size, bits=self.block_size) ^ B
-            
+
         A = (A - self.S[0]) % self.mod
         B = (B - self.S[1]) % self.mod
 

@@ -69,7 +69,7 @@ class RSATestCase(unittest.TestCase):
             for _ in range(10):
                 plaintext = Bytes.random((bits // 8) - 1)
                 ciphertext = rsa.encrypt(plaintext)
-                
+
                 self.assertEqual(rsa.decrypt(ciphertext).zfill(len(plaintext)), plaintext)
 
 
@@ -95,7 +95,7 @@ class RSATestCase(unittest.TestCase):
 
         self.assertEqual((rsa.n, rsa.e, rsa.alt_d), (0x545702789299c59544f0a48037d5fcbe285b5c214d26469f7f52423763d01b331d0f7c9dfd5e98435b362e083875d101e10bf862a34a20cd38cd68743770b1ee57ce7f04e4335729aecacdc662b9b1e0f438f1a691538001d9c8f3374dc1dabf2e9fb316be636b0d2393f511c5bc7373c1666562322dc3911163e338b83bdf7d9a622c81b9edd19cd1699cae8c2def325de313e070d7733fc7ca95e0b12ef6a43095626e1fa3b19681a6e6b2828eb6b3487cb7bb58370086b108e9eaf9f20a53b8f44c9fe7ab7ad545d70b3c5f470190ece9e7172824e05747e1c431a664ab6bd2f914bf64e4dcac0575c493f52a488737f85742fb52aa4555f144ab8e601713, 0x10001, 7637900981413881127344732199207423148450857019726723094659043462794313258767201253269496359678839942555541437712415706663660985252940123204794095993626699211163986533562336773310103190916142252882331767886927729021516529141672972169957951166501750445256177733568843099186777096376892875529534391517354389358568809006385725873288954661635538351606457829485241023554979084645466210495420866845750976009860684015622002855709494103022482640146893844516679296838305756556603312962721311081086887412291530082263197989863828789712221961262494351622769754044860656696333724061992404959980518191241190042534000830303328685273))
         self.assertEqual((rsa.d, rsa.e, rsa.p, rsa.q), (new_rsa.d, new_rsa.e, new_rsa.p, new_rsa.q))
-        self.assertEqual(TEST_PRIV.replace(b'\n', b''), der_bytes.replace(b'\n', b''))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PRIV.replace(b'\n', b''))
 
 
 
@@ -106,12 +106,12 @@ class RSATestCase(unittest.TestCase):
         der_bytes = rsa_pub.export_public_key()
         new_pub  = RSA.import_key(der_bytes)
 
-
         self.assertEqual((rsa_pub.n, rsa_pub.e), (rsa_priv.n, rsa_priv.e))
-        self.assertEqual((new_pub.n, new_pub.e), (rsa_priv.n, rsa_priv.e))
-    
+        self.assertEqual((rsa_pub.n, rsa_pub.e), (new_pub.n, new_pub.e))
+        self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PUB.replace(b'\n', b''))
 
-    
+
+
     def test_factorize_from_shared_p(self):
         for _ in range(5):
             bits = max(1, Bytes.random(2).int() >> 4)
@@ -124,8 +124,8 @@ class RSATestCase(unittest.TestCase):
 
             self.assertEqual((rsa_a.d, rsa_a.e, rsa_a.n, rsa_a.p, rsa_a.q), (new_rsa_a.d, new_rsa_a.e, new_rsa_a.n, new_rsa_a.p, new_rsa_a.q))
             self.assertEqual((rsa_b.d, rsa_b.e, rsa_b.n, rsa_b.p, rsa_b.q), (new_rsa_b.d, new_rsa_b.e, new_rsa_b.n, new_rsa_b.p, new_rsa_b.q))
-    
-    
+
+
 
     def test_factorize_from_d(self):
         for _ in range(5):

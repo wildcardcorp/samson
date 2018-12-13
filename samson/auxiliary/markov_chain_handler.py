@@ -14,7 +14,7 @@ class MarkovChainHandler(TokenizerHandler):
     def reset(self):
         self.curr_parsed_chain = self.chain
 
-    
+
     def handle_token(self, token: str):
         """
         Handles a new token being found.

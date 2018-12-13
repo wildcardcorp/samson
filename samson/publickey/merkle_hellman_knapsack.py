@@ -31,7 +31,7 @@ class MerkleHellmanKnapsack(object):
 
     def __repr__(self):
         return f"<MerkleHellmanKnapsack: priv={self.priv}, pub={self.pub}, q={self.q}, r={self.r}>"
-    
+
     def __str__(self):
         return self.__repr__()
 
@@ -52,7 +52,7 @@ class MerkleHellmanKnapsack(object):
             bin_str += bin(byte)[2:].zfill(8)
 
         all_sums = []
-        
+
         for i in range(len(bin_str) // len(self.pub)):
             byte_str = bin_str[i * len(self.pub):(i + 1) * len(self.pub)]
             all_sums.append(sum([int(byte_str[j]) * self.pub[j] for j in range(len(self.pub))]))

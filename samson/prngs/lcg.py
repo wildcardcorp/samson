@@ -32,7 +32,7 @@ class LCG(object):
 
     def __str__(self):
         return self.__repr__()
-        
+
 
     def generate(self) -> int:
         """
@@ -44,7 +44,7 @@ class LCG(object):
         self.X = (self.a * self.X + self.c) % self.m
         return self.X
 
-    
+
     # https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
     def check_full_period(self) -> bool:
         """
@@ -88,7 +88,7 @@ class LCG(object):
             congruences = [t2*t0 - t1*t1 for t0, t1, t2 in zip(diffs, diffs[1:], diffs[2:])]
             modulus = abs(functools.reduce(gcd, congruences))
 
-        
+
         if not multiplier:
             multiplier = (states[2] - states[1]) * mod_inv(states[1] - states[0], modulus) % modulus
 
@@ -97,8 +97,8 @@ class LCG(object):
             increment = (states[1] - states[0] * multiplier) % modulus
 
         return LCG(states[-1], multiplier, increment, modulus)
-    
-    
+
+
 
     # Reference: https://github.com/mariuslp/PCG_attack
     # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
@@ -145,7 +145,7 @@ class LCG(object):
 
                     for diff in seed_diffs:
                         computed_seeds.append((diff + computed_seeds[-1]) % modulus)
-                    
+
 
                     # It's possible to find a spectrum of nearly-equivalent LCGs.
                     # The accuracy of `predicted_lcg` is dependent on the size of `outputs_to_predict` and the

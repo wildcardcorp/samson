@@ -10,12 +10,12 @@ class ECBTestCase(unittest.TestCase):
         rij = Rijndael(key)
         ecb = ECB(rij.encrypt, rij.decrypt, rij.block_size // 8)
         ciphertext  = ecb.encrypt(plaintext, pad=False)
-        
+
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(ecb.decrypt(ciphertext, unpad=False), plaintext)
 
 
-    
+
     def test_vec0(self):
         key                 = Bytes(0x2B7E151628AED2A6ABF7158809CF4F3C).zfill(16)
         plaintext           = Bytes(0x6BC1BEE22E409F96E93D7E117393172AAE2D8A571E03AC9C9EB76FAC45AF8E5130C81C46A35CE411E5FBC1191A0A52EFF69F2445DF4F9B17AD2B417BE66C3710).zfill(64)
@@ -24,7 +24,7 @@ class ECBTestCase(unittest.TestCase):
         self._run_test(key, plaintext, expected_ciphertext)
 
 
-    
+
     def test_vec1(self):
         key                 = Bytes(0x8E73B0F7DA0E6452C810F32B809079E562F8EAD2522C6B7B).zfill(24)
         plaintext           = Bytes(0x6BC1BEE22E409F96E93D7E117393172AAE2D8A571E03AC9C9EB76FAC45AF8E5130C81C46A35CE411E5FBC1191A0A52EFF69F2445DF4F9B17AD2B417BE66C3710).zfill(64)

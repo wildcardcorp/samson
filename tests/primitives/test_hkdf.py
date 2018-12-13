@@ -12,7 +12,7 @@ class HKDFTestCase(unittest.TestCase):
         self.assertEqual(hkdf.derive(key, salt, info), okm)
 
 
-    
+
     def test_vec1(self):
         hash_obj = SHA256()
         ikm = Bytes(0x0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b)

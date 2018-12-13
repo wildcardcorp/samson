@@ -79,7 +79,7 @@ def levenshtein_distance(seq_a: list, seq_b: list) -> int:
             current_row.append(min(insertions, deletions, substitutions))
 
         previous_row = current_row
-    
+
     return previous_row[-1]
 
 
@@ -121,11 +121,11 @@ def chisquare(observed_dict: dict, expected_freq_dict: dict) -> float:
             obs_val = observed_dict[key]
         else:
             obs_val = 0
-        
+
         expected_number = observed_len * freq_value
         total += (expected_number - obs_val) ** 2 / expected_number
 
-    
+
     for key, obs_value in observed_dict.items():
         if key not in expected_freq_dict:
             obs_val = obs_value
@@ -133,7 +133,7 @@ def chisquare(observed_dict: dict, expected_freq_dict: dict) -> float:
             obs_val = 0
 
         total += obs_val ** 2
-    
+
     return total
 
 
@@ -238,9 +238,9 @@ def incremental_rc4_bias_map_gen(filepath, start_idx=0, data=b'\x00' * 51, key_s
             mod_sample_size = sample_size % chunk_size
         else:
             mod_sample_size = chunk_size
-        
+
         bias_map = generate_random_rc4_bias_map(data, key_size, mod_sample_size)
-        
+
 
         with open(filepath + ".{}".format(i), "w+") as f:
             f.write(json.dumps(bias_map))
@@ -251,11 +251,11 @@ def incremental_rc4_bias_map_gen(filepath, start_idx=0, data=b'\x00' * 51, key_s
 
 def merge_rc4_bias_map_files(base_path, num):
     bias_maps = []
-    
+
     for i in range(num):
         with open("{}.{}".format(base_path, i)) as f:
             content = f.read()
-        
+
         bias_maps.append(json.loads(content))
 
     return merge_rc4_bias_maps(bias_maps)

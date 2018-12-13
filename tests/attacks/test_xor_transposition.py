@@ -45,6 +45,6 @@ class XORTranspositionTestCase(unittest.TestCase):
     def test_rc4_attack(self):
         self.try_encryptor(encrypt_rc4)
 
-    
+
     def test_ctr_attack(self):
         self.try_encryptor(encrypt_ctr)

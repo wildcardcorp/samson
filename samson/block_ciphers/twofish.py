@@ -59,12 +59,12 @@ def G(X, L, k):
         for j in range(4):
             q_box = Q_BOXES[Q_ORD[i + 1][j]]
             y[j] = Q_PERMUTE(y[j], q_box) ^ L[i][j]
-    
+
 
     for j in range(4):
         q_box = Q_BOXES[Q_ORD[0][j]]
         y[j] = Q_PERMUTE(y[j], q_box)
-    
+
 
     z = MAT_MUL(MDS, y, GF_MOD_POLY)[::-1]
     return Bytes(z).int()
@@ -103,9 +103,9 @@ def MAT_MUL(mat, vec, mod):
         t = 0
         for j in range(len(vec)):
             t ^= GF_MUL(mat[i][j], vec[j], mod)
-        
+
         result.append(t)
-    
+
     return result
 
 
@@ -118,7 +118,7 @@ def EXPAND_KEY(M_e, M_o, k):
 
         K.append((A_i + B_i) & 0xFFFFFFFF)
         K.append(left_rotate((A_i + 2*B_i) & 0xFFFFFFFF, 9))
-    
+
     return K
 
 
@@ -162,7 +162,7 @@ class Twofish(object):
         for i in range(k):
             vec = [byte for byte in M_e[i]] + [byte for byte in M_o[i]]
             self.S.append(MAT_MUL(RS, vec, RS_MOD_POLY))
-        
+
 
         self.S.reverse()
 
@@ -171,7 +171,7 @@ class Twofish(object):
 
         self.K = EXPAND_KEY(M_e_8, M_o_8, k)
 
-    
+
 
     def F(self, R_0, R_1, i):
         R_0_little = int.from_bytes(int.to_bytes(R_0, 4, 'big'), 'little')
@@ -214,12 +214,12 @@ class Twofish(object):
 
             R[0], R[2] = R[2], R[0]
             R[1], R[3] = R[3], R[1]
-        
+
         R = [R[(i+2) % 4] ^ self.K[i+4] for i in range(len(pt_chunks))]
-        
+
         return Bytes(b''.join([int.to_bytes(r, 4, 'little') for r in R]))
 
-    
+
 
 
     def decrypt(self, ciphertext: bytes) -> Bytes:
@@ -249,7 +249,7 @@ class Twofish(object):
 
             R[0], R[2] = R[2], R[0]
             R[1], R[3] = R[3], R[1]
-        
+
         R = [R[(i+2) % 4] ^ self.K[i] for i in range(len(ct_chunks))]
-        
+
         return Bytes(b''.join([int.to_bytes(r, 4, 'little') for r in R]))

@@ -73,13 +73,13 @@ def COMPRESS(message, state):
 
             T = left_rotate(AR + FR[curr_round](BR, CR, DR) + msg_chunks[RR[curr_round][w]] + KR[curr_round], SR[curr_round][w]) + ER
             AR = ER & 0xFFFFFFFF; ER = DR & 0xFFFFFFFF; DR = left_rotate(CR, 10); CR = BR & 0xFFFFFFFF; BR = T & 0xFFFFFFFF
-    
+
     T = (h[1] + CL + DR) & 0xFFFFFFFF
     h[1] = (h[2] + DL + ER) & 0xFFFFFFFF
     h[2] = (h[3] + EL + AR) & 0xFFFFFFFF
     h[3] = (h[4] + AL + BR) & 0xFFFFFFFF
     h[4] = (h[0] + BL + CR) & 0xFFFFFFFF
-    h[0] = T 
+    h[0] = T
 
     return sum([Bytes(state, 'little').zfill(4) for state in h])
 

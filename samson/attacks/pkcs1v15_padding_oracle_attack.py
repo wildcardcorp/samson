@@ -17,7 +17,7 @@ def _append_and_merge(new_a, new_b, intervals):
             new_b = max(b, new_b)
             intervals[i] = new_a, new_b
             return
-    
+
     intervals.append((new_a, new_b))
 
 
@@ -43,7 +43,7 @@ class PKCS1v15PaddingOracleAttack(object):
         self.oracle = oracle
 
 
-    
+
     def execute(self, ciphertext: int, n: int, e: int, key_length: int) -> Bytes:
         """
         Executes the attack.
@@ -105,7 +105,7 @@ class PKCS1v15PaddingOracleAttack(object):
 
                     if self.oracle.check_padding(c):
                         break
-                        
+
             # Step 2.c
             elif len(M) == 1:
                 log.debug("Only one interval")

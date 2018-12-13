@@ -33,7 +33,7 @@ class ChaCha(Salsa):
 
     Add-rotate-xor (ARX) structure.
     """
-    
+
     def __init__(self, key: bytes, nonce: bytes, rounds: int=20, constant: bytes=b"expand 32-byte k"):
         """
         Parameters:

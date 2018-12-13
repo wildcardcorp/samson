@@ -45,7 +45,7 @@ class RC4(object):
         for i in range(256):
             j = (j + S[i] + key[i % key_length]) % 256
             S[i], S[j] = S[j], S[i]
-        
+
         return S
 
 
@@ -60,7 +60,7 @@ class RC4(object):
             Bytes: Keystream.
         """
         keystream = Bytes(b'')
-        
+
         for _ in range(length):
             self.i = (self.i + 1) % 256
             self.j = (self.j + self.S[self.i]) % 256

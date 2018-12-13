@@ -68,7 +68,7 @@ class SNOW3G(object):
         for _ in range(32):
             F = self.clock_FSM()
             self.clock_lfsr(F)
-    
+
 
 
     def __repr__(self):
@@ -89,7 +89,7 @@ class SNOW3G(object):
     def MULa(self, c: int) -> int:
         return (self.MULxPOW(c, 23, 0xA9) << 24) + (self.MULxPOW(c, 245, 0xA9) << 16) + (self.MULxPOW(c, 48, 0xA9) << 8) + self.MULxPOW(c, 239, 0xA9)
 
-    
+
     def DIVa(self, c: int) -> int:
         return (self.MULxPOW(c, 16, 0xA9) << 24) + (self.MULxPOW(c, 39, 0xA9) << 16) + (self.MULxPOW(c, 6, 0xA9) << 8) + self.MULxPOW(c, 64, 0xA9)
 
@@ -99,7 +99,7 @@ class SNOW3G(object):
             return V
         else:
             return self.MULx(self.MULxPOW(V, i - 1, c), c)
-    
+
 
 
     def S1(self, w: int) -> Bytes:
@@ -119,7 +119,7 @@ class SNOW3G(object):
         r3 = sqw0 ^ sqw1 ^ self.MULx(sqw2, val) ^ sqw2 ^ self.MULx(sqw3, val)
 
         return Bytes([r0, r1, r2, r3]).to_int()
-    
+
 
     def clock_FSM(self) -> int:
         """
@@ -169,7 +169,7 @@ class SNOW3G(object):
         self.clock_lfsr()
 
         ks = []
-        
+
         for _ in range(length):
             F = self.clock_FSM()
             ks.append(F ^ self.s[0])

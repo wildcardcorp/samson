@@ -28,7 +28,7 @@ class NaiveMDCollider(object):
         self.output_size = output_size
 
 
-    
+
     @staticmethod
     def initialize_with_known_prefixes(prefixes: list, iv: bytes, construction_func: FunctionType, output_size: int):
         """

@@ -19,7 +19,7 @@ class DH25519TestCase(unittest.TestCase):
 
         if expected_shared_key:
             self.assertEqual(dh_a.derive_key(pub_b), expected_shared_key)
-    
+
 
     # Let's just test a bunch of random numbers
     def test_gauntlet(self):

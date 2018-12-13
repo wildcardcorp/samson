@@ -23,7 +23,7 @@ class MWC1616(object):
         self.b = b
         self.bits = bits
         self._mask = 2**bits - 1
-    
+
 
     def __repr__(self):
         return f"<MWC1616: state={self.state}, a={self.a}, b={self.b}, bits={self.bits}>"

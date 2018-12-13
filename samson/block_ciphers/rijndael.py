@@ -13,7 +13,7 @@ def initialize_sbox():
         # Multiply p by 3
         p = p ^ (p << 1) ^ (0x1B if p & 0x80 else 0)
         p &= 0xFF
-        
+
         # Divide q by 3
         q ^= (q << 1) & 0xFF
         q ^= (q << 2) & 0xFF
@@ -80,20 +80,20 @@ class Rijndael(object):
         key = Bytes.wrap(key)
         if not (len(key) * 8) in range(128, 257, 32):
             raise Exception("Invalid key size! Must be between 128 and 256 and a multiple of 32")
-        
+
         if not block_size in range(128, 257, 32):
             raise Exception("Invalid 'block_size'! Must be between 128 and 256 and a multiple of 32")
 
-        
+
         self.key = key
         self.block_size = block_size
 
         self._chunk_size = self.block_size // 32
         round_keys = self.key_schedule()
         self.round_keys = [Bytes(b''.join(round_keys[i:i + self._chunk_size])) for i in range(0, len(round_keys), self._chunk_size)]
-        
+
         Nk = len(self.key) // 4
-        Nb = self._chunk_size 
+        Nb = self._chunk_size
         self.num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
 
 
@@ -144,7 +144,7 @@ class Rijndael(object):
                 state_matrix = Bytes([SBOX[byte] for byte in state_matrix])
                 state_matrix = self.shift_rows(state_matrix)
                 state_matrix ^= round_key
-            
+
             yield state_matrix.transpose(self._chunk_size)
 
 
@@ -215,13 +215,13 @@ class Rijndael(object):
         for _ in range(8):
             if (b & 1) != 0:
                 p ^= a
-            
+
             hi_bi_set = (a & 0x80) != 0
             a <<=1
 
             if hi_bi_set:
                 a ^= 0x1B
-            
+
             b >>= 1
 
         return p
@@ -237,5 +237,5 @@ class Rijndael(object):
             new_state[i + c1] = (self._gmul(mix_matrix[4], state_matrix[i + c0]) ^ self._gmul(mix_matrix[5], state_matrix[i + c1]) ^ self._gmul(mix_matrix[6], state_matrix[i + c2]) ^ self._gmul(mix_matrix[7], state_matrix[i + c3])) & 0xFF
             new_state[i + c2] = (self._gmul(mix_matrix[8], state_matrix[i + c0]) ^ self._gmul(mix_matrix[9], state_matrix[i + c1]) ^ self._gmul(mix_matrix[10], state_matrix[i + c2]) ^ self._gmul(mix_matrix[11], state_matrix[i + c3])) & 0xFF
             new_state[i + c3] = (self._gmul(mix_matrix[12], state_matrix[i + c0]) ^ self._gmul(mix_matrix[13], state_matrix[i + c1]) ^ self._gmul(mix_matrix[14], state_matrix[i + c2]) ^ self._gmul(mix_matrix[15], state_matrix[i + c3])) & 0xFF
-        
+
         return new_state
