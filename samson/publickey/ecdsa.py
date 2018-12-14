@@ -1,12 +1,15 @@
+from fastecdsa.curve import P192, P224, P256, P384, P521
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.publickey.dsa import DSA
-from samson.utilities.encoding import export_der, bytes_to_der_sequence
+from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
+from samson.utilities.pem import pem_encode, pem_decode
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
 import math
+import base64
 
 class NamedCurve(ObjectIdentifier):
     tagSet = baseTagSet = tag.initTagSet(
@@ -111,41 +114,75 @@ class ECDSA(DSA):
     # https://github.com/golang/crypto/blob/master/ssh/keys.go
     # https://stackoverflow.com/questions/5929050/how-does-asn-1-encode-an-object-identifier
     @staticmethod
-    def import_key(buffer: bytes):
+    def import_key(buffer: bytes, passphrase: bytes=None):
         """
         Builds an ECDSA instance from DER and/or PEM-encoded bytes.
 
         Parameters:
-            buffers (bytes): DER and/or PEM-encoded bytes.
+            buffer     (bytes): DER and/or PEM-encoded bytes.
+            passphrase (bytes): Passphrase to decrypt DER-bytes (if applicable).
         
         Returns:
             ECDSA: ECDSA instance.
         """
-        items = bytes_to_der_sequence(buffer)
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer, passphrase)
 
-        if len(items) == 4 and int(items[0]) == 1:
-            d = Bytes(items[1]).int()
-            curve_idx = 2
-            pub_point_idx = 3
+        ssh_header = b'ecdsa-'
 
+        if ssh_header in buffer:
+            # SSH public key?
+            if buffer.startswith(ssh_header):
+                buffer = base64.b64decode(buffer.split(b' ')[1])
 
-        # Is it a public key?
-        elif len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1':
-            curve_idx = 0
-            pub_point_idx = 1
-            d = 1
+            key_parts = parse_openssh(ssh_header, buffer)
 
-            # Move up OID for convenience
-            items[0] = items[0][1]
+            # Public key?
+            if len(key_parts) == 3:
+                curve, x_y_bytes = key_parts[1:]
+                d = 1
+            else:
+                curve, x_y_bytes, d, _host, _ = key_parts[4:]
+                d = d.int()
+
+            if curve == b'nistp192':
+                curve = P192
+            elif curve == b'nistp224':
+                curve = P224
+            elif curve == b'nistp256':
+                curve = P256
+            elif curve == b'nistp384':
+                curve = P384
+            elif curve == b'nistp521':
+                curve = P521
+
         else:
-            raise ValueError("Unable to parse provided ECDSA key.")
+            items = bytes_to_der_sequence(buffer, passphrase)
+
+            if len(items) == 4 and int(items[0]) == 1:
+                d = Bytes(items[1]).int()
+                curve_idx = 2
+                pub_point_idx = 3
 
 
-        curve_oid = items[curve_idx].asTuple()
-        oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-        curve = Curve.get_curve_by_oid(oid_bytes)
+            # Is it a public key?
+            elif len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1':
+                curve_idx = 0
+                pub_point_idx = 1
+                d = 1
 
-        x_y_bytes = Bytes(int(items[pub_point_idx]))
+                # Move up OID for convenience
+                items[0] = items[0][1]
+            else:
+                raise ValueError("Unable to parse provided ECDSA key.")
+
+
+            curve_oid = items[curve_idx].asTuple()
+            oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
+            curve = Curve.get_curve_by_oid(oid_bytes)
+
+            x_y_bytes = Bytes(int(items[pub_point_idx]))
+
 
         # Uncompressed Point
         if x_y_bytes[0] == 4:
@@ -162,30 +199,39 @@ class ECDSA(DSA):
         return ecdsa
 
 
+
     def format_public_point(self) -> str:
         """
         Internal function used for exporting the key. Formats `Q` into a bitstring.
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-        pub_point_bs = bin((b'\x00\x04' + (Bytes(self.Q.x) + Bytes(self.Q.y)).zfill(zero_fill * 2)).int())[2:]
+        pub_point_bs = bin((b'\x00\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))).int())[2:]
         pub_point_bs = pub_point_bs.zfill(math.ceil(len(pub_point_bs) / 8) * 8)
         return pub_point_bs
 
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='EC PRIVATE KEY') -> bytes:
+    def export_private_key(self, encode_pem: bool=True, marker: str='EC PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full ECDSA instance into DER-encoded bytes.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
             marker      (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: DER-encoding of DSA instance.
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-        return export_der([1, Bytes(self.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple(), self.format_public_point()], encode_pem, marker, item_types=[Integer, OctetString, NamedCurve, PublicPoint])
+        der = export_der([1, Bytes(self.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple(), self.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
+
+        if encode_pem:
+            der = pem_encode(der, marker, encryption=encryption, passphrase=passphrase, iv=iv)
+
+        return der
 
 
 
@@ -201,4 +247,9 @@ class ECDSA(DSA):
             bytes: DER-encoding of ECDSA instance.
         """
         curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
-        return export_der([curve_seq, self.format_public_point()], encode_pem, marker, item_types=[SequenceOf, BitString])
+        der = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
+
+        if encode_pem:
+            der = pem_encode(der, marker)
+
+        return der

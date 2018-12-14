@@ -1,8 +1,10 @@
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import export_der, bytes_to_der_sequence, pem_encode
+from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
+from samson.utilities.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence
+import base64
 import math
 
 class DSA(object):
@@ -119,29 +121,51 @@ class DSA(object):
 
 
     @staticmethod
-    def import_key(buffer: bytes):
+    def import_key(buffer: bytes, passphrase: bytes=None):
         """
         Builds an DSA instance from DER and/or PEM-encoded bytes.
 
         Parameters:
-            buffers (bytes): DER and/or PEM-encoded bytes.
+            buffer     (bytes): DER and/or PEM-encoded bytes.
+            passphrase (bytes): Passphrase to decrypt DER-bytes (if applicable).
         
         Returns:
             DSA: DSA instance.
         """
-        items = bytes_to_der_sequence(buffer)
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer, passphrase)
 
-        if len(items) == 6 and int(items[0]) == 0:
-            p, q, g, y, x = [int(item) for item in items[1:6]]
+        ssh_header = b'ssh-dss'
 
-        # Is public key?
-        elif len(items) == 2 and str(items[0][0]) == '1.2.840.10040.4.1':
-            y_sequence_bytes = Bytes(int(items[1]))
-            y = int(decoder.decode(y_sequence_bytes)[0])
-            p, q, g = [int(item) for item in items[0][1]]
-            x = 0
+        if ssh_header in buffer:
+            # SSH public key?
+            if buffer.startswith(ssh_header):
+                buffer = base64.b64decode(buffer.split(b' ')[1])
+
+
+            key_parts = parse_openssh(ssh_header, buffer)
+
+            # Public key?
+            if len(key_parts) == 5:
+                p, q, g, y = [part.int() for part in key_parts[1:]]
+                x = 0
+            else:
+                p, q, g, y, x, _host = [part.int() for part in key_parts[6:]]
+
         else:
-            raise ValueError("Unable to parse provided DSA key.")
+            items = bytes_to_der_sequence(buffer, passphrase)
+
+            if len(items) == 6 and int(items[0]) == 0:
+                p, q, g, y, x = [int(item) for item in items[1:6]]
+
+            # Is public key?
+            elif len(items) == 2 and str(items[0][0]) == '1.2.840.10040.4.1':
+                y_sequence_bytes = Bytes(int(items[1]))
+                y = int(decoder.decode(y_sequence_bytes)[0])
+                p, q, g = [int(item) for item in items[0][1]]
+                x = 0
+            else:
+                raise ValueError("Unable to parse provided DSA key.")
 
         dsa = DSA(None, p=p, q=q, g=g, x=x)
         dsa.y = y
@@ -150,18 +174,26 @@ class DSA(object):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='DSA PRIVATE KEY') -> bytes:
+    def export_private_key(self, encode_pem: bool=True, marker: str='DSA PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full DSA instance into DER-encoded bytes.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            marker       (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: DER-encoding of DSA instance.
         """
-        return export_der([0, self.p, self.q, self.g, self.y, self.x], encode_pem, marker)
+        der = export_der([0, self.p, self.q, self.g, self.y, self.x])
+
+        if encode_pem:
+            der = pem_encode(der, marker, encryption=encryption, passphrase=passphrase, iv=iv)
+
+        return der
 
 
 

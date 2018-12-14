@@ -59,7 +59,6 @@ class DaviesMeyerConstruction(object):
 
 
 
-    # TODO: Get block size from block_cipher object instead of having to explicitly set it.
     @staticmethod
     def generate_fixed_point(block_cipher: object, message: bytes, block_size: int):
         """
@@ -67,7 +66,7 @@ class DaviesMeyerConstruction(object):
         its input, and, therefore, infinitely produces itself.
 
         Parameters:
-            block_cipher (object): Block cipher object.
+            block_cipher  (type): Block cipher type.
             message       (bytes): Message you want to be fixed point.
             block_size      (int): Block size of `block_cipher`.
 

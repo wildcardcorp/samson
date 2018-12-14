@@ -4,8 +4,6 @@ from sympy.abc import x
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence, Integer, SequenceOf
 import math
-import base64
-import re
 
 # https://en.wikipedia.org/wiki/Non-adjacent_form
 def to_NAF(input_arg: bytes) -> list:
@@ -36,6 +34,7 @@ def to_NAF(input_arg: bytes) -> list:
         E /= 2
         i += 1
     return z[::-1]
+
 
 
 def from_NAF(naf: list) -> int:
@@ -103,58 +102,12 @@ def bitstring_to_bytes(bitstring: str, byteorder: str='big') -> bytes:
 
 
 
-PRE_ENCAPSULATION_BOUNDARY_RE  = re.compile(rb'\s*-----BEGIN (.*)-----\n')
-POST_ENCAPSULATION_BOUNDARY_RE = re.compile(rb'-----END (.*)-----\s*')
-
-# TODO: Handle encrypted PEM files
-def pem_decode(pem_bytes: bytes) -> bytes:
-    """
-    Decodes PEM bytes into raw bytes.
-
-    Parameters:
-        pem_bytes (bytes): PEM-encoded bytes.
-
-    Returns:
-        bytes: Decoded bytes.
-    """
-    if not PRE_ENCAPSULATION_BOUNDARY_RE.match(pem_bytes):
-        raise ValueError('`pem_bytes` must have a valid pre-encapsulation boundary')
-
-
-    if not POST_ENCAPSULATION_BOUNDARY_RE.search(pem_bytes):
-        raise ValueError('`pem_bytes` must have a valid post-encapsulation boundary')
-
-
-    headers_removed = b''.join(pem_bytes.replace(b' ', b'').split()[1:-1])
-    return base64.b64decode(headers_removed)
-
-
-
-def pem_encode(der_bytes: bytes, marker: str, width: int=70) -> bytes:
-    """
-    PEM-encodes DER-encoded bytes.
-
-    Parameters:
-        der_bytes (bytes): DER-encoded bytes.
-        marker      (str): Header and footer marker (e.g. 'RSA PRIVATE KEY').
-        width       (int): Maximum line width before newline.
-
-    Returns:
-        bytes: PEM-encoded bytes.
-    """
-    data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
-    return f"-----BEGIN {marker}-----\n".encode('utf-8') + data + f"\n-----END {marker}-----".encode('utf-8')
-
-
-
-def export_der(items: list, encode_pem: bool, marker: str, item_types: list=None) -> bytes:
+def export_der(items: list, item_types: list=None) -> bytes:
     """
     Converts items (in order) to DER-encoded bytes.
 
     Parameters:
         items      (list): Items to be encoded.
-        encode_pem (bool): Whether or not to PEM-encode as well.
-        marker      (str): Marker to use in PEM formatting (if applicable).
     
     Returns:
         bytes: DER-encoded sequence bytes.
@@ -173,29 +126,27 @@ def export_der(items: list, encode_pem: bool, marker: str, item_types: list=None
 
         seq.setComponentByPosition(len(seq), item)
 
-    der_encoded = encoder.encode(seq)
-
-    if encode_pem:
-        der_encoded = pem_encode(der_encoded, marker)
-
-    return der_encoded
+    return encoder.encode(seq)
 
 
 
-def bytes_to_der_sequence(buffer: bytes) -> Sequence:
+def bytes_to_der_sequence(buffer: bytes, passphrase: bytes=None) -> Sequence:
     """
     Attempts to PEM-decode `buffer` then decodes the result to a DER sequence.
 
     Parameters:
-        buffer (bytes): The bytes to DER-decode.
+        buffer     (bytes): The bytes to DER-decode.
+        passphrase (bytes): Passphrase to decrypt DER-bytes (if applicable).
     
     Returns:
         Sequence: DER sequence.
     """
+    from samson.utilities.pem import pem_decode
     try:
-        buffer = pem_decode(buffer)
-    except ValueError as _:
-        pass
+        buffer = pem_decode(buffer, passphrase)
+    except ValueError as e:
+        if 'passphrase not specified' in str(e):
+            raise e
 
     seq = decoder.decode(buffer)
     items = seq[0]
@@ -230,6 +181,35 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
             oid_bytes += bytes([int(block, 2) for block in new_bin_blocks])
 
     return oid_bytes
+
+
+def parse_openssh(header: bytes, ssh_bytes: bytes) -> list:
+    """
+    Parses OpenSSH-like formats, including SSH2.
+
+    Parameters:
+        header    (bytes): Header that denotes the beginning of sequences (e.g. b'ssh-rsa').
+        ssh_bytes (bytes): The bytes to parse.
+    
+    Returns:
+        list: List of parsed Bytes.
+    """
+    from samson.utilities.bytes import Bytes
+    ssh_bytes = ssh_bytes[ssh_bytes.index(header) - 4:]
+    ctr = 0
+    key_parts = []
+
+    while len(ssh_bytes) - ctr > 4:
+        length_spec_end = ctr + 4
+        section_length = Bytes(ssh_bytes[ctr:length_spec_end]).int()
+        key_parts.append(Bytes(ssh_bytes[length_spec_end:length_spec_end + section_length]))
+        ctr += 4 + section_length
+
+    if header in key_parts[-1]:
+        private_parts = parse_openssh(header, key_parts[-1])
+        key_parts = key_parts[:-1] + private_parts
+
+    return key_parts
 
 
 

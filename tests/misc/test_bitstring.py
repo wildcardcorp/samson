@@ -91,3 +91,16 @@ class BitstringTestCase(unittest.TestCase):
     def test_rrot_gauntlet(self):
         for i in range(128):
             self._run_unary_gauntlet(lambda x: x.rrot(i), iterations=32)
+
+
+
+    # def test_swap_byteorder(self):
+    #     bs_a = Bitstring('11110000')
+    #     bs_b = Bitstring('11110000')
+
+    #     self.assertTrue(str(bs_a), str(bs_b))
+
+    #     bs_b.byteorder = 'little'
+    #     self.assertTrue(str(bs_a), str(bs_b))
+
+    #     self.assertFalse(bs_a.int(), bs_b.int())

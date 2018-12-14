@@ -71,24 +71,24 @@ class Rijndael(object):
     Block size: 128, 160, 192, 224, 256 bits
     """
 
-    def __init__(self, key: bytes, block_size: int=128):
+    def __init__(self, key: bytes, block_size: int=16):
         """
         Parameters:
             key      (bytes): Bytes-like object to key the cipher.
-            block_size (int): The desired block size in bits.
+            block_size (int): The desired block size in bytes.
         """
         key = Bytes.wrap(key)
-        if not (len(key) * 8) in range(128, 257, 32):
-            raise Exception("Invalid key size! Must be between 128 and 256 and a multiple of 32")
+        if not (len(key)) in range(16, 33, 4):
+            raise Exception("Invalid key size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
 
-        if not block_size in range(128, 257, 32):
-            raise Exception("Invalid 'block_size'! Must be between 128 and 256 and a multiple of 32")
+        if not block_size in range(16, 33, 4):
+            raise Exception("Invalid block size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
 
 
         self.key = key
         self.block_size = block_size
 
-        self._chunk_size = self.block_size // 32
+        self._chunk_size = self.block_size // 4
         round_keys = self.key_schedule()
         self.round_keys = [Bytes(b''.join(round_keys[i:i + self._chunk_size])) for i in range(0, len(round_keys), self._chunk_size)]
 
@@ -98,7 +98,7 @@ class Rijndael(object):
 
 
     def __repr__(self):
-        return f"<Rijndael: key={self.key}, key_size={len(self.key) * 8}, block_size={self.block_size}>"
+        return f"<Rijndael: key={self.key}, key_size={len(self.key)}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()

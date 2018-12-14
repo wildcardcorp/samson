@@ -35,9 +35,10 @@ X   Clean up IteratedHashMulticollision
 X   Make XORDictionaryAttack work with larger bytestrings
 
 X   Clean up code/make interfaces more uniform
-    X   Choose bitlength or bytelength convention (look at Rijndael)
     X   Decide whether to use functions or objects
-    X   Fix all "TODOs"
+
+
+X   PKCS8 decryption support
 
 
 X   Nostradamus attack
@@ -53,12 +54,14 @@ X   Revamp spec
 X   Implement reverse clock for FLFSR
 
 X   samson must install properly from PyPi/pip
+    X   Tested /w instructions on FSL
+    X   Tested /w instructions on Kali
 
 
 
 0.2.0
 ===============
-X   SSH key support for import/export
+X   Full SSH key support for import/export
     X   RSA
     X   DSA
     X   ECDSA

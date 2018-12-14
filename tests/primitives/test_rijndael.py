@@ -39,7 +39,7 @@ class RijndaelTestCase(unittest.TestCase):
         key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f, 16, 'big')
         plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
         test_vector = b'69c4e0d86a7b0430d8cdb78070b4c55a'
-        block_size = 128
+        block_size = 16
 
         self._run_test(key, plaintext, block_size, test_vector)
 
@@ -49,7 +49,7 @@ class RijndaelTestCase(unittest.TestCase):
         key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f1011121314151617, 24, 'big')
         plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
         test_vector = b'dda97ca4864cdfe06eaf70a0ec0d7191'
-        block_size = 128
+        block_size = 16
 
         self._run_test(key, plaintext, block_size, test_vector)
 
@@ -59,10 +59,9 @@ class RijndaelTestCase(unittest.TestCase):
         key = int.to_bytes(0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f, 32, 'big')
         plaintext = int.to_bytes(0x00112233445566778899aabbccddeeff, 16, 'big')
         test_vector = b'8ea2b7ca516745bfeafc49904b496089'
-        block_size = 128
+        block_size = 16
 
         self._run_test(key, plaintext, block_size, test_vector)
-
 
 
 
@@ -72,7 +71,7 @@ class RijndaelTestCase(unittest.TestCase):
         key = int.to_bytes(0x8000000000000000000000000000000000000000000000000000000000000000, 32, 'big')
         plaintext = b'\x00' * 24
         test_vector = b'06EB844DEC23F29F029BE85FDCE578CEC5C663CE0C70403C'.lower()
-        block_size = 192
+        block_size = 24
 
         self._run_test(key, plaintext, block_size, test_vector)
 
@@ -85,7 +84,7 @@ class RijndaelTestCase(unittest.TestCase):
         key = int.to_bytes(0x8000000000000000000000000000000000000000000000000000000000000000, 32, 'big')
         plaintext = b'\x00' * 32
         test_vector = b'E62ABCE069837B65309BE4EDA2C0E149FE56C07B7082D3287F592C4A4927A277'.lower()
-        block_size = 256
+        block_size = 32
 
         self._run_test(key, plaintext, block_size, test_vector)
 

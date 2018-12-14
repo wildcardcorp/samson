@@ -2,16 +2,11 @@ from fastecdsa.curve import P192, P224, P256, P521
 from fastecdsa.point import Point
 from samson.utilities.bytes import Bytes
 from samson.publickey.ecdsa import ECDSA
+from samson.utilities.pem import RFC1423_ALGOS
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 import unittest
 
-
-# TEST_PRIV = b"""-----BEGIN EC PRIVATE KEY-----
-# MHcCAQEEIE13oiYnyngAxhfBsmhPDQSFwKd2s4OQgUr5RW9lLxp5oAoGCCqGSM49
-# AwEHoUQDQgAESFAUN0qXA0Wn70eLRdOsxCoL3BLBvSpy10qtn24isycOfs91e4zv
-# qglW9UvvP2Q3jYtv2tN90vpu9ZJ3FYSfdQ==
-# -----END EC PRIVATE KEY-----"""
 
 # Generated using OpenSSL
 # https://crypto.stackexchange.com/questions/50019/public-key-format-for-ecdsa-as-in-fips-186-4
@@ -61,8 +56,96 @@ PUB_POINT_521 = Point(EXPECTED_PUB_521[:len(EXPECTED_PUB_521) // 2].int(), EXPEC
 
 
 
-class ECDSATestCase(unittest.TestCase):
+# ssh-keygen -t ecdsa -f test_ecdsa_ssh
+# ssh-keygen -e -f test_ecdsa_ssh
+TEST_SSH_PRIV = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQTfqIzzQ2SjHfSujA1qJUGAPEBuU4Ok
+wZUEe4Pz5/LBbbXZY4tEHgGIqLPVDgiSNVTWak6DtXHmui/mBIe+qsKHAAAAsOjVMFLo1T
+BSAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN+ojPNDZKMd9K6M
+DWolQYA8QG5Tg6TBlQR7g/Pn8sFttdlji0QeAYios9UOCJI1VNZqToO1cea6L+YEh76qwo
+cAAAAgSp/lGR7Bd1KDs7UkH/hOlSeYd7LYK0WXChm0Md3Gk6YAAAARZG9uYWxkQERvbmFs
+ZC1NQlABAgMEBQYH
+-----END OPENSSH PRIVATE KEY-----"""
 
+
+TEST_SSH_PUB = b"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN+ojPNDZKMd9K6MDWolQYA8QG5Tg6TBlQR7g/Pn8sFttdlji0QeAYios9UOCJI1VNZqToO1cea6L+YEh76qwoc= nohost@localhost"
+
+TEST_SSH2_PUB = b"""---- BEGIN SSH2 PUBLIC KEY ----
+Comment: "256-bit ECDSA, converted by nohost@localhost from OpenSSH"
+AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN+ojPNDZKMd9K6MDW
+olQYA8QG5Tg6TBlQR7g/Pn8sFttdlji0QeAYios9UOCJI1VNZqToO1cea6L+YEh76qwoc=
+
+---- END SSH2 PUBLIC KEY ----"""
+
+
+# Generated using ssh-keygen and OpenSSL
+# ssh-keygen -t ecdsa -N 'super secret passphrase' -f test_ecdsa_key -m PEM
+# openssl ec -aes192 -in test_ecdsa_key -text
+# openssl ec -aes256 -in test_ecdsa_key -text
+# openssl ec -des -in test_ecdsa_key -text
+# openssl ec -des3 -in test_ecdsa_key -text
+
+PEM_PASSPHRASE = b"super secret passphrase"
+
+TEST_PEM_DEC = b"""-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIHIDLVo4s+FzBR/XmlHzsyQPbYn5Auwa14FVmF3J4FwEoAoGCCqGSM49
+AwEHoUQDQgAEiqvr5mACJTTYbhGHdrlnJ5SxrnfalYZwmHDQGdMKQVeR1hXqgsnb
+AjlQB0m9alO1rG3EWYhaIfW9BwxNxIHK1g==
+-----END EC PRIVATE KEY-----"""
+
+
+TEST_PEM_AES_128_ENC = b"""-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,C981702945DB6FAD288A670F0B67A833
+
+l7lGdhS7i18L61l1Q7W6lmCbYDuH4Zzp7iWHvL7vzvYzZRSq6eNK9z/Td2bNIlpD
+z4/PHEpTV8zzypNe8m3XX/TGkYhkvjDHFCZkoAJnaoQ6fxQbgQkGx24VmC7NzbT4
+28y+qoN4SYNGWTY6wumOPtvYn5Tkn5kCeBB5nkVXJF4=
+-----END EC PRIVATE KEY-----"""
+
+
+TEST_PEM_AES_192_ENC = b"""-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-192-CBC,F0A40CF0E5F716A03D621AD30BC392D0
+
+OrfXpDFVSVF/AqGMvjCrnZzC2IPBJ9w08/fojpIU7xoS/b86oIEqLXHtI8x0uTgD
+5BTGzeHIk5XxflJL5fca+DYH6OoQ6ABN35vhh4stdt4ap+zleZBjwRK9O27PHkV4
+5CzrnfPhooAQS8C4iKJ8zP+K7BkqkiPengNqFIGXHlM=
+-----END EC PRIVATE KEY-----"""
+
+
+TEST_PEM_AES_256_ENC = b"""-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-256-CBC,C85939A34BB07379720B08A854C5485C
+
+mK4SmlFb/BbnKC5ZItMN4+1p4E6/5VNzivEd0KDBnRwJ5FJ0pKpDkNTbtLj/Ztql
+BI2nOK9LQ58SNbnM7fgXPWI8QGJtRoo05wTLx0+suK1zOzeFQ72CB9pWBSByWM8E
+M/T+9PtZ49bTwfjuj/cmcDZyWGT2TKXai8n2Eic0MiE=
+-----END EC PRIVATE KEY-----"""
+
+
+TEST_PEM_DES_ENC = b"""-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: DES-CBC,6EB0EFD0E559CD57
+
+gJwuXc1Io97tGeS0gJIjKanNNXzvXpTpa3r4GbK8o91DTQ03PXjNXBYP/gxEJ+eM
+4RCAs/AyTchgjq2vdeQKuQuVD7VteENDjPQJ8J/w5Q9OTI0E1M/VCjhNwN2ofGbQ
+XRTAw1AavOgJZGXDMQOTHBDCXDYO4+dCVzQy7m81E4s=
+-----END EC PRIVATE KEY-----"""
+
+
+TEST_PEM_DES3_ENC = b"""-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: DES-EDE3-CBC,097889AD025D4FDA
+
+/eLyDjyHEfpikTayfUHtJMCXwEyXamDz9YbW35j3WedHEul2O5WaPhTTSFlMcEgX
+CaXCb5kuNb86emoAZmzmzgJ7vf5paX/sXptxZvLu8TVnL9mGd4J4WJngW6OtJjFc
+ekSjuWil8PH9HSA7HnBcS5LKwaHEaHuBTSbSyJWuW1c=
+-----END EC PRIVATE KEY-----"""
+
+
+class ECDSATestCase(unittest.TestCase):
     def test_import_export_private(self):
         ecdsa = ECDSA.import_key(TEST_PRIV)
         der_bytes = ecdsa.export_private_key()
@@ -94,6 +177,55 @@ class ECDSATestCase(unittest.TestCase):
         self.assertEqual(ecdsa_pub.Q, ecdsa_priv.Q)
         self.assertEqual(new_pub.Q, ecdsa_priv.Q)
         self.assertEqual(der_bytes.replace(b'\n', b''), TEST_PUB.replace(b'\n', b''))
+
+
+
+    def _run_import_pem_enc(self, enc_priv):
+        with self.assertRaises(ValueError):
+            ECDSA.import_key(enc_priv)
+
+        enc_ecdsa = ECDSA.import_key(enc_priv, PEM_PASSPHRASE)
+        dec_ecdsa = ECDSA.import_key(TEST_PEM_DEC)
+        self.assertEqual((enc_ecdsa.G, enc_ecdsa.d, enc_ecdsa.Q), (dec_ecdsa.G, dec_ecdsa.d, dec_ecdsa.Q))
+
+
+    def test_import_enc_aes_128(self):
+        self._run_import_pem_enc(TEST_PEM_AES_128_ENC)
+
+    def test_import_enc_aes_192(self):
+        self._run_import_pem_enc(TEST_PEM_AES_192_ENC)
+
+    def test_import_enc_aes_256(self):
+        self._run_import_pem_enc(TEST_PEM_AES_256_ENC)
+
+    def test_import_enc_des(self):
+        self._run_import_pem_enc(TEST_PEM_DES_ENC)
+
+    def test_import_enc_des3(self):
+        self._run_import_pem_enc(TEST_PEM_DES3_ENC)
+
+
+    def test_import_enc_gauntlet(self):
+        supported_algos = RFC1423_ALGOS.keys()
+        for algo in supported_algos:
+            for _ in range(10):
+                ecdsa = ECDSA(G=P256.G, hash_obj=None)
+                key = Bytes.random(Bytes.random(1).int() + 1)
+                enc_pem = ecdsa.export_private_key(encryption=algo, passphrase=key)
+                dec_ecdsa = ECDSA.import_key(enc_pem, key)
+
+                self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (dec_ecdsa.G, dec_ecdsa.d, dec_ecdsa.Q))
+
+
+
+    def test_import_ssh(self):
+        ecdsa_pub      = ECDSA.import_key(TEST_SSH_PUB)
+        ecdsa_ssh2_pub = ECDSA.import_key(TEST_SSH2_PUB)
+        ecdsa_priv     = ECDSA.import_key(TEST_SSH_PRIV)
+
+        self.assertEqual((ecdsa_pub.G, ecdsa_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
+        self.assertEqual((ecdsa_ssh2_pub.G, ecdsa_ssh2_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
+        self.assertEqual(ecdsa_priv.d * ecdsa_priv.G, ecdsa_priv.Q)
 
 
 

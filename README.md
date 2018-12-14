@@ -1,54 +1,38 @@
-# Samson
-
-Samson is a cryptanalysis and attack framework. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks.
-
+# samson
 
 ### **DO NOT USE SAMSON'S CRYPTOGRAPHIC PRIMITIVES TO SECURE THINGS**
 
-Includes:
-* Block cipher attacks
-    * ECB
-        * Prepend attack
-    * CBC
-        * Padding oracle attack
-        * CBC/IV key equivalence attack
-* Stream cipher attacks
-    * ARC4
-        * Prepend attack
-    * CTR/OTP
-        * Nonce-reuse plaintext recovery
-* PKI attacks
-    * RSA
-        * PKCS15 Padding Oracle
-        * CRT factorization
-        * Shared-`p` factorization
-    * DSA/ECDSA
-        * `k`-reuse derivation
-        * Private key derivation from `k`
-* Hash attacks
-    * Merkle-Damgard Length Extension
-    * Iterated-hash multicollision
-    * Nostradamus attack
-* PRNG Attacks
-    * MT19937 cloning
-* Other side-channel attacks
-    * CRIME
-* Text analyzers
-    * English
-* Optimization algorithms
-    * Grey Wolf Metaheuristic Optimizer
-* Markov chain generator
-* Common functions in cryptography
+samson is a cryptanalysis and attack framework. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks. samson was born from frustration with existing libraries artificially limiting user control over cryptographic primitives.
+
+Many of the biggest cryptographic attacks have been implemented including:
+* CBC Padding Oracle
+* PKCS#1v1.5 Padding Oracle
+* CRIME/BREACH
+* DSA/ECDSA key reuse
+* Stream cipher nonce reuse
+* Merkle-Damgard Length Extension
+* PRNG cracking
+
+samson's key focuses are:
+* _Flexibility_: Allow the user to freely manipulate internal state
+* _Uniformity_: Present the user with a uniform interface
+* _Convenience_: Minimize time spent not directly solving a problem
+* _Real world applicability_: Build attacks to work generically and include interfaces to common standards
+
+## Example Use Cases
+* Auditing infrastructure
+* Modelling existing systems
+* Solving/creating CTFs
 
 
-## Environment
+## Testing Environment
 * **Runtime**: Python 3.6.7
-* **Architecture**: Linux 4.16.3-301.fc28.x86_64 #1 SMP Mon Apr 23 21:59:58 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+* **Architecture**: Linux 4.18.17-200.fc28.x86_64 #1 SMP Mon Nov 5 18:04:28 UTC 2018 GNU/Linux
 * **OS**: Fedora Security Lab (Fedora release 28)
 
 
 ## Installation
-RHEL derivatives
+### RHEL derivatives
 ```bash
 sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
 pip3 install samson-crypto

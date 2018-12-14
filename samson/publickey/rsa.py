@@ -1,8 +1,10 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import export_der, bytes_to_der_sequence, pem_encode
+from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
+from samson.utilities.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes
+import base64
 import math
 import random
 
@@ -31,6 +33,8 @@ class RSA(object):
 
             if gcd(self.e, phi) != 1:
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
+            
+            bits = p.bit_length() + q.bit_length()
         else:
             next_p = p
             next_q = q
@@ -99,19 +103,27 @@ class RSA(object):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='RSA PRIVATE KEY') -> bytes:
+    def export_private_key(self, encode_pem: bool=True, marker: str='RSA PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full RSA instance into DER-encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            marker       (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: DER-encoding of RSA instance.
         """
-        return export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)], encode_pem, marker)
+        der = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)])
+
+        if encode_pem:
+            der = pem_encode(der, marker, encryption=encryption, passphrase=passphrase, iv=iv)
+
+        return der
 
 
 
@@ -153,39 +165,66 @@ class RSA(object):
 
 
     @staticmethod
-    def import_key(buffer: bytes):
+    def import_key(buffer: bytes, passphrase: bytes=None):
         """
         Builds an RSA instance from DER and/or PEM-encoded bytes.
 
         Parameters:
-            buffers (bytes): DER and/or PEM-encoded bytes.
+            buffer     (bytes): DER and/or PEM-encoded bytes.
+            passphrase (bytes): Passphrase to decrypt DER-bytes (if applicable).
         
         Returns:
             RSA: RSA instance.
         """
-        items = bytes_to_der_sequence(buffer)
 
-        # PKCS#1
-        if len(items) == 9 and int(items[0]) == 0:
-            items = [int(item) for item in items]
-            del items[6:]
-            del items[0]
-            n, e, _d, p, q, = items
-            rsa = RSA(0, p=p, q=q, e=e)
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer, passphrase)
 
-        elif len(items) == 2:
-            if type(items[1]) is BitString:
-                if str(items[0][0]) == '1.2.840.113549.1.1.1':
-                    bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
-                    items = list(bitstring_seq)
-                else:
-                    raise ValueError('Unable to decode RSA key.')
+        ssh_header = b'ssh-rsa'
 
-            n, e = [int(item) for item in items]
-            rsa = RSA(2, e=e)
+        if ssh_header in buffer:
+            # SSH public key?
+            if buffer.startswith(ssh_header):
+                buffer = base64.b64decode(buffer.split(b' ')[1])
+
+
+            key_parts = parse_openssh(ssh_header, buffer)
+
+            # Public key?
+            if len(key_parts) == 3:
+                n, e = key_parts[2].int(), key_parts[1].int()
+                rsa = RSA(2, e=e)
+                rsa.n = n
+            else:
+                n, e, _, _, p, q, _host = [part.int() for part in key_parts[4:]]
+                rsa = RSA(0, p=p, q=q, e=e)
+
             rsa.n = n
+
         else:
-            raise ValueError("Unable to parse provided RSA key.")
+            items = bytes_to_der_sequence(buffer)
+
+            # PKCS#1
+            if len(items) == 9 and int(items[0]) == 0:
+                items = [int(item) for item in items]
+                del items[6:]
+                del items[0]
+                n, e, _d, p, q, = items
+                rsa = RSA(0, p=p, q=q, e=e)
+
+            elif len(items) == 2:
+                if type(items[1]) is BitString:
+                    if str(items[0][0]) == '1.2.840.113549.1.1.1':
+                        bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
+                        items = list(bitstring_seq)
+                    else:
+                        raise ValueError('Unable to decode RSA key.')
+
+                n, e = [int(item) for item in items]
+                rsa = RSA(2, e=e)
+                rsa.n = n
+            else:
+                raise ValueError("Unable to parse provided RSA key.")
 
         rsa.bits = rsa.n.bit_length()
         return rsa
