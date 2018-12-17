@@ -4,7 +4,7 @@ from samson.block_ciphers.modes.ecb import ECB
 
 from samson.utilities.general import rand_bytes
 from samson.utilities.manipulation import get_blocks
-from samson.padding import PKCS7
+from samson.padding.pkcs7 import PKCS7
 
 key_size = 16
 block_size = 16

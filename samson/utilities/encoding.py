@@ -183,6 +183,7 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
     return oid_bytes
 
 
+# TODO: Add decryption support
 def parse_openssh(header: bytes, ssh_bytes: bytes) -> list:
     """
     Parses OpenSSH-like formats, including SSH2.
@@ -210,6 +211,22 @@ def parse_openssh(header: bytes, ssh_bytes: bytes) -> list:
         key_parts = key_parts[:-1] + private_parts
 
     return key_parts
+
+
+def generate_openssh(values: list=[]) -> bytes:
+    from samson.utilities.bytes import Bytes
+
+    ssh_encoding = Bytes(b'')
+    for item in values:
+        if type(item) is int:
+            length = (item.bit_length() // 8) + 1
+        else:
+            length = len(item)
+
+        item = Bytes.wrap(item)
+        ssh_encoding += Bytes(length).zfill(4) + item.zfill(length)
+
+    return ssh_encoding
 
 
 

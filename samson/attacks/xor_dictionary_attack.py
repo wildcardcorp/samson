@@ -30,21 +30,19 @@ class XORDictionaryAttack(object):
         self.wordlist = wordlist
 
 
-    def execute(self, ciphertexts: list, word_ranges: list=[2,3,4], delimiter: str=' ') -> list:
+    def execute(self, ciphertexts: list, word_ranges: list=[2,3], delimiter: str=' ') -> list:
         """
         Executes the attack.
         
         Parameters:
             ciphertexts (list): List of bytes-like ciphertexts using the same keystream.
             word_ranges (list): List of numbers of words to try. E.G. [2, 3, 4] means
-                                try the Cartesian product of 2, 3,
-                                and 4-tuple word combinations.
+                                try the Cartesian product of 2, 3, and 4-tuple word combinations.
             delimiter    (str): Delimiter to use between word combinations.
         
         Returns:
             list: Top 10 possible plaintexts.
         """
-
         if len(ciphertexts) != 2:
             raise ValueError('`ciphertexts` MUST contain two samples.')
 

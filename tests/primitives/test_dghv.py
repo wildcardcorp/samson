@@ -1,4 +1,4 @@
-from samson.publickey.dghv import DGHV
+from samson.public_key.dghv import DGHV
 from samson.utilities.bytes import Bytes
 import unittest
 

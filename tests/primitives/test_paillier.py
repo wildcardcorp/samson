@@ -1,4 +1,4 @@
-from samson.publickey.paillier import Paillier
+from samson.public_key.paillier import Paillier
 import unittest
 
 class PaillierTestCase(unittest.TestCase):

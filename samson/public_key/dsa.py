@@ -2,6 +2,7 @@ from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
 from samson.utilities.pem import pem_encode, pem_decode
+from samson.hashes.sha2 import SHA256
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence
 import base64
@@ -12,7 +13,7 @@ class DSA(object):
     Digital Signature Algorithm
     """
 
-    def __init__(self, hash_obj: object, p: int=None, q: int=None, g: int=None, x: int=None):
+    def __init__(self, hash_obj: object=SHA256(), p: int=None, q: int=None, g: int=None, x: int=None):
         """
         Parameters:
             hash_obj (object): Instantiated object with compatible hash interface.

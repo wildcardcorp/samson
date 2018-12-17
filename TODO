@@ -24,23 +24,6 @@ CURRENT
 ---------------
 0.1.0
 ===============
-Goals:
-    * Everything works
-    * Document everything
-    * Test everything
-
-
-X   Make Bitstring sane... (use something like TDD)
-X   Clean up IteratedHashMulticollision
-X   Make XORDictionaryAttack work with larger bytestrings
-
-X   Clean up code/make interfaces more uniform
-    X   Decide whether to use functions or objects
-
-
-X   PKCS8 decryption support
-
-
 X   Nostradamus attack
     OK  Works with prefixes
     OK  Works with len(prefixes) not a power of 2
@@ -49,24 +32,13 @@ X   Nostradamus attack
     X   Works with MD5
 
 
-X   Spiff up README
-X   Revamp spec
-X   Implement reverse clock for FLFSR
-
-X   samson must install properly from PyPi/pip
-    X   Tested /w instructions on FSL
-    X   Tested /w instructions on Kali
-
-
 
 0.2.0
 ===============
-X   Full SSH key support for import/export
-    X   RSA
-    X   DSA
-    X   ECDSA
-    X   EdDSA
+X   SSH decryption support
+X   Abstract certificate importing to genericized function
 
+X   bcrypt
 X   scrypt
 X   EAX
 X   SIV

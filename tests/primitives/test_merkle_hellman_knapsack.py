@@ -1,4 +1,4 @@
-from samson.publickey.merkle_hellman_knapsack import MerkleHellmanKnapsack
+from samson.public_key.merkle_hellman_knapsack import MerkleHellmanKnapsack
 from samson.utilities.bytes import Bytes
 import unittest
 

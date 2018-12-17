@@ -1,4 +1,4 @@
-from samson.publickey.dsa import DSA
+from samson.public_key.dsa import DSA
 from samson.utilities.bytes import Bytes
 from samson.utilities.pem import RFC1423_ALGOS
 import hashlib

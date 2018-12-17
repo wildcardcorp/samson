@@ -2,7 +2,6 @@ from samson.utilities.bitstring import Bitstring
 from samson.utilities.bytes import Bytes
 import unittest
 
-# TODO: Test properties and edge cases of Bitstring to ensure it works as expected
 # TEST BYTEORDER
 # Validates Bitstring against Bytes to ensure a uniform interface
 class BitstringTestCase(unittest.TestCase):
@@ -91,16 +90,3 @@ class BitstringTestCase(unittest.TestCase):
     def test_rrot_gauntlet(self):
         for i in range(128):
             self._run_unary_gauntlet(lambda x: x.rrot(i), iterations=32)
-
-
-
-    # def test_swap_byteorder(self):
-    #     bs_a = Bitstring('11110000')
-    #     bs_b = Bitstring('11110000')
-
-    #     self.assertTrue(str(bs_a), str(bs_b))
-
-    #     bs_b.byteorder = 'little'
-    #     self.assertTrue(str(bs_a), str(bs_b))
-
-    #     self.assertFalse(bs_a.int(), bs_b.int())

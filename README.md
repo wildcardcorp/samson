@@ -2,7 +2,7 @@
 
 ### **DO NOT USE SAMSON'S CRYPTOGRAPHIC PRIMITIVES TO SECURE THINGS**
 
-samson is a cryptanalysis and attack framework. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks. samson was born from frustration with existing libraries artificially limiting user control over cryptographic primitives.
+samson is a cryptanalysis and attack library. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks. samson was born from frustration with existing libraries artificially limiting user control over cryptographic primitives.
 
 Many of the biggest cryptographic attacks have been implemented including:
 * CBC Padding Oracle
@@ -19,6 +19,70 @@ samson's key focuses are:
 * _Convenience_: Minimize time spent not directly solving a problem
 * _Real world applicability_: Build attacks to work generically and include interfaces to common standards
 
+
+## Examples
+### CLI
+```bash
+[root@localhost ~]# samson hash md5 texttohash
+0d7e83711c9c8efa135653ef124cc23b
+
+[root@localhost ~]# echo -n "texttohash" | samson hash md5
+0d7e83711c9c8efa135653ef124cc23b
+
+[root@localhost ~]# samson hash blake2b texttohash
+de92a99c2d5cb8386cada3589b7c70efa27c6d99a3ec1a2f9313258c0e91229f2279ccf68d6766aa20d124ca415dacbb89fb657013de1a2009752084186445a7
+
+[root@localhost ~]# samson hash keccak texttohash --args=r=1044,c=512,digest_bit_size=256
+1a568ef9ead0b2a9eeffc1d1e9a688c9153f33719ac5b30a533d1edba0e301b8
+
+[root@localhost ~]# samson pki generate rsa --args=bits=1024
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQChL/Xmka6z8EEiwNC+NXrEs1WHFjUz364hPfFlOMVAmrrWHsAls71U+6
+5VybjZPpYOBGcr/M2C6al9W7y18fkf3gAZhfPLvat8OpsfM+ltmlLJ3kTLiVJo2Y+KTPNz
+I9nrKUgD/KEcL73kvwJGYL+YwX8YNcbxKv5rNxB0kdW33wIDAQABAoGBAJhMe7ie4AZutO
+zEaLfASj6+/8oC5sQbzijkoUi16lLPoEeeiIlXGkbJA4FVd430/81AxccfN4NBin7DBjyX
+5H2BmsN3rPGnsCKC+uY4z2+er7B+i2YHgF1K5ymC/8pFV5eU5GTVF0FxZHtviLhDA0p8Fh
+liii2JNpM2MDgj7j9BAkEAuzKx+nspNtH+myjMHMRkswLiMIQ8VonOXmH6aBnQekzYvAmy
+nCbSlbYohxCYjrPy+a76siSIGK+SO8YpxG7MIQJBANxt8S+ZnrmPZKoWEu3pcn95Fa26Up
+qz2L2YemqRid6BlE2/2+cLYMVglEUfhgrqvNCFbwqc1UgeK47065iUA/8CQExZE7+uBZQn
+N2k+zWiaLNvZvDi/ZgCBedqCqWdVx/JpbyfZ6K/JIbAPuB3GBgKFn/53gCWxwpQW31RjsN
+s9uSECQQDOpkN2XI5xZ/z3d7pHUJQG7X1lYUgPwItxM4GQZuDZuKFQQo3mDMSsRd667tK7
+aVWaJ33ydRV+hspPO02jvSABAkAPaMHmQcEN8c8bOWc5VjH8kxcV5iHUw88WH9hEKpHTsk
+j+LYTu11aOZXFh4dmw5jHd1gjA4bD24c0f5NN7vQLJ
+-----END RSA PRIVATE KEY-----
+
+
+[root@localhost ~]# samson pki generate rsa --args=bits=128,p=7
+-----BEGIN RSA PRIVATE KEY-----
+MD0CAQACCQRsJXO1QfNPyQIDAQABAgkCcRw0yU5C5DUCAQcCCQChvDUZ5NmdrwIBBQIJAI
+vnlXuftgsrAgEC
+-----END RSA PRIVATE KEY-----
+
+[root@localhost ~]# samson pki generate rsa --args=bits=256 --pub
+-----BEGIN PUBLIC KEY-----
+MDwwDQYJKoZIhvcNAQEBBQADKwAwKAIhAKItLmP4OG4LIOgWZRt+MFOifSHsoow9NcwAwt
+p3Xx0NAgMBAAE=
+-----END PUBLIC KEY-----
+
+[root@localhost ~]# samson pki generate ecdsa --args=curve=nistp256
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIJi3UXr8EQ5YtBs3Av55J9mFTcgHdd4ZI8VNi62dwA0xoAoGCCqGSM49AwEHoU
+QDQgAEHDlmxAnUm6yFJrp7lfzipJPWhYoc3uL1a9q+/6c8AiICIBPBkfkxhttBF9DdT3U3
+XmtOsZIPWcYxT68yomeTvw==
+-----END EC PRIVATE KEY-----
+
+[root@localhost ~]# openssl genrsa 128 | samson pki parse rsa
+Generating RSA private key, 128 bit long modulus
+.+++++++++++++++++++++++++++
+..+++++++++++++++++++++++++++
+e is 65537 (0x010001)
+<RSA: bits=128, p=18204634713468071783, q=14777058483132963961, e=65537, n=269010951824990204830693900060300012463, phi=134505475912495102398856103431849488360, d=14600484545241469070379515690589701393, alt_d=14600484545241469070379515690589701393>
+```
+
+### REPL
+
+
+
 ## Example Use Cases
 * Auditing infrastructure
 * Modelling existing systems
@@ -32,12 +96,17 @@ samson's key focuses are:
 
 
 ## Installation
-### RHEL derivatives
+### RHEL derivatives (tested on Fedora Security Lab 28)
 ```bash
 sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
 pip3 install samson-crypto
 ```
 
+### Debian derivatives (tested on Kali Linux 2018.4 64-bit)
+```bash
+apt-get -y install python3-pip
+pip3 install samson-crypto
+```
 
 ## Performance
 Samson's primitives aren't the fastest nor were they meant to be. If you're concerned about performance, you have a couple of options:

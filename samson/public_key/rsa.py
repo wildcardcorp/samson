@@ -13,18 +13,15 @@ class RSA(object):
     Rivest-Shamir-Adleman public key cryptosystem
     """
 
-    def __init__(self, bits: int, p: int=None, q: int=None, e: int=None):
+    def __init__(self, bits: int, p: int=None, q: int=None, e: int=65537):
         """
         Parameters:
             bits (int): Number of bits for strength and capacity.
             p (int): Secret prime modulus.
             q (int): Secret prime modulus.
-            e (int): Public expoonent.
+            e (int): Public exponent.
         """
-        if p and q and not e:
-            raise Exception("Argument 'e' must be set if 'p' and 'q' are set. ")
-
-        self.e = e or 3
+        self.e = e
         phi = 0
 
         if p and q:
@@ -33,7 +30,7 @@ class RSA(object):
 
             if gcd(self.e, phi) != 1:
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
-            
+
             bits = p.bit_length() + q.bit_length()
         else:
             next_p = p

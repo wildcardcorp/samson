@@ -1,12 +1,38 @@
 from samson.utilities.bytes import Bytes
-from samson.publickey.eddsa import EdDSA
+from samson.public_key.eddsa import EdDSA
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA512
 from samson.hashes.sha3 import SHA3
 import unittest
 
+TEST_SSH_PRIV = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBct6kHgZO1njzDIC75re+m3clCzKTQlBNM3t/MMwoSwQAAAJibx2Cum8dg
+rgAAAAtzc2gtZWQyNTUxOQAAACBct6kHgZO1njzDIC75re+m3clCzKTQlBNM3t/MMwoSwQ
+AAAEAzRlV4oo+r1+CWXJRbA7mg19t37FRDj2CuPIqiTw0kSVy3qQeBk7WePMMgLvmt76bd
+yULMpNCUE0ze38wzChLBAAAAEWRvbmFsZEBEb25hbGQtTUJQAQIDBA==
+-----END OPENSSH PRIVATE KEY-----"""
+
+
+TEST_SSH_PUB = b"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFy3qQeBk7WePMMgLvmt76bdyULMpNCUE0ze38wzChLB nohost@localhost"
+
+TEST_SSH2_PUB = b"""---- BEGIN SSH2 PUBLIC KEY ----
+Comment: "256-bit ED25519, converted by nohost@localhost from OpenSSH"
+AAAAC3NzaC1lZDI1NTE5AAAAIFy3qQeBk7WePMMgLvmt76bdyULMpNCUE0ze38wzChLB
+---- END SSH2 PUBLIC KEY ----"""
+
+
 # https://tools.ietf.org/html/rfc8032#section-7.1
 class EdDSATestCase(unittest.TestCase):
+    def test_import_ssh(self):
+        priv = EdDSA.import_key(TEST_SSH_PRIV)
+        pubv1 = EdDSA.import_key(TEST_SSH_PUB)
+        pubv2 = EdDSA.import_key(TEST_SSH2_PUB)
+
+        self.assertEqual(priv.A, pubv1.A)
+        self.assertEqual(priv.A, pubv2.A)
+
+
     def _run_test(self, message, d, curve, hash_alg, expected_public_key=None, expected_sig=None):
         eddsa = EdDSA(d=d, curve=curve, hash_obj=hash_alg)
         sig = eddsa.sign(message)

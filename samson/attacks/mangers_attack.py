@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
-from samson.publickey.rsa import RSA
+from samson.public_key.rsa import RSA
 import math
 
 import logging

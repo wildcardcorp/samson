@@ -12,6 +12,6 @@ from samson.oracles.all import *
 from samson.padding.all import *
 from samson.prngs.all import *
 from samson.protocols.all import *
-from samson.publickey.all import *
+from samson.public_key.all import *
 from samson.stream_ciphers.all import *
 from samson.utilities.all import *

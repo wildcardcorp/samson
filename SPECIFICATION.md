@@ -1,5 +1,5 @@
 # Specification
-In the interest of organization and consistency, this specification will inform the structure of the framework.
+In the interest of organization and consistency, this specification will inform the structure of the library.
 
 
 ## **Analyzer**

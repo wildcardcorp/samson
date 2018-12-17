@@ -1,7 +1,8 @@
 from fastecdsa.curve import P192, P224, P256, P384, P521
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
-from samson.publickey.dsa import DSA
+from samson.public_key.dsa import DSA
+from samson.hashes.sha2 import SHA256
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
 from samson.utilities.pem import pem_encode, pem_decode
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
@@ -35,7 +36,7 @@ class ECDSA(DSA):
     Elliptical Curve Digital Signature Algorithm
     """
 
-    def __init__(self, G: Point, hash_obj: object, d: int=None):
+    def __init__(self, G: Point, hash_obj: object=SHA256(), d: int=None):
         """
         Parameters:
             G         (Point): Generator point for a curve.

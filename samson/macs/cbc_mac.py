@@ -39,5 +39,5 @@ class CBCMAC(object):
             Bytes: The MAC.
         """
         cryptor = self.cipher(self.key)
-        cbc = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size // 8)
-        return cbc.encrypt(message, pad)[-(cryptor.block_size // 8):]
+        cbc = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size)
+        return cbc.encrypt(message, pad)[-(cryptor.block_size):]

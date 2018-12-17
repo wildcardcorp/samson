@@ -21,9 +21,10 @@ tests_require = [
 
 setup(name='samson-crypto',
       version=__import__('samson').VERSION,
-      description='Cryptanalysis and attack framework',
+      description='Cryptanalysis and attack library',
       scripts=['scripts/samson'],
       long_description=README,
+      long_description_content_type='text/markdown',
       classifiers=[
           "Topic :: Security",
           "Topic :: Security :: Cryptography",
@@ -50,7 +51,7 @@ setup(name='samson-crypto',
           "samson/padding",
           "samson/prngs",
           "samson/protocols",
-          "samson/publickey",
+          "samson/public_key",
           "samson/stream_ciphers",
           "samson/utilities"
       ],

@@ -156,7 +156,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'samson', u'samson Documentation',
-     author, 'samson', 'Cryptanalysis and attack framework',
+     author, 'samson', 'Cryptanalysis and attack library',
      'Security'),
 ]
 

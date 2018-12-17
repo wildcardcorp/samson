@@ -54,10 +54,10 @@ class SHA3(object):
 
 
     @staticmethod
-    def SHAKE128(bit_length: int) -> Keccak:
-        return SHA3.build_sha3(1344, 256, bit_length, 0x1F)
+    def SHAKE128(digest_bit_length: int) -> Keccak:
+        return SHA3.build_sha3(1344, 256, digest_bit_length, 0x1F)
 
 
     @staticmethod
-    def SHAKE256(bit_length: int) -> Keccak:
-        return SHA3.build_sha3(1088, 512, bit_length, 0x1F)
+    def SHAKE256(digest_bit_length: int) -> Keccak:
+        return SHA3.build_sha3(1088, 512, digest_bit_length, 0x1F)

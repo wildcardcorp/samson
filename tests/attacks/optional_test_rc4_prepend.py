@@ -17,7 +17,7 @@ def random_encrypt(data):
     cipher = RC4(key)
     plaintext = (data + secret)
 
-    return cipher.yield_state(len(plaintext)) ^ plaintext
+    return cipher.generate(len(plaintext)) ^ plaintext
 
 
 

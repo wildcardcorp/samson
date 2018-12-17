@@ -1,4 +1,4 @@
-from samson.publickey.elgamal import ElGamal
+from samson.public_key.elgamal import ElGamal
 import unittest
 
 # https://github.com/Legrandin/pycrypto/blob/7834db2809024536cdfd7fef0b5657dd390bd780/lib/Crypto/SelfTest/PublicKey/test_ElGamal.py

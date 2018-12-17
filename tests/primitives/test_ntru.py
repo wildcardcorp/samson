@@ -1,4 +1,4 @@
-from samson.publickey.ntru import NTRU
+from samson.public_key.ntru import NTRU
 from samson.utilities.bytes import Bytes
 from sympy import Poly
 from sympy.abc import x

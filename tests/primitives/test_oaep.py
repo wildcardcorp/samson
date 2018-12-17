@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.publickey.rsa import RSA
+from samson.public_key.rsa import RSA
 from samson.padding.oaep import OAEP
 import unittest
 

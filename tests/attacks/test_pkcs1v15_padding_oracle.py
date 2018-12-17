@@ -1,5 +1,5 @@
 from samson.oracles.padding_oracle import PaddingOracle
-from samson.publickey.rsa import RSA
+from samson.public_key.rsa import RSA
 from samson.attacks.pkcs1v15_padding_oracle_attack import PKCS1v15PaddingOracleAttack
 from samson.padding.pkcs1v15 import PKCS1v15
 import unittest
