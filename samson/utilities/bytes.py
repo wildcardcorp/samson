@@ -145,7 +145,7 @@ class Bytes(bytearray):
         if not bits:
             bits = len(self) * 8
 
-        back_to_bytes = int.to_bytes(left_rotate(self.to_int(), amount, bits), bits // 8, self.byteorder)
+        back_to_bytes = int.to_bytes(left_rotate(self.to_int(), amount % bits, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes, self.byteorder)
 
 
@@ -164,7 +164,7 @@ class Bytes(bytearray):
         if not bits:
             bits = len(self) * 8
 
-        back_to_bytes = int.to_bytes(right_rotate(self.to_int(), amount, bits), bits // 8, self.byteorder)
+        back_to_bytes = int.to_bytes(right_rotate(self.to_int(), amount % bits, bits), bits // 8, self.byteorder)
         return Bytes(back_to_bytes, self.byteorder)
 
 

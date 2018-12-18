@@ -37,8 +37,8 @@ X   Nostradamus attack
 ===============
 X   SSH decryption support
 X   Abstract certificate importing to genericized function
+X   More PRNG cracking (SAT)
 
-X   bcrypt
 X   scrypt
 X   EAX
 X   SIV
@@ -46,7 +46,7 @@ X   RC6
 X   Reporting backends (tqdm)
 X   OMAC
 X   UMAC
-X   More PRNG cracking (SAT)
 X   Timing attack framework
 X   Primitive analysis
 X   CAST
+X   Performance improvements

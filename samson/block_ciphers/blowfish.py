@@ -243,7 +243,7 @@ class Blowfish(object):
     Block size: 64 bits
     """
 
-    def __init__(self, key: bytes):
+    def __init__(self, key: bytes, run_key_schedule: bool=True):
         """
         Parameters:
             key (bytes): Bytes-like object to key the cipher.
@@ -251,8 +251,10 @@ class Blowfish(object):
         self.key = Bytes.wrap(key)
         self.P = deepcopy(P)
         self.S = [deepcopy(S1), deepcopy(S2), deepcopy(S3), deepcopy(S4)]
+        self.block_size = 8
 
-        self.key_schedule()
+        if run_key_schedule:
+            self.key_schedule()
 
 
     def __repr__(self):
@@ -321,7 +323,7 @@ class Blowfish(object):
 
         R_i, L_i = self.enc_L_R(L_i, R_i)
 
-        return (Bytes(L_i) + Bytes(R_i)).zfill(8)
+        return Bytes(L_i).zfill(4) + Bytes(R_i).zfill(4)
 
 
 

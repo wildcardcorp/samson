@@ -3,7 +3,45 @@ from sympy import Poly, GF
 from sympy.abc import x
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence, Integer, SequenceOf
+import base64
+import string
 import math
+
+
+# https://github.com/fwenzel/python-bcrypt
+B64_CHARS = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '+/')).encode('utf-8')
+B64_CHARS_BCRYPT = ''.join(('./', string.ascii_uppercase, string.ascii_lowercase, string.digits)).encode('utf-8')
+
+B64_TO_BCRYPT_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_BCRYPT)
+BCRYPT_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_BCRYPT, B64_CHARS)
+
+def bcrypt_b64_encode(bytestring: bytes) -> bytes:
+    """
+    Encodes a bytestring with bcrypt's version of base64.
+
+    Parameters:
+        bytestring (bytes): Bytes to encode.
+    
+    Returns:
+        bytes: bcrypt-base64 encoded bytestring.
+    """
+    return base64.b64encode(bytestring).translate(B64_TO_BCRYPT_TRANSLATION, b'=')
+
+
+def bcrypt_b64_decode(bytestring: bytes) -> bytes:
+    """
+    Decodes a bytestring with bcrypt's version of base64.
+
+    Parameters:
+        bytestring (bytes): Bytes to decode.
+    
+    Returns:
+        bytes: bcrypt-base64 decoded bytestring.
+    """
+    # Handle missing padding
+    bytestring = bytestring.translate(BCRYPT_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
+    return base64.b64decode(bytestring)
+
 
 # https://en.wikipedia.org/wiki/Non-adjacent_form
 def to_NAF(input_arg: bytes) -> list:
