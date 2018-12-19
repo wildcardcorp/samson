@@ -5,7 +5,6 @@ X   RC6
 X   Argon2
 X   EAX
 X   scrypt
-X   bcrypt
 X   IDEA
 X   SAT solving (probably just an interface)
 X   SEED

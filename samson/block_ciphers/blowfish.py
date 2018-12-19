@@ -246,7 +246,8 @@ class Blowfish(object):
     def __init__(self, key: bytes, run_key_schedule: bool=True):
         """
         Parameters:
-            key (bytes): Bytes-like object to key the cipher.
+            key             (bytes): Bytes-like object to key the cipher.
+            run_key_schedule (bool): Whether or not to run the key schedule. Useful when extending Blowfish (i.e. bcrypt).
         """
         self.key = Bytes.wrap(key)
         self.P = deepcopy(P)
@@ -282,7 +283,17 @@ class Blowfish(object):
 
 
 
-    def enc_L_R(self, L, R):
+    def enc_L_R(self, L: int, R: int) -> (int, int):
+        """
+        Internal function. Used to encrypt integers directly.
+
+        Parameters:
+            L (int): Left side integer.
+            R (int): Right side integer.
+        
+        Returns:
+            (int, int): The encrypted versions of `L` and `R`.
+        """
         L_i, R_i = L, R
 
         for i in range(16):

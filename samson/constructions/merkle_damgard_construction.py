@@ -36,7 +36,9 @@ class MerkleDamgardConstruction(object):
             block_size        (int): Size of the internal state.
             endianness        (str): Endianess of the internal state.
         """
-        self.initial_state = deepcopy(initial_state)
+        if not type(initial_state) is Bytes:
+            initial_state = Bytes([_ for _ in initial_state])
+        self.initial_state = initial_state
 
         # Allows for direct use of class and subclass overriding simultaneously
         if compression_func:

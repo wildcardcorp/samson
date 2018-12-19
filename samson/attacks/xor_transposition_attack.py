@@ -1,6 +1,5 @@
 from samson.utilities.bytes import Bytes
 from samson.analyzers.analyzer import Analyzer
-from copy import deepcopy
 import struct
 
 import logging
@@ -77,7 +76,7 @@ class XORTranspositionAttack(object):
 
                     frames = []
                     for curr_cipher in retransposed_plaintexts:
-                        cipher_copy = deepcopy(curr_cipher)
+                        cipher_copy = bytearray([_ for _ in curr_cipher])
                         cipher_copy[i] = ord(Bytes(struct.pack('B', char)) ^ struct.pack('B', curr_cipher[i]))
 
                         preprocessed_frame = self.analyzer.preprocess(cipher_copy)

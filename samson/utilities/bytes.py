@@ -15,7 +15,7 @@ class Bytes(bytearray):
             bytes_like (bytes): Any bytes-like interface or integer. Integers will be converted using the byteorder.
             byteorder    (str): Byte order of the input. Will be used when converting between integer and byte representations.
         """
-        if type(bytes_like) is int:
+        if issubclass(type(bytes_like), int):
             bytes_like = int_to_bytes(bytes_like, byteorder)
 
         super().__init__(bytes_like)

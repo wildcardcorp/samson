@@ -4,7 +4,6 @@ from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, Twisted
 from samson.hashes.sha2 import SHA512
 from samson.utilities.encoding import parse_openssh
 from samson.utilities.pem import pem_decode
-from copy import deepcopy
 import base64
 
 def bit(h,i):
@@ -69,7 +68,7 @@ class EdDSA(DSA):
         Returns:
             TwistedEdwardsPoint: Decoded point.
         """
-        y_bytes = deepcopy(in_bytes)
+        y_bytes = Bytes([_ for _ in in_bytes], 'little')
         y_bytes[-1] &= 0x7F
         y = y_bytes.int()
         x = self.curve.recover_point_from_y(y).x
