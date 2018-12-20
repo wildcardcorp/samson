@@ -1,6 +1,6 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
-from samson.utilities.pem import pem_encode, pem_decode
+from samson.encoding.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes

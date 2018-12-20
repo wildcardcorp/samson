@@ -1,7 +1,7 @@
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
-from samson.utilities.pem import pem_encode, pem_decode
+from samson.encoding.pem import pem_encode, pem_decode
 from samson.hashes.sha2 import SHA256
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence

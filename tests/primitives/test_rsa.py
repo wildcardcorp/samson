@@ -1,6 +1,6 @@
 from samson.public_key.rsa import RSA
 from samson.utilities.bytes import Bytes
-from samson.utilities.pem import RFC1423_ALGOS
+from samson.encoding.pem import RFC1423_ALGOS
 import unittest
 
 

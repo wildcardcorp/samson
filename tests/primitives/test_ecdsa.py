@@ -2,7 +2,7 @@ from fastecdsa.curve import P192, P224, P256, P521
 from fastecdsa.point import Point
 from samson.utilities.bytes import Bytes
 from samson.public_key.ecdsa import ECDSA
-from samson.utilities.pem import RFC1423_ALGOS
+from samson.encoding.pem import RFC1423_ALGOS
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 import unittest

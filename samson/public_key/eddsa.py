@@ -3,7 +3,7 @@ from samson.public_key.dsa import DSA
 from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve
 from samson.hashes.sha2 import SHA512
 from samson.utilities.encoding import parse_openssh
-from samson.utilities.pem import pem_decode
+from samson.encoding.pem import pem_decode
 import base64
 
 def bit(h,i):

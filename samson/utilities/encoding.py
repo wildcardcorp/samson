@@ -179,7 +179,7 @@ def bytes_to_der_sequence(buffer: bytes, passphrase: bytes=None) -> Sequence:
     Returns:
         Sequence: DER sequence.
     """
-    from samson.utilities.pem import pem_decode
+    from samson.encoding.pem import pem_decode
     try:
         buffer = pem_decode(buffer, passphrase)
     except ValueError as e:
@@ -249,23 +249,6 @@ def parse_openssh(header: bytes, ssh_bytes: bytes) -> list:
         key_parts = key_parts[:-1] + private_parts
 
     return key_parts
-
-
-def generate_openssh(values: list=[]) -> bytes:
-    from samson.utilities.bytes import Bytes
-
-    ssh_encoding = Bytes(b'')
-    for item in values:
-        if type(item) is int:
-            length = (item.bit_length() // 8) + 1
-        else:
-            length = len(item)
-
-        item = Bytes.wrap(item)
-        ssh_encoding += Bytes(length).zfill(4) + item.zfill(length)
-
-    return ssh_encoding
-
 
 
 def int_to_poly(integer: int) -> Poly:

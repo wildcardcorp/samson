@@ -4,7 +4,7 @@ from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
-from samson.utilities.pem import pem_encode, pem_decode
+from samson.encoding.pem import pem_encode, pem_decode
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point

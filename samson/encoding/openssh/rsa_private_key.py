@@ -2,11 +2,25 @@ from samson.encoding.openssh.packed_bytes import PackedBytes
 from samson.encoding.openssh.literal import Literal
 from samson.utilities.bytes import Bytes
 from samson.padding.incremental_padding import IncrementalPadding
-
-padder = IncrementalPadding()
+from types import FunctionType
 
 class RSAPrivateKey(object):
-    def __init__(self, name, check_bytes=None, n=None, e=None, d=None, q_mod_p=None, p=None, q=None, host=None):
+    """
+    OpenSSH encoding for an RSA private key.
+    """
+
+    def __init__(self, name: str, check_bytes: bytes=None, n: int=None, e: int=None, d: int=None, q_mod_p: int=None, p: int=None, q: int=None, host: bytes=None):
+        """
+        Parameters:
+            name          (str): Name for bookeeping purposes.
+            check_bytes (bytes): Four random bytes repeated for OpenSSH to check if the decryption worked.
+            n             (int): RSA modulus.
+            e             (int): RSA public exponent.
+            q_mod_p       (int): RSA q mod p.
+            p             (int): RSA secret prime.
+            q             (int): RSA secret prime.
+            host        (bytes): Host the key was generated on.
+        """
         self.name = name
         self.check_bytes = check_bytes or Bytes.random(4) * 2
         self.n = n
@@ -26,7 +40,18 @@ class RSAPrivateKey(object):
 
 
     @staticmethod
-    def pack(value, encryptor=None):
+    def pack(value: object, encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
+        """
+        Packs a private key into an OpenSSH-compliant encoding.
+
+        Parameters:
+            value      (bytes): Value to encode.
+            encryptor   (func): (Optional) Function to use as the encryptor.
+            padding_size (int): The block size to pad to. Usually 8 unless you're encrypting.
+        
+        Returns:
+            Bytes: Packed bytes.
+        """
         check_bytes = Literal('check_bytes', length=8).pack(value.check_bytes)
         header = PackedBytes('rsa-header').pack(b'ssh-rsa')
         n = PackedBytes('n').pack(value.n)
@@ -37,6 +62,7 @@ class RSAPrivateKey(object):
         q = PackedBytes('q').pack(value.q)
         host = PackedBytes('host').pack(value.host)
 
+        padder = IncrementalPadding(padding_size)
         body = padder.pad(check_bytes + header + n + e + d + q_mod_p + p + q + host)
 
         if encryptor:
@@ -44,9 +70,19 @@ class RSAPrivateKey(object):
 
         return PackedBytes('private_key').pack(body)
 
-    
+
     @staticmethod
-    def unpack(encoded_bytes, decryptor=None):
+    def unpack(encoded_bytes: bytes, decryptor: FunctionType=None) -> (object, bytes):
+        """
+        Unpacks bytes into an RSAPrivateKey object.
+
+        Parameters:
+            encoded_bytes (bytes): Bytes to be (partially?) decoded.
+            decryptor      (func): (Optional) Function to use as the decryptor.
+        
+        Returns:
+            (RSAPrivateKey, bytes): The decoded object and unused bytes.
+        """
         params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
         if decryptor:
             params = decryptor(params)
