@@ -9,7 +9,7 @@ class PackedBytes(object):
     def __init__(self, name: str):
         """
         Parameters:
-            name     (str): Name for bookeeping purposes.
+            name (str): Name for bookkeeping purposes.
         """
         self.name = name
 

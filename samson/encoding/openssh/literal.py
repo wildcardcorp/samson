@@ -8,8 +8,8 @@ class Literal(object):
     def __init__(self, name: str, length: int=4):
         """
         Parameters:
-            name     (str): Name for bookeeping purposes.
-            length   (int): Length to be packed into (zfilled).
+            name   (str): Name for bookkeeping purposes.
+            length (int): Length to be packed into (zfilled).
         """
         self.name = name
         self.length = length

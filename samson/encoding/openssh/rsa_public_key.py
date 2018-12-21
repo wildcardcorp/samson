@@ -9,7 +9,7 @@ class RSAPublicKey(object):
     def __init__(self, name: str, n: int=None, e: int=None):
         """
         Parameters:
-            name (str): Name for bookeeping purposes.
+            name (str): Name for bookkeeping purposes.
             n    (int): RSA modulus.
             e    (int): RSA public exponent.
         """
@@ -31,7 +31,7 @@ class RSAPublicKey(object):
         Packs a public key into an OpenSSH-compliant encoding.
 
         Parameters:
-            value      (bytes): Value to encode.
+            value (bytes): Value to encode.
         
         Returns:
             Bytes: Packed bytes.

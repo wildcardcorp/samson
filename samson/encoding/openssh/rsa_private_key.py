@@ -1,5 +1,6 @@
 from samson.encoding.openssh.packed_bytes import PackedBytes
 from samson.encoding.openssh.literal import Literal
+from samson.encoding.openssh.private_key import PrivateKey
 from samson.utilities.bytes import Bytes
 from samson.padding.incremental_padding import IncrementalPadding
 from types import FunctionType
@@ -12,7 +13,7 @@ class RSAPrivateKey(object):
     def __init__(self, name: str, check_bytes: bytes=None, n: int=None, e: int=None, d: int=None, q_mod_p: int=None, p: int=None, q: int=None, host: bytes=None):
         """
         Parameters:
-            name          (str): Name for bookeeping purposes.
+            name          (str): Name for bookkeeping purposes.
             check_bytes (bytes): Four random bytes repeated for OpenSSH to check if the decryption worked.
             n             (int): RSA modulus.
             e             (int): RSA public exponent.
@@ -84,14 +85,8 @@ class RSAPrivateKey(object):
             (RSAPrivateKey, bytes): The decoded object and unused bytes.
         """
         params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
-        if decryptor:
-            params = decryptor(params)
-
-        check_bytes, params = Literal('check_bytes', length=8).unpack(params)
-        check1, check2 = check_bytes.chunk(4)
-
-        if check1 != check2:
-            raise ValueError(f'Private key check bytes incorrect. Is it encrypted? check1: {check1}, check2: {check2}')
+        
+        check_bytes, params = PrivateKey.check_decrypt(params, decryptor)
 
         _header, params = PackedBytes('rsa-header').unpack(params)
         n, params = PackedBytes('n').unpack(params)

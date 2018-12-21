@@ -10,7 +10,7 @@ class KDFParams(object):
     def __init__(self, name: str, salt: bytes=None, rounds: bytes=None):
         """
         Parameters:
-            name     (str): Name for bookeeping purposes.
+            name     (str): Name for bookkeeping purposes.
             salt   (bytes): Salt.
             rounds (bytes): Number of rounds to perform.
         """
@@ -54,4 +54,4 @@ class KDFParams(object):
         params, encoded_bytes = PackedBytes('kdf_params').unpack(encoded_bytes)
         salt, params = PackedBytes('salt').unpack(params)
         rounds, params = Literal('rounds').unpack(params)
-        return KDFParams('kdf_params', salt=salt, rounds=rounds.int()), encoded_bytes
+        return KDFParams('kdf_params', salt=salt, rounds=rounds.int() or b''), encoded_bytes
