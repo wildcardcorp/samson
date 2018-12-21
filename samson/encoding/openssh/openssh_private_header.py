@@ -42,10 +42,13 @@ SPEC = [
     Literal('num_keys')
 ]
 
+
 class OpenSSHPrivateHeader(object):
     """
     Represents a full, private OpenSSH key.
     """
+
+    MAGIC_HEADER = b'openssh-key-v1\x00'
 
     def __init__(self, header: bytes, encryption: bytes, kdf: bytes, kdf_params: KDFParams, num_keys: int):
         """

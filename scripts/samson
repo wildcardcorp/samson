@@ -66,6 +66,7 @@ if __name__ == '__main__':
 
             if arguments.action == 'generate':
                 pki_obj = pki_cls(**dict_args)
+                
                 if arguments.pub:
                     print(pki_obj.export_public_key().decode())
                 else:

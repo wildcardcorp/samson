@@ -5,6 +5,12 @@ from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
 from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
 from samson.encoding.pem import pem_encode, pem_decode
+
+from samson.encoding.openssh.ecdsa_private_key import ECDSAPrivateKey
+from samson.encoding.openssh.ecdsa_public_key import ECDSAPublicKey
+from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
+from samson.encoding.openssh.kdf_params import KDFParams
+
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point
@@ -29,6 +35,14 @@ class PublicPoint(BitString):
     typeId = BitString.typeId
 
 
+SSH_CURVE_NAME_LOOKUP = {
+    P192: b'nistp192',
+    P224: b'nistp224',
+    P256: b'nistp256',
+    P384: b'nistp384',
+    P521: b'nistp521'
+}
+
 
 # https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 class ECDSA(DSA):
@@ -48,7 +62,6 @@ class ECDSA(DSA):
         self.d = d or max(1, Bytes.random(self.q.bit_length() + 7 // 8).int() % self.q)
         self.Q = self.d * self.G
         self.hash_obj = hash_obj
-
 
 
     def __repr__(self):
@@ -132,19 +145,24 @@ class ECDSA(DSA):
         ssh_header = b'ecdsa-'
 
         if ssh_header in buffer:
-            # SSH public key?
-            if buffer.startswith(ssh_header):
-                buffer = base64.b64decode(buffer.split(b' ')[1])
+            # SSH private key?
+            if b'openssh-key-v1' in buffer:
+                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
+                pub, left_over = ECDSAPublicKey.unpack(left_over)
 
-            key_parts = parse_openssh(ssh_header, buffer)
+                decryptor = None
+                if passphrase:
+                    decryptor = header.generate_decryptor(passphrase)
 
-            # Public key?
-            if len(key_parts) == 3:
-                curve, x_y_bytes = key_parts[1:]
-                d = 1
+                priv, _left_over = ECDSAPrivateKey.unpack(left_over, decryptor)
+                curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
+
             else:
-                curve, x_y_bytes, d, _host, _ = key_parts[4:]
-                d = d.int()
+                if buffer.split(b' ')[0][:len(ssh_header)] == ssh_header:
+                    buffer = base64.b64decode(buffer.split(b' ')[1])
+
+                pub, _ = ECDSAPublicKey.unpack(buffer, already_unpacked=True)
+                curve, x_y_bytes, d = pub.curve, pub.x_y_bytes, 1
 
             if curve == b'nistp192':
                 curve = P192
@@ -212,45 +230,107 @@ class ECDSA(DSA):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='EC PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS8', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
-        Exports the full ECDSA instance into DER-encoded bytes.
+        Exports the full ECDSA instance into encoded bytes.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8' and 'OpenSSH'.
+            marker       (str): Marker to use in PEM formatting (if applicable).
             encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
             iv         (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
-            bytes: DER-encoding of DSA instance.
+            bytes: Encoding of DSA instance.
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-        der = export_der([1, Bytes(self.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple(), self.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
 
-        if encode_pem:
-            der = pem_encode(der, marker, encryption=encryption, passphrase=passphrase, iv=iv)
+        if encoding.upper() == 'PKCS8'.upper():
+            encoded = export_der([1, Bytes(self.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple(), self.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
 
-        return der
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'EC PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+
+        elif encoding.upper() == 'OpenSSH'.upper():
+            if encryption:
+                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
+            else:
+                kdf_params = KDFParams('kdf_params', b'', b'')
+
+            header = OpenSSHPrivateHeader(
+                header=OpenSSHPrivateHeader.MAGIC_HEADER,
+                encryption=encryption or b'none',
+                kdf=b'bcrypt' if encryption else b'none',
+                kdf_params=kdf_params,
+                num_keys=1
+            )
+
+            curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
+            x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
+
+            public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
+            private_key = ECDSAPrivateKey(
+                'private_key',
+                check_bytes=None,
+                curve=curve,
+                x_y_bytes=x_y_bytes,
+                d=self.d,
+                host=b'nohost@localhost'
+            )
+
+            encryptor, padding_size = None, 8
+            if passphrase:
+                encryptor, padding_size = header.generate_encryptor(passphrase)
+
+            packed_key = header.pack() + ECDSAPublicKey.pack(public_key) + ECDSAPrivateKey.pack(private_key, encryptor, padding_size)
+            if encode_pem:
+                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+
+        return encoded
 
 
 
-    def export_public_key(self, encode_pem: bool=True, marker: str='PUBLIC KEY') -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS8', marker: str=None) -> bytes:
         """
-        Exports the only the public parameters of the ECDSA instance into DER-encoded bytes.
+        Exports the only the public parameters of the ECDSA instance into encoded bytes.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
+            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'SSH2'.
             marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
-            bytes: DER-encoding of ECDSA instance.
+            bytes: Encoding of ECDSA instance.
         """
-        curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
-        der = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
+        zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
+        curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
+        x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
-        if encode_pem:
-            der = pem_encode(der, marker)
+        if encoding == 'PKCS8':
+            curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
+            encoded = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
 
-        return der
+            default_marker = 'PUBLIC KEY'
+            default_pem = True
+
+        elif encoding == 'OpenSSH':
+            public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
+            encoded = b'ecdsa-sha2-' + curve + b' ' + base64.b64encode(ECDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
+            default_pem = False
+        
+        elif encoding == 'SSH2':
+            public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
+            encoded = ECDSAPublicKey.pack(public_key)[4:]
+            default_marker = 'SSH2 PUBLIC KEY'
+            default_pem = True
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+
+        if (encode_pem is None and default_pem) or encode_pem:
+            encoded = pem_encode(encoded, marker or default_marker)
+
+        return encoded

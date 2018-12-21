@@ -2,8 +2,13 @@ from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve
 from samson.hashes.sha2 import SHA512
-from samson.utilities.encoding import parse_openssh
-from samson.encoding.pem import pem_decode
+from samson.encoding.pem import pem_decode, pem_encode
+
+from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
+from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
+from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
+from samson.encoding.openssh.kdf_params import KDFParams
+
 import base64
 
 def bit(h,i):
@@ -26,7 +31,7 @@ class EdDSA(DSA):
         """
         self.B = curve.B
         self.curve = curve
-        self.d = Bytes.wrap(d or max(1, Bytes.random((curve.b + 7) // 8).int() % curve.q))
+        self.d = Bytes.wrap(d or max(1, Bytes.random(hash_obj.digest_size).int()))
         self.H = hash_obj
 
         self.h = hash_obj.hash(self.d)
@@ -143,19 +148,24 @@ class EdDSA(DSA):
         ssh_header = b'ssh-ed25519'
 
         if ssh_header in buffer:
-            # SSH public key?
-            if buffer.startswith(ssh_header):
-                buffer = base64.b64decode(buffer.split(b' ')[1])
+            # SSH private key?
+            if b'openssh-key-v1' in buffer:
+                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
+                pub, left_over = EdDSAPublicKey.unpack(left_over)
 
-            key_parts = parse_openssh(ssh_header, buffer)
+                decryptor = None
+                if passphrase:
+                    decryptor = header.generate_decryptor(passphrase)
 
-            # Public key?
-            if len(key_parts) == 2:
-                a = key_parts[1].int()
-                d = 0
+                priv, _left_over = EdDSAPrivateKey.unpack(left_over, decryptor)
+                a, d = priv.a, priv.d
+
             else:
-                a, d, _host = key_parts[3:]
-                a = a.int()
+                if buffer.split(b' ')[0][:len(ssh_header)] == ssh_header:
+                    buffer = base64.b64decode(buffer.split(b' ')[1])
+
+                pub, _ = EdDSAPublicKey.unpack(buffer, already_unpacked=True)
+                a, d = pub.a, 0
         else:
             raise ValueError("Unable to parse provided EdDSA key.")
 
@@ -164,9 +174,83 @@ class EdDSA(DSA):
         return eddsa
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='EdDSA PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
-        raise NotImplementedError()
+    def export_private_key(self, encode_pem: bool=True, encoding: str='OpenSSH', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+        """
+        Exports the full EdDSA instance into encoded bytes.
+
+        Parameters:
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            encoding     (str): Encoding scheme to use. Currently supports 'OpenSSH'.
+            marker       (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
+        
+        Returns:
+            bytes: Bytes-encoded EdDSA instance.
+        """
+        if encoding.upper() == 'OpenSSH'.upper():
+            if encryption:
+                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
+            else:
+                kdf_params = KDFParams('kdf_params', b'', b'')
+
+            header = OpenSSHPrivateHeader(
+                header=OpenSSHPrivateHeader.MAGIC_HEADER,
+                encryption=encryption or b'none',
+                kdf=b'bcrypt' if encryption else b'none',
+                kdf_params=kdf_params,
+                num_keys=1
+            )
+
+            public_key = EdDSAPublicKey('public_key', self.a)
+            private_key = EdDSAPrivateKey(
+                'private_key',
+                check_bytes=None,
+                a=self.a,
+                d=self.d,
+                host=b'nohost@localhost'
+            )
+
+            encryptor, padding_size = None, 8
+            if passphrase:
+                encryptor, padding_size = header.generate_encryptor(passphrase)
+
+            packed_key = header.pack() + EdDSAPublicKey.pack(public_key) + EdDSAPrivateKey.pack(private_key, encryptor, padding_size)
+            if encode_pem:
+                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+        
+        return encoded
 
 
-    def export_public_key(self, encode_pem: bool=True, marker: str='PUBLIC KEY') -> bytes:
-        raise NotImplementedError()
+    def export_public_key(self, encode_pem: bool=None, encoding: str='OpenSSH', marker: str=None) -> bytes:
+        """
+        Exports the only the public parameters of the EdDSA instance into encoded bytes.
+
+        Parameters:
+            encode_pem (bool): Whether or not to PEM-encode as well.
+            encoding    (str): Encoding scheme to use. Currently supports 'OpenSSH', and 'SSH2'.
+            marker      (str): Marker to use in PEM formatting (if applicable).
+        
+        Returns:
+            bytes: Encoding of EdDSA instance.
+        """
+        if encoding == 'OpenSSH':
+            public_key = EdDSAPublicKey('public_key', self.a)
+            encoded = b'ssh-ed25519 ' + base64.b64encode(EdDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
+            default_pem = False
+        
+        elif encoding == 'SSH2':
+            public_key = EdDSAPublicKey('public_key', self.a)
+            encoded = EdDSAPublicKey.pack(public_key)[4:]
+            default_marker = 'SSH2 PUBLIC KEY'
+            default_pem = True
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+
+        if (encode_pem is None and default_pem) or encode_pem:
+            encoded = pem_encode(encoded, marker or default_marker)
+
+        return encoded

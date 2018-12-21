@@ -34,22 +34,31 @@ X   Nostradamus attack
 
 0.2.0
 ===============
-X   SSH decryption support
+OK  SSH decryption support
     OK  Build basic OpenSSH encoding/decoding support
-    X   Add OpenSSH decoding support for
+    OK  Add OpenSSH decoding support for
         OK  RSA
-        X   DSA
-        X   ECDSA
-        X   EdDSA
+        OK  DSA
+        OK  ECDSA
+        OK  EdDSA
 
-    X   Allow user to choose encoding when exporting keys for
-        X   RSA
-        X   DSA
-        X   ECDSA
-        X   EdDSA
+    OK  Allow user to choose encoding when exporting keys for
+        OK  RSA
+        OK  DSA
+        OK  ECDSA
+        OK  EdDSA
 
+X   Write test cases against ssh-keygen for all SSH exporting/encryption (get actual values as well!)
 
 X   Abstract certificate importing to genericized function
+    X   Clean up encoding.openssh (public and private overlap)
+    X   Clean up public key import functions
+    X   Clean up public key export functions
+
+X   Use correct formatting for SSH2 (---- XXX ----)
+
+X   Ensure ECC point mul is correct
+
 X   Decide what to do with "encoding" utilities vs encoding folder (samson.encoding.general?)
 X   More PRNG cracking (SAT)
 

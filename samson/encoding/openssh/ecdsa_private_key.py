@@ -20,7 +20,7 @@ class ECDSAPrivateKey(object):
             host        (bytes): Host the key was generated on.
         """
         self.name = name
-        self.check_bytes = check_bytes
+        self.check_bytes = check_bytes or Bytes.random(4) * 2
         self.curve = curve
         self.x_y_bytes = x_y_bytes
         self.d = d
@@ -74,8 +74,10 @@ class ECDSAPrivateKey(object):
         Returns:
             (ECDSAPrivateKey, bytes): The decoded object and unused bytes.
         """
+        encoded_bytes = Bytes.wrap(encoded_bytes)
+        
         if already_unpacked:
-            params, encoded_bytes = Bytes.wrap(encoded_bytes), None
+            params, encoded_bytes = encoded_bytes, None
         else:
             params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
         

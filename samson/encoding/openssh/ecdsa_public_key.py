@@ -54,8 +54,10 @@ class ECDSAPublicKey(object):
         Returns:
             (ECDSAPublicKey, bytes): The decoded object and unused bytes.
         """
+        encoded_bytes = Bytes.wrap(encoded_bytes)
+        
         if already_unpacked:
-            params, encoded_bytes = Bytes.wrap(encoded_bytes), None
+            params, encoded_bytes = encoded_bytes, None
         else:
             params, encoded_bytes = PackedBytes('public_key').unpack(encoded_bytes)
 

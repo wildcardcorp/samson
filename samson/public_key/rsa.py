@@ -1,5 +1,11 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
+from samson.utilities.encoding import export_der, bytes_to_der_sequence
+
+from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
+from samson.encoding.openssh.rsa_public_key import RSAPublicKey
+from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
+from samson.encoding.openssh.kdf_params import KDFParams
+
 from samson.encoding.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
@@ -100,64 +106,120 @@ class RSA(object):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, marker: str='RSA PRIVATE KEY', encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS8', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
-        Exports the full RSA instance into DER-encoded bytes.
+        Exports the full RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
             encode_pem  (bool): Whether or not to PEM-encode as well.
+            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8' and 'OpenSSH'.
             marker       (str): Marker to use in PEM formatting (if applicable).
             encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
             iv         (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
-            bytes: DER-encoding of RSA instance.
+            bytes: Bytes-encoded RSA instance.
         """
-        der = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)])
+        if encoding.upper() == 'PKCS8'.upper():
+            encoded = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)])
 
-        if encode_pem:
-            der = pem_encode(der, marker, encryption=encryption, passphrase=passphrase, iv=iv)
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
-        return der
+        elif encoding.upper() == 'OpenSSH'.upper():
+            if encryption:
+                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
+            else:
+                kdf_params = KDFParams('kdf_params', b'', b'')
+
+            header = OpenSSHPrivateHeader(
+                header=OpenSSHPrivateHeader.MAGIC_HEADER,
+                encryption=encryption or b'none',
+                kdf=b'bcrypt' if encryption else b'none',
+                kdf_params=kdf_params,
+                num_keys=1
+            )
+
+            public_key = RSAPublicKey('public_key', self.n, self.e)
+            private_key = RSAPrivateKey(
+                'private_key',
+                check_bytes=None,
+                n=self.n,
+                e=self.e,
+                d=self.alt_d,
+                q_mod_p=mod_inv(self.q, self.p),
+                p=self.p,
+                q=self.q,
+                host=b'nohost@localhost'
+            )
+
+            encryptor, padding_size = None, 8
+            if passphrase:
+                encryptor, padding_size = header.generate_encryptor(passphrase)
+
+            packed_key = header.pack() + RSAPublicKey.pack(public_key) + RSAPrivateKey.pack(private_key, encryptor, padding_size)
+            if encode_pem:
+                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+
+        return encoded
 
 
 
-    def export_public_key(self, encode_pem: bool=True, marker: str='PUBLIC KEY') -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS8', marker: str=None) -> bytes:
         """
-        Exports the only the public parameters of the RSA instance into DER-encoded bytes.
+        Exports the only the public parameters of the RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
+            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'SSH2'.
             marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
-            bytes: DER-encoding of RSA instance.
+            bytes: Encoding of RSA instance.
         """
-        seq = Sequence()
-        seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
-        seq.setComponentByPosition(1, Null())
+        if encoding == 'PKCS8':
+            seq = Sequence()
+            seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
+            seq.setComponentByPosition(1, Null())
 
-        param_seq = SequenceOf()
-        param_seq.append(Integer(self.n))
-        param_seq.append(Integer(self.e))
+            param_seq = SequenceOf()
+            param_seq.append(Integer(self.n))
+            param_seq.append(Integer(self.e))
 
-        param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
-        param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
-        param_bs = BitString(param_bs)
+            param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
+            param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
+            param_bs = BitString(param_bs)
 
-        top_seq = Sequence()
-        top_seq.setComponentByPosition(0, seq)
-        top_seq.setComponentByPosition(1, param_bs)
+            top_seq = Sequence()
+            top_seq.setComponentByPosition(0, seq)
+            top_seq.setComponentByPosition(1, param_bs)
 
-        der_encoded = encoder.encode(top_seq)
+            encoded = encoder.encode(top_seq)
+            default_marker = 'PUBLIC KEY'
+            default_pem = True
 
-        if encode_pem:
-            der_encoded = pem_encode(der_encoded, marker)
+        elif encoding == 'OpenSSH':
+            public_key = RSAPublicKey('public_key', self.n, self.e)
+            encoded = b'ssh-rsa ' + base64.b64encode(RSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
+            default_pem = False
+        
+        elif encoding == 'SSH2':
+            public_key = RSAPublicKey('public_key', self.n, self.e)
+            encoded = RSAPublicKey.pack(public_key)[4:]
+            default_marker = 'SSH2 PUBLIC KEY'
+            default_pem = True
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
 
-        return der_encoded
+        if (encode_pem is None and default_pem) or encode_pem:
+            encoded = pem_encode(encoded, marker or default_marker)
+
+        return encoded
 
 
 
@@ -180,24 +242,27 @@ class RSA(object):
         ssh_header = b'ssh-rsa'
 
         if ssh_header in buffer:
-            # SSH public key?
-            if buffer.startswith(ssh_header):
-                buffer = base64.b64decode(buffer.split(b' ')[1])
+            # SSH private key?
+            if OpenSSHPrivateHeader.MAGIC_HEADER in buffer:
+                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
+                pub, left_over = RSAPublicKey.unpack(left_over)
 
+                decryptor = None
+                if passphrase:
+                    decryptor = header.generate_decryptor(passphrase)
 
-            key_parts = parse_openssh(ssh_header, buffer)
+                priv, _left_over = RSAPrivateKey.unpack(left_over, decryptor)
+                n, e, p, q = priv.n, priv.e, priv.p, priv.q
 
-            # Public key?
-            if len(key_parts) == 3:
-                n, e = key_parts[2].int(), key_parts[1].int()
-                rsa = RSA(2, e=e)
-                rsa.n = n
             else:
-                n, e, _, _, p, q, _host = [part.int() for part in key_parts[4:]]
-                rsa = RSA(0, p=p, q=q, e=e)
+                if buffer.split(b' ')[0] == ssh_header:
+                    buffer = base64.b64decode(buffer.split(b' ')[1])
 
+                pub, _ = RSAPublicKey.unpack(buffer, already_unpacked=True)
+                n, e, p, q = pub.n, pub.e, 2, 3
+
+            rsa = RSA(2, p=p, q=q, e=e)
             rsa.n = n
-
         else:
             items = bytes_to_der_sequence(buffer)
 

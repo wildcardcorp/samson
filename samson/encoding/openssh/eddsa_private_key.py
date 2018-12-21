@@ -20,7 +20,7 @@ class EdDSAPrivateKey(object):
             host        (bytes): Host the key was generated on.
         """
         self.name = name
-        self.check_bytes = check_bytes
+        self.check_bytes = check_bytes or Bytes.random(4) * 2
         self.a = a
         self.d = d
         self.host = host
@@ -72,8 +72,10 @@ class EdDSAPrivateKey(object):
         Returns:
             (EdDSAPrivateKey, bytes): The decoded object and unused bytes.
         """
+        encoded_bytes = Bytes.wrap(encoded_bytes)
+        
         if already_unpacked:
-            params, encoded_bytes = Bytes.wrap(encoded_bytes), None
+            params, encoded_bytes = encoded_bytes, None
         else:
             params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
         

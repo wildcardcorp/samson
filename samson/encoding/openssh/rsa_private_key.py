@@ -17,7 +17,7 @@ class RSAPrivateKey(object):
             check_bytes (bytes): Four random bytes repeated for OpenSSH to check if the decryption worked.
             n             (int): RSA modulus.
             e             (int): RSA public exponent.
-            q_mod_p       (int): RSA q mod p.
+            q_mod_p       (int): RSA q^{-1} mod p.
             p             (int): RSA secret prime.
             q             (int): RSA secret prime.
             host        (bytes): Host the key was generated on.
