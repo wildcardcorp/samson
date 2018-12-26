@@ -85,7 +85,7 @@ class RSAPrivateKey(object):
             (RSAPrivateKey, bytes): The decoded object and unused bytes.
         """
         params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
-        
+
         check_bytes, params = PrivateKey.check_decrypt(params, decryptor)
 
         _header, params = PackedBytes('rsa-header').unpack(params)

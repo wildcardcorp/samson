@@ -11,5 +11,5 @@ class PrivateKey(object):
 
         if check1 != check2:
             raise ValueError(f'Private key check bytes incorrect. Is it encrypted? check1: {check1}, check2: {check2}')
-        
+
         return check_bytes, params

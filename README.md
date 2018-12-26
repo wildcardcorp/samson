@@ -21,7 +21,7 @@ samson's key focuses are:
 
 
 ## Examples
-### REPL
+### **REPL**
 ```bash
 [root@localhost ~]# samson
 
@@ -104,7 +104,7 @@ In [4]: recovered_plaintext
 Out[4]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder=big>
 ```
 
-### CLI
+### **CLI**
 ```bash
 [root@localhost ~]# samson hash md5 texttohash
 0d7e83711c9c8efa135653ef124cc23b

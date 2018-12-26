@@ -1,6 +1,6 @@
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import export_der, bytes_to_der_sequence
+from samson.encoding.general import export_der, bytes_to_der_sequence
 
 from samson.encoding.openssh.dsa_private_key import DSAPrivateKey
 from samson.encoding.openssh.dsa_public_key import DSAPublicKey
@@ -206,7 +206,7 @@ class DSA(object):
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'DSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
-        
+
         elif encoding.upper() == 'OpenSSH'.upper():
             if encryption:
                 kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
@@ -259,6 +259,8 @@ class DSA(object):
         Returns:
             bytes: Encoding of DSA instance.
         """
+        use_rfc_4716 = False
+
         if encoding == 'PKCS8':
             seq_of = SequenceOf()
             seq_of.extend([Integer(self.p), Integer(self.q), Integer(self.g)])
@@ -283,16 +285,18 @@ class DSA(object):
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
             encoded = b'ssh-dss ' + base64.b64encode(DSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
             default_pem = False
-        
+
         elif encoding == 'SSH2':
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
             encoded = DSAPublicKey.pack(public_key)[4:]
             default_marker = 'SSH2 PUBLIC KEY'
             default_pem = True
+            use_rfc_4716 = True
+            
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
-            encoded = pem_encode(encoded, marker or default_marker)
+            encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
 
         return encoded

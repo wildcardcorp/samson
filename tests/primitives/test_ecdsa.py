@@ -1,10 +1,11 @@
-from fastecdsa.curve import P192, P224, P256, P521
+from fastecdsa.curve import P192, P224, P256, P384, P521
 from fastecdsa.point import Point
 from samson.utilities.bytes import Bytes
 from samson.public_key.ecdsa import ECDSA
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
+import random
 import unittest
 
 
@@ -145,6 +146,53 @@ ekSjuWil8PH9HSA7HnBcS5LKwaHEaHuBTSbSyJWuW1c=
 -----END EC PRIVATE KEY-----"""
 
 
+# ssh-keygen -t ecdsa -f ssh0
+# ssh-keygen -t ecdsa -f ssh1
+# ssh-keygen -t ecdsa -f ssh2 -N '33754c0f43c12ca5'
+# ssh-keygen -t ecdsa -f ssh3 -N '692fe1e040f63bcc'
+
+TEST_OPENSSH0 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQT3OKW55K928fgS959zJKt7vxjZa325
+AhqK2DsgfgrL7PCOR8sHKVBAVSoYqgL2quD1/a0nQInT6iKdHjt2eJFKAAAAsEfqLHVH6i
+x1AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPc4pbnkr3bx+BL3
+n3Mkq3u/GNlrfbkCGorYOyB+Csvs8I5HywcpUEBVKhiqAvaq4PX9rSdAidPqIp0eO3Z4kU
+oAAAAhAMV8Z+6PWs8S6h/LzKVq1iZSLo8KMttO6ZhJJPT1P28HAAAAEWRvbmFsZEBEb25h
+bGQtTUJQAQIDBAUG
+-----END OPENSSH PRIVATE KEY-----""", None)
+
+TEST_OPENSSH1 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQTR6THrFlIzWynLXARNN9Oq2EBtbn8X
+VCg25Jc/ysOlSlVzMAi9Wl8Q0/sESsBHbcWb8iQEixfPiQr7K8BvF7akAAAAsKNI90qjSP
+dKAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNHpMesWUjNbKctc
+BE0306rYQG1ufxdUKDbklz/Kw6VKVXMwCL1aXxDT+wRKwEdtxZvyJASLF8+JCvsrwG8Xtq
+QAAAAhAJNY2X8nRWJQU4XCR8sUa06h4GaSVgUK5pKUtGJM1UypAAAAEWRvbmFsZEBEb25h
+bGQtTUJQAQIDBAUG
+-----END OPENSSH PRIVATE KEY-----""", None)
+
+TEST_OPENSSH2 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABCi2rSY/6
+XvIos8XrmthE1LAAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlz
+dHAyNTYAAABBBK1fTBfZ3fZeXnYHo0JbD0rL8XU5JKju7BY8oRvr08UeJf9LJh47+yqe2/
+PxwR7jywJ5C6KO+Kq1hGoqSJ4IrzoAAACww1spwnk50Oe+ooaFM6m8g2uKlJsRUbSLqejX
+uHv21CgYgANaTRQpn26xl9yBjW3MUCG8tMfJz9UYJ+mWXs/gF6ook5mgOUrErTnixvi4Uj
+9r6Ck6EgKWOfvv252bDmi5nq8bp9VKjtcHQfN/5qrFK9+TjmoRvTzerJA+OnYRHcr22lw8
+oM8u5kVMo1AIFEv7ls+GFvrGfGcc6iuCpCi5BtZzNHwh432uRxygoqY4+xg=
+-----END OPENSSH PRIVATE KEY-----""", b'33754c0f43c12ca5')
+
+TEST_OPENSSH3 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABCSksZFhw
+lOiMWgdIYM4keoAAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlz
+dHAyNTYAAABBBBD9lJaJ2GFI6rAPlAwXmOtWbZ3Kdvj2WMn4UkxZrOVCgmYDpBRWsxM8sy
+/WOadTMGce7s2KqB6UbU9TET8N5DoAAACwS6YYv9PfxO0SSMxRS/yfMYn+DhJVMHn2z27o
+c6Sbw0iKcvHyB3NbOJF19bPMDr63t3WxW+F4lJbR+z0KMrgzvf0hlg1Sfj8i4Es9BPcH22
+aOdbIEH+BasBrC0jhiaCvHI2NNxdVkP8a6kfwzpPSCNc+LpIlqTjVTlZKRUKTvvs5pjqZ/
+ZvlicyXNaRi6YZYwy6myBHPkZ3r7jjpF+CrAFZsF17q+mBSRn6swmt9P7Sw=
+-----END OPENSSH PRIVATE KEY-----""", b'692fe1e040f63bcc')
+
+
+
 class ECDSATestCase(unittest.TestCase):
     def test_import_export_private(self):
         ecdsa = ECDSA.import_key(TEST_PRIV)
@@ -226,6 +274,43 @@ class ECDSATestCase(unittest.TestCase):
         self.assertEqual((ecdsa_pub.G, ecdsa_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
         self.assertEqual((ecdsa_ssh2_pub.G, ecdsa_ssh2_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
         self.assertEqual(ecdsa_priv.d * ecdsa_priv.G, ecdsa_priv.Q)
+
+
+
+    def test_import_openssh(self):
+        for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
+            if passphrase:
+                with self.assertRaises(ValueError):
+                    ECDSA.import_key(key)
+
+            ecdsa = ECDSA.import_key(key, passphrase=passphrase)
+            self.assertEqual(ecdsa.d * ecdsa.G, ecdsa.Q)
+            self.assertLess(ecdsa.d, ecdsa.q)
+
+
+
+    def test_openssh_gauntlet(self):
+        num_runs = 6
+        num_enc = num_runs // 3
+        curves = [P192, P224, P256, P384, P521]
+        for i in range(num_runs):
+            curve = random.choice(curves)
+            ecdsa = ECDSA(curve.G)
+            passphrase = None
+            if i < num_enc:
+                passphrase = Bytes.random(Bytes.random(1).int())
+
+            priv        = ecdsa.export_private_key(encoding='OpenSSH', encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = ecdsa.export_public_key(encoding='OpenSSH')
+            pub_ssh2    = ecdsa.export_public_key(encoding='SSH2')
+
+            new_priv = ECDSA.import_key(priv, passphrase=passphrase)
+            new_pub_openssh = ECDSA.import_key(pub_openssh)
+            new_pub_ssh2 = ECDSA.import_key(pub_ssh2)
+
+            self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
+            self.assertEqual((new_pub_openssh.G, new_pub_openssh.Q), (ecdsa.G, ecdsa.Q))
+            self.assertEqual((new_pub_ssh2.G, new_pub_ssh2.Q), (ecdsa.G, ecdsa.Q))
 
 
 

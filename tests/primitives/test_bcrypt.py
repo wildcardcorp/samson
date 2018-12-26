@@ -1,5 +1,5 @@
 from samson.kdfs.bcrypt import Bcrypt
-from samson.utilities.encoding import bcrypt_b64_decode
+from samson.encoding.general import bcrypt_b64_decode
 import unittest
 
 # Test vectors from https://github.com/patrickfav/bcrypt/wiki/Published-Test-Vectors

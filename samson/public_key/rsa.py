@@ -1,5 +1,5 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.utilities.encoding import export_der, bytes_to_der_sequence
+from samson.encoding.general import export_der, bytes_to_der_sequence
 
 from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.rsa_public_key import RSAPublicKey
@@ -182,6 +182,8 @@ class RSA(object):
         Returns:
             bytes: Encoding of RSA instance.
         """
+        use_rfc_4716 = False
+
         if encoding == 'PKCS8':
             seq = Sequence()
             seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
@@ -207,17 +209,19 @@ class RSA(object):
             public_key = RSAPublicKey('public_key', self.n, self.e)
             encoded = b'ssh-rsa ' + base64.b64encode(RSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
             default_pem = False
-        
+
         elif encoding == 'SSH2':
             public_key = RSAPublicKey('public_key', self.n, self.e)
             encoded = RSAPublicKey.pack(public_key)[4:]
             default_marker = 'SSH2 PUBLIC KEY'
             default_pem = True
+            use_rfc_4716 = True
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
-            encoded = pem_encode(encoded, marker or default_marker)
+            encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
 
         return encoded
 

@@ -50,13 +50,13 @@ class ECDSAPrivateKey(object):
         """
         check_bytes = Literal('check_bytes', length=8).pack(value.check_bytes)
         encoded = check_bytes + PackedBytes('ecdsa-header').pack(b'ecdsa-sha2-' + value.curve) + PackedBytes('curve').pack(value.curve) + PackedBytes('x_y_bytes').pack(value.x_y_bytes) + PackedBytes('d').pack(value.d) + PackedBytes('host').pack(value.host)
-    
+
         padder = IncrementalPadding(padding_size)
         body = padder.pad(encoded)
 
         if encryptor:
             body = encryptor(body)
-        
+
         body = PackedBytes('private_key').pack(body)
 
         return body
@@ -75,12 +75,12 @@ class ECDSAPrivateKey(object):
             (ECDSAPrivateKey, bytes): The decoded object and unused bytes.
         """
         encoded_bytes = Bytes.wrap(encoded_bytes)
-        
+
         if already_unpacked:
             params, encoded_bytes = encoded_bytes, None
         else:
             params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
-        
+
         check_bytes, params = PrivateKey.check_decrypt(params, decryptor)
 
         _header, params = PackedBytes('ecdsa-header').unpack(params)

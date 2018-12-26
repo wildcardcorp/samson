@@ -6,12 +6,14 @@ class PackedBytes(object):
     Packs bytes-coercible objects into length-encoded bytes.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, endianness: str='big'):
         """
         Parameters:
             name (str): Name for bookkeeping purposes.
         """
         self.name = name
+        self.endianness = endianness
+
 
 
     def __repr__(self):
@@ -32,7 +34,7 @@ class PackedBytes(object):
         Returns:
             bytes: Packed bytes.
         """
-        val = Bytes.wrap(value)
+        val = Bytes.wrap(value, byteorder=self.endianness)
 
         if issubclass(type(value), int):
             val = val.zfill(math.ceil((value.bit_length() + 1) / 8))
@@ -56,4 +58,6 @@ class PackedBytes(object):
             (bytes, bytes): The unpacked bytes and unused bytes.
         """
         length = encoded_bytes[:4].int()
-        return encoded_bytes[4:length + 4], encoded_bytes[length + 4:]
+        unpacked = encoded_bytes[4:length + 4]
+        unpacked.byteorder = self.endianness
+        return unpacked, encoded_bytes[length + 4:]

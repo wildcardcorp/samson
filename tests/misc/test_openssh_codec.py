@@ -36,7 +36,7 @@ class OpenSSHCodecTestCase(unittest.TestCase):
     def _run_rsa_pub_test(self, openssh_key):
         parsed_key, _ = RSAPublicKey.unpack(openssh_key, already_unpacked=True)
         self.assertEqual(RSAPublicKey.pack(parsed_key)[4:], openssh_key)
-    
+
 
 
     def _run_dsa_priv_test(self, openssh_key, passphrase=None):

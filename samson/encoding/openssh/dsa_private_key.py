@@ -1,6 +1,5 @@
 from samson.encoding.openssh.packed_bytes import PackedBytes
 from samson.encoding.openssh.literal import Literal
-from samson.encoding.openssh.dsa_public_key import DSAPublicKey
 from samson.encoding.openssh.private_key import PrivateKey
 from samson.padding.incremental_padding import IncrementalPadding
 from samson.utilities.bytes import Bytes
@@ -79,7 +78,7 @@ class DSAPrivateKey(object):
             (DSAPrivateKey, bytes): The decoded object and unused bytes.
         """
         encoded_bytes = Bytes.wrap(encoded_bytes)
-        
+
         if already_unpacked:
             params, encoded_bytes = encoded_bytes, None
         else:

@@ -1,4 +1,4 @@
-from samson.utilities.encoding import bytes_to_bitstring
+from samson.encoding.general import bytes_to_bitstring
 from math import log, sqrt
 from samson.stream_ciphers.rc4 import RC4
 import operator

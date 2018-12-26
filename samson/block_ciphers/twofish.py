@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import poly_to_int, int_to_poly
+from samson.encoding.general import poly_to_int, int_to_poly
 from samson.utilities.manipulation import right_rotate, left_rotate
 
 GF_MOD = 2**8 + 2**6 + 2**5 + 2**3 + 1

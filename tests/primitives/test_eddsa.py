@@ -22,6 +22,46 @@ AAAAC3NzaC1lZDI1NTE5AAAAIFy3qQeBk7WePMMgLvmt76bdyULMpNCUE0ze38wzChLB
 ---- END SSH2 PUBLIC KEY ----"""
 
 
+# ssh-keygen -t ed25519 -f ssh0
+# ssh-keygen -t ed25519 -f ssh1
+# ssh-keygen -t ed25519 -f ssh2 -N '934495604a1e0cfe'
+# ssh-keygen -t ed25519 -f ssh3 -N 'd133d14b43d1a42f'
+
+TEST_OPENSSH0 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACCZztxi9GNkL4YeuAn3ud0D4yY7dnp6D4zr6PaLvfUJiAAAAJhyLKRhciyk
+YQAAAAtzc2gtZWQyNTUxOQAAACCZztxi9GNkL4YeuAn3ud0D4yY7dnp6D4zr6PaLvfUJiA
+AAAEAqNbIVBf0bVPEo3XM07befF8WntPsUsoBOU3DgeSPCg5nO3GL0Y2Qvhh64Cfe53QPj
+Jjt2enoPjOvo9ou99QmIAAAAEWRvbmFsZEBEb25hbGQtTUJQAQIDBA==
+-----END OPENSSH PRIVATE KEY-----""", None)
+
+TEST_OPENSSH1 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACBF0siswWzn50v+fTwkEpTf0IUMoAWc4PZt6XrCsvU0LAAAAJiGkZahhpGW
+oQAAAAtzc2gtZWQyNTUxOQAAACBF0siswWzn50v+fTwkEpTf0IUMoAWc4PZt6XrCsvU0LA
+AAAECkW+m9PNS4SmPFNB9maqJtak2CjtkkZlAg3gw7qWGNf0XSyKzBbOfnS/59PCQSlN/Q
+hQygBZzg9m3pesKy9TQsAAAAEWRvbmFsZEBEb25hbGQtTUJQAQIDBA==
+-----END OPENSSH PRIVATE KEY-----""", None)
+
+TEST_OPENSSH2 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBE8k7xL2
+ywJPEcJegAFnIxAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIL6SwZdHYjMvWvWH
+vu+YYT4f0F2atgxbSlniCUbcG59xAAAAoIj1P/qxC9ei4XuBeTQ0dvbQwu13wwgpc47Mq9
+jF/4IDjhqzOg+McKl4c9OdclXVqohu7Aeeyha4YB0UYQ81f+RV+95rMUI282txXkehPGtM
+Fw6lOTkvhHk5GaEEXTgPdg8YWQOUzgRDcb38NuONXTj/DkKvGsQsdXDxHoMbZF/o/NOkos
+ssDCHzotPaK5nNnuWbpG6AnGNsuusYRyxEbpQ=
+-----END OPENSSH PRIVATE KEY-----""", b'934495604a1e0cfe')
+
+TEST_OPENSSH3 = (b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBjV526pf
+NgcquPjbhjTY3sAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIDPvMKkF2zLxAUXQ
+rlyyO5Hxu7y/7W+5jcicSOzzBFRsAAAAoGOaufFSN7t2t7imEgM1F8MGnUfxHVCJ9Nz/2y
+iTNedFNKH0WvbLn89u06TphI3bka1gta0ref/N13Plo8uPkwvjrm9oAtTnjsrZ6ApNwt9B
+A+XJo6me3WIQ7MqA2aZ8t0IL8fmIB80ojE0VbR7XlcCn298SgOV95dJT7KO1KSaDwTYFko
+euMpFa0COjJ4Pk0WBhJMdN3+U8UNKqU6meEg8=
+-----END OPENSSH PRIVATE KEY-----""", b'd133d14b43d1a42f')
+
+
 # https://tools.ietf.org/html/rfc8032#section-7.1
 class EdDSATestCase(unittest.TestCase):
     def test_import_ssh(self):
@@ -31,6 +71,45 @@ class EdDSATestCase(unittest.TestCase):
 
         self.assertEqual(priv.A, pubv1.A)
         self.assertEqual(priv.A, pubv2.A)
+
+
+
+    def test_import_openssh(self):
+        for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
+            if passphrase:
+                with self.assertRaises(ValueError):
+                    EdDSA.import_key(key)
+
+            eddsa = EdDSA.import_key(key, passphrase=passphrase)
+
+            # EdDSA's little-endian causes a pretty big headache
+            other_eddsa = EdDSA(h=eddsa.h[:32][::-1], clamp=False)
+
+            self.assertEqual(eddsa.a, other_eddsa.a)
+
+
+
+    def test_openssh_gauntlet(self):
+        num_runs = 1
+        num_enc = num_runs // 3
+        for i in range(num_runs):
+            eddsa = EdDSA()
+            passphrase = None
+            if i < num_enc:
+                passphrase = Bytes.random(Bytes.random(1).int())
+
+            priv        = eddsa.export_private_key(encoding='OpenSSH', encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = eddsa.export_public_key(encoding='OpenSSH')
+            pub_ssh2    = eddsa.export_public_key(encoding='SSH2')
+
+            new_priv = EdDSA.import_key(priv, passphrase=passphrase)
+            new_pub_openssh = EdDSA.import_key(pub_openssh)
+            new_pub_ssh2 = EdDSA.import_key(pub_ssh2)
+
+            self.assertEqual((new_priv.h, new_priv.a, new_priv.A), (eddsa.h, eddsa.a, eddsa.A))
+            self.assertEqual((new_pub_openssh.a, new_pub_openssh.A), (eddsa.a, eddsa.A))
+            self.assertEqual((new_pub_ssh2.a, new_pub_ssh2.A), (eddsa.a, eddsa.A))
+
 
 
     def _run_test(self, message, d, curve, hash_alg, expected_public_key=None, expected_sig=None):

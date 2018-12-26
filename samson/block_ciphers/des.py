@@ -1,6 +1,6 @@
 from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import bytes_to_bitstring
+from samson.encoding.general import bytes_to_bitstring
 from samson.utilities.manipulation import left_rotate
 
 # https://en.wikipedia.org/wiki/Data_Encryption_Standard

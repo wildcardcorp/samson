@@ -121,17 +121,18 @@ def pem_decode(pem_bytes: bytes, passphrase: bytes=None) -> bytes:
 
 
 
-def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=None, passphrase: bytes=None, iv: bytes=None, use_rfc_4716: bool=False) -> bytes:
     """
     PEM-encodes DER-encoded bytes.
 
     Parameters:
-        der_bytes  (bytes): DER-encoded bytes.
-        marker       (str): Header and footer marker (e.g. 'RSA PRIVATE KEY').
-        width        (int): Maximum line width before newline.
-        encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-        passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-        iv         (bytes): (Optional) IV to use for CBC encryption.
+        der_bytes   (bytes): DER-encoded bytes.
+        marker        (str): Header and footer marker (e.g. 'RSA PRIVATE KEY').
+        width         (int): Maximum line width before newline.
+        encryption    (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+        passphrase  (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+        iv          (bytes): (Optional) IV to use for CBC encryption.
+        use_rfc_4716 (bool): Use RFC4716 (SSH2) formatting rather than RFC1421 (PEM).
 
     Returns:
         bytes: PEM-encoded bytes.
@@ -146,4 +147,12 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=Non
         additional_headers = f'Proc-Type: 4,ENCRYPTED\nDEK-Info: {encryption},{cbc.iv.hex().upper().decode()}\n\n'
 
     data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
-    return f"-----BEGIN {marker}-----\n{additional_headers}".encode('utf-8') + data + f"\n-----END {marker}-----".encode('utf-8')
+
+    if use_rfc_4716:
+        begin_delim = '---- '
+        end_delim = ' ----'
+    else:
+        begin_delim = '-----'
+        end_delim = '-----'
+
+    return f"{begin_delim}BEGIN {marker}{end_delim}\n{additional_headers}".encode('utf-8') + data + f"\n{begin_delim}END {marker}{end_delim}".encode('utf-8')

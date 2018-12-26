@@ -221,35 +221,6 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
     return oid_bytes
 
 
-# TODO: Add decryption support
-def parse_openssh(header: bytes, ssh_bytes: bytes) -> list:
-    """
-    Parses OpenSSH-like formats, including SSH2.
-
-    Parameters:
-        header    (bytes): Header that denotes the beginning of sequences (e.g. b'ssh-rsa').
-        ssh_bytes (bytes): The bytes to parse.
-    
-    Returns:
-        list: List of parsed Bytes.
-    """
-    from samson.utilities.bytes import Bytes
-    ssh_bytes = ssh_bytes[ssh_bytes.index(header) - 4:]
-    ctr = 0
-    key_parts = []
-
-    while len(ssh_bytes) - ctr > 4:
-        length_spec_end = ctr + 4
-        section_length = Bytes(ssh_bytes[ctr:length_spec_end]).int()
-        key_parts.append(Bytes(ssh_bytes[length_spec_end:length_spec_end + section_length]))
-        ctr += 4 + section_length
-
-    if header in key_parts[-1]:
-        private_parts = parse_openssh(header, key_parts[-1])
-        key_parts = key_parts[:-1] + private_parts
-
-    return key_parts
-
 
 def int_to_poly(integer: int) -> Poly:
     """

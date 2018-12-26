@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
-from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve
+from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
 from samson.hashes.sha2 import SHA512
 from samson.encoding.pem import pem_decode, pem_encode
 
@@ -11,16 +11,16 @@ from samson.encoding.openssh.kdf_params import KDFParams
 
 import base64
 
-def bit(h,i):
-  return (h[i//8] >> (i%8)) & 1
 
-# https://ed25519.cr.yp.to/python/ed25519.py
+# Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
+# Fit to RFC8032 (https://tools.ietf.org/html/rfc8032#appendix-A)
+# and against OpenSSH_7.8p1
 class EdDSA(DSA):
     """
     Edwards Curve Digitial Signature Algorithm
     """
 
-    def __init__(self, curve: TwistedEdwardsCurve=EdwardsCurve25519, hash_obj: object=SHA512(), d: int=None, A: TwistedEdwardsPoint=None, a: int=None):
+    def __init__(self, curve: TwistedEdwardsCurve=EdwardsCurve25519, hash_obj: object=SHA512(), d: int=None, A: TwistedEdwardsPoint=None, a: int=None, h: bytes=None, clamp: bool=True):
         """
         Parameters:
             curve (TwistedEdwardsCurve): Curve used for calculations.
@@ -28,21 +28,25 @@ class EdDSA(DSA):
             d                     (int): Private key.
             A     (TwistedEdwardsPoint): (Optional) Public point.
             a                     (int): (Optional) Public scalar.
+            h                   (bytes): (Optional) Hashed private key.
+            clamp                (bool): Whether or not to clamp the public scalar.
         """
         self.B = curve.B
         self.curve = curve
         self.d = Bytes.wrap(d or max(1, Bytes.random(hash_obj.digest_size).int()))
         self.H = hash_obj
 
-        self.h = hash_obj.hash(self.d)
+        self.h = h or hash_obj.hash(self.d)
 
-        self.a = a or 2**(curve.n) | sum(2**i * bit(self.h, i) for i in range(curve.c, curve.n))
+        a = a or self.h[:self.curve.b // 8].int()
+        self.a = curve.clamp_to_curve(a, True) if clamp else a
+
         self.A = A or self.B * self.a
 
 
 
     def __repr__(self):
-        return f"<EdDSA: d={self.d}, A={self.A}, curve={self.curve}, H={self.H}>"
+        return f"<EdDSA: d={self.d}, a={self.a}, A={self.A}, curve={self.curve}, H={self.H}>"
 
     def __str__(self):
         return self.__repr__()
@@ -158,18 +162,18 @@ class EdDSA(DSA):
                     decryptor = header.generate_decryptor(passphrase)
 
                 priv, _left_over = EdDSAPrivateKey.unpack(left_over, decryptor)
-                a, d = priv.a, priv.d
+                a, h = priv.a, priv.h
 
             else:
                 if buffer.split(b' ')[0][:len(ssh_header)] == ssh_header:
                     buffer = base64.b64decode(buffer.split(b' ')[1])
 
                 pub, _ = EdDSAPublicKey.unpack(buffer, already_unpacked=True)
-                a, d = pub.a, 0
+                a, h = pub.a, 0
         else:
             raise ValueError("Unable to parse provided EdDSA key.")
 
-        eddsa = EdDSA(curve=EdwardsCurve25519, d=d, a=a)
+        eddsa = EdDSA(curve=EdwardsCurve25519, h=h, a=a, d=0, clamp=False)
 
         return eddsa
 
@@ -208,7 +212,7 @@ class EdDSA(DSA):
                 'private_key',
                 check_bytes=None,
                 a=self.a,
-                d=self.d,
+                h=self.h,
                 host=b'nohost@localhost'
             )
 
@@ -221,7 +225,7 @@ class EdDSA(DSA):
                 encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
-        
+
         return encoded
 
 
@@ -237,20 +241,24 @@ class EdDSA(DSA):
         Returns:
             bytes: Encoding of EdDSA instance.
         """
+        use_rfc_4716 = False
+
         if encoding == 'OpenSSH':
             public_key = EdDSAPublicKey('public_key', self.a)
             encoded = b'ssh-ed25519 ' + base64.b64encode(EdDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
             default_pem = False
-        
+
         elif encoding == 'SSH2':
             public_key = EdDSAPublicKey('public_key', self.a)
             encoded = EdDSAPublicKey.pack(public_key)[4:]
             default_marker = 'SSH2 PUBLIC KEY'
             default_pem = True
+            use_rfc_4716 = True
+            
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
-            encoded = pem_encode(encoded, marker or default_marker)
+            encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
 
         return encoded

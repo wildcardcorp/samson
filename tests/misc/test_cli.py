@@ -29,5 +29,4 @@ class CLITestCase(unittest.TestCase):
             if pki_name in PKI_PARAMS:
                 params += [f"--args={PKI_PARAMS[pki_name]}"]
 
-            if pki_name != 'eddsa':
-                check_output(["samson", "pki", "generate", *params])
+            check_output(["samson", "pki", "generate", *params])

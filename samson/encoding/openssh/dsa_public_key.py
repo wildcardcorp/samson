@@ -59,7 +59,7 @@ class DSAPublicKey(object):
             (DSAPublicKey, bytes): The decoded object and unused bytes.
         """
         encoded_bytes = Bytes.wrap(encoded_bytes)
-        
+
         if already_unpacked:
             params, encoded_bytes = encoded_bytes, None
         else:
@@ -73,5 +73,5 @@ class DSAPublicKey(object):
 
         if already_unpacked:
             encoded_bytes = params
-            
+
         return DSAPublicKey('public_key', p=p.int(), q=q.int(), g=g.int(), y=y.int()), encoded_bytes

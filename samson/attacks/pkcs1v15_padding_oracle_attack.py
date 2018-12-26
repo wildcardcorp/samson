@@ -1,4 +1,4 @@
-from samson.utilities.encoding import int_to_bytes
+from samson.encoding.general import int_to_bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.bytes import Bytes
 from random import randint

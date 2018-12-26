@@ -3,7 +3,7 @@ from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
-from samson.utilities.encoding import export_der, bytes_to_der_sequence, parse_openssh
+from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.encoding.pem import pem_encode, pem_decode
 
 from samson.encoding.openssh.ecdsa_private_key import ECDSAPrivateKey
@@ -310,6 +310,8 @@ class ECDSA(DSA):
         curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
         x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
+        use_rfc_4716 = False
+
         if encoding == 'PKCS8':
             curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
             encoded = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
@@ -321,16 +323,18 @@ class ECDSA(DSA):
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
             encoded = b'ecdsa-sha2-' + curve + b' ' + base64.b64encode(ECDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
             default_pem = False
-        
+
         elif encoding == 'SSH2':
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
             encoded = ECDSAPublicKey.pack(public_key)[4:]
             default_marker = 'SSH2 PUBLIC KEY'
             default_pem = True
+            use_rfc_4716 = True
+            
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
-            encoded = pem_encode(encoded, marker or default_marker)
+            encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
 
         return encoded

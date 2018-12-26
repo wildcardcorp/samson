@@ -1,8 +1,6 @@
 from samson.encoding.openssh.packed_bytes import PackedBytes
 from samson.encoding.openssh.literal import Literal
 from samson.encoding.openssh.kdf_params import KDFParams
-from samson.encoding.openssh.rsa_public_key import RSAPublicKey
-from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.utilities.bytes import Bytes
 from types import FunctionType
 
@@ -112,13 +110,13 @@ class OpenSSHPrivateHeader(object):
         for item in SPEC:
             val, encoded_bytes = item.unpack(encoded_bytes)
             vals[item.name] = val
-        
+
         vals['num_keys'] = vals['num_keys'].int()
 
         return OpenSSHPrivateHeader(**vals), encoded_bytes
 
 
-    
+
     def generate_encryptor(self, passphrase: bytes) -> (FunctionType, int):
         """
         Generates an encryptor based on the KDF parameters and `passphrase`.

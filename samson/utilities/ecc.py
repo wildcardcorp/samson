@@ -190,6 +190,9 @@ class Curve448(MontgomeryCurve):
         return MontgomeryPoint(x, self)
 
 
+def bit(h,i):
+  return (h[i//8] >> (i%8)) & 1
+
 
 # https://ed25519.cr.yp.to/python/ed25519.py
 # https://tools.ietf.org/html/rfc8032
@@ -237,6 +240,26 @@ class TwistedEdwardsCurve(object):
 
     def __eq__(self, other) -> bool:
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
+
+
+
+    def clamp_to_curve(self, x: int, swap_bit_order: bool=True) -> int:
+        from samson.utilities.manipulation import get_blocks
+        """
+        Coerces `x` to a valid x-coordinate on the curve.
+
+        Parameters:
+            x               (int): `x` value to coerce.
+            swap_bit_order (bool): Whether or not to swap the bit order before processing.
+
+        Returns:
+            int: Valid x-coordinate.
+        """
+        as_bits = bin(x)[2:].zfill(self.b)
+        if swap_bit_order:
+            as_bits = ''.join([block[::-1] for block in get_blocks(as_bits, 8)])
+
+        return 2**(self.n) | sum(2**i * int((as_bits)[i]) for i in range(self.c, self.n))
 
 
 

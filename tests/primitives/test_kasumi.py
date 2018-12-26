@@ -1,6 +1,6 @@
 from samson.block_ciphers.kasumi import KASUMI
 from samson.utilities.bytes import Bytes
-from samson.utilities.encoding import int_to_bytes
+from samson.encoding.general import int_to_bytes
 import unittest
 
 

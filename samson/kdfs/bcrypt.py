@@ -1,6 +1,6 @@
 from samson.block_ciphers.blowfish import Blowfish
 from samson.block_ciphers.modes.ecb import ECB
-from samson.utilities.encoding import bcrypt_b64_encode
+from samson.encoding.general import bcrypt_b64_encode
 from samson.utilities.bytes import Bytes
 
 CONSTANT = b"OrpheanBeholderScryDoubt"
