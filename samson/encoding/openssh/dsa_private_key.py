@@ -1,6 +1,6 @@
 from samson.encoding.openssh.packed_bytes import PackedBytes
 from samson.encoding.openssh.literal import Literal
-from samson.encoding.openssh.private_key import PrivateKey
+from samson.encoding.openssh.general import check_decrypt
 from samson.padding.incremental_padding import IncrementalPadding
 from samson.utilities.bytes import Bytes
 from types import FunctionType
@@ -84,7 +84,7 @@ class DSAPrivateKey(object):
         else:
             params, encoded_bytes = PackedBytes('private_key').unpack(encoded_bytes)
 
-        check_bytes, params = PrivateKey.check_decrypt(params, decryptor)
+        check_bytes, params = check_decrypt(params, decryptor)
 
         _header, params = PackedBytes('dsa-header').unpack(params)
         p, params = PackedBytes('p').unpack(params)

@@ -5,3 +5,4 @@ samson_crypto.egg-info/
 dist/
 build/
 doc/_build
+scripts/performance/last_run*

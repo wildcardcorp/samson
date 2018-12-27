@@ -3,14 +3,9 @@ from samson.public_key.dsa import DSA
 from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
 from samson.hashes.sha2 import SHA512
 from samson.encoding.pem import pem_decode, pem_encode
-
 from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
 from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
-from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
-from samson.encoding.openssh.kdf_params import KDFParams
-
-import base64
-
+from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
 # Fit to RFC8032 (https://tools.ietf.org/html/rfc8032#appendix-A)
@@ -152,23 +147,11 @@ class EdDSA(DSA):
         ssh_header = b'ssh-ed25519'
 
         if ssh_header in buffer:
-            # SSH private key?
-            if b'openssh-key-v1' in buffer:
-                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
-                pub, left_over = EdDSAPublicKey.unpack(left_over)
+            priv, pub = parse_openssh_key(buffer, ssh_header, EdDSAPublicKey, EdDSAPrivateKey, passphrase)
 
-                decryptor = None
-                if passphrase:
-                    decryptor = header.generate_decryptor(passphrase)
-
-                priv, _left_over = EdDSAPrivateKey.unpack(left_over, decryptor)
+            if priv:
                 a, h = priv.a, priv.h
-
             else:
-                if buffer.split(b' ')[0][:len(ssh_header)] == ssh_header:
-                    buffer = base64.b64decode(buffer.split(b' ')[1])
-
-                pub, _ = EdDSAPublicKey.unpack(buffer, already_unpacked=True)
                 a, h = pub.a, 0
         else:
             raise ValueError("Unable to parse provided EdDSA key.")
@@ -194,19 +177,6 @@ class EdDSA(DSA):
             bytes: Bytes-encoded EdDSA instance.
         """
         if encoding.upper() == 'OpenSSH'.upper():
-            if encryption:
-                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
-            else:
-                kdf_params = KDFParams('kdf_params', b'', b'')
-
-            header = OpenSSHPrivateHeader(
-                header=OpenSSHPrivateHeader.MAGIC_HEADER,
-                encryption=encryption or b'none',
-                kdf=b'bcrypt' if encryption else b'none',
-                kdf_params=kdf_params,
-                num_keys=1
-            )
-
             public_key = EdDSAPublicKey('public_key', self.a)
             private_key = EdDSAPrivateKey(
                 'private_key',
@@ -216,13 +186,7 @@ class EdDSA(DSA):
                 host=b'nohost@localhost'
             )
 
-            encryptor, padding_size = None, 8
-            if passphrase:
-                encryptor, padding_size = header.generate_encryptor(passphrase)
-
-            packed_key = header.pack() + EdDSAPublicKey.pack(public_key) + EdDSAPrivateKey.pack(private_key, encryptor, padding_size)
-            if encode_pem:
-                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -243,20 +207,8 @@ class EdDSA(DSA):
         """
         use_rfc_4716 = False
 
-        if encoding == 'OpenSSH':
-            public_key = EdDSAPublicKey('public_key', self.a)
-            encoded = b'ssh-ed25519 ' + base64.b64encode(EdDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
-            default_pem = False
-
-        elif encoding == 'SSH2':
-            public_key = EdDSAPublicKey('public_key', self.a)
-            encoded = EdDSAPublicKey.pack(public_key)[4:]
-            default_marker = 'SSH2 PUBLIC KEY'
-            default_pem = True
-            use_rfc_4716 = True
-            
-        else:
-            raise ValueError(f'Unsupported encoding "{encoding}"')
+        public_key = EdDSAPublicKey('public_key', self.a)
+        encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-ed25519', public_key)
 
         if (encode_pem is None and default_pem) or encode_pem:
             encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)

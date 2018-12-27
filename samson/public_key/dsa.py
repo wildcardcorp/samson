@@ -4,14 +4,12 @@ from samson.encoding.general import export_der, bytes_to_der_sequence
 
 from samson.encoding.openssh.dsa_private_key import DSAPrivateKey
 from samson.encoding.openssh.dsa_public_key import DSAPublicKey
-from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
-from samson.encoding.openssh.kdf_params import KDFParams
+from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 
 from samson.encoding.pem import pem_encode, pem_decode
 from samson.hashes.sha2 import SHA256
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence
-import base64
 import math
 
 class DSA(object):
@@ -145,23 +143,11 @@ class DSA(object):
         ssh_header = b'ssh-dss'
 
         if ssh_header in buffer:
-            # SSH private key?
-            if b'openssh-key-v1' in buffer:
-                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
-                pub, left_over = DSAPublicKey.unpack(left_over)
+            priv, pub = parse_openssh_key(buffer, ssh_header, DSAPublicKey, DSAPrivateKey, passphrase)
 
-                decryptor = None
-                if passphrase:
-                    decryptor = header.generate_decryptor(passphrase)
-
-                priv, _left_over = DSAPrivateKey.unpack(left_over, decryptor)
+            if priv:
                 p, q, g, y, x = priv.p, priv.q, priv.g, priv.y, priv.x
-
             else:
-                if buffer.split(b' ')[0] == ssh_header:
-                    buffer = base64.b64decode(buffer.split(b' ')[1])
-
-                pub, _ = DSAPublicKey.unpack(buffer, already_unpacked=True)
                 p, q, g, y, x = pub.p, pub.q, pub.g, pub.y, 0
 
         else:
@@ -208,19 +194,6 @@ class DSA(object):
                 encoded = pem_encode(encoded, marker or 'DSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding.upper() == 'OpenSSH'.upper():
-            if encryption:
-                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
-            else:
-                kdf_params = KDFParams('kdf_params', b'', b'')
-
-            header = OpenSSHPrivateHeader(
-                header=OpenSSHPrivateHeader.MAGIC_HEADER,
-                encryption=encryption or b'none',
-                kdf=b'bcrypt' if encryption else b'none',
-                kdf_params=kdf_params,
-                num_keys=1
-            )
-
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
             private_key = DSAPrivateKey(
                 'private_key',
@@ -233,13 +206,7 @@ class DSA(object):
                 host=b'nohost@localhost'
             )
 
-            encryptor, padding_size = None, 8
-            if passphrase:
-                encryptor, padding_size = header.generate_encryptor(passphrase)
-
-            packed_key = header.pack() + DSAPublicKey.pack(public_key) + DSAPrivateKey.pack(private_key, encryptor, padding_size)
-            if encode_pem:
-                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -281,20 +248,24 @@ class DSA(object):
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        elif encoding == 'OpenSSH':
-            public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            encoded = b'ssh-dss ' + base64.b64encode(DSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
-            default_pem = False
-
-        elif encoding == 'SSH2':
-            public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            encoded = DSAPublicKey.pack(public_key)[4:]
-            default_marker = 'SSH2 PUBLIC KEY'
-            default_pem = True
-            use_rfc_4716 = True
-            
         else:
-            raise ValueError(f'Unsupported encoding "{encoding}"')
+            public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-dss', public_key)
+
+        # elif encoding == 'OpenSSH':
+        #     public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
+        #     encoded = b'ssh-dss ' + base64.b64encode(DSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
+        #     default_pem = False
+
+        # elif encoding == 'SSH2':
+        #     public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
+        #     encoded = DSAPublicKey.pack(public_key)[4:]
+        #     default_marker = 'SSH2 PUBLIC KEY'
+        #     default_pem = True
+        #     use_rfc_4716 = True
+
+        # else:
+        #     raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
             encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)

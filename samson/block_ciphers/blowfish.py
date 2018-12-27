@@ -282,7 +282,6 @@ class Blowfish(object):
                 self.S[i][j +1] = R
 
 
-
     def enc_L_R(self, L: int, R: int) -> (int, int):
         """
         Internal function. Used to encrypt integers directly.

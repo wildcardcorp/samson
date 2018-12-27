@@ -14,6 +14,8 @@ X   UMAC
 X   Timing attack miniframework
 ?   Stateless block cipher shuffling
 X   Pluggable reporting backends (tqdm, logging, etc)
+X   Differential power analysis
+X   Flush+Reload key recovery
 
 X   Code reorganization
 X   Commenting/convenience functions/use internal classes
@@ -34,21 +36,13 @@ X   Nostradamus attack
 
 0.2.0
 ===============
-X   Abstract certificate importing to genericized function
-    X   Clean up encoding.openssh (public and private overlap)
-    X   Clean up public key import functions
-    X   Clean up public key export functions
-
-
-X   Add better PKI encoding support to the CLI
-
 X   Ensure ECC point mul is correct
 X   SHA512/t
 
 X   More PRNG cracking (SAT)
 
 X   Performance improvements
-    X   Build reproducible performance test
+    OK  Build reproducible performance test
     X   Profile code for hotspots
 
 X   Reporting backends (tqdm)

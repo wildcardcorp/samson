@@ -3,14 +3,12 @@ from samson.encoding.general import export_der, bytes_to_der_sequence
 
 from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.rsa_public_key import RSAPublicKey
-from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
-from samson.encoding.openssh.kdf_params import KDFParams
+from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 
 from samson.encoding.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes
-import base64
 import math
 import random
 
@@ -129,19 +127,6 @@ class RSA(object):
                 encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding.upper() == 'OpenSSH'.upper():
-            if encryption:
-                kdf_params = KDFParams('kdf_params', iv or Bytes.random(16), 16)
-            else:
-                kdf_params = KDFParams('kdf_params', b'', b'')
-
-            header = OpenSSHPrivateHeader(
-                header=OpenSSHPrivateHeader.MAGIC_HEADER,
-                encryption=encryption or b'none',
-                kdf=b'bcrypt' if encryption else b'none',
-                kdf_params=kdf_params,
-                num_keys=1
-            )
-
             public_key = RSAPublicKey('public_key', self.n, self.e)
             private_key = RSAPrivateKey(
                 'private_key',
@@ -155,13 +140,7 @@ class RSA(object):
                 host=b'nohost@localhost'
             )
 
-            encryptor, padding_size = None, 8
-            if passphrase:
-                encryptor, padding_size = header.generate_encryptor(passphrase)
-
-            packed_key = header.pack() + RSAPublicKey.pack(public_key) + RSAPrivateKey.pack(private_key, encryptor, padding_size)
-            if encode_pem:
-                encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -205,20 +184,10 @@ class RSA(object):
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        elif encoding == 'OpenSSH':
-            public_key = RSAPublicKey('public_key', self.n, self.e)
-            encoded = b'ssh-rsa ' + base64.b64encode(RSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
-            default_pem = False
-
-        elif encoding == 'SSH2':
-            public_key = RSAPublicKey('public_key', self.n, self.e)
-            encoded = RSAPublicKey.pack(public_key)[4:]
-            default_marker = 'SSH2 PUBLIC KEY'
-            default_pem = True
-            use_rfc_4716 = True
-
         else:
-            raise ValueError(f'Unsupported encoding "{encoding}"')
+            public_key = RSAPublicKey('public_key', self.n, self.e)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-rsa', public_key)
+
 
         if (encode_pem is None and default_pem) or encode_pem:
             encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
@@ -239,30 +208,17 @@ class RSA(object):
         Returns:
             RSA: RSA instance.
         """
-
         if buffer.startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
         ssh_header = b'ssh-rsa'
 
         if ssh_header in buffer:
-            # SSH private key?
-            if OpenSSHPrivateHeader.MAGIC_HEADER in buffer:
-                header, left_over = OpenSSHPrivateHeader.unpack(buffer)
-                pub, left_over = RSAPublicKey.unpack(left_over)
+            priv, pub = parse_openssh_key(buffer, ssh_header, RSAPublicKey, RSAPrivateKey, passphrase)
 
-                decryptor = None
-                if passphrase:
-                    decryptor = header.generate_decryptor(passphrase)
-
-                priv, _left_over = RSAPrivateKey.unpack(left_over, decryptor)
+            if priv:
                 n, e, p, q = priv.n, priv.e, priv.p, priv.q
-
             else:
-                if buffer.split(b' ')[0] == ssh_header:
-                    buffer = base64.b64decode(buffer.split(b' ')[1])
-
-                pub, _ = RSAPublicKey.unpack(buffer, already_unpacked=True)
                 n, e, p, q = pub.n, pub.e, 2, 3
 
             rsa = RSA(2, p=p, q=q, e=e)

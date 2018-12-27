@@ -5,3 +5,4 @@ from .ecc import *
 from .general import *
 from .manipulation import *
 from .math import *
+from .runtime import GLOBAL_CFG

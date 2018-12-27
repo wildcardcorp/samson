@@ -13,6 +13,8 @@ PKI_PARAMS = {
     'ecdsa': 'curve=nistp192'
 }
 
+ENCODING_PARAMS = [[], ['--encoding=OpenSSH'], ['--encoding=pkcs8'], ['--pub'], ['--pub', '--encoding=ssh2']]
+
 class CLITestCase(unittest.TestCase):
     def test_hashes(self):
         for hash_name in HASHES:
@@ -29,4 +31,8 @@ class CLITestCase(unittest.TestCase):
             if pki_name in PKI_PARAMS:
                 params += [f"--args={PKI_PARAMS[pki_name]}"]
 
-            check_output(["samson", "pki", "generate", *params])
+            for encoding in ENCODING_PARAMS:
+                if pki_name == 'eddsa' and len(encoding) == 1 and 'pkcs8' in encoding[0]:
+                    continue
+
+                check_output(["samson", "pki", "generate", *params] + encoding)
