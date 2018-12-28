@@ -1,5 +1,6 @@
 from samson.utilities.manipulation import xor_buffs
 from samson.analyzers.analyzer import Analyzer
+from samson.utilities.runtime import RUNTIME
 
 import logging
 log = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class XORDictionaryAttack(object):
         self.wordlist = wordlist
 
 
+    @RUNTIME.report
     def execute(self, ciphertexts: list, word_ranges: list=[2,3], delimiter: str=' ') -> list:
         """
         Executes the attack.
@@ -55,7 +57,7 @@ class XORDictionaryAttack(object):
         last_num_processed = 0
         results = []
 
-        for j in word_ranges:
+        for j in RUNTIME.report_progress(word_ranges):
             log.debug(f"Starting word range {j}")
 
             for i in range(j - last_num_processed):

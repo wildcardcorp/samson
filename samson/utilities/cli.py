@@ -10,8 +10,9 @@ from fastecdsa.curve import *
 init_printing()
 
 import logging
-logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.WARNING)
+logging.getLogger().setLevel(logging.WARNING)
 logging.getLogger("samson").setLevel(logging.DEBUG)
+logger = logging.getLogger("samson.repl")
 """
 
 LOGO = """

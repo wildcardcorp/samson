@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
+from samson.utilities.runtime import RUNTIME
 import struct
 
 import logging
@@ -32,6 +33,7 @@ class CBCPaddingOracleAttack(object):
         self.block_size = block_size
 
 
+    @RUNTIME.report
     def execute(self, ciphertext: bytes) -> Bytes:
         """
         Executes the attack.
@@ -47,7 +49,7 @@ class CBCPaddingOracleAttack(object):
 
         plaintexts = []
 
-        for i, block in enumerate(reversed_blocks):
+        for i, block in enumerate(RUNTIME.report_progress(reversed_blocks, unit='blocks')):
             log.debug("Starting iteration {}".format(i))
             plaintext = Bytes(b'')
 
@@ -56,7 +58,7 @@ class CBCPaddingOracleAttack(object):
             else:
                 preceding_block = reversed_blocks[i + 1]
 
-            for _ in range(len(block)):
+            for _ in RUNTIME.report_progress(range(len(block)), unit='bytes'):
                 last_working_char = None
 
                 for possible_char in range(256):

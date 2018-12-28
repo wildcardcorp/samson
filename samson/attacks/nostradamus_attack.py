@@ -1,6 +1,7 @@
 from copy import deepcopy
 from types import FunctionType
 from samson.utilities.bytes import Bytes
+from samson.utilities.runtime import RUNTIME
 
 import logging
 log = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class NostradamusAttack(object):
 
 
 
+    @RUNTIME.report
     def _generate_tree(self):
         """
         Builds a binary hash tree of colliding, intermediary Merkle-Damgard construction states.
@@ -68,7 +70,7 @@ class NostradamusAttack(object):
             solution_tree.append([])
 
 
-        for i in range(self.k):
+        for i in RUNTIME.report_progress(range(self.k)):
             for (p1, p2) in tree[i]:
                 p1_suffix, p2_suffix, intermediary_collision = self.collision_func(p1, p2)
                 solution_tree[i].append((p1, p2, p1_suffix, p2_suffix, intermediary_collision))

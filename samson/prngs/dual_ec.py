@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.math import tonelli, mod_inv
+from samson.utilities.runtime import RUNTIME
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
 import random
@@ -63,8 +64,9 @@ class DualEC(object):
         return P, Q, d
 
 
-    @staticmethod
-    def derive_from_backdoor(P: Point, Q: Point, d: int, observed_out: bytes) -> list:
+    @classmethod
+    @RUNTIME.report
+    def derive_from_backdoor(cls: object, P: Point, Q: Point, d: int, observed_out: bytes) -> list:
         """
         Recovers the internal state of a Dual EC generator and builds a replica.
 
@@ -77,7 +79,6 @@ class DualEC(object):
         Returns:
             list: List of possible internal states.
         """
-
         assert len(observed_out) >= 30
 
         curve = P.curve
@@ -87,7 +88,7 @@ class DualEC(object):
 
         possible_states = []
 
-        for i in range(2**16):
+        for i in RUNTIME.report_progress(range(2**16), desc='Statespace searched', unit='states'):
             test_r1 = int.to_bytes(i, 2, 'big') + r1
             test_x = int.from_bytes(test_r1, 'big')
             try:

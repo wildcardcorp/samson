@@ -13,7 +13,8 @@ requires = [
     "fastecdsa",
     "sympy",
     "pyasn1",
-    "ipython"
+    "ipython",
+    "tqdm"
 ]
 
 tests_require = [

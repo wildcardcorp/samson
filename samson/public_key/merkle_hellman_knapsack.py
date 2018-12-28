@@ -1,6 +1,7 @@
 
 from samson.utilities.math import mod_inv, lll, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
+from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix, eye
 
 
@@ -91,8 +92,9 @@ class MerkleHellmanKnapsack(object):
         return plaintext
 
 
-    @staticmethod
-    def recover_plaintext(ciphertext: int, pub: list, alpha: int=1) -> Bytes:
+    @classmethod
+    @RUNTIME.report
+    def recover_plaintext(cls: object, ciphertext: int, pub: list, alpha: int=1) -> Bytes:
         """
         Attempts to recover the plaintext without the private key.
 
@@ -108,7 +110,7 @@ class MerkleHellmanKnapsack(object):
         pub_matrix = ident.col_join(Matrix([pub]))
         problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]]).T)
 
-        for i in range(len(pub)):
+        for i in RUNTIME.report_progress(range(len(pub)), desc='Alphaspace searched'):
             alpha_penalizer = Matrix([alpha] * len(pub) + [-alpha * i]).T
             problem_matrix_prime = problem_matrix.col_join(alpha_penalizer).T
             matrices = [problem_matrix_prime.row(row) for row in range(problem_matrix_prime.rows)]

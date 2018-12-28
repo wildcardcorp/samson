@@ -1,4 +1,5 @@
 from samson.utilities.math import gcd, mod_inv, lll, is_power_of_two
+from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
 from sympy import isprime
 from sympy.ntheory import factorint
@@ -103,8 +104,9 @@ class LCG(object):
     # Reference: https://github.com/mariuslp/PCG_attack
     # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
     # ^^ "Reconstructing Truncated Integer Variables Satisfying Linear Congruences"
-    @staticmethod
-    def crack_truncated(outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int):
+    @classmethod
+    @RUNTIME.report
+    def crack_truncated(cls: object, outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int):
         """
         Given a decent number of truncated states (about 200 when there's only 3-bit outputs), returns a replica LCG.
 
@@ -132,7 +134,7 @@ class LCG(object):
 
 
             # Bruteforce low bits
-            for z in range(2 ** trunc_amount):
+            for z in RUNTIME.report_progress(range(2 ** trunc_amount), desc='Seedspace searched', unit='seeds'):
                 x_0 = (outputs[0] << trunc_amount) + z
                 x_1 = (seed_diffs[0] + x_0) % modulus
                 computed_c = (x_1 - multiplier * x_0) % modulus

@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.public_key.rsa import RSA
+from samson.utilities.runtime import RUNTIME
 import math
 
 import logging
@@ -33,6 +34,7 @@ class MangersAttack(object):
         return self.oracle.check_padding(Bytes((c * f_e) % N))
 
 
+    @RUNTIME.report
     def execute(self, ciphertext: bytes) -> Bytes:
         """
         Executes Manger's attack.
@@ -86,6 +88,11 @@ class MangersAttack(object):
 
         log.info("Starting step 3")
         log.debug(f"B-(diff * f2) = {B - (diff * f2)}")
+
+        # Reporting
+        last_log_diff = math.log(diff, 2)
+        progress = RUNTIME.report_progress(None, total=last_log_diff)
+
         while diff > 0:
             if ctr % 100 == 0:
                 log.debug(f"Iteration {ctr} difference: {diff}")
@@ -105,7 +112,14 @@ class MangersAttack(object):
             else:
                 m_max = iNB // f3
 
+
             diff = m_max - m_min
+
+            # Update progress
+            log_diff = math.log(diff + 1, 2)
+            progress.update(last_log_diff - log_diff)
+            last_log_diff = log_diff
+
             ctr += 1
 
 

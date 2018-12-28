@@ -1,6 +1,7 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import right_rotate, get_blocks
+import math
 
 # https://en.wikipedia.org/wiki/SHA-2
 H_256 = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
@@ -208,11 +209,18 @@ class SHA384(SHA2):
 
 
 class SHA512(SHA2):
-    def __init__(self, h: list=None):
+    def __init__(self, h: list=None, trunc: int=None):
         """
         Parameters:
-            h (list): Initial state as list of integers.
+            h    (list): Initial state as list of integers.
+            trunc (int): Truncation length for SHA-512/t.
         """
+        # FIPS 180-4
+        if trunc:
+            h = h or H_512
+            h_doubleprime = [h ^ 0xa5a5a5a5a5a5a5a5 for h in H_512]
+            h = [chunk.int() for chunk in SHA512(h=h_doubleprime).hash(f'SHA-512/{trunc}'.encode('utf-8')).chunk(8)]
+
         super().__init__(
             initial_state=h or H_512,
             digest_size=512 // 8,
@@ -222,3 +230,19 @@ class SHA512(SHA2):
             rot=ROT_512,
             k=K_512
         )
+
+        self.trunc = trunc or 0
+
+
+    def hash(self, message: bytes) -> Bytes:
+        """
+        Yields the final, hashed state of the `message`.
+
+        Parameters:
+            message (bytes): Message to be hashed.
+        
+        Returns:
+            Bytes: Fully-hashed state.
+        """
+        final_state = super().hash(message)
+        return final_state[:math.ceil((self.trunc or 512) / 8)]

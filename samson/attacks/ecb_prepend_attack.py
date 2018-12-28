@@ -1,6 +1,7 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
+from samson.utilities.runtime import RUNTIME
 import struct
 
 import logging
@@ -27,6 +28,7 @@ class ECBPrependAttack(object):
         self.oracle = oracle
 
 
+    @RUNTIME.report
     def execute(self) -> Bytes:
         """
         Executes the attack.
@@ -41,11 +43,11 @@ class ECBPrependAttack(object):
         block_size = self.oracle.find_block_size()
 
         plaintexts = []
-        for curr_block in range(baseline // block_size):
+        for curr_block in RUNTIME.report_progress(range(baseline // block_size), unit='blocks'):
             log.debug("Starting iteration {}".format(curr_block))
 
             plaintext = b''
-            for curr_byte in range(block_size):
+            for curr_byte in RUNTIME.report_progress(range(block_size), unit='bytes'):
                 if curr_block == 0:
                     payload = ('A' * (block_size - (curr_byte + 1))).encode()
                 else:

@@ -1,9 +1,12 @@
 from samson.utilities.analysis import generate_rc4_bias_map, RC4_BIAS_MAP
 from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.utilities.runtime import RUNTIME
 from samson.utilities.bytes import Bytes
 import multiprocessing
 import itertools
 import struct
+import math
+import gc
 
 import logging
 log = logging.getLogger(__name__)
@@ -39,16 +42,18 @@ class RC4PrependAttack(object):
 
 
     def _encrypt_chunk(self, payload: bytes, chunk_size: int):
-        return [self.oracle.encrypt(payload) for _ in range(chunk_size)]
+        return [bytearray(self.oracle.encrypt(payload)) for _ in range(chunk_size)]
 
 
-    def execute(self, secret_length: int, sample_size: int=2**23) -> Bytes:
+    @RUNTIME.report
+    def execute(self, secret_length: int, sample_size: int=2**23, chunk_size: int=2**19) -> Bytes:
         """
         Executes the attack.
 
         Parameters:
             secret_length (int): The length of the secret you're trying to recover.
             sample_size   (int): The amount of samples to collect per byte of the secret. Higher numbers are slower but more accurate.
+            chunk_size    (int): The size of sample chunks per CPU before a forceful garbage collection saves the day.
         
         Returns:
             Bytes: The recovered plaintext.
@@ -57,9 +62,9 @@ class RC4PrependAttack(object):
         cpu_count = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cpu_count)
 
-        log.debug("Running with {} cores".format(cpu_count))
+        log.info(f"Running with {cpu_count} cores")
 
-        for i in range(secret_length):
+        for i in RUNTIME.report_progress(range(secret_length), unit='bytes'):
             log.debug("Starting iteration {}/{}".format(i + 1, secret_length))
 
             if len(cracked_indices[i]) > 0:
@@ -70,11 +75,14 @@ class RC4PrependAttack(object):
             active_biases = [bias for bias in applicable_biases if padding_len + secret_length > bias]
 
             payload = b'\x00' * padding_len
-            chunk_size = sample_size // cpu_count
+            num_chunks = math.ceil(sample_size / chunk_size)
 
-            log.debug("Sampling {} ciphertexts".format(sample_size))
-            random_ciphertexts = [pool.apply_async(self._encrypt_chunk, (payload, chunk_size)) for i in range(cpu_count)]
-            flattened_list = [result for result_list in random_ciphertexts for result in result_list.get()]
+            log.debug(f"Sampling {sample_size} ciphertexts")
+            flattened_list = []
+            for i in range(math.ceil(num_chunks / cpu_count)):
+                random_ciphertexts = [pool.apply_async(self._encrypt_chunk, (payload, chunk_size)) for i in range(min(num_chunks - (i*cpu_count), cpu_count))]
+                flattened_list.extend([result for result_list in random_ciphertexts for result in result_list.get()])
+                gc.collect()
 
             log.debug("Generating bias map")
             bias_map = generate_rc4_bias_map(flattened_list)

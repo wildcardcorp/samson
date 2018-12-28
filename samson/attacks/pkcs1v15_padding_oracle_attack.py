@@ -1,7 +1,9 @@
 from samson.encoding.general import int_to_bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.bytes import Bytes
+from samson.utilities.runtime import RUNTIME
 from random import randint
+import math
 
 import logging
 log = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ class PKCS1v15PaddingOracleAttack(object):
 
 
 
+    @RUNTIME.report
     def execute(self, ciphertext: int, n: int, e: int, key_length: int) -> Bytes:
         """
         Executes the attack.
@@ -80,10 +83,19 @@ class PKCS1v15PaddingOracleAttack(object):
                     log.debug("Padding is now correct; blinding complete")
                     break
 
+        # Setup reporting
+        last_log_diff = math.log(M[0][1] - M[0][0], 2)
+        progress = RUNTIME.report_progress(None, total=last_log_diff)
+
         # Step 2
         while True:
             log.debug("Starting iteration {}".format(i))
             log.debug("Current intervals: {}".format(M))
+
+            diff = math.log(sum([interval[1] - interval[0] for interval in M]) + 1, 2)
+            progress.update(last_log_diff - diff)
+            last_log_diff = diff
+
             # Step 2.a
             if i == 1:
                 s = _ceil(n, 3*B)

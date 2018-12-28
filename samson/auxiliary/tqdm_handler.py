@@ -1,5 +1,5 @@
 import logging
-from tqdm import tqdm, trange
+from tqdm import tqdm
 
 class TqdmHandler(logging.StreamHandler):
     def emit(self, record):

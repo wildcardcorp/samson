@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.analyzers.analyzer import Analyzer
+from samson.utilities.runtime import RUNTIME
 import struct
 
 import logging
@@ -28,6 +29,7 @@ class XORTranspositionAttack(object):
         self.analyzer = analyzer
 
 
+    @RUNTIME.report
     def execute(self, ciphertexts: list, iterations: int=3) -> list:
         """
         Executes the attack.
@@ -49,7 +51,7 @@ class XORTranspositionAttack(object):
 
         # Transposition analysis first (transposition)
         transposed_plaintexts = []
-        for cipher in transposed_ciphers:
+        for cipher in RUNTIME.report_progress(transposed_ciphers, desc='Transposition analysis', unit='ciphers'):
             all_chars = {}
             for char in range(256):
                 plaintext = Bytes(struct.pack('B', char)).stretch(len(cipher)) ^ cipher
@@ -64,11 +66,11 @@ class XORTranspositionAttack(object):
         log.debug("Starting full-text analysis on retransposed text")
 
         # Clean up with a character-by-character, higher-context analysis (retransposed)
-        for j in range(iterations):
+        for j in RUNTIME.report_progress(range(iterations), desc='Higher-context analysis'):
             log.debug("Starting iteration {}/{}".format(j + 1, iterations))
             differential_mask = bytearray()
 
-            for i in range(min_size):
+            for i in RUNTIME.report_progress(range(min_size), desc='Building differential mask', unit='bytes'):
                 all_chars = {}
 
                 for char in range(256):

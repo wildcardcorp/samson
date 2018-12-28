@@ -63,6 +63,12 @@ class Bytes(bytearray):
         return self.__repr__()
 
 
+    def __deepcopy__(self, memo):
+        result = Bytes(bytes_like=bytearray(self), byteorder=self.byteorder)
+        memo[id(self)] = result
+        return result
+
+
     # Operators
     def __xor__(self, other):
         if type(other) is int:
