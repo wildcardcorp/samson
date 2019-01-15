@@ -42,6 +42,7 @@ class XORTranspositionTestCase(unittest.TestCase):
         self.assertLessEqual(avg_distance, 2)
 
 
+    # Here just for reference. No reason to test against two stream ciphers.
     # def test_rc4_attack(self):
     #     self.try_encryptor(encrypt_rc4)
 

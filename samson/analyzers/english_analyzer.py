@@ -2,10 +2,8 @@ from samson.analyzers.analyzer import Analyzer
 from samson.utilities.analysis import chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
-from samson.utilities.bytes import Bytes
 from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS, CHAR_FREQ
 from collections import Counter
-from itertools import repeat
 import string
 import re
 
@@ -15,8 +13,6 @@ WORDLIST        = {word.decode().strip(): 0 for word in CRACKLIB_WORDLIST}
 DELIMITER_REGEX = re.compile(b'[?.,! ]')
 
 MOST_COMMON_BIGRAMS = {k.lower():v for k,v in MOST_COMMON_BIGRAMS.items()}
-MOST_COMMON_BIGRAMS_KEYS = [k for k,v in MOST_COMMON_BIGRAMS.items()]
-
 
 def _num_common_first_letters(words):
     return sum([FIRST_LETTER_FREQUENCIES[bytes([word[0]])] for word in words if len(word) > 0 and bytes([word[0]]) in FIRST_LETTER_FREQUENCIES]) / len(words)
@@ -58,13 +54,11 @@ class EnglishAnalyzer(Analyzer):
         first_letter_freq   = processed_dict['first_letter_freq']
         found_words         = processed_dict['found_words']
         delimited_words     = processed_dict['delimited_words']
-        monogram_chisquared = processed_dict['monogram_chisquared']
-        # bigram_chisquared   = processed_dict['bigram_chisquared']
         bigram_score        = processed_dict['bigram_score']
 
         word_score = sum([len(word) ** (3.5 + (bytes(word, 'utf-8') in delimited_words) * 1) for word in found_words])
 
-        return (word_freq * 2 + 1) * (((alphabet_ratio + 0.6) ** 9) * 60) * ((ascii_ratio + 0.3) ** 5) * (common_words + 1) * (first_letter_freq + 1) * (word_score + 1) * (1 / (monogram_chisquared ** 5) * 10) * (bigram_score * 25) # (1 / (bigram_chisquared ** 5) * 0.01) *
+        return (word_freq * 2 + 1) * (((alphabet_ratio + 0.6) ** 9) * 60) * ((ascii_ratio + 0.3) ** 5) * (common_words + 1) * (first_letter_freq + 1) * (word_score + 1) * (bigram_score * 25)
 
 
 
@@ -91,8 +85,6 @@ class EnglishAnalyzer(Analyzer):
         ascii_ratio    = sum([1 for char in bytes_lower if char in ASCII_RANGE]) / byte_len
 
         bigram_score   = weighted_token_ratio(bytes_lower, MOST_COMMON_BIGRAMS, byte_len)
-
-        #bigrams           = dict(map(key_count, repeat(bytes_lower), MOST_COMMON_BIGRAMS_KEYS))
         first_letter_freq = _num_common_first_letters(delimited_words)
 
         found_words  = TOKENIZE([bytes_lower.decode('latin-1')])
@@ -100,9 +92,7 @@ class EnglishAnalyzer(Analyzer):
 
         # We divide it by the `length*2` to normalize it since I empirically found that the chisquared of
         # a uniform distribution of `length` bytes tends towards it.
-        len_times_two = (byte_len * 2)
-        monogram_chisquared = chisquare(Counter(in_bytes), CHAR_FREQ, byte_len) / len_times_two
-        #bigram_chisquared   = chisquare(bigrams, MOST_COMMON_BIGRAMS, len_times_two) / len_times_two
+        monogram_chisquared = chisquare(Counter(in_bytes), CHAR_FREQ, byte_len) / (byte_len * 2)
 
         return_dict = {
             'word_freq': word_freq,
@@ -114,7 +104,6 @@ class EnglishAnalyzer(Analyzer):
             'delimited_words': delimited_words,
             'monogram_chisquared': monogram_chisquared,
             'bigram_score': bigram_score
-            #'bigram_chisquared': bigram_chisquared
         }
 
         if in_ciphers != None:

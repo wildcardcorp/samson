@@ -6,7 +6,7 @@ from types import FunctionType
 
 class GreyWolfOptimizer:
   """
-  Metaheuristic swarm-optmization algorithm.
+  Metaheuristic swarm-optmization algorithm. Operates over real numbers.
 
 >>> bRange = np.matrix([[0, 1],
 ... [-1, 1],

@@ -37,7 +37,7 @@ class ECCTestCase(unittest.TestCase):
         new_point = point * scalar
         self.assertEqual((new_point.x, new_point.y, new_point.curve), (expected_point.x, expected_point.y, expected_point.curve))
 
-    
+
     def test_ed25519_vec0(self):
         point = TwistedEdwardsPoint(x=47994554896164053830959029072481078386599585210356637264868054678660707520716, y=54024386633314616877827082476987868147282925656774767463732970271280810522, curve=EdwardsCurve25519)
         scalar = 1

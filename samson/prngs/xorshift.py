@@ -1,95 +1,20 @@
-from types import FunctionType
-
 # https://en.wikipedia.org/wiki/Xorshift
 
 MASK32 = 0xFFFFFFFF
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
 
-def V32(x):
-    x ^= (x << 13) & MASK32
-    x ^= x >> 17
-    x ^= (x << 5) & MASK32
-
-    return x, x
-
-
-def V64(x):
-    x ^= (x << 13) & MASK64
-    x ^= x >> 7
-    x ^= (x << 17) & MASK64
-
-    return x, x
-
-
-def V128(x):
-    s = x[0]
-    t = x[3]
-    t ^= (t << 11) & MASK64
-    t ^= t >> 8
-
-    x[3] = x[2]
-    x[2] = x[1]
-    x[1] = x[0]
-
-    t ^= s >> 19
-    t ^= s
-    t &= MASK64
-
-    return [t, *x[1:]], t
-
-
-def V116_PLUS(state):
-    s1, s0 = state
-    state[0] = s0
-
-    s1 ^= (s1 << 24) & MASK58
-    state[1] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 41)
-
-    return state, (state[1] + s0) & MASK58
-
-
-
-def V128_PLUS(state):
-    s1, s0 = state
-    state[0] = s0
-
-    s1 ^= (s1 << 23) & MASK64
-    s1 ^= s1 >> 17
-    s1 ^= s0
-    s1 ^= s0 >> 26
-
-    state[1] = s1
-
-    return state, sum(state) & MASK64
-
-
-
-def V1024_STAR(state):
-    p, s = state
-    s0 = s[p]
-
-    p = (p + 1) & 15
-    s1 = s[p]
-
-    s1 ^= (s1 << 31) & MASK64
-    s[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30)
-    return [p, s], (s[p] * 1181783497276652981) & MASK64
-
-
-
-class Xorshift(object):
-    def __init__(self, seed: int, variant: FunctionType=V128_PLUS):
+class Xorshift32(object):
+    def __init__(self, seed: int):
         """
         Parameters:
-            seed       (int): Initial value.
-            variant   (func): Xorshift variant. Function that takes in the current state (may be a list) and returns (new_state, output).
+            seed (int): Initial value.
         """
         self.state = seed
-        self.variant = variant
+
 
     def __repr__(self):
-        return f"<Xorshift: state={self.state}, variant={self.variant}>"
+        return f"<Xorshift32: state={self.state}>"
 
     def __str__(self):
         return self.__repr__()
@@ -102,5 +27,194 @@ class Xorshift(object):
         Returns:
             int: Next psuedorandom output.
         """
-        self.state, result = self.variant(self.state)
-        return result
+        x = self.state
+        x ^= (x << 13) & MASK32
+        x ^= x >> 17
+        x ^= (x << 5) & MASK32
+        self.state = x
+
+        return x
+
+
+
+class Xorshift64(object):
+    def __init__(self, seed: int):
+        """
+        Parameters:
+            seed (int): Initial value.
+        """
+        self.state = seed
+
+
+    def __repr__(self):
+        return f"<Xorshift64: state={self.state}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        x = self.state
+        x ^= (x << 13) & MASK64
+        x ^= x >> 7
+        x ^= (x << 17) & MASK64
+        self.state = x
+
+        return x
+
+
+
+class Xorshift128(object):
+    def __init__(self, seed: tuple):
+        """
+        Parameters:
+            seed (tuple): Initial value.
+        """
+        self.state = seed
+
+
+    def __repr__(self):
+        return f"<Xorshift128: state={self.state}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        x = self.state
+        s = x[0]
+        t = x[3]
+        t ^= (t << 11) & MASK64
+        t ^= t >> 8
+
+        x[3] = x[2]
+        x[2] = x[1]
+        x[1] = x[0]
+
+        t ^= s >> 19
+        t ^= s
+        t &= MASK64
+
+        self.state = [t, *x[1:]]
+
+        return t
+
+
+
+class Xorshift116Plus(object):
+    def __init__(self, seed: tuple):
+        """
+        Parameters:
+            seed (tuple): Initial value.
+        """
+        self.state = seed
+
+
+    def __repr__(self):
+        return f"<Xorshift116Plus: state={self.state}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        state = self.state
+        s1, s0 = state
+        state[0] = s0
+
+        s1 ^= (s1 << 24) & MASK58
+        state[1] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 41)
+
+        return (state[1] + s0) & MASK58
+
+
+
+class Xorshift128Plus(object):
+    def __init__(self, seed: tuple):
+        """
+        Parameters:
+            seed (tuple): Initial value.
+        """
+        self.state = seed
+
+
+    def __repr__(self):
+        return f"<Xorshift128Plus: state={self.state}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        state = self.state
+        s1, s0 = state
+        state[0] = s0
+
+        s1 ^= (s1 << 23) & MASK64
+        s1 ^= s1 >> 17
+        s1 ^= s0
+        s1 ^= s0 >> 26
+
+        state[1] = s1
+
+        return sum(state) & MASK64
+
+
+
+class Xorshift1024Star(object):
+    def __init__(self, seed: tuple):
+        """
+        Parameters:
+            seed (tuple): Initial value.
+        """
+        self.state = seed
+
+
+    def __repr__(self):
+        return f"<Xorshift1024Star: state={self.state}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def generate(self) -> int:
+        """
+        Generates the next psuedorandom output.
+
+        Returns:
+            int: Next psuedorandom output.
+        """
+        p, s = self.state
+        s0 = s[p]
+
+        p = (p + 1) & 15
+        s1 = s[p]
+
+        s1 ^= (s1 << 31) & MASK64
+        s[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30)
+        self.state = [p, s]
+        return (s[p] * 1181783497276652981) & MASK64

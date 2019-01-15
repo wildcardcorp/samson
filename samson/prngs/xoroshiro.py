@@ -1,5 +1,4 @@
 from samson.utilities.manipulation import left_rotate
-from types import FunctionType
 
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
@@ -28,7 +27,7 @@ class Xoroshiro116Plus(Xoroshiro):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def generate(self) -> int:
         """
         Generates the next psuedorandom output.
@@ -53,7 +52,7 @@ class Xoroshiro128Plus(Xoroshiro):
     def __str__(self):
         return self.__repr__()
 
-    
+
     def generate(self) -> int:
         """
         Generates the next psuedorandom output.

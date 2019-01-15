@@ -371,7 +371,7 @@ class TwistedEdwardsPoint(object):
 
             if (scalar >> i) & 1:
                 Q = Q + self
-                
+
         return Q
 
 

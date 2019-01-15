@@ -10,7 +10,7 @@ ENGLISH_VALUES = [b'I\'m rated "R"...this is a warning, ya better void / Poets a
 class EnglishAnalyzerTestCase(unittest.TestCase):
     def setUp(self):
         self.analyzer = EnglishAnalyzer()
-    
+
 
 
     def _check_best_sample(self, expected_val, all_values):
@@ -32,7 +32,7 @@ class EnglishAnalyzerTestCase(unittest.TestCase):
             shuffle(all_values)
 
             self._check_best_sample(english_val, all_values)
-    
+
 
 
     # Tests the analyzer against a set containing a known English string and shuffled versions of it.
@@ -47,7 +47,7 @@ class EnglishAnalyzerTestCase(unittest.TestCase):
 
             self.assertEqual(self.analyzer.select_highest_scores(all_values)[0], english_val)
 
-    
+
 
     # Tests the analyzer against a set containing a known English string and mutated versions of it.
     def test_against_mutation(self):
