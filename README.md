@@ -195,4 +195,4 @@ Samson's primitives aren't the fastest nor were they meant to be. If you're conc
 * Use primitives from a faster library (e.g. pycrypto)
 * Use PyPy instead of CPython
 
-Since samson mostly calls Python, PyPy offers large speed-ups. However, `multiprocessing` doesn't work very well with PyPy. There seems to be a memory leak, and sometimes bytes are unpickled as strings. I recommend against running the RC4 prepend attack with PyPy as it uses `multiprocessing`. Additionally, the latest stable version of PyPy works with Python 3.5 while SHA3 was introduced in 3.6. samson's SHA3 will still work, but the tests will fail.
+Since samson mostly calls Python, PyPy offers large speed-ups. However, the latest stable version of PyPy works with Python 3.5 while SHA3 was introduced in 3.6. samson's SHA3 will still work, but the tests will fail.

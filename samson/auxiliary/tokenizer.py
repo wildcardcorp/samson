@@ -61,11 +61,12 @@ class Tokenizer(object):
                 token = ''
                 last_largest_substring = ''
                 curr_token_chain = self.processed_tokens
+                part_len = len(part)
 
                 # We'll use a while loop, so we have more control over the counter
                 char_counter = 0
 
-                while char_counter < len(part):
+                while char_counter < part_len:
                     char = part[char_counter]
 
                     if char in curr_token_chain:
@@ -75,7 +76,7 @@ class Tokenizer(object):
                         # This is a valid substring, and there's only an end-of-token flag left
                         # OR
                         # This is a valid substring, and we've reached the end of the part
-                        if curr_token_chain == {'$$': None} or ('$$' in curr_token_chain and char_counter + 1 == len(part)):
+                        if curr_token_chain == {'$$': None} or ('$$' in curr_token_chain and char_counter + 1 == part_len):
                             token_handler.handle_token(token)
 
                             token = ''

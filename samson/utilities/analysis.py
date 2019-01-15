@@ -103,7 +103,7 @@ def count_items(items: list) -> dict:
 
 
 
-def chisquare(observed_dict: dict, expected_freq_dict: dict) -> float:
+def chisquare(observed_dict: dict, expected_freq_dict: dict, length_override: int=0) -> float:
     """
     Calculates the Chi-squared score of an `observed_dict` against the `expected_freq_dict`.
 
@@ -114,7 +114,8 @@ def chisquare(observed_dict: dict, expected_freq_dict: dict) -> float:
     Returns:
         float: Chi-squared score.
     """
-    observed_len = sum([v for _k, v in observed_dict.items()])
+    observed_items = observed_dict.items()
+    observed_len = length_override or sum([v for _k, v in observed_items])
     total = 0
     for key, freq_value in expected_freq_dict.items():
         if key in observed_dict:

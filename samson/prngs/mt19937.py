@@ -21,7 +21,7 @@ def temper(y):
 
 # We don't have to include a constant since 32-bit Mersenne Twister doesn't
 # use non-idempotent constants on its right shifts.
-def _untemper_right(y, bits):
+def untemper_right(y, bits):
     # Create a 32-bit mask with `bits` 1s at the beginning.
     # We'll shift this over the iterations to invert the temper.
     mask = (1 << bits) - 1 << 32 - bits
@@ -42,7 +42,7 @@ def _untemper_right(y, bits):
     return y
 
 
-def _untemper_left(y, bits, constant):
+def untemper_left(y, bits, constant):
     int32_mask = 0xFFFFFFFF
     mask = (1 << bits) - 1
     shift_mod = 0
@@ -58,11 +58,11 @@ def _untemper_left(y, bits, constant):
     return y
 
 
-def _untemper(y):
-    y = _untemper_right(y, l)
-    y = _untemper_left(y, t, c)
-    y = _untemper_left(y, s, b)
-    y = _untemper_right(y, u)
+def untemper(y):
+    y = untemper_right(y, l)
+    y = untemper_left(y, t, c)
+    y = untemper_left(y, s, b)
+    y = untemper_right(y, u)
     return y & d
 
 
@@ -144,6 +144,6 @@ class MT19937:
             raise ValueError("`observed_outputs` must contain at least 624 consecutive outputs.")
 
         cloned = MT19937(0)
-        cloned.state = [_untemper(output) for output in observed_outputs][-624:]
+        cloned.state = [untemper(output) for output in observed_outputs][-624:]
 
         return cloned

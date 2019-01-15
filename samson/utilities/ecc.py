@@ -364,14 +364,14 @@ class TwistedEdwardsPoint(object):
             raise NotImplementedError("TwistedEdwardsPoint multiplication is currently only implemented for scalars.")
 
         Q = TwistedEdwardsPoint(0, 1, self.curve)
-        iters = math.ceil(math.log(scalar, 2))
+        iters = math.ceil(math.log(scalar, 2)) if scalar else 0
 
-        for i in range(iters-1, -1, -1):
+        for i in range(iters, -1, -1):
             Q = Q + Q
 
             if (scalar >> i) & 1:
                 Q = Q + self
-
+                
         return Q
 
 

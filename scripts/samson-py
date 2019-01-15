@@ -8,11 +8,20 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
 
 hash_parser = subparsers.add_parser('hash')
+hash_parser.description = f"Available hash types: {', '.join([k for k,v in HASHES.items()])}"
+
 hash_parser.add_argument('type')
 hash_parser.add_argument('text', nargs="?")
 hash_parser.add_argument('--args', nargs="?")
 
 pki_parser = subparsers.add_parser('pki')
+pki_parser.formatter_class = argparse.RawDescriptionHelpFormatter
+pki_parser.description = f"""Available PKI types: {', '.join([k for k,v in PKI.items()])}
+
+Available curves: {', '.join([k for k,v in CURVES.items()])}
+"""
+
+
 pki_parser.add_argument('action')
 pki_parser.add_argument('type')
 pki_parser.add_argument('--args', nargs="?")

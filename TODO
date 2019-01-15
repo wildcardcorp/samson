@@ -36,24 +36,44 @@ X   Nostradamus attack
 
 0.2.0
 ===============
-X   Ensure ECC point mul is correct
-
 X   More PRNG cracking (SAT)
+    OK	Clean up Xorshift/shiro series by subclassing a base
+    X	Add cracking for Xoroshiro/shift series
+    X	Add cracking for LFG
 
 X   Performance improvements
     OK  Build reproducible performance test
     X   Profile code for hotspots
 
+X   Timing attack framework
+    X   Time sync
+    X   Techniques to increase sync resolution from a lower resolution oracle
+
+X   Clean up EnglishAnalyzer
+    OK  Move frequency dists to the wordlist file
+    X	Perform chisquared on bigrams and words
+    X	Switch from relative scale to logistic regression?
+	X   Create corpus to learn from
+
+
+X   Evolutionary algorithm
+    X   Should be highly configurable
 
 
 0.3.0
 ===============
+X   OCB
+    X   OCB1
+    X   OCB2
+        X   Auth tag forgery
+
+    X   OCB3
+
 X   scrypt
 X   EAX
 X   SIV
 X   RC6
 X   OMAC
 X   UMAC
-X   Timing attack framework
 X   Primitive analysis
 X   CAST

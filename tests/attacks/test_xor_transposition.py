@@ -42,8 +42,8 @@ class XORTranspositionTestCase(unittest.TestCase):
         self.assertLessEqual(avg_distance, 2)
 
 
-    def test_rc4_attack(self):
-        self.try_encryptor(encrypt_rc4)
+    # def test_rc4_attack(self):
+    #     self.try_encryptor(encrypt_rc4)
 
 
     def test_ctr_attack(self):
