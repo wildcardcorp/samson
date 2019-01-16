@@ -1,4 +1,5 @@
-from samson.prngs.xorshift import Xorshift32, Xorshift64, Xorshift128, Xorshift128Plus, Xorshift116Plus, Xorshift1024Star
+from samson.prngs.xorshift import Xorshift32, Xorshift64, Xorshift128, Xorshift128Plus, Xorshift116Plus, Xorshift1024Star, MASK58
+from samson.utilities.bytes import Bytes
 import unittest
 
 
@@ -714,6 +715,15 @@ class XorshiftTestCase(unittest.TestCase):
         ]
 
         self._run_test(seed, variant, expected_outputs, modifier)
+    
+
+    def test_crack_116_plus(self):
+        xs = Xorshift116Plus([Bytes.random(8).int() & MASK58, Bytes.random(8).int() & MASK58])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = Xorshift116Plus.crack(out)
+
+        self.assertEqual(xs.state, other_xs.state)
+
 
     # Reference code from: https://github.com/v8/v8/blob/085fed0fb5c3b0136827b5d7c190b4bd1c23a23e/src/base/utils/random-number-generator.h#L102
     # #include <stdio.h>
@@ -756,3 +766,11 @@ class XorshiftTestCase(unittest.TestCase):
 
 
         self._run_test(seed, variant, expected_outputs, modifier)
+
+
+    def test_crack_128_plus(self):
+        xs = Xorshift128Plus([Bytes.random(8).int(), Bytes.random(8).int()])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = Xorshift128Plus.crack(out)
+
+        self.assertEqual(xs.state, other_xs.state)

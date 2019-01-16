@@ -49,6 +49,22 @@ def hamming_distance(bytes1: bytes, bytes2: bytes) -> int:
     return distance
 
 
+def str_hamming_distance(s1: str, s2: str) -> int:
+    """
+    Computes the Hamming distance between two equal-length strings
+
+    Parameters:
+        s1 (str): First string.
+        s2 (str): Second string.
+    
+    Returns:
+        int: Hamming Distance.
+    """
+    if len(s1) != len(s2):
+        raise ValueError("Strings MUST be equal length")
+
+    return sum(letter1 != letter2 for letter1, letter2 in zip(s1, s2))
+
 
 def levenshtein_distance(seq_a: list, seq_b: list) -> int:
     """

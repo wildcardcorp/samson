@@ -26,7 +26,6 @@ class DualEC(object):
     def __repr__(self):
         return f"<DualEC: P={self.P}, Q={self.Q}, t={self.t}>"
 
-
     def __str__(self):
         return self.__repr__()
 

@@ -15,6 +15,8 @@ requires = [
     "pyasn1",
     "ipython",
     "tqdm"
+    "z3",
+    "z3-solver"
 ]
 
 tests_require = [

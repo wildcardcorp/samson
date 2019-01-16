@@ -39,6 +39,15 @@ X   Nostradamus attack
 X   More PRNG cracking (SAT)
     OK	Clean up Xorshift/shiro series by subclassing a base
     X	Add cracking for Xoroshiro/shift series
+        X   Xorshift32
+        X   Xorshift64
+        X   Xorshift128
+        X   Xorshift116Plus
+        OK  Xorshift128Plus
+        X   Xorshift1024Star
+        X   Xoroshiro116Plus
+        X   Xoroshiro128Plus
+
     X	Add cracking for LFG
 
 X   Performance improvements
@@ -55,9 +64,6 @@ X   Clean up EnglishAnalyzer
     X	Switch from relative scale to logistic regression?
 	X   Create corpus to learn from
 
-
-X   Evolutionary algorithm
-    X   Should be highly configurable
 
 
 0.3.0

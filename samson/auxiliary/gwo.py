@@ -42,7 +42,7 @@ class GreyWolfOptimizer:
 
 
     # Randomly initialize all wolves
-    for w in range(self.numWolves):
+    for _ in range(self.numWolves):
       # Initialize wolf and add one to the wolf vector to hold cost
       wolf = np.zeros((1, numParams + 1))
 
@@ -62,8 +62,8 @@ class GreyWolfOptimizer:
       int: Number of iterations ran. (NOTE: Solutions stored in `bestWolves`.)
     """
     numParams = self.wolves.shape[1] - 1
-    min = np.transpose(self.boundaries[:, :1])
-    max = np.transpose(self.boundaries[:, 1:2])
+    min_bound = np.transpose(self.boundaries[:, :1])
+    max_bound = np.transpose(self.boundaries[:, 1:2])
 
     last_top = 0.0
     max_conv_sample = 15
@@ -109,7 +109,7 @@ class GreyWolfOptimizer:
         mean = np.mean(currXs, axis=0)
 
         # Keep within boundaries
-        boundsCheckedWolf = np.minimum(np.maximum(mean, min), max)
+        boundsCheckedWolf = np.minimum(np.maximum(mean, min_bound), max_bound)
         self.wolves[w] = np.array(np.append(boundsCheckedWolf.tolist(), 0))
 
       self.wolves = np.concatenate((self.wolves[3:], topWolvesCost))
