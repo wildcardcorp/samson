@@ -1,5 +1,4 @@
-from z3 import *
-import random
+from samson.prngs.iterative_prng import IterativePRNG
 
 # https://en.wikipedia.org/wiki/Xorshift
 
@@ -7,49 +6,17 @@ MASK32 = 0xFFFFFFFF
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
 
-class Xorshift(object):
-    def generate(self) -> int:
-        """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
-        """
-        s0, s1, result = self.gen_func(*self.state)
-        self.state = [s0, s1]
-        return result
+DEFAULT_SHFT_R = lambda x, n: x >> n
 
 
-    @classmethod
-    def crack(cls, outputs):
-        ostate0, ostate1 = BitVecs('ostate0 ostate1', cls.NATIVE_BITS)
-        sym_state0, sym_state1 = ostate0, ostate1
+class Xorshift32(IterativePRNG):
+    NATIVE_BITS = 32
+    STATE_SIZE  =  1
 
-        solver = Solver()
-        conditions = []
-
-        for output in outputs:
-            sym_state0, sym_state1, calc = cls.gen_func(sym_state0, sym_state1, SHFT_L=lambda x, n: x << n, SHFT_R=LShR)
-
-            condition = Bool('c%d' % int(random.random()))
-            solver.add(Implies(condition, calc == int(output)))
-            conditions += [condition]
-
-        if solver.check(conditions) == sat:
-            model = solver.model()
-            xs = cls([model[ostate0].as_long(), model[ostate1].as_long()])
-            [xs.generate() for _ in outputs]
-            return xs
-        else:
-            raise RuntimeError('Model not satisfiable.')
-
-
-
-class Xorshift32(object):
-    def __init__(self, seed: int):
+    def __init__(self, seed: list):
         """
         Parameters:
-            seed (int): Initial value.
+            seed (list): Initial value.
         """
         self.state = seed
 
@@ -61,28 +28,29 @@ class Xorshift32(object):
         return self.__repr__()
 
 
-    def generate(self) -> int:
+    @staticmethod
+    def gen_func(sym_s0, SHFT_L=lambda x, n: (x << n) & MASK32, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
+        Internal function compatible with Python and symbolic execution.
         """
-        x = self.state
-        x ^= (x << 13) & MASK32
-        x ^= x >> 17
-        x ^= (x << 5) & MASK32
-        self.state = x
+        x = sym_s0
+        x ^= SHFT_L(x, 13)
+        x ^= SHFT_R(x, 17)
+        x ^= SHFT_L(x,  5)
+        sym_s0 = x
 
-        return x
+        return [sym_s0], sym_s0
 
 
 
-class Xorshift64(object):
-    def __init__(self, seed: int):
+class Xorshift64(IterativePRNG):
+    NATIVE_BITS = 64
+    STATE_SIZE  =  1
+
+    def __init__(self, seed: list):
         """
         Parameters:
-            seed (int): Initial value.
+            seed (list): Initial value.
         """
         self.state = seed
 
@@ -94,24 +62,25 @@ class Xorshift64(object):
         return self.__repr__()
 
 
-    def generate(self) -> int:
+    @staticmethod
+    def gen_func(sym_s0, SHFT_L=lambda x, n: (x << n) & MASK64, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
+        Internal function compatible with Python and symbolic execution.
         """
-        x = self.state
-        x ^= (x << 13) & MASK64
-        x ^= x >> 7
-        x ^= (x << 17) & MASK64
-        self.state = x
+        x = sym_s0
+        x ^= SHFT_L(x, 13)
+        x ^= SHFT_R(x,  7)
+        x ^= SHFT_L(x, 17)
+        sym_s0 = x
 
-        return x
+        return [sym_s0], sym_s0
 
 
 
-class Xorshift128(object):
+class Xorshift128(IterativePRNG):
+    NATIVE_BITS = 64
+    STATE_SIZE  =  4
+
     def __init__(self, seed: list):
         """
         Parameters:
@@ -127,35 +96,30 @@ class Xorshift128(object):
         return self.__repr__()
 
 
-    def generate(self) -> int:
+    @staticmethod
+    def gen_func(sym_s0, sym_s1, sym_s2, sym_s3, SHFT_L=lambda x, n: (x << n) & MASK64, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
+        Internal function compatible with Python and symbolic execution.
         """
-        x = self.state
-        s = x[0]
-        t = x[3]
-        t ^= (t << 11) & MASK64
-        t ^= t >> 8
+        s = sym_s0
+        t = sym_s3
+        t ^= SHFT_L(t, 11)
+        t ^= SHFT_R(t,  8)
 
-        x[3] = x[2]
-        x[2] = x[1]
-        x[1] = x[0]
+        sym_s3 = sym_s2
+        sym_s2 = sym_s1
+        sym_s1 = sym_s0
 
-        t ^= s >> 19
+        t ^= SHFT_R(s, 19)
         t ^= s
         t &= MASK64
 
-        self.state = [t, *x[1:]]
-
-        return t
+        return [t, sym_s1, sym_s2, sym_s3], t
 
 
-
-class Xorshift116Plus(Xorshift):
+class Xorshift116Plus(IterativePRNG):
     NATIVE_BITS = 58
+    STATE_SIZE  =  2
 
     def __init__(self, seed: list):
         """
@@ -173,7 +137,7 @@ class Xorshift116Plus(Xorshift):
 
 
     @staticmethod
-    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK58, SHFT_R=lambda x, n: x >> n):
+    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK58, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
         Internal function compatible with Python and symbolic execution.
         """
@@ -182,12 +146,14 @@ class Xorshift116Plus(Xorshift):
         s1 ^= SHFT_L(s1, 24)
         s1 ^= s0 ^ SHFT_R(s1, 11) ^ SHFT_R(s0, 41)
 
-        return s0, s1, (s1 + s0) & MASK58
+        return [s0, s1], (s1 + s0) & MASK58
+
 
 
 # Reference: https://github.com/TACIXAT/XorShift128Plus/blob/master/xs128p.py
-class Xorshift128Plus(Xorshift):
+class Xorshift128Plus(IterativePRNG):
     NATIVE_BITS = 64
+    STATE_SIZE  =  2
 
     def __init__(self, seed: list):
         """
@@ -205,7 +171,7 @@ class Xorshift128Plus(Xorshift):
 
 
     @staticmethod
-    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK64, SHFT_R=lambda x, n: x >> n):
+    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK64, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
         Internal function compatible with Python and symbolic execution.
         """
@@ -219,7 +185,7 @@ class Xorshift128Plus(Xorshift):
         sym_s1 = s1
         calc = (sym_s0 + sym_s1)
 
-        return sym_s0, sym_s1, calc & MASK64
+        return [sym_s0, sym_s1], calc & MASK64
 
 
     def reverse_clock(self) -> int:
@@ -264,7 +230,9 @@ class Xorshift1024Star(object):
         Returns:
             int: Next psuedorandom output.
         """
-        p, s = self.state
+        # p, s = self.state
+        p = self.state[0]
+        s = self.state[1:]
         s0 = s[p]
 
         p = (p + 1) & 15
@@ -272,5 +240,5 @@ class Xorshift1024Star(object):
 
         s1 ^= (s1 << 31) & MASK64
         s[p] = s1 ^ s0 ^ (s1 >> 11) ^ (s0 >> 30)
-        self.state = [p, s]
+        self.state = [p, *s]
         return (s[p] * 1181783497276652981) & MASK64

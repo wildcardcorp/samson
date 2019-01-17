@@ -1,4 +1,5 @@
 from samson.prngs.xorshift import Xorshift32, Xorshift64, Xorshift128, Xorshift128Plus, Xorshift116Plus, Xorshift1024Star, MASK58
+from samson.prngs.iterative_prng import IterativePRNG
 from samson.utilities.bytes import Bytes
 import unittest
 
@@ -65,7 +66,7 @@ class XorshiftTestCase(unittest.TestCase):
     # }
 
     def test_32(self):
-        seed = 123456789
+        seed = [123456789]
 
         modifier = 0
         variant = Xorshift32
@@ -74,8 +75,17 @@ class XorshiftTestCase(unittest.TestCase):
         self._run_test(seed, variant, expected_outputs, modifier)
 
 
+
+    def test_crack_32(self):
+        xs = Xorshift32([Bytes.random(4).int()])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = IterativePRNG.crack(Xorshift32, out)
+
+        self.assertEqual(xs.state, other_xs.state)
+
+
     def test_64(self):
-        seed = 7905265725762493245
+        seed = [7905265725762493245]
 
         modifier = 0
         variant = Xorshift64
@@ -83,6 +93,13 @@ class XorshiftTestCase(unittest.TestCase):
 
         self._run_test(seed, variant, expected_outputs, modifier)
 
+
+    def test_crack_64(self):
+        xs = Xorshift64([Bytes.random(8).int()])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = IterativePRNG.crack(Xorshift64, out)
+
+        self.assertEqual(xs.state, other_xs.state)
 
 
     def test_128(self):
@@ -95,20 +112,35 @@ class XorshiftTestCase(unittest.TestCase):
         self._run_test(seed, variant, expected_outputs, modifier)
 
 
+    def test_crack_128(self):
+        xs = Xorshift128([Bytes.random(8).int() for _ in range(4)])
+        out = [xs.generate() for _ in range(4)]
+        other_xs = IterativePRNG.crack(Xorshift128, out)
+
+        self.assertEqual(xs.state, other_xs.state)
+
 
     # Elixir
     # > :rand.seed(:exs1024s, {123, 123534, 345345})
     # > :rand.export_seed
     # > 1..1000 |> Enum.map(fn _ -> :rand.uniform(18446744073709551616) end) |> IO.inspect(limit: :infinity)
     def test_1024_star(self):
-        seed = (0, [
+        # seed = (0, [
+        #     1777391367797874666, 1964529382746821925, 7996041688159811731,
+        #     16797603918550466679, 13239206057622895956, 2190120427146910527,
+        #     18292739386017762693, 7995684206500985125, 1619687243448614582,
+        #     961993414031414042, 10239938031393579756, 12249841489256032092,
+        #     1457887945073169212, 16031477380367994289, 12526413104181201380,
+        #     16202025130717851397
+        # ])
+        seed = [0,
             1777391367797874666, 1964529382746821925, 7996041688159811731,
             16797603918550466679, 13239206057622895956, 2190120427146910527,
             18292739386017762693, 7995684206500985125, 1619687243448614582,
             961993414031414042, 10239938031393579756, 12249841489256032092,
             1457887945073169212, 16031477380367994289, 12526413104181201380,
             16202025130717851397
-        ])
+        ]
 
         modifier = 1
         variant = Xorshift1024Star
@@ -715,12 +747,12 @@ class XorshiftTestCase(unittest.TestCase):
         ]
 
         self._run_test(seed, variant, expected_outputs, modifier)
-    
+
 
     def test_crack_116_plus(self):
         xs = Xorshift116Plus([Bytes.random(8).int() & MASK58, Bytes.random(8).int() & MASK58])
         out = [xs.generate() for _ in range(3)]
-        other_xs = Xorshift116Plus.crack(out)
+        other_xs = IterativePRNG.crack(Xorshift116Plus, out)
 
         self.assertEqual(xs.state, other_xs.state)
 
@@ -771,6 +803,6 @@ class XorshiftTestCase(unittest.TestCase):
     def test_crack_128_plus(self):
         xs = Xorshift128Plus([Bytes.random(8).int(), Bytes.random(8).int()])
         out = [xs.generate() for _ in range(3)]
-        other_xs = Xorshift128Plus.crack(out)
+        other_xs = IterativePRNG.crack(Xorshift128Plus, out)
 
         self.assertEqual(xs.state, other_xs.state)

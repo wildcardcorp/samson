@@ -1,4 +1,5 @@
 from samson.prngs.mwc1616 import MWC1616
+from samson.utilities.bytes import Bytes
 import unittest
 
 # Test vector manually generated from http://www.helsbreth.org/random/rng_mwc1616.html
@@ -12,3 +13,14 @@ class MWC1616TestCase(unittest.TestCase):
 
         mwc = MWC1616(seed, a=a, b=b)
         self.assertEqual([mwc.generate() for _ in range(len(expected_result))], expected_result)
+
+
+
+    def test_crack(self):
+        mwc = MWC1616([Bytes.random(4).int() for _ in range(2)])
+        out = [mwc.generate() for _ in range(3)]
+
+        other_mwc = MWC1616([0,0])
+        other_mwc = other_mwc.crack(out)
+
+        self.assertEqual(mwc.state, other_mwc.state)

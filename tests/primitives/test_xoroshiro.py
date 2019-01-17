@@ -1,4 +1,6 @@
 from samson.prngs.xoroshiro import Xoroshiro116Plus, Xoroshiro128Plus
+from samson.prngs.iterative_prng import IterativePRNG
+from samson.utilities.bytes import Bytes
 import unittest
 
 class XoroshiroTestCase(unittest.TestCase):
@@ -19,6 +21,12 @@ class XoroshiroTestCase(unittest.TestCase):
         self._run_test(seed, variant, expected_outputs, modifier)
 
 
+    def test_crack_128_plus(self):
+        xs = Xoroshiro128Plus([Bytes.random(8).int() for _ in range(2)])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = IterativePRNG.crack(Xoroshiro128Plus, out)
+
+        self.assertEqual(xs.state, other_xs.state)
 
     # Elixir
     # > :rand.seed(:exrop, {123, 123534, 345345})
@@ -283,3 +291,14 @@ class XoroshiroTestCase(unittest.TestCase):
         ]
 
         self._run_test(seed, variant, expected_outputs, modifier)
+
+
+
+    # NOTE: We don't assert against the state because the 116+ crack doesn't find the actual state
+    # but an equivalent one
+    def test_crack_116_plus(self):
+        xs = Xoroshiro116Plus([Bytes.random(8).int() for _ in range(2)])
+        out = [xs.generate() for _ in range(3)]
+        other_xs = IterativePRNG.crack(Xoroshiro116Plus, out)
+
+        self.assertEqual([xs.generate() for _ in range(10)], [other_xs.generate() for _ in range(10)])

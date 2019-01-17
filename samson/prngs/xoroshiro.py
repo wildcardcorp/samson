@@ -1,26 +1,22 @@
 from samson.utilities.manipulation import left_rotate
+from samson.prngs.xorshift import DEFAULT_SHFT_R
+from samson.prngs.iterative_prng import IterativePRNG
 
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
 
-class Xoroshiro(object):
-    def __init__(self, seed: tuple):
+class Xoroshiro116Plus(IterativePRNG):
+    NATIVE_BITS = 58
+    STATE_SIZE  =  2
+
+    def __init__(self, seed: list):
         """
         Parameters:
-            seed (tuple): Initial value.
+            seed (list): Initial value.
         """
         self.state = seed
 
 
-    def __repr__(self):
-        return f"<Xoroshiro: state={self.state}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
-class Xoroshiro116Plus(Xoroshiro):
     def __repr__(self):
         return f"<Xoroshiro116Plus: state={self.state}>"
 
@@ -28,24 +24,33 @@ class Xoroshiro116Plus(Xoroshiro):
         return self.__repr__()
 
 
-    def generate(self) -> int:
+    @staticmethod
+    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK58, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x, n: left_rotate(x, n, bits=58)) -> (list, int):
         """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
+        Internal function compatible with Python and symbolic execution.
         """
-        s0, s1 = self.state
+        s0, s1 = sym_s0, sym_s1
         result = (s0 + s1) & MASK58
 
         s1 ^= s0
-        self.state[0] = left_rotate(s0, 24, bits=58) ^ s1 ^ ((s1 << 2) & MASK58)
-        self.state[1] = left_rotate(s1, 35, bits=58)
-        return result
+        sym_s0 = RotateLeft(s0, 24) ^ s1 ^ SHFT_L(s1, 2)
+        sym_s1 = RotateLeft(s1, 35)
+        return [sym_s0, sym_s1], result
 
 
 
-class Xoroshiro128Plus(Xoroshiro):
+class Xoroshiro128Plus(IterativePRNG):
+    NATIVE_BITS = 64
+    STATE_SIZE  =  2
+
+    def __init__(self, seed: list):
+        """
+        Parameters:
+            seed (list): Initial value.
+        """
+        self.state = seed
+
+
     def __repr__(self):
         return f"<Xoroshiro128Plus: state={self.state}>"
 
@@ -53,17 +58,15 @@ class Xoroshiro128Plus(Xoroshiro):
         return self.__repr__()
 
 
-    def generate(self) -> int:
+    @staticmethod
+    def gen_func(sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK64, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x, n: left_rotate(x, n, bits=64)) -> (list, int):
         """
-        Generates the next psuedorandom output.
-
-        Returns:
-            int: Next psuedorandom output.
+        Internal function compatible with Python and symbolic execution.
         """
-        s0, s1 = self.state
+        s0, s1 = sym_s0, sym_s1
         result = (s0 + s1) & MASK64
 
         s1 ^= s0
-        self.state[0] = left_rotate(s0, 24, bits=64) ^ s1 ^ ((s1 << 16) & MASK64)
-        self.state[1] = left_rotate(s1, 37, bits=64)
-        return result
+        sym_s0 = RotateLeft(s0, 24) ^ s1 ^ SHFT_L(s1, 16)
+        sym_s1 = RotateLeft(s1, 37)
+        return [sym_s0, sym_s1], result
