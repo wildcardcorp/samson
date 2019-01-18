@@ -6,14 +6,12 @@ X   Argon2
 X   EAX
 X   scrypt
 X   IDEA
-X   SAT solving (probably just an interface)
 X   SEED
 X   CAST
 X   OMAC
 X   UMAC
 X   Timing attack miniframework
 ?   Stateless block cipher shuffling
-X   Pluggable reporting backends (tqdm, logging, etc)
 X   Differential power analysis
 X   Flush+Reload key recovery
 
@@ -36,20 +34,6 @@ X   Nostradamus attack
 
 0.2.0
 ===============
-X   More PRNG cracking (SAT)
-    OK	Clean up Xorshift/shiro series by subclassing a base
-    X	Add cracking for Xoroshiro/shift series
-        OK  Xorshift32
-        OK  Xorshift64
-        OK  Xorshift128
-        OK  Xorshift116Plus
-        OK  Xorshift128Plus
-        X   Xorshift1024Star
-        OK  Xoroshiro116Plus
-        OK  Xoroshiro128Plus
-
-    X	Add cracking for LFG
-
 X   Performance improvements
     OK  Build reproducible performance test
     X   Profile code for hotspots
@@ -60,7 +44,6 @@ X   Timing attack framework
 
 X   Clean up EnglishAnalyzer
     OK  Move frequency dists to the wordlist file
-    X	Perform chisquared on bigrams and words
     X	Switch from relative scale to logistic regression?
 	X   Create corpus to learn from
 

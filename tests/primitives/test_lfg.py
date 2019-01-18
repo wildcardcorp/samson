@@ -40,23 +40,31 @@ class LFGTestCase(unittest.TestCase):
 
 
     def test_crack(self):
-        for _ in range(100):
-            length = next_prime(Bytes.random(2).int() % 1000)
+        for i in range(5000):
+            # Fuzz some variables into existence
+            length = max(next_prime(Bytes.random(2).int() % 1000), 5)
             tap_dist = min(next_prime(length // 2), length-1)
+
             feed = Bytes.random(2).int() % length
             tap = (feed - tap_dist) % length
+            operation = LFG.ADD_OP if i % 2 else LFG.SUB_OP
+            increment = False
+            #increment = not ((i % 4) // 2)
+            #print(i)
 
-            lfg = LFG(state=[Bytes.random(8).int() for _ in range(length)], tap=tap, feed=feed, length=length)
+            # Set up the LFGs
+            lfg = LFG(state=[Bytes.random(8).int() for _ in range(length)], tap=tap, feed=feed, length=length, operation=operation, increment=increment)
 
             num_samples = length + max(1, Bytes.random(1).int() % 50)
 
-            print(tap, feed, length, num_samples)
-
-            cracked_lfg = LFG(state=[0], tap=tap, feed=feed, length=length)
+            cracked_lfg = LFG(state=[0], tap=tap, feed=feed, length=length, operation=operation, increment=increment)
             cracked_lfg.crack([lfg.generate() for _ in range(num_samples)])
-            print(cracked_lfg.tap, cracked_lfg.feed)
 
-            predicted_values = [cracked_lfg.generate() for _ in range(1000)]
-            real_values = [lfg.generate() for _ in range(1000)]
+            # print(lfg)
+            # print(cracked_lfg)
+
+            # Prove they will always be equivalent by generating a number of values greater than twice the LFG length. This guarantees that 1) the entire state has been modified, and 2) the modified state also produces an equivalent modified state.
+            predicted_values = [cracked_lfg.generate() for _ in range(2000)]
+            real_values = [lfg.generate() for _ in range(2000)]
 
             self.assertEqual(predicted_values, real_values)
