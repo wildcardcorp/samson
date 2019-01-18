@@ -1,3 +1,4 @@
+from .genetic_algorithm import GeneticAlgorithm
 from .gwo import GreyWolfOptimizer
 from .hashclash_collider import HashClashCollider
 from .markov_chain_handler import MarkovChainHandler
@@ -8,4 +9,4 @@ from .tokenizer import Tokenizer
 from .viterbi_decoder import ViterbiDecoder
 
 
-__all__ = ["GreyWolfOptimizer", "HashClashCollider", "MarkovChainHandler", "MarkovState", "NaiveMDCollider", "TokenListHandler", "Tokenizer", "ViterbiDecoder"]
+__all__ = ["GeneticAlgorithm", "GreyWolfOptimizer", "HashClashCollider", "MarkovChainHandler", "MarkovState", "NaiveMDCollider", "TokenListHandler", "Tokenizer", "ViterbiDecoder"]

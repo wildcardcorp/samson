@@ -26,7 +26,6 @@ class LFG(object):
         self.operation = operation
         self.increment = increment
         self.shift_mod = -1 + 2 * increment
-        self.inv_shift_mod = -1 + 2 * (not increment)
 
 
     def __repr__(self):
@@ -66,10 +65,9 @@ class LFG(object):
         # We don't need all of the outputs (it can actually cause problems). We just have to synchronize at the end.
         orig_len = len(outputs)
         outputs = outputs[:self.length + num_outputs_to_predict]
-        #outputs = outputs[-self.length + num_outputs_to_predict]
 
-        init_state  = outputs[:self.length][::-1]
-        next_states = outputs[self.length:][::-1]
+        init_state  = outputs[:self.length][::self.shift_mod]
+        next_states = outputs[self.length:][::self.shift_mod]
 
         next_state_len = len(next_states)
 
@@ -79,13 +77,13 @@ class LFG(object):
             guessed_feed = (self.feed + self.shift_mod * i) % self.length
             guessed_tap  = (self.tap  + self.shift_mod * i) % self.length
 
-            simulated_states = [self.operation(self.state[(guessed_feed + self.inv_shift_mod * j) % self.length], self.state[(guessed_tap + self.inv_shift_mod * j) % self.length]) & 0xFFFFFFFFFFFFFFFF for j in range(next_state_len)]
+            simulated_states = [self.operation(self.state[(guessed_feed - self.shift_mod * j) % self.length], self.state[(guessed_tap - self.shift_mod * j) % self.length]) & 0xFFFFFFFFFFFFFFFF for j in range(next_state_len)][::-self.shift_mod]
 
             if simulated_states == next_states:
                 # We've found working tap/feed positions. Run the clock difference to synchronize states.
                 clock_difference = orig_len - len(outputs)
-                self.feed = guessed_feed + self.inv_shift_mod * next_state_len
-                self.tap  = guessed_tap  + self.inv_shift_mod * next_state_len
+                self.feed = guessed_feed - self.shift_mod * next_state_len
+                self.tap  = guessed_tap  - self.shift_mod * next_state_len
 
                 [self.generate() for _ in range(next_state_len + clock_difference)]
                 return

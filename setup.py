@@ -7,14 +7,14 @@ with open(os.path.join(here, 'README.md')) as f:
     README = f.read()
 
 
-# see requirements.txt for requirements
 requires = [
-    "scipy",
+    "scipy", #==1.1.0
+    "numpy==1.15.2",
     "fastecdsa",
     "sympy",
     "pyasn1",
     "ipython",
-    "tqdm"
+    "tqdm",
     "z3",
     "z3-solver"
 ]

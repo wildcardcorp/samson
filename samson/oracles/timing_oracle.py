@@ -11,7 +11,7 @@ class TimingOracle(object):
             request_func (func): Function that takes in bytes.
         """
         self.request_func = request_func
-    
+
 
     def get_timing(self):
         pass

@@ -48,9 +48,7 @@ class LFGTestCase(unittest.TestCase):
             feed = Bytes.random(2).int() % length
             tap = (feed - tap_dist) % length
             operation = LFG.ADD_OP if i % 2 else LFG.SUB_OP
-            increment = False
-            #increment = not ((i % 4) // 2)
-            #print(i)
+            increment = ((i % 4) // 2)
 
             # Set up the LFGs
             lfg = LFG(state=[Bytes.random(8).int() for _ in range(length)], tap=tap, feed=feed, length=length, operation=operation, increment=increment)
@@ -59,9 +57,6 @@ class LFGTestCase(unittest.TestCase):
 
             cracked_lfg = LFG(state=[0], tap=tap, feed=feed, length=length, operation=operation, increment=increment)
             cracked_lfg.crack([lfg.generate() for _ in range(num_samples)])
-
-            # print(lfg)
-            # print(cracked_lfg)
 
             # Prove they will always be equivalent by generating a number of values greater than twice the LFG length. This guarantees that 1) the entire state has been modified, and 2) the modified state also produces an equivalent modified state.
             predicted_values = [cracked_lfg.generate() for _ in range(2000)]

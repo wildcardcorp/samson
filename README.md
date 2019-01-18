@@ -177,10 +177,13 @@ e is 65537 (0x010001)
 
 
 ## Installation
+### **Recommended OS is Fedora and recommended Python implementation is PyPy**
+
 ### RHEL derivatives (tested on Fedora Security Lab 28)
 ```bash
-sudo dnf -y install python3-devel gmp-devel redhat-rpm-config
-pip3 install samson-crypto
+sudo dnf -y install pypy3 pypy3-devel redhat-rpm-config gmp-devel lapack-devel.x86_64 blas-devel.x86_64 gcc-c++
+pypy3 -m ensurepip
+pypy3 -m pip install samson-crypto
 ```
 
 ### Debian derivatives (tested on Kali Linux 2018.4 64-bit)
