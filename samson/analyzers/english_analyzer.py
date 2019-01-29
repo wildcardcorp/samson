@@ -2,14 +2,16 @@ from samson.analyzers.analyzer import Analyzer
 from samson.utilities.analysis import chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
-from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS, CHAR_FREQ
+from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS, CHAR_FREQ, ENGLISH_ONE_GRAMS
 from collections import Counter
 import string
 import re
 
+TOP_50K = [k.encode('utf-8') for k,v in ENGLISH_ONE_GRAMS.items()][:50000]
+
 ASCII_RANGE     = {k:0 for k in [10, 13] + list(range(20, 127))}
 ASCII_LOWER     = {k:0 for k in bytes(string.ascii_lowercase, 'utf-8')}
-WORDLIST        = {word.decode().strip(): 0 for word in CRACKLIB_WORDLIST}
+WORDLIST        = {word.decode().strip(): 0 for word in CRACKLIB_WORDLIST + TOP_50K}
 DELIMITER_REGEX = re.compile(b'[?.,! ]')
 
 MOST_COMMON_BIGRAMS = {k.lower():v for k,v in MOST_COMMON_BIGRAMS.items()}

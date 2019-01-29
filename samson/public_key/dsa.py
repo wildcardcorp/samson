@@ -58,7 +58,7 @@ class DSA(object):
         k = k or max(1, Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q)
         inv_k = mod_inv(k, self.q)
         r = pow(self.g, k, self.p) % self.q
-        s = (inv_k * (self.hash_obj.hash(message) + self.x * r)) % self.q
+        s = (inv_k * (self.hash_obj.hash(message).int() + self.x * r)) % self.q
         return (r, s)
 
 
@@ -76,7 +76,7 @@ class DSA(object):
         """
         (r, s) = sig
         w = mod_inv(s, self.q)
-        u_1 = (self.hash_obj.hash(message) * w) % self.q
+        u_1 = (self.hash_obj.hash(message).int() * w) % self.q
         u_2 = (r * w) % self.q
         v = (pow(self.g, u_1, self.p) * pow(self.y, u_2, self.p) % self.p) % self.q
         return v == r
@@ -102,7 +102,7 @@ class DSA(object):
         assert r_a == r_b
 
         s = (s_a - s_b) % self.q
-        m = (self.hash_obj.hash(msg_a) - self.hash_obj.hash(msg_b)) % self.q
+        m = (self.hash_obj.hash(msg_a).int() - self.hash_obj.hash(msg_b).int()) % self.q
         return mod_inv(s, self.q) * m % self.q
 
 
@@ -121,7 +121,7 @@ class DSA(object):
             int: Derived `x`.
         """
         (r, s) = sig
-        return ((s * k) - self.hash_obj.hash(message)) * mod_inv(r, self.q) % self.q
+        return ((s * k) - self.hash_obj.hash(message).int()) * mod_inv(r, self.q) % self.q
 
 
 

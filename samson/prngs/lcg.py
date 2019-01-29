@@ -158,6 +158,8 @@ class LCG(object):
                     if [predicted_lcg.generate() >> trunc_amount for _ in range(len(outputs_to_predict))] == outputs_to_predict:
                         return predicted_lcg
 
+            raise RuntimeError('Seedspace exhausted')
+
 
 
 

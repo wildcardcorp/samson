@@ -64,3 +64,25 @@ class CBCPaddingOracleTestCase(unittest.TestCase):
 
         print(recovered_plaintext)
         self.assertEqual(base64.b64decode(chosen_plaintext.encode()), recovered_plaintext)
+
+
+
+    def test_paddingattack_batch(self):
+        ciphertext = encrypt_data()
+        assert decrypt_data(ciphertext) == True
+
+        def decrypt_batch(blocks):
+            working_blocks = []
+            for block in blocks:
+                if decrypt_data(block):
+                    working_blocks.append(block)
+
+            return working_blocks[-1]
+
+        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_batch), iv, block_size=block_size, batch_requests=True)
+        recovered_plaintext = attack.execute(bytes(ciphertext))
+
+        recovered_plaintext = padder.unpad(recovered_plaintext)
+
+        print(recovered_plaintext)
+        self.assertEqual(base64.b64decode(chosen_plaintext.encode()), recovered_plaintext)

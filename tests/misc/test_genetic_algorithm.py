@@ -29,7 +29,7 @@ And by opposing end them. To die, to sleep"""
         def crossover_func(parents):
             if Bytes.random(1).int() < 32:
                 crossover_idx = Bytes.random(1).int() % len(hamlet_excerpt)
-                return parents[0].state[:crossover_idx] + parents[1].state[crossover_idx:]
+                ret = parents[0].state[:crossover_idx] + parents[1].state[crossover_idx:]
             else:
                 ret = parents[0].state
             return ret

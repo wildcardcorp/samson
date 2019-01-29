@@ -194,6 +194,23 @@ ZvlicyXNaRi6YZYwy6myBHPkZ3r7jjpF+CrAFZsF17q+mBSRn6swmt9P7Sw=
 
 
 class ECDSATestCase(unittest.TestCase):
+
+    def test_k_derivation(self):
+        ecdsa = ECDSA(P256.G)
+        k = Bytes.random(32).int()
+        msgA = b'my first message'
+        msgB = b'uh oh, two messages?!'
+
+        sigA = ecdsa.sign(msgA, k)
+        sigB = ecdsa.sign(msgB, k)
+
+        found_k = ecdsa.derive_k_from_sigs(msgA, sigA, msgB, sigB)
+        self.assertEqual(found_k, k)
+
+        d = ecdsa.d
+        self.assertEqual(ecdsa.derive_x_from_k(msgA, found_k, sigA), d)
+
+
     def test_import_export_private(self):
         ecdsa = ECDSA.import_key(TEST_PRIV)
         der_bytes = ecdsa.export_private_key()

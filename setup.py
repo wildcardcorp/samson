@@ -8,7 +8,7 @@ with open(os.path.join(here, 'README.md')) as f:
 
 
 requires = [
-    "scipy", #==1.1.0
+    "scipy",
     "numpy==1.15.2",
     "fastecdsa",
     "sympy",

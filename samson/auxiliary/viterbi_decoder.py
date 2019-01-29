@@ -1,5 +1,5 @@
+from samson.auxiliary.english_data import ENGLISH_ONE_GRAMS, ENGLISH_TWO_GRAMS
 from math import log10
-import os
 
 # http://practicalcryptography.com/cryptanalysis/text-characterisation/word-statistics-fitness-measure/
 class ViterbiDecoder(object):
@@ -9,37 +9,24 @@ class ViterbiDecoder(object):
 
     def __init__(self):
         self.Pw = {}
-        with open(os.path.join(os.path.dirname(__file__), 'count_1w.txt'), 'r') as f:
-            for line in f.readlines():
-                key, count = line.split('\t')
-
-                self.Pw[key.upper()] = self.Pw.get(key.upper(), 0) + int(count)
-
         self.N = 1024908267229 ## Number of tokens
 
-
         # Calculate first order log probabilities
-        for key in self.Pw.keys():
-            self.Pw[key] = log10(float(self.Pw[key]) / self.N)
+        for key in ENGLISH_ONE_GRAMS.keys():
+            self.Pw[key.upper()] = log10(float(ENGLISH_ONE_GRAMS[key]) / self.N)
 
 
         # Get second order word model
         self.Pw2 = {}
-        with open(os.path.join(os.path.dirname(__file__), 'count_2w.txt'), 'r') as f:
-            for line in f.readlines():
-                key, count = line.split('\t')
-
-                self.Pw2[key.upper()] = self.Pw2.get(key.upper(), 0) + int(count)
-
 
         # Calculate second order log probabilities
-        for key in self.Pw2.keys():
-            word1, _word2 = key.split()
+        for key in ENGLISH_TWO_GRAMS.keys():
+            word1 = key.split()[0].upper()
 
             if word1 not in self.Pw:
-                self.Pw2[key] = log10(float(self.Pw2[key]) / self.N)
+                self.Pw2[key.upper()] = log10(float(ENGLISH_TWO_GRAMS[key]) / self.N)
             else:
-                self.Pw2[key] = log10(float(self.Pw2[key]) / self.N) - self.Pw[word1]
+                self.Pw2[key.upper()] = log10(float(ENGLISH_TWO_GRAMS[key]) / self.N) - self.Pw[word1]
 
 
         # Precalculate the probabilities we assign to words not in our dict, L is length of word

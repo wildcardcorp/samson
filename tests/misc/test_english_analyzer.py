@@ -1,16 +1,16 @@
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 from samson.utilities.bytes import Bytes
 from samson.utilities.general import shuffle
+from .test_viterbi_decoder import SUPPOSED_ENGLISH
 from copy import deepcopy
 import unittest
 
-ENGLISH_VALUES = [b'I\'m rated "R"...this is a warning, ya better void / Poets are paranoid, DJ\'s D-stroyed', b"Cuz I came back to attack others in spite- / Strike like lightnin', It's quite frightenin'!", b"But don't be afraid in the dark, in a park / Not a scream or a cry, or a bark, more like a spark;", b"Ya tremble like a alcoholic, muscles tighten up / What's that, lighten up! You see a sight but", b'Suddenly you feel like your in a horror flick / You grab your heart then wish for tomorrow quick!', b"Music's the clue, when I come your warned / Apocalypse Now, when I'm done, ya gone!", b"Haven't you ever heard of a MC-murderer? / This is the death penalty,and I'm servin' a", b'Death wish, so come on, step to this / Hysterical idea for a lyrical professionist!', b'Friday the thirteenth, walking down Elm Street / You come in my realm ya get beat!', b'This is off limits, so your visions are blurry / All ya see is the meters at a volume', b"Terror in the styles, never error-files / Indeed I'm known-your exiled!"]
+ENGLISH_VALUES = [b'I\'m rated "R"...this is a warning, ya better void / Poets are paranoid, DJ\'s D-stroyed', b"Cuz I came back to attack others in spite- / Strike like lightnin', It's quite frightenin'!", b"But don't be afraid in the dark, in a park / Not a scream or a cry, or a bark, more like a spark;", b"Ya tremble like a alcoholic, muscles tighten up / What's that, lighten up! You see a sight but", b'Suddenly you feel like your in a horror flick / You grab your heart then wish for tomorrow quick!', b"Music's the clue, when I come your warned / Apocalypse Now, when I'm done, ya gone!", b"Haven't you ever heard of a MC-murderer? / This is the death penalty,and I'm servin' a", b'Death wish, so come on, step to this / Hysterical idea for a lyrical professionist!', b'Friday the thirteenth, walking down Elm Street / You come in my realm ya get beat!', b'This is off limits, so your visions are blurry / All ya see is the meters at a volume', b"Terror in the styles, never error-files / Indeed I'm known-your exiled!"] + [item.encode('utf-8') for item in SUPPOSED_ENGLISH]
 
 
 class EnglishAnalyzerTestCase(unittest.TestCase):
     def setUp(self):
         self.analyzer = EnglishAnalyzer()
-
 
 
     def _check_best_sample(self, expected_val, all_values):

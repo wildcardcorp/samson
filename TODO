@@ -10,47 +10,29 @@ X   SEED
 X   CAST
 X   OMAC
 X   UMAC
-X   Timing attack miniframework
 ?   Stateless block cipher shuffling
 X   Differential power analysis
 X   Flush+Reload key recovery
 
-X   Code reorganization
-X   Commenting/convenience functions/use internal classes
 
 
 CURRENT
 ---------------
-0.1.0
-===============
-X   Nostradamus attack
-    OK  Works with prefixes
-    OK  Works with len(prefixes) not a power of 2
-    X   Implement less naively (?)
-        X   Hashclash wrapper
-    X   Works with MD5
-
-
-
 0.2.0
 ===============
-X   Performance improvements
-    OK  Build reproducible performance test
-    X   Profile code for hotspots
-
 X   Timing attack framework
+    OK  Build TimingOracle
     X   Time sync
     X   Techniques to increase sync resolution from a lower resolution oracle
-
-X   Clean up EnglishAnalyzer
-    OK  Move frequency dists to the wordlist file
-    X	Switch from relative scale to logistic regression?
-	X   Create corpus to learn from
-
 
 
 0.3.0
 ===============
+X   More encoders/decoders
+    X   JWE/JOSE (https://tools.ietf.org/html/rfc7516#section-11.5)
+    X   Fernet
+    X   PASETO
+
 X   OCB
     X   OCB1
     X   OCB2
@@ -58,11 +40,11 @@ X   OCB
 
     X   OCB3
 
-X   scrypt
 X   EAX
 X   SIV
 X   RC6
 X   OMAC
 X   UMAC
+X   scrypt
 X   Primitive analysis
 X   CAST
