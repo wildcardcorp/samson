@@ -9,11 +9,13 @@ from samson.encoding.pem import pem_encode, pem_decode
 from samson.encoding.openssh.ecdsa_private_key import ECDSAPrivateKey
 from samson.encoding.openssh.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.jwk.jwk_ec_encoder import JWKECEncoder
 
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
+from json import JSONDecodeError
 import math
 
 class NamedCurve(ObjectIdentifier):
@@ -41,8 +43,9 @@ SSH_CURVE_NAME_LOOKUP = {
     P521: b'nistp521'
 }
 
-INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
+SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
 
+SSH_PUBLIC_HEADER = b'ecdsa-'
 
 # https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 class ECDSA(DSA):
@@ -139,55 +142,56 @@ class ECDSA(DSA):
         Returns:
             ECDSA: ECDSA instance.
         """
-        if buffer.startswith(b'----'):
-            buffer = pem_decode(buffer, passphrase)
+        try:
+            curve, x, y, d = JWKECEncoder.decode(buffer)
+        except JSONDecodeError as _:
+            if buffer.startswith(b'----'):
+                buffer = pem_decode(buffer, passphrase)
 
-        ssh_header = b'ecdsa-'
+            if SSH_PUBLIC_HEADER in buffer:
+                priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, passphrase)
 
-        if ssh_header in buffer:
-            priv, pub = parse_openssh_key(buffer, ssh_header, ECDSAPublicKey, ECDSAPrivateKey, passphrase)
+                if priv:
+                    curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
+                else:
+                    curve, x_y_bytes, d = pub.curve, pub.x_y_bytes, 1
 
-            if priv:
-                curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
+                curve = SSH_INVERSE_CURVE_LOOKUP[curve.decode()]
             else:
-                curve, x_y_bytes, d = pub.curve, pub.x_y_bytes, 1
+                items = bytes_to_der_sequence(buffer, passphrase)
 
-            curve = INVERSE_CURVE_LOOKUP[curve.decode()]
-        else:
-            items = bytes_to_der_sequence(buffer, passphrase)
-
-            if len(items) == 4 and int(items[0]) == 1:
-                d = Bytes(items[1]).int()
-                curve_idx = 2
-                pub_point_idx = 3
+                if len(items) == 4 and int(items[0]) == 1:
+                    d = Bytes(items[1]).int()
+                    curve_idx = 2
+                    pub_point_idx = 3
 
 
-            # Is it a public key?
-            elif len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1':
-                curve_idx = 0
-                pub_point_idx = 1
-                d = 1
+                # Is it a public key?
+                elif len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1':
+                    curve_idx = 0
+                    pub_point_idx = 1
+                    d = 1
 
-                # Move up OID for convenience
-                items[0] = items[0][1]
+                    # Move up OID for convenience
+                    items[0] = items[0][1]
+                else:
+                    raise ValueError("Unable to parse provided ECDSA key.")
+
+
+                curve_oid = items[curve_idx].asTuple()
+                oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
+                curve = Curve.get_curve_by_oid(oid_bytes)
+
+                x_y_bytes = Bytes(int(items[pub_point_idx]))
+
+
+            # Uncompressed Point
+            if x_y_bytes[0] == 4:
+                x_y_bytes = x_y_bytes[1:]
             else:
-                raise ValueError("Unable to parse provided ECDSA key.")
+                raise NotImplementedError("Support for ECPoint decompression not implemented.")
 
-
-            curve_oid = items[curve_idx].asTuple()
-            oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-            curve = Curve.get_curve_by_oid(oid_bytes)
-
-            x_y_bytes = Bytes(int(items[pub_point_idx]))
-
-
-        # Uncompressed Point
-        if x_y_bytes[0] == 4:
-            x_y_bytes = x_y_bytes[1:]
-        else:
-            raise NotImplementedError("Support for ECPoint decompression not implemented.")
-
-        x, y = x_y_bytes[:len(x_y_bytes) // 2].int(), x_y_bytes[len(x_y_bytes) // 2:].int()
+            x, y = x_y_bytes[:len(x_y_bytes) // 2].int(), x_y_bytes[len(x_y_bytes) // 2:].int()
         Q = Point(x, y, curve)
 
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
@@ -214,7 +218,7 @@ class ECDSA(DSA):
 
         Parameters:
             encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8' and 'OpenSSH'.
+            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'JWK'.
             marker       (str): Marker to use in PEM formatting (if applicable).
             encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
@@ -246,6 +250,9 @@ class ECDSA(DSA):
             )
 
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+
+        elif encoding.upper() == 'JWK':
+            encoded = JWKECEncoder.encode(self, is_private=True)
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -259,7 +266,7 @@ class ECDSA(DSA):
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'SSH2'.
+            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', 'SSH2', and 'JWK'.
             marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
@@ -278,24 +285,16 @@ class ECDSA(DSA):
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        else:
+        elif 'SSH' in encoding:
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
             encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ecdsa-sha2-' + curve, public_key)
+        
+        elif encoding.upper() == 'JWK':
+            encoded = JWKECEncoder.encode(self, is_private=False)
+            default_pem = False
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
 
-        # elif encoding == 'OpenSSH':
-        #     public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-        #     encoded = b'ecdsa-sha2-' + curve + b' ' + base64.b64encode(ECDSAPublicKey.pack(public_key)[4:]) + b' nohost@localhost'
-        #     default_pem = False
-
-        # elif encoding == 'SSH2':
-        #     public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-        #     encoded = ECDSAPublicKey.pack(public_key)[4:]
-        #     default_marker = 'SSH2 PUBLIC KEY'
-        #     default_pem = True
-        #     use_rfc_4716 = True
-
-        # else:
-        #     raise ValueError(f'Unsupported encoding "{encoding}"')
 
         if (encode_pem is None and default_pem) or encode_pem:
             encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)

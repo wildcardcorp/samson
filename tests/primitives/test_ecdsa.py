@@ -192,6 +192,8 @@ ZvlicyXNaRi6YZYwy6myBHPkZ3r7jjpF+CrAFZsF17q+mBSRn6swmt9P7Sw=
 -----END OPENSSH PRIVATE KEY-----""", b'692fe1e040f63bcc')
 
 
+# JWK example from https://tools.ietf.org/html/rfc7517#section-3
+TEST_JWK = '{"kty": "EC", "crv": "P-256", "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"}'
 
 class ECDSATestCase(unittest.TestCase):
 
@@ -329,6 +331,27 @@ class ECDSATestCase(unittest.TestCase):
             self.assertEqual((new_pub_openssh.G, new_pub_openssh.Q), (ecdsa.G, ecdsa.Q))
             self.assertEqual((new_pub_ssh2.G, new_pub_ssh2.Q), (ecdsa.G, ecdsa.Q))
 
+
+    def test_import_jwk(self):
+        ec = ECDSA.import_key(TEST_JWK)
+        jwk = ec.export_public_key(encoding='JWK')
+        self.assertEqual(jwk, TEST_JWK)
+
+    
+    def test_jwk_gauntlet(self):
+        curves = [P192, P224, P256, P384, P521]
+        for _ in range(100):
+            curve = random.choice(curves)
+            ecdsa = ECDSA(curve.G)
+
+            priv        = ecdsa.export_private_key(encoding='JWK')
+            pub_openssh = ecdsa.export_public_key(encoding='JWK')
+
+            new_priv = ECDSA.import_key(priv)
+            new_pub_openssh = ECDSA.import_key(pub_openssh)
+
+            self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
+            self.assertEqual((new_pub_openssh.G, new_pub_openssh.Q), (ecdsa.G, ecdsa.Q))
 
 
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5

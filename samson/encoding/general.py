@@ -11,9 +11,12 @@ import math
 # https://github.com/fwenzel/python-bcrypt
 B64_CHARS = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '+/')).encode('utf-8')
 B64_CHARS_BCRYPT = ''.join(('./', string.ascii_uppercase, string.ascii_lowercase, string.digits)).encode('utf-8')
+B64_CHARS_URL = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '-_')).encode('utf-8')
 
 B64_TO_BCRYPT_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_BCRYPT)
 BCRYPT_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_BCRYPT, B64_CHARS)
+B64_TO_URL_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_URL)
+URL_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_URL, B64_CHARS)
 
 def bcrypt_b64_encode(bytestring: bytes) -> bytes:
     """
@@ -41,6 +44,35 @@ def bcrypt_b64_decode(bytestring: bytes) -> bytes:
     # Handle missing padding
     bytestring = bytestring.translate(BCRYPT_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
     return base64.b64decode(bytestring)
+
+
+def url_b64_encode(bytestring: bytes) -> bytes:
+    """
+    Encodes a bytestring with URL-safe version of base64.
+
+    Parameters:
+        bytestring (bytes): Bytes to encode.
+    
+    Returns:
+        bytes: url-base64 encoded bytestring.
+    """
+    return base64.b64encode(bytestring).translate(B64_TO_URL_TRANSLATION, b'=')
+
+
+def url_b64_decode(bytestring: bytes) -> bytes:
+    """
+    Decodes a bytestring with a URL-safe version of base64.
+
+    Parameters:
+        bytestring (bytes): Bytes to decode.
+    
+    Returns:
+        bytes: url-base64 decoded bytestring.
+    """
+    # Handle missing padding
+    bytestring = bytestring.translate(URL_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
+    return base64.b64decode(bytestring)
+
 
 
 # https://en.wikipedia.org/wiki/Non-adjacent_form

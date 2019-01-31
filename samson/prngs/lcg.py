@@ -169,10 +169,10 @@ class LCG(object):
         Used internally by `crack_truncated`. Uses the LLL algorithm to find seed differentials.
 
         Parameters:
-            outputs            (list): List of truncated-state outputs (in order).
-            multiplier          (int): The LCG's multiplier.
-            increment           (int): The LCG's increment.
-            modulus             (int): The LCG's modulus.
+            outputs   (list): List of truncated-state outputs (in order).
+            multiplier (int): The LCG's multiplier.
+            increment  (int): The LCG's increment.
+            modulus    (int): The LCG's modulus.
         
         Returns:
             Matrix: `sympy` `Matrix` representing seed differentials.

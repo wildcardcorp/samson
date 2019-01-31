@@ -26,12 +26,19 @@ X   Timing attack framework
     X   Techniques to increase sync resolution from a lower resolution oracle
 
 
+X   Document timing attack setup
+
+
 0.3.0
 ===============
-X   More encoders/decoders
-    X   JWE/JOSE (https://tools.ietf.org/html/rfc7516#section-11.5)
+X   More encoders/decoders/cryptosystems
+    X   JWK (https://tools.ietf.org/html/rfc7517#section-3)
+        X   RSA
+        OK  ECDSA
+        
     X   Fernet
     X   PASETO
+
 
 X   OCB
     X   OCB1
@@ -40,9 +47,21 @@ X   OCB
 
     X   OCB3
 
+X   Key wrapping
+    X   https://tools.ietf.org/html/rfc3394.html
+    X   https://tools.ietf.org/html/rfc5649.html
+
+X   OTP
+    X HOTP - https://tools.ietf.org/html/rfc4226.html
+    X TOTP - https://tools.ietf.org/html/rfc6238.html
+
 X   EAX
 X   SIV
 X   RC6
+
+
+0.4.0
+===============
 X   OMAC
 X   UMAC
 X   scrypt

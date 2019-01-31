@@ -61,8 +61,8 @@ class SRPClient(object):
         Performs server challenge.
 
         Parameters:
-            salt  (bytes): Salt from server.
-            B       (int): Server's challenge.
+            salt (bytes): Salt from server.
+            B      (int): Server's challenge.
         
         Returns:
             Bytes: Challenge bytes to send to server.

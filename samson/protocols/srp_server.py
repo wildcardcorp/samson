@@ -36,7 +36,6 @@ class SRPServer(object):
 
 
 
-
     def create_account(self, identity: bytes, password: bytes):
         """
         Creates a new account entry with the server.
@@ -45,7 +44,6 @@ class SRPServer(object):
             identity (bytes): Username.
             password (bytes): Password.
         """
-        # x = self.hash_obj.hash(self.salt + password).int()
         x = self.hash_obj.hash(self.salt + self.hash_obj.hash(identity + b':' + password)).int()
         v = modexp(self.g, x, self.N)
         self.accounts[identity] = v
