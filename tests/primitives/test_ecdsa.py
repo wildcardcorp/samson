@@ -337,21 +337,21 @@ class ECDSATestCase(unittest.TestCase):
         jwk = ec.export_public_key(encoding='JWK')
         self.assertEqual(jwk, TEST_JWK)
 
-    
+
     def test_jwk_gauntlet(self):
         curves = [P192, P224, P256, P384, P521]
         for _ in range(100):
             curve = random.choice(curves)
             ecdsa = ECDSA(curve.G)
 
-            priv        = ecdsa.export_private_key(encoding='JWK')
-            pub_openssh = ecdsa.export_public_key(encoding='JWK')
+            priv = ecdsa.export_private_key(encoding='JWK')
+            pub  = ecdsa.export_public_key(encoding='JWK')
 
             new_priv = ECDSA.import_key(priv)
-            new_pub_openssh = ECDSA.import_key(pub_openssh)
+            new_pub  = ECDSA.import_key(pub)
 
             self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
-            self.assertEqual((new_pub_openssh.G, new_pub_openssh.Q), (ecdsa.G, ecdsa.Q))
+            self.assertEqual((new_pub.G, new_pub.Q), (ecdsa.G, ecdsa.Q))
 
 
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5

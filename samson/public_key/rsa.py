@@ -4,11 +4,13 @@ from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.rsa_public_key import RSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.jwk.jwk_rsa_encoder import JWKRSAEncoder
 
 from samson.encoding.pem import pem_encode, pem_decode
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes
+from json import JSONDecodeError
 import math
 import random
 
@@ -21,9 +23,9 @@ class RSA(object):
         """
         Parameters:
             bits (int): Number of bits for strength and capacity.
-            p (int): Secret prime modulus.
-            q (int): Secret prime modulus.
-            e (int): Public exponent.
+            p    (int): Secret prime modulus.
+            q    (int): Secret prime modulus.
+            e    (int): Public exponent.
         """
         self.e = e
         phi = 0
@@ -60,6 +62,10 @@ class RSA(object):
         self.phi = phi
         self.d = mod_inv(self.e, phi)
         self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
+
+        self.dP = self.d % (self.p-1)
+        self.dQ = self.d % (self.q-1)
+        self.Qi = mod_inv(self.q, self.p)
 
         self.pub = (self.e, self.n)
         self.priv = (self.d, self.n)
@@ -121,7 +127,7 @@ class RSA(object):
             bytes: Bytes-encoded RSA instance.
         """
         if encoding.upper() == 'PKCS8'.upper():
-            encoded = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.d % (self.p-1), self.d % (self.q-1), mod_inv(self.q, self.p)])
+            encoded = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.dP, self.dQ, self.Qi])
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
@@ -141,6 +147,9 @@ class RSA(object):
             )
 
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+
+        elif encoding.upper() == 'JWK':
+            encoded = JWKRSAEncoder.encode(self, is_private=True)
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -163,7 +172,7 @@ class RSA(object):
         """
         use_rfc_4716 = False
 
-        if encoding == 'PKCS8':
+        if encoding.upper() == 'PKCS8':
             seq = Sequence()
             seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
             seq.setComponentByPosition(1, Null())
@@ -184,6 +193,9 @@ class RSA(object):
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
+        elif encoding.upper() == 'JWK':
+            encoded = JWKRSAEncoder.encode(self)
+            default_pem = False
         else:
             public_key = RSAPublicKey('public_key', self.n, self.e)
             encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-rsa', public_key)
@@ -208,45 +220,50 @@ class RSA(object):
         Returns:
             RSA: RSA instance.
         """
-        if buffer.startswith(b'----'):
-            buffer = pem_decode(buffer, passphrase)
-
-        ssh_header = b'ssh-rsa'
-
-        if ssh_header in buffer:
-            priv, pub = parse_openssh_key(buffer, ssh_header, RSAPublicKey, RSAPrivateKey, passphrase)
-
-            if priv:
-                n, e, p, q = priv.n, priv.e, priv.p, priv.q
-            else:
-                n, e, p, q = pub.n, pub.e, 2, 3
-
+        try:
+            n, e, p, q = JWKRSAEncoder.decode(buffer)
             rsa = RSA(2, p=p, q=q, e=e)
             rsa.n = n
-        else:
-            items = bytes_to_der_sequence(buffer)
+        except (JSONDecodeError, UnicodeDecodeError) as _:
+            if buffer.startswith(b'----'):
+                buffer = pem_decode(buffer, passphrase)
 
-            # PKCS#1
-            if len(items) == 9 and int(items[0]) == 0:
-                items = [int(item) for item in items]
-                del items[6:]
-                del items[0]
-                n, e, _d, p, q, = items
-                rsa = RSA(0, p=p, q=q, e=e)
+            ssh_header = b'ssh-rsa'
 
-            elif len(items) == 2:
-                if type(items[1]) is BitString:
-                    if str(items[0][0]) == '1.2.840.113549.1.1.1':
-                        bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
-                        items = list(bitstring_seq)
-                    else:
-                        raise ValueError('Unable to decode RSA key.')
+            if ssh_header in buffer:
+                priv, pub = parse_openssh_key(buffer, ssh_header, RSAPublicKey, RSAPrivateKey, passphrase)
 
-                n, e = [int(item) for item in items]
-                rsa = RSA(2, e=e)
+                if priv:
+                    n, e, p, q = priv.n, priv.e, priv.p, priv.q
+                else:
+                    n, e, p, q = pub.n, pub.e, 2, 3
+
+                rsa = RSA(2, p=p, q=q, e=e)
                 rsa.n = n
             else:
-                raise ValueError("Unable to parse provided RSA key.")
+                items = bytes_to_der_sequence(buffer)
+
+                # PKCS#1
+                if len(items) == 9 and int(items[0]) == 0:
+                    items = [int(item) for item in items]
+                    del items[6:]
+                    del items[0]
+                    n, e, _d, p, q = items
+                    rsa = RSA(0, p=p, q=q, e=e)
+
+                elif len(items) == 2:
+                    if type(items[1]) is BitString:
+                        if str(items[0][0]) == '1.2.840.113549.1.1.1':
+                            bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
+                            items = list(bitstring_seq)
+                        else:
+                            raise ValueError('Unable to decode RSA key.')
+
+                    n, e = [int(item) for item in items]
+                    rsa = RSA(2, e=e)
+                    rsa.n = n
+                else:
+                    raise ValueError("Unable to parse provided RSA key.")
 
         rsa.bits = rsa.n.bit_length()
         return rsa

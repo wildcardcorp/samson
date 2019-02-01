@@ -1,7 +1,6 @@
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
-from types import FunctionType
 
 class SocialistMillionare(object):
     """
@@ -26,18 +25,18 @@ class SocialistMillionare(object):
         # We do this explicitly with None so users can easily set these values to zero :)
         if exp1 is None:
             exp1 = Bytes.random(16).int()
-        
+
         if exp2 is None:
             exp2 = Bytes.random(16).int()
-        
+
         self.exp1 = exp1
         self.exp2 = exp2
-        
+
         self.P_b = None
 
         self.P = None
         self.Q = None
-    
+
 
     def __repr__(self):
         return f"<SocialistMillionare: key={self.key}, h={self.h}, p={self.p}, exp1={self.exp1}, exp2={self.exp2}, validate={self.validate}>"
@@ -55,9 +54,9 @@ class SocialistMillionare(object):
             (int, int): The Diffie-Hellman challenges of the random exponents.
         """
         return pow(self.h, self.exp1, self.p), pow(self.h, self.exp2, self.p)
-    
 
-    def receive_initial_challenge(self, challenge: (int, int), r: int=None)-> (int, int):
+
+    def receive_initial_challenge(self, challenge: (int, int), r: int=None) -> (int, int):
         """
         Receives the Diffie-Hellman challenges and produces the next challenge parameters.
 
@@ -80,7 +79,7 @@ class SocialistMillionare(object):
         self.Q = (pow(self.h, r, self.p) * pow(g, self.key, self.p)) % self.p
 
         return self.P, self.Q
-    
+
 
     def get_final_challenge(self, challenge: (int, int)) -> int:
         """
@@ -98,7 +97,7 @@ class SocialistMillionare(object):
             assert self.Q != Q_b
 
         return pow(Q_b * mod_inv(self.Q, self.p), self.exp2, self.p)
-    
+
 
     def assert_correct(self, c_b: int) -> bool:
         """

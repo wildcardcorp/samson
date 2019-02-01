@@ -5,8 +5,6 @@ X   RC6
 X   Argon2
 X   EAX
 X   scrypt
-X   IDEA
-X   SEED
 X   CAST
 X   OMAC
 X   UMAC
@@ -14,6 +12,11 @@ X   UMAC
 X   Differential power analysis
 X   Flush+Reload key recovery
 
+X   Create cryptosystem object - parses formatted text into a functional cryptosystem
+    X   TLS
+    X   JOSE
+    X   Fernet
+    X   PASETO
 
 
 CURRENT
@@ -32,12 +35,11 @@ X   Document timing attack setup
 0.3.0
 ===============
 X   More encoders/decoders/cryptosystems
-    X   JWK (https://tools.ietf.org/html/rfc7517#section-3)
-        X   RSA
+    OK  JWK (https://tools.ietf.org/html/rfc7517#section-3)
+        OK  RSA
         OK  ECDSA
-        
-    X   Fernet
-    X   PASETO
+
+    X   JWK Encryption (key wrapping)
 
 
 X   OCB
@@ -51,17 +53,14 @@ X   Key wrapping
     X   https://tools.ietf.org/html/rfc3394.html
     X   https://tools.ietf.org/html/rfc5649.html
 
-X   OTP
-    X HOTP - https://tools.ietf.org/html/rfc4226.html
-    X TOTP - https://tools.ietf.org/html/rfc6238.html
-
 X   EAX
 X   SIV
-X   RC6
+X   PMAC
 
 
 0.4.0
 ===============
+X   RC6
 X   OMAC
 X   UMAC
 X   scrypt

@@ -144,7 +144,7 @@ class ECDSA(DSA):
         """
         try:
             curve, x, y, d = JWKECEncoder.decode(buffer)
-        except JSONDecodeError as _:
+        except (JSONDecodeError, UnicodeDecodeError) as _:
             if buffer.startswith(b'----'):
                 buffer = pem_decode(buffer, passphrase)
 
@@ -288,7 +288,7 @@ class ECDSA(DSA):
         elif 'SSH' in encoding:
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
             encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ecdsa-sha2-' + curve, public_key)
-        
+
         elif encoding.upper() == 'JWK':
             encoded = JWKECEncoder.encode(self, is_private=False)
             default_pem = False
