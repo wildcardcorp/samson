@@ -49,13 +49,9 @@ X   OCB
 
     X   OCB3
 
-X   Key wrapping
-    X   https://tools.ietf.org/html/rfc3394.html
-    X   https://tools.ietf.org/html/rfc5649.html
-
 X   EAX
-X   SIV
 X   PMAC
+X   STREAM
 
 
 0.4.0

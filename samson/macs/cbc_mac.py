@@ -7,7 +7,7 @@ class CBCMAC(object):
     Message authentication code scheme based off of a block cipher in CBC mode.
     """
 
-    def __init__(self, key: bytes, cipher: Rijndael, iv: bytes=b'\x00' * 16):
+    def __init__(self, key: bytes, cipher: object=Rijndael, iv: bytes=b'\x00' * 16):
         """
         Parameters:
             key    (bytes): Bytes-like object to key the underlying cipher.
@@ -21,7 +21,6 @@ class CBCMAC(object):
 
     def __repr__(self):
         return f"<CBCMAC: key={self.key}, iv={self.iv}, cipher={self.cipher}>"
-
 
     def __str__(self):
         return self.__repr__()
