@@ -227,8 +227,9 @@ class DSA(object):
             bytes: Encoding of DSA instance.
         """
         use_rfc_4716 = False
+        encoding_upper = encoding.upper()
 
-        if encoding == 'PKCS8':
+        if encoding_upper == 'PKCS8':
             seq_of = SequenceOf()
             seq_of.extend([Integer(self.p), Integer(self.q), Integer(self.g)])
 
@@ -250,7 +251,7 @@ class DSA(object):
 
         else:
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-dss', public_key)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding_upper, b'ssh-dss', public_key)
 
         # elif encoding == 'OpenSSH':
         #     public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)

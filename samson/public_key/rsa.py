@@ -149,7 +149,7 @@ class RSA(object):
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
 
         elif encoding.upper() == 'JWK':
-            encoded = JWKRSAEncoder.encode(self, is_private=True)
+            encoded = JWKRSAEncoder.encode(self, is_private=True).encode('utf-8')
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -194,7 +194,7 @@ class RSA(object):
             default_pem = True
 
         elif encoding.upper() == 'JWK':
-            encoded = JWKRSAEncoder.encode(self)
+            encoded = JWKRSAEncoder.encode(self).encode('utf-8')
             default_pem = False
         else:
             public_key = RSAPublicKey('public_key', self.n, self.e)

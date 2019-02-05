@@ -252,7 +252,7 @@ class ECDSA(DSA):
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
 
         elif encoding.upper() == 'JWK':
-            encoded = JWKECEncoder.encode(self, is_private=True)
+            encoded = JWKECEncoder.encode(self, is_private=True).encode('utf-8')
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -277,20 +277,21 @@ class ECDSA(DSA):
         x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
         use_rfc_4716 = False
+        encoding_upper = encoding.upper()
 
-        if encoding == 'PKCS8':
+        if encoding_upper == 'PKCS8':
             curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
             encoded = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
 
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        elif 'SSH' in encoding:
+        elif 'SSH' in encoding_upper:
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ecdsa-sha2-' + curve, public_key)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding_upper, b'ecdsa-sha2-' + curve, public_key)
 
-        elif encoding.upper() == 'JWK':
-            encoded = JWKECEncoder.encode(self, is_private=False)
+        elif encoding_upper == 'JWK':
+            encoded = JWKECEncoder.encode(self, is_private=False).encode('utf-8')
             default_pem = False
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
