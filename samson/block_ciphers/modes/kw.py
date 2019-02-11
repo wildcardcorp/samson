@@ -40,6 +40,8 @@ class KW(object):
         """
         iv = self.iv
         length = len(plaintext)
+        plaintext = Bytes.wrap(plaintext)
+
         if pad:
             r = ((length) + 7) // 8
             plaintext = plaintext + ((r * 8) - length) * b'\x00'
@@ -75,6 +77,8 @@ class KW(object):
         Returns:
             Bytes: Resulting plaintext.
         """
+        ciphertext = Bytes.wrap(ciphertext)
+        
         A = ciphertext[:8]
         R = ciphertext[8:].chunk(8)
         n = len(R)

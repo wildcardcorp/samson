@@ -33,6 +33,8 @@ class TimingOracle(object):
 
     def get_timing(self, message: object, sample_size: int=1000) -> (float, float):
         """
+        Times running the `request_func` with `message`.
+
         Parameters:
             message  (object): Message to send to oracle function.
             sample_size (int): Number of samples to collect.

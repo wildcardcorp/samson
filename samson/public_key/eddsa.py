@@ -7,6 +7,9 @@ from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
 from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 
+SSH_HEADER = b'ssh-ed25519'
+
+
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
 # Fit to RFC8032 (https://tools.ietf.org/html/rfc8032#appendix-A)
 # and against OpenSSH_7.8p1
@@ -144,10 +147,8 @@ class EdDSA(DSA):
         if buffer.startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
-        ssh_header = b'ssh-ed25519'
-
-        if ssh_header in buffer:
-            priv, pub = parse_openssh_key(buffer, ssh_header, EdDSAPublicKey, EdDSAPrivateKey, passphrase)
+        if SSH_HEADER in buffer:
+            priv, pub = parse_openssh_key(buffer, SSH_HEADER, EdDSAPublicKey, EdDSAPrivateKey, passphrase)
 
             if priv:
                 a, h = priv.a, priv.h
