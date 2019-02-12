@@ -63,6 +63,7 @@ class CBC(object):
     def decrypt(self, ciphertext: bytes, unpad: bool=True) -> Bytes:
         """
         Decrypts `ciphertext`.
+        
         Parameters:
             ciphertext (bytes): Bytes-like object to be decrypted.
             unpad       (bool): Unpads the plaintext with PKCS7.
