@@ -335,7 +335,7 @@ class ECDSATestCase(unittest.TestCase):
     def test_import_jwk(self):
         ec = ECDSA.import_key(TEST_JWK)
         jwk = ec.export_public_key(encoding='JWK')
-        self.assertEqual(jwk, TEST_JWK)
+        self.assertEqual(jwk.decode(), TEST_JWK)
 
 
     def test_jwk_gauntlet(self):

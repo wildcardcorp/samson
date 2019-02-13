@@ -78,7 +78,7 @@ class KW(object):
             Bytes: Resulting plaintext.
         """
         ciphertext = Bytes.wrap(ciphertext)
-        
+
         A = ciphertext[:8]
         R = ciphertext[8:].chunk(8)
         n = len(R)

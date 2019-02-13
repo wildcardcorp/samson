@@ -76,13 +76,10 @@ class XORTranspositionAttack(object):
                 for char in range(256):
                     full_text_analyses = []
 
-                    frames = []
                     for curr_cipher in retransposed_plaintexts:
                         cipher_copy = bytearray([_ for _ in curr_cipher])
                         cipher_copy[i] = ord(Bytes(struct.pack('B', char)) ^ struct.pack('B', curr_cipher[i]))
 
-                        preprocessed_frame = self.analyzer.preprocess(cipher_copy)
-                        frames.append(preprocessed_frame)
                         full_text_analyses.append(self.analyzer.analyze(cipher_copy))
 
                     all_chars[char] = (sum(full_text_analyses), char)

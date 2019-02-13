@@ -1,8 +1,11 @@
-from samson.ace.ace import *
+from samson.ace.ace import Consequence, SymEnc, Plaintext, MAC, Context, Mangers, CBCPOA, IdentityExploit
 import unittest
 
+ID_PT_R = IdentityExploit(Consequence.PLAINTEXT_RECOVERY)
+ID_PT_M = IdentityExploit(Consequence.PLAINTEXT_MANIPULATION)
+
 class ACETestCase(unittest.TestCase):
-    def _run_test(self, setup, first_msg, receive, should_succeed):
+    def _run_test(self, setup, first_msg, receive, expected_exploit_chain, should_succeed):
         ctx = Context()
 
         ctx.execute(setup)
@@ -11,7 +14,8 @@ class ACETestCase(unittest.TestCase):
 
         if should_succeed:
             exploit_chain = ctx.solve()
-            self.assertIsNotNone(exploit_chain)
+            # self.assertIsNotNone(exploit_chain)
+            self.assertEqual(exploit_chain, expected_exploit_chain)
         else:
             with self.assertRaises(Exception):
                 ctx.solve()
@@ -27,9 +31,9 @@ class ACETestCase(unittest.TestCase):
 
         def receive(ctx):
             ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
-        
 
-        self._run_test(setup, first_msg, receive, True)
+
+        self._run_test(setup, first_msg, receive, [ID_PT_R], True)
 
 
 
@@ -48,9 +52,9 @@ class ACETestCase(unittest.TestCase):
             ctx.enc_perms.propagate_requirement_satisfied(Consequence.PLAINTEXT_MANIPULATION)
 
             ctx.goal(ctx.enc_perms, Consequence.PLAINTEXT_RECOVERY)
-        
-        
-        self._run_test(setup, first_msg, receive, False)
+
+
+        self._run_test(setup, first_msg, receive, None, False)
 
 
 
@@ -71,10 +75,10 @@ class ACETestCase(unittest.TestCase):
 
             pt = ctx.sym_enc.decrypt(ctx.enc_perms)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
-        
-        
-        self._run_test(setup, first_msg, receive, True)
-    
+
+
+        self._run_test(setup, first_msg, receive, [CBCPOA(), ID_PT_R], True)
+
 
 
 
@@ -94,9 +98,9 @@ class ACETestCase(unittest.TestCase):
 
             pt = ctx.sym_enc.decrypt(ctx.enc_perms)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
-        
-        
-        self._run_test(setup, first_msg, receive, True)
+
+
+        self._run_test(setup, first_msg, receive, [Mangers(), ID_PT_R], True)
 
 
 
@@ -120,7 +124,7 @@ class ACETestCase(unittest.TestCase):
             ctx.goal(pt, Consequence.PLAINTEXT_MANIPULATION)
 
 
-        self._run_test(setup, first_msg, receive, True)
+        self._run_test(setup, first_msg, receive, [CBCPOA(), Mangers(), ID_PT_M],True)
 
 
 
@@ -144,7 +148,7 @@ class ACETestCase(unittest.TestCase):
             ctx.goal(pt, Consequence.PLAINTEXT_MANIPULATION)
 
 
-        self._run_test(setup, first_msg, receive, True)
+        self._run_test(setup, first_msg, receive, [CBCPOA(), Mangers(), ID_PT_M], True)
 
 
 
@@ -169,7 +173,7 @@ class ACETestCase(unittest.TestCase):
             ctx.goal(pt, Consequence.PLAINTEXT_MANIPULATION)
 
 
-        self._run_test(setup, first_msg, receive, False)
+        self._run_test(setup, first_msg, receive, None, False)
 
 
 
@@ -196,7 +200,7 @@ class ACETestCase(unittest.TestCase):
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
 
-        self._run_test(setup, first_msg, receive, False)
+        self._run_test(setup, first_msg, receive, None, False)
 
 
 
@@ -223,7 +227,8 @@ class ACETestCase(unittest.TestCase):
             pt = ctx.mac.validate(pt)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
-        self._run_test(setup, first_msg, receive, True)
+
+        self._run_test(setup, first_msg, receive, [Mangers(), CBCPOA(), ID_PT_R, ID_PT_R], True)
 
 
 
@@ -249,8 +254,9 @@ class ACETestCase(unittest.TestCase):
             pt = ctx.mac.validate(pt)
             ctx.goal(pt, Consequence.PLAINTEXT_MANIPULATION)
 
-        self._run_test(setup, first_msg, receive, False)
-    
+
+        self._run_test(setup, first_msg, receive, None, False)
+
 
 
     # Here we generate a symmetric key for Rijndael, encrypt the plaintext, and then encrypt the key
@@ -278,7 +284,8 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc('Rijndael', 'CBC', key).decrypt(ctx.enc_perms)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
-        self._run_test(setup, first_msg, receive, True)
+        # Mangers(), 
+        self._run_test(setup, first_msg, receive, [CBCPOA(), ID_PT_R], True)
 
 
 
@@ -307,7 +314,8 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc('Rijndael', 'CBC', key).decrypt(ctx.enc_perms)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
-        self._run_test(setup, first_msg, receive, False)
+
+        self._run_test(setup, first_msg, receive, None, False)
 
 
 
@@ -341,14 +349,14 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc('Rijndael', 'CBC', key).decrypt(pt)
             ctx.goal(key, Consequence.PLAINTEXT_RECOVERY)
 
-        self._run_test(setup, first_msg, receive, True)
+        # Mangers(), 
+        self._run_test(setup, first_msg, receive, [CBCPOA(), ID_PT_R], True)
 
 
 
     # This is basically the same as above, but this time we're asking for the plaintext.
     # This should still work. Even though the MAC is protecting the perms ciphertext,
     # we should be able to perform the key recovery and then the plaintext recovery.
-    # TODO: Make this work. Maybe we need some sort of dependency/pathing system?
     def test_enc_key_and_mac_pt_recovery(self):
         def setup(ctx):
             ctx.asym_enc = SymEnc('RSA', 'OAEP', None)
@@ -378,4 +386,5 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc('Rijndael', 'CBC', key).decrypt(pt)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
-        self._run_test(setup, first_msg, receive, True)
+
+        self._run_test(setup, first_msg, receive, [ID_PT_R, [Mangers(), ID_PT_R], CBCPOA(), ID_PT_R], True)

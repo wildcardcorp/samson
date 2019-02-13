@@ -40,6 +40,7 @@ setup(name='samson-crypto',
       url="https://github.com/wildcardcorp/samson",
       packages=[
           "samson",
+          "samson/ace",
           "samson/analyzers",
           "samson/attacks",
           "samson/auxiliary",

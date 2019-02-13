@@ -1,5 +1,4 @@
 from samson.utilities.runtime import RUNTIME
-from copy import deepcopy
 from enum import Enum
 
 import logging
@@ -53,6 +52,9 @@ class Readable(object):
 
     def __str__(self):
         return self.__repr__()
+    
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 
 class IdentityConstraint(Readable):
@@ -79,7 +81,7 @@ class SymEnc(object):
         self.mode = mode
         self.key = key
 
-    
+
     def __eq__(self, other):
         key = self.key
         if issubclass(type(key), State):
@@ -98,7 +100,7 @@ class SymEnc(object):
 
         if self.alg in CONSTRAINTS:
             all_constraints.extend(CONSTRAINTS[self.alg])
-        
+
         if self.mode in CONSTRAINTS:
             all_constraints.extend(CONSTRAINTS[self.mode])
 
@@ -228,7 +230,7 @@ class Context(object):
 
         while current_state.child != None:
             current_state = current_state.child
-        
+
         # Add an IdentityConstraint to the base state
         constraint = IdentityConstraint()
         constraint.needed_consequence = consequence
@@ -243,8 +245,6 @@ class Context(object):
         exploit_chain = []
 
         while current_state != None:
-            # print(current_state)
-            # print()
             has_exploit = False
 
             for exploit in current_state.exploits:
@@ -259,11 +259,11 @@ class Context(object):
                         if needed_consequences[0] == Consequence.KEY_RECOVERY:
                             log.info('Cannot continue without key. Attempting key recovery.')
                             new_solver = Context()
-                            
+
                             original_key = current_state.owner.key
                             while original_key.parent:
                                 original_key = original_key.parent
-                            
+
                             new_solver.goal(original_key, Consequence.PLAINTEXT_RECOVERY)
                             exploit_chain.append(new_solver.solve())
                             current_state.requirements_satisfied.append(Consequence.KEY_RECOVERY)
@@ -279,10 +279,7 @@ class Context(object):
                 # 1.b) The exploit is not prevented by the constraint AND there does not exist a constraint that prevents any of the exploits requirements
                 # 2  ) The exploit's consequence is not prevented by any other constraint
                 # 3  ) This is not the goal consequence
-
-                if all([requirement in current_state.requirements_satisfied for requirement in exploit.requirements]) and not needed_consequences:# \
-                    # and all([other_constraint.prevents_consequence not in exploit.requirements for other_constraint in current_state.constraints]):
-
+                if all([requirement in current_state.requirements_satisfied for requirement in exploit.requirements]) and not needed_consequences:
                     for constraint in current_state.constraints:
 
                         # See if the attack will work

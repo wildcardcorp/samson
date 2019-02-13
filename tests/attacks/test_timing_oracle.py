@@ -18,7 +18,6 @@ class TimingOracleTestCase(unittest.TestCase):
     def test_hi_res(self):
         oracle = TimingOracle(vulnerable_func, filters=[lambda items: percentile_filter(0.1, items)])
 
-        # args = {'sample_size':2000, 'base_samples':200}
         args = {'sample_size':80000}
         answer = ''
         for _ in tqdm(range(11)):

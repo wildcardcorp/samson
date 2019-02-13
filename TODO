@@ -54,7 +54,10 @@ X   PMAC
 X   STREAM
 
 X   Composable exploits and ACE
-
+    X   RUNTIME primitive property/exploit loading
+    X   RUNTIME programmatic search
+    X   ACE verified against several manual cryptanalysis test vectors
+    X   ACE creates working exploits
 
 
 0.4.0

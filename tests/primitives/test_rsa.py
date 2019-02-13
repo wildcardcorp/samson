@@ -570,7 +570,7 @@ class RSATestCase(unittest.TestCase):
         rsa = RSA.import_key(TEST_JWK)
         priv_jwk = rsa.export_private_key(encoding='JWK')
 
-        self.assertEqual(priv_jwk, TEST_JWK)
+        self.assertEqual(priv_jwk.decode(), TEST_JWK)
 
 
 

@@ -1,4 +1,4 @@
-from z3 import *
+from z3 import BitVecs, Solver, LShR, Bool, Implies, sat, RotateLeft
 from inspect import isclass
 import random
 
