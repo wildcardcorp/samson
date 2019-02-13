@@ -7,9 +7,10 @@ from .ecb_cts import ECBCTS
 from .ecb import ECB
 from .kw import KW
 from .gcm import GCM
+from .ocb2 import OCB2
 from .ofb import OFB
 from .siv import SIV
 from .xts import XTS
 
 
-__all__ = ["CBCCTS", "CBC", "CCM", "CFB", "CTR", "ECBCTS", "ECB", "KW", "GCM", "OFB", "SIV", "XTS"]
+__all__ = ["CBCCTS", "CBC", "CCM", "CFB", "CTR", "ECBCTS", "ECB", "KW", "GCM", "OCB2", "OFB", "SIV", "XTS"]

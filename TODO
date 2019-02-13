@@ -44,13 +44,13 @@ X   More encoders/decoders/cryptosystems
 
 X   OCB
     X   OCB1
-    X   OCB2
-        X   Auth tag forgery
+    OK  OCB2
+        OK  Auth tag forgery
 
     X   OCB3
 
 X   EAX
-X   PMAC
+OK  PMAC
 X   STREAM
 
 X   Composable exploits and ACE
@@ -63,7 +63,6 @@ X   Composable exploits and ACE
 0.4.0
 ===============
 X   RC6
-X   OMAC
 X   UMAC
 X   scrypt
 X   Primitive analysis

@@ -34,7 +34,7 @@ class CMAC(object):
         """
         Internal function used to generate CMAC subkeys `k1` and `k2`.
         """
-        L = self.cipher(self.key).encrypt(Bytes(b'').zfill(16))
+        L = self.cipher(self.key).encrypt(Bytes(b'').zfill(self.block_size))
 
         if L.int() & 0x80000000000000000000000000000000:
             K1 = (L << 1) ^ 0x00000000000000000000000000000087
