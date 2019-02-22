@@ -1,5 +1,6 @@
-from types import FunctionType
 from samson.auxiliary.progress import Progress
+from samson.ace.exploit import DynamicExploit, register_knowns
+from types import FunctionType
 import logging
 import inspect
 
@@ -9,11 +10,12 @@ class RuntimeConfiguration(object):
     """
 
     def __init__(self):
+        # Initialize reporter
         try:
             from samson.auxiliary.tqdm_handler import TqdmHandler
             from samson.auxiliary.tqdm_reporter import TqdmReporter
 
-            handler = TqdmHandler()
+            handler   = TqdmHandler()
             formatter = logging.Formatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
             handler.setFormatter(formatter)
             handler.setLevel(logging.DEBUG)
@@ -25,6 +27,8 @@ class RuntimeConfiguration(object):
             from samson.auxiliary.reporter import Reporter
             self.reporter = Reporter()
 
+
+        # Initialize GRND_INT
         try:
             from gmpy2 import mpz
             self.GRND_INT = mpz
@@ -34,6 +38,12 @@ class RuntimeConfiguration(object):
                 self.GRND_INT = mpz
             except ImportError:
                 self.GRND_INT = int
+
+
+        # Initialize exploit mappings
+        self.exploits = {}
+        self.exploit_mappings = {}
+        self.constraints = {}
 
 
 
@@ -110,4 +120,14 @@ class RuntimeConfiguration(object):
         return new_func
 
 
+
+    def register_exploit(self, cls, consequence, requirements):
+        self.exploits[cls] = DynamicExploit(cls, consequence, requirements)
+
+
+    def register_exploit_mapping(self, cls, attack):
+        self.exploit_mappings[cls] = attack
+
+
 RUNTIME = RuntimeConfiguration()
+register_knowns()

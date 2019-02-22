@@ -12,7 +12,7 @@ class OCB2TestCase(unittest.TestCase):
 
         self.assertEqual(ciphertext, (expected_tag, expected_ciphertext))
         self.assertEqual(ocb2.decrypt(nonce, ciphertext, auth_data), plaintext)
-    
+
 
     def test_vec0(self):
         key       = Bytes(0x000102030405060708090A0B0C0D0E0F).zfill(16)

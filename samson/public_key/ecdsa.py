@@ -192,6 +192,7 @@ class ECDSA(DSA):
                 raise NotImplementedError("Support for ECPoint decompression not implemented.")
 
             x, y = x_y_bytes[:len(x_y_bytes) // 2].int(), x_y_bytes[len(x_y_bytes) // 2:].int()
+
         Q = Point(x, y, curve)
 
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)

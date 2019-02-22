@@ -11,7 +11,7 @@ class PMACTestCase(unittest.TestCase):
         tag  = pmac.generate(plaintext)
 
         self.assertEqual(tag, expected_tag)
-    
+
 
     def test_vec0(self):
         key          = Bytes(0x000102030405060708090a0b0c0d0e0f).zfill(16)

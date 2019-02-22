@@ -1,4 +1,7 @@
 from samson.utilities.runtime import RUNTIME
+from samson.ace.consequence import Consequence
+from samson.ace.utility import Readable
+from samson.ace.exploit import IdentityExploit
 from enum import Enum
 
 import logging
@@ -34,27 +37,8 @@ class State(object):
 
 
 
-
 class Requirement(Enum):
     EVENTUALLY_DECRYPTS = 0
-
-
-class Consequence(Enum):
-    PLAINTEXT_RECOVERY = 0
-    PLAINTEXT_MANIPULATION = 1
-    KEY_RECOVERY = 2
-
-
-
-class Readable(object):
-    def __repr__(self):
-        return f"<{self.__class__}: {self.__dict__}>"
-
-    def __str__(self):
-        return self.__repr__()
-    
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
 
 
 class IdentityConstraint(Readable):
@@ -63,16 +47,32 @@ class IdentityConstraint(Readable):
         self.needed_consequence   = None
 
 
-class IdentityExploit(Readable):
-    def __init__(self, consequence):
-        self.consequence  = consequence
-        self.requirements = []
-
 
 class Plaintext(State):
     def __init__(self):
         super().__init__(constraints=[IdentityConstraint()], exploits=[IdentityExploit(Consequence.PLAINTEXT_RECOVERY), IdentityExploit(Consequence.PLAINTEXT_MANIPULATION)])
 
+
+
+def get_runtime_exploits(primitive):
+    all_exploits = []
+    for cls in [primitive] + [_ for _ in primitive.__bases__]:
+        if cls in RUNTIME.exploit_mappings:
+            attack  = RUNTIME.exploit_mappings[cls]
+            exploit = RUNTIME.exploits[attack]
+            all_exploits.append(exploit)
+
+    return all_exploits
+
+
+def get_runtime_constraints(primitive):
+    all_constraints = []
+    for cls in [primitive] + [_ for _ in primitive.__bases__]:
+        if cls in RUNTIME.constraints:
+            constraint  = RUNTIME.constraints[cls]
+            all_constraints.append(constraint)
+
+    return all_constraints
 
 
 class SymEnc(object):
@@ -98,18 +98,10 @@ class SymEnc(object):
         all_constraints = []
         all_exploits = []
 
-        if self.alg in CONSTRAINTS:
-            all_constraints.extend(CONSTRAINTS[self.alg])
-
-        if self.mode in CONSTRAINTS:
-            all_constraints.extend(CONSTRAINTS[self.mode])
-
-        if self.alg in EXPLOITS:
-            all_exploits.extend(EXPLOITS[self.alg])
-
-        if self.mode in EXPLOITS:
-            all_exploits.extend(EXPLOITS[self.mode])
-
+        # Get from RUNTIME
+        for primitive in [self.alg, self.mode]:
+            all_exploits.extend(get_runtime_exploits(primitive))
+            all_constraints.extend(get_runtime_constraints(primitive))
 
         new_state = State(state, self, all_constraints, all_exploits)
         return new_state
@@ -146,21 +138,17 @@ class MAC(object):
 
 
     def generate(self, state):
-        all_constraints = []
-        all_exploits = []
-
-        if self.alg in CONSTRAINTS:
-            all_constraints.extend(CONSTRAINTS[self.alg])
-
-        if self.alg in EXPLOITS:
-            all_exploits.extend(EXPLOITS[self.alg])
-
+        # Get from RUNTIME
+        all_exploits    = get_runtime_exploits(self.alg)
+        all_constraints = get_runtime_constraints(self.alg)
 
         new_state = State(state, self, all_constraints, all_exploits)
         return new_state
 
 
     def validate(self, state):
+        from samson.ace.constraints import MACConstraint
+
         current_state = state.exposed_state
 
         if current_state.owner != self:
@@ -175,48 +163,6 @@ class MAC(object):
 
         return state
 
-
-
-class EncryptedConstraint(Readable):
-    def __init__(self):
-        self.prevents_consequence = Consequence.PLAINTEXT_RECOVERY
-        self.needed_consequence   = Consequence.PLAINTEXT_RECOVERY
-
-
-
-class MACConstraint(Readable):
-    def __init__(self):
-        self.prevents_consequence = Consequence.PLAINTEXT_MANIPULATION
-        self.needed_consequence   = Consequence.KEY_RECOVERY
-
-
-
-class CBCPOA(Readable):
-    def __init__(self):
-        self.consequence  = Consequence.PLAINTEXT_RECOVERY
-        self.requirements = [Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION]
-
-
-
-class Mangers(Readable):
-    def __init__(self):
-        self.consequence  = Consequence.PLAINTEXT_RECOVERY
-        self.requirements = [Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION]
-
-
-
-EXPLOITS = {
-    'CBC': [CBCPOA()],
-    'OAEP': [Mangers()],
-    'MAC': [IdentityExploit(Consequence.PLAINTEXT_RECOVERY)]
-}
-
-
-CONSTRAINTS = {
-    'Rijndael': [EncryptedConstraint()],
-    'RSA': [EncryptedConstraint()],
-    'MAC': [MACConstraint()]
-}
 
 
 class Context(object):
@@ -239,15 +185,19 @@ class Context(object):
         self.goal_consequence = consequence
 
 
+
     @RUNTIME.report
     def solve(self):
         current_state = self.final_state
         exploit_chain = []
 
         while current_state != None:
-            has_exploit = False
+            has_exploit   = False
+            return_to_top = False
+            constraint    = None
 
             for exploit in current_state.exploits:
+                return_to_top = False
 
                 # See if there are any outstanding constraints that we can solve
                 while True:
@@ -267,8 +217,17 @@ class Context(object):
                             new_solver.goal(original_key, Consequence.PLAINTEXT_RECOVERY)
                             exploit_chain.append(new_solver.solve())
                             current_state.requirements_satisfied.append(Consequence.KEY_RECOVERY)
+
+                            # Let's restart
+                            current_state = self.final_state
+                            return_to_top = True
+                            break
                     else:
                         break
+
+                if return_to_top:
+                    log.debug('Returning to top')
+                    break
 
 
                 # Check to make sure we satisfy requirements
@@ -300,11 +259,13 @@ class Context(object):
                     break
 
             # Did we find _any_ exploits for this state?
-            if has_exploit:
-                current_state = current_state.child
-                exploit_chain.append(exploit)
-            else:
-                raise Exception(f'No suitable exploit found. Last consequence not fulfilled: {constraint.needed_consequence if constraint else "None (no constraint evaluated due to requirements)"}')
+            if not return_to_top:
+                if has_exploit:
+                    current_state = current_state.child
+                    exploit_chain.append(exploit)
+                else:
+                    raise Exception(f'No suitable exploit found. Last consequence not fulfilled: {constraint.needed_consequence if constraint else "None (no constraint evaluated due to requirements)"}')
 
 
+        exploit_chain = [exploit for exploit in exploit_chain if not issubclass(type(exploit), IdentityExploit)]
         return exploit_chain

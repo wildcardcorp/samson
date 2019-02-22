@@ -1,5 +1,6 @@
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 
 
 def initialize_sbox():
@@ -62,7 +63,7 @@ NUM_ROUNDS = [
 ]
 
 # https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
-class Rijndael(object):
+class Rijndael(EncryptionAlg):
     """
     Underlying cipher of AES.
 

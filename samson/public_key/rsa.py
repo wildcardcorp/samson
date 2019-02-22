@@ -1,5 +1,6 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
 from samson.encoding.general import export_der, bytes_to_der_sequence
+from samson.core.encryption_alg import EncryptionAlg
 
 from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.rsa_public_key import RSAPublicKey
@@ -14,7 +15,7 @@ from json import JSONDecodeError
 import math
 import random
 
-class RSA(object):
+class RSA(EncryptionAlg):
     """
     Rivest-Shamir-Adleman public key cryptosystem
     """

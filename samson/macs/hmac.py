@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
+from samson.core.mac import MAC
 
 # https://en.wikipedia.org/wiki/HMAC
-class HMAC(object):
+class HMAC(MAC):
     """
     Hash-based message authentication code using a generic interface to hash functions.
     """

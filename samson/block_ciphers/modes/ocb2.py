@@ -1,6 +1,5 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
-from samson.macs.pmac import PMAC
 from types import FunctionType
 
 def triple(bytestring):
@@ -30,8 +29,8 @@ class OCB2(object):
 
     def __str__(self):
         return self.__repr__()
-    
-    
+
+
     # TODO: We already have a PMAC class, but it doesn't seem to produce
     # the same results. Is there some trivial tweak we can do so we don't
     # have to have two implementations?
@@ -49,7 +48,7 @@ class OCB2(object):
         for i in range(len(data_chunks) - 1):
             offset = dbl(offset)
             checksum ^= self.encryptor(offset ^ data_chunks[i])
-        
+
         offset = dbl(offset)
 
         M_last = data_chunks[-1]
@@ -60,11 +59,11 @@ class OCB2(object):
         else:
             M_last += b'\x80'
             M_last  = (M_last + (b'\x00' * (self.block_size - len(M_last))))
-            
+
             checksum ^= M_last
             offset = triple(offset)
             offset = triple(offset)
-        
+
         return self.encryptor(offset ^ checksum)
 
 
@@ -95,7 +94,7 @@ class OCB2(object):
             checksum ^= message_chunks[i]
             xoffset = self.encryptor(offset ^ message_chunks[i])
             ciphertext += offset ^ xoffset
-        
+
         offset = dbl(offset)
 
         M_last = message_chunks[-1]
@@ -142,7 +141,7 @@ class OCB2(object):
             pt_chunk = self.decryptor(offset ^ message_chunks[i]) ^ offset
             checksum ^= pt_chunk
             plaintext += pt_chunk
-        
+
         offset = dbl(offset)
 
         M_last = message_chunks[-1]
@@ -159,7 +158,7 @@ class OCB2(object):
         if auth_data:
             tag ^= self.internal_pmac(auth_data)
 
-        
+
         if verify:
             assert tag == given_tag
 

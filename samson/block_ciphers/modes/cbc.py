@@ -1,8 +1,11 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.padding.pkcs7 import PKCS7
+from samson.ace.decorators import has_exploit
+from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from types import FunctionType
 
+@has_exploit(CBCPaddingOracleAttack)
 class CBC(object):
     """Cipherblock chaining block cipher mode."""
 

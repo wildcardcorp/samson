@@ -21,7 +21,7 @@ class PMAC(object):
         result = (self.L[0].int() >> 1)
         if self.L[0].int() & 1:
             result ^= 0x80000000000000000000000000000043
-        
+
         self.L_inv = result
 
         for i in range(1, 32):
@@ -60,13 +60,13 @@ class PMAC(object):
 
         if not message_chunks:
             message_chunks = [message]
-        
+
 
         for i in range(len(message_chunks) - 1):
             offset ^= self.L[self.ntz(i+1)]
             sigma  ^= self.encryptor(offset ^ message_chunks[i])
-        
-        
+
+
         M_last = message_chunks[-1]
 
         if incomplete_block or not len(message):

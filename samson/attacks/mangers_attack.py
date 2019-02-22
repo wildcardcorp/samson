@@ -2,6 +2,8 @@ from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.public_key.rsa import RSA
 from samson.utilities.runtime import RUNTIME
+from samson.ace.decorators import define_exploit
+from samson.ace.ace import Consequence, Requirement
 import math
 
 import logging
@@ -10,6 +12,7 @@ log = logging.getLogger(__name__)
 
 # AKA OAEP padding oracle
 # http://archiv.infsec.ethz.ch/education/fs08/secsem/Manger01.pdf
+@define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION])
 class MangersAttack(object):
     """
     Performs a plaintext recovery attack.
