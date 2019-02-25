@@ -10,8 +10,8 @@ class SIV(object):
     def __init__(self, s2v_key: bytes, cipher_obj: object):
         """
         Parameters:
-            s2v_key   (bytes): Key used for generating/verifying S2V IV (i.e. `k2` in RFC5297).
-            cipher_obj (func): Function that takes in a plaintext and returns a ciphertext.
+            s2v_key     (bytes): Key used for generating/verifying S2V IV (i.e. `k2` in RFC5297).
+            cipher_obj (object): Instantiated cipher object.
         """
         self.s2v_key = s2v_key
         self.cipher_obj = cipher_obj

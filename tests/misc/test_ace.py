@@ -1,4 +1,6 @@
-from samson.ace.ace import Consequence, SymEnc, Plaintext, MAC, Context, IdentityExploit
+from samson.ace.ace import SymEnc, MAC, ACE
+from samson.ace.consequence import Consequence
+from samson.ace.state import Plaintext
 from samson.ace.exploit import KeyPossession
 from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
@@ -10,15 +12,13 @@ from samson.attacks.mangers_attack import MangersAttack
 from samson.utilities.runtime import RUNTIME
 import unittest
 
-ID_PT_R = IdentityExploit(Consequence.PLAINTEXT_RECOVERY)
-ID_PT_M = IdentityExploit(Consequence.PLAINTEXT_MANIPULATION)
 
 CBCPOA  = RUNTIME.exploits[CBCPaddingOracleAttack]
 Mangers = RUNTIME.exploits[MangersAttack]
 
 class ACETestCase(unittest.TestCase):
     def _run_test(self, setup, first_msg, receive, expected_exploit_chain, should_succeed):
-        ctx = Context()
+        ctx = ACE()
 
         ctx.execute(setup)
         ctx.execute(first_msg)
@@ -72,7 +72,6 @@ class ACETestCase(unittest.TestCase):
 
     def test_cbc_padding_oracle(self):
         def setup(ctx):
-            # ctx.sym_enc = SymEnc(Rijndael, CBC, None)
             ctx.sym_enc = SymEnc(Rijndael, CBC, None)
 
 
@@ -296,7 +295,7 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc(Rijndael, CBC, key).decrypt(ctx.enc_perms)
             ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
 
-        # Mangers(),
+
         self._run_test(setup, first_msg, receive, [CBCPOA], True)
 
 
@@ -361,6 +360,7 @@ class ACETestCase(unittest.TestCase):
             pt  = SymEnc(Rijndael, CBC, key).decrypt(pt)
             ctx.goal(key, Consequence.PLAINTEXT_RECOVERY)
 
+
         self._run_test(setup, first_msg, receive, [Mangers], True)
 
 
@@ -416,5 +416,6 @@ class ACETestCase(unittest.TestCase):
         def receive(ctx):
             ctx.enc_perms.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
             ctx.goal(ctx.enc_perms, Consequence.PLAINTEXT_RECOVERY)
+
 
         self._run_test(setup, first_msg, receive, [KeyPossession()], True)

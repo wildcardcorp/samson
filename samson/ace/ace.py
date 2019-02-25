@@ -1,56 +1,16 @@
 from samson.utilities.runtime import RUNTIME
+from samson.ace.constraints import IdentityConstraint
 from samson.ace.consequence import Consequence
-from samson.ace.utility import Readable
 from samson.ace.exploit import IdentityExploit
+from samson.ace.state import State
 from enum import Enum
 
 import logging
 log = logging.getLogger(__name__)
 
-class State(object):
-    def __init__(self, child=None, owner=None, constraints=[], exploits=[]):
-        self.child = child
-        self.parent = None
-        self.owner = owner
-        self.constraints = constraints
-        self.exploits = exploits
-        self.requirements_satisfied = []
-        self.exposed_state = self
-
-        if child:
-            child.parent = self
-
-
-    def __repr__(self):
-        return f"<State: child={self.child}, owner={self.owner}, constraints={self.constraints}, exploits={self.exploits}, requirements_satisfied={self.requirements_satisfied}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-    def propagate_requirement_satisfied(self, requirement):
-        current_state = self
-
-        while current_state != None:
-            current_state.requirements_satisfied.append(requirement)
-            current_state = current_state.child
-
-
 
 class Requirement(Enum):
     EVENTUALLY_DECRYPTS = 0
-
-
-class IdentityConstraint(Readable):
-    def __init__(self):
-        self.prevents_consequence = None
-        self.needed_consequence   = None
-
-
-
-class Plaintext(State):
-    def __init__(self):
-        super().__init__(constraints=[IdentityConstraint()], exploits=[IdentityExploit(Consequence.PLAINTEXT_RECOVERY), IdentityExploit(Consequence.PLAINTEXT_MANIPULATION)])
 
 
 
@@ -73,6 +33,7 @@ def get_runtime_constraints(primitive):
             all_constraints.append(constraint)
 
     return all_constraints
+
 
 
 class SymEnc(object):
@@ -165,7 +126,7 @@ class MAC(object):
 
 
 
-class Context(object):
+class ACE(object):
     def execute(self, func):
         func(self)
 
@@ -207,8 +168,8 @@ class Context(object):
                         # So far, we only know how to solve KEY_RECOVERY
                         # TODO: If we solve this, why not just early exit?
                         if needed_consequences[0] == Consequence.KEY_RECOVERY:
-                            log.info('Cannot continue without key. Attempting key recovery.')
-                            new_solver = Context()
+                            log.debug('Cannot continue without key. Attempting key recovery.')
+                            new_solver = ACE()
 
                             original_key = current_state.owner.key
                             while original_key.parent:
@@ -247,7 +208,7 @@ class Context(object):
                             and not any([constraint.needed_consequence == other_constraint.prevents_consequence for other_constraint in current_state.constraints if other_constraint != constraint]) \
                             and not (current_state.child is None and exploit.consequence != self.goal_consequence):
 
-                            log.info(f'{constraint.needed_consequence} reachable with {exploit}')
+                            log.debug(f'{constraint.needed_consequence} reachable with {exploit}')
                             has_exploit = True
                             break
                 else:

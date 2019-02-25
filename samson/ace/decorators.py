@@ -2,7 +2,6 @@ from samson.utilities.runtime import RUNTIME
 
 def has_exploit(attack):
     def real_decorator(cls):
-        print(cls, attack)
         RUNTIME.register_exploit_mapping(cls, attack)
         return cls
     return real_decorator
