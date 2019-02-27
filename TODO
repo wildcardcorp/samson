@@ -3,11 +3,7 @@ Idea backlog
 X   Wang's Attack
 X   RC6
 X   Argon2
-X   EAX
-X   scrypt
 X   CAST
-X   OMAC
-X   UMAC
 ?   Stateless block cipher shuffling
 X   Differential power analysis
 X   Flush+Reload key recovery
@@ -43,7 +39,6 @@ X   More encoders/decoders/cryptosystems
 
 
 X   OCB
-    X   OCB1
     OK  OCB2
         OK  Auth tag forgery
 
@@ -54,15 +49,21 @@ OK  PMAC
 X   STREAM
 
 X   Composable exploits and ACE
-    X   RUNTIME primitive property/exploit loading
+    OK  RUNTIME primitive property/exploit loading
     X   RUNTIME programmatic search
-    X   ACE verified against several manual cryptanalysis test vectors
+    OK  ACE verified against several manual cryptanalysis test vectors
     X   ACE creates working exploits
+    X   ACE correctly detects
+        X   Small key size
+        X   Non-CSPRNGs
 
 
 0.4.0
 ===============
 X   RC6
-X   scrypt
+OK  scrypt
+X   Argon2
+X   SM3
+X   SM4
 X   Primitive analysis
 X   CAST
