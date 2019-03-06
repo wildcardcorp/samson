@@ -12,8 +12,8 @@ class RijndaelTestCase(unittest.TestCase):
         ciphertext1 = cipher_obj.encrypt(plaintext)
         ciphertext2 = cipher_obj.decrypt(plaintext)
 
-        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
-        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+        self.assertEqual(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertEqual(cipher_obj.encrypt(ciphertext2), plaintext)
 
 
     def _run_test(self, key, plaintext, block_size, test_vector, iterations=1):

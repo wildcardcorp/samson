@@ -1,7 +1,8 @@
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
+from samson.core.mac import MAC
 
-class Poly1305(object):
+class Poly1305(MAC):
     """
     Message authentication code using an underlying block cipher. The (r, nonce) combination MUST
     be unique to guarantee its security properties. A single reuse can allow for a forgery.

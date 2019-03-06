@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
+from samson.core.encryption_alg import EncryptionAlg
 import math
 
 S0 = [
@@ -63,7 +64,7 @@ def ADD_M(a, b):
 
 
 # Reference: https://www.gsma.com/aboutus/wp-content/uploads/2014/12/eea3eia3zucv16.pdf
-class ZUC(object):
+class ZUC(EncryptionAlg):
     """
     ZUC stream cipher
 

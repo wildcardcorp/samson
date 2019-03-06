@@ -1,9 +1,10 @@
 from samson.prngs.bitsliced_flfsr import BitslicedFLFSR
+from samson.core.encryption_alg import EncryptionAlg
 from samson.utilities.bytes import Bytes
 
 # https://github.com/ttsou/airprobe/blob/master/A5.1/python/A51_Tables/a51.py
 # Implemented in big endian
-class A51(object):
+class A51(EncryptionAlg):
     """
     A5/1 stream cipher
 

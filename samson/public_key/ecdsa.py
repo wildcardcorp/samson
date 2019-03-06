@@ -3,36 +3,18 @@ from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
-from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.encoding.pem import pem_encode, pem_decode
 
 from samson.encoding.openssh.ecdsa_private_key import ECDSAPrivateKey
 from samson.encoding.openssh.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 from samson.encoding.jwk.jwk_ec_encoder import JWKECEncoder
+from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
+from samson.encoding.pkcs1.pkcs1_ecdsa_public_key import PKCS1ECDSAPublicKey
+from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate
 
-from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, SequenceOf, tag
-from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point
-from fastecdsa.curve import Curve
-from json import JSONDecodeError
 import math
-
-class NamedCurve(ObjectIdentifier):
-    tagSet = baseTagSet = tag.initTagSet(
-        tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 6)
-    ).tagExplicitly(tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
-
-    typeId = ObjectIdentifier.typeId
-
-
-
-class PublicPoint(BitString):
-    tagSet = baseTagSet = tag.initTagSet(
-        tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 3)
-    ).tagExplicitly(tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))
-
-    typeId = BitString.typeId
 
 
 SSH_CURVE_NAME_LOOKUP = {
@@ -126,6 +108,19 @@ class ECDSA(DSA):
         return v.x == r
 
 
+    @staticmethod
+    def decode_point(x_y_bytes: bytes):
+        x_y_bytes = Bytes.wrap(x_y_bytes)
+
+        # Uncompressed Point
+        if x_y_bytes[0] == 4:
+            x_y_bytes = x_y_bytes[1:]
+        else:
+            raise NotImplementedError("Support for ECPoint decompression not implemented.")
+
+        x, y = x_y_bytes[:len(x_y_bytes) // 2].int(), x_y_bytes[len(x_y_bytes) // 2:].int()
+        return x, y
+
 
     # https://tools.ietf.org/html/rfc5656
     # https://github.com/golang/crypto/blob/master/ssh/keys.go
@@ -142,9 +137,9 @@ class ECDSA(DSA):
         Returns:
             ECDSA: ECDSA instance.
         """
-        try:
-            curve, x, y, d = JWKECEncoder.decode(buffer)
-        except (JSONDecodeError, UnicodeDecodeError) as _:
+        if JWKECEncoder.check(buffer):
+            ecdsa = JWKECEncoder.decode(buffer)
+        else:
             if buffer.startswith(b'----'):
                 buffer = pem_decode(buffer, passphrase)
 
@@ -157,46 +152,23 @@ class ECDSA(DSA):
                     curve, x_y_bytes, d = pub.curve, pub.x_y_bytes, 1
 
                 curve = SSH_INVERSE_CURVE_LOOKUP[curve.decode()]
+
+                Q = Point(*ECDSA.decode_point(x_y_bytes), curve)
+                ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
+                ecdsa.Q = Q
             else:
-                items = bytes_to_der_sequence(buffer, passphrase)
+                if X509ECDSACertificate.check(buffer):
+                    ecdsa = X509ECDSACertificate.decode(buffer)
 
-                if len(items) == 4 and int(items[0]) == 1:
-                    d = Bytes(items[1]).int()
-                    curve_idx = 2
-                    pub_point_idx = 3
-
+                elif PKCS1ECDSAPrivateKey.check(buffer):
+                    ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
 
                 # Is it a public key?
-                elif len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1':
-                    curve_idx = 0
-                    pub_point_idx = 1
-                    d = 1
+                elif PKCS1ECDSAPublicKey.check(buffer):
+                    ecdsa = PKCS1ECDSAPublicKey.decode(buffer)
 
-                    # Move up OID for convenience
-                    items[0] = items[0][1]
                 else:
                     raise ValueError("Unable to parse provided ECDSA key.")
-
-
-                curve_oid = items[curve_idx].asTuple()
-                oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-                curve = Curve.get_curve_by_oid(oid_bytes)
-
-                x_y_bytes = Bytes(int(items[pub_point_idx]))
-
-
-            # Uncompressed Point
-            if x_y_bytes[0] == 4:
-                x_y_bytes = x_y_bytes[1:]
-            else:
-                raise NotImplementedError("Support for ECPoint decompression not implemented.")
-
-            x, y = x_y_bytes[:len(x_y_bytes) // 2].int(), x_y_bytes[len(x_y_bytes) // 2:].int()
-
-        Q = Point(x, y, curve)
-
-        ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
-        ecdsa.Q = Q
 
         return ecdsa
 
@@ -213,13 +185,13 @@ class ECDSA(DSA):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS8', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS1', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full ECDSA instance into encoded bytes.
 
         Parameters:
             encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'JWK'.
+            encoding     (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', and 'JWK'.
             marker       (str): Marker to use in PEM formatting (if applicable).
             encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
@@ -230,8 +202,8 @@ class ECDSA(DSA):
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
 
-        if encoding.upper() == 'PKCS8'.upper():
-            encoded = export_der([1, Bytes(self.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple(), self.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
+        if encoding.upper() == 'PKCS1'.upper():
+            encoded = PKCS1ECDSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'EC PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
@@ -261,13 +233,13 @@ class ECDSA(DSA):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS8', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS1', marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the ECDSA instance into encoded bytes.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', 'SSH2', and 'JWK'.
+            encoding    (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', 'SSH2', and 'JWK'.
             marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
@@ -280,9 +252,8 @@ class ECDSA(DSA):
         use_rfc_4716 = False
         encoding_upper = encoding.upper()
 
-        if encoding_upper == 'PKCS8':
-            curve_seq = [ObjectIdentifier([1, 2, 840, 10045, 2, 1]), ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.G.curve.oid)]) + self.G.curve.oid)[0].asTuple())]
-            encoded = export_der([curve_seq, self.format_public_point()], item_types=[SequenceOf, BitString])
+        if encoding_upper == 'PKCS1':
+            encoded = PKCS1ECDSAPublicKey.encode(self)
 
             default_marker = 'PUBLIC KEY'
             default_pem = True

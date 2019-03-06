@@ -1,8 +1,9 @@
 from samson.macs.cbc_mac import CBCMAC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
+from samson.core.mac import MAC
 
-class CMAC(object):
+class CMAC(MAC):
     """
     Message authentication code scheme based off of CBCMAC.
     """

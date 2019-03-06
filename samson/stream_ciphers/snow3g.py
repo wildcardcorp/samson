@@ -1,5 +1,6 @@
 from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 
 SQ = [
     0x25,0x24,0x73,0x67,0xD7,0xAE,0x5C,0x30,0xA4,0xEE,0x6E,0xCB,0x7D,0xB5,0x82,0xDB,
@@ -22,7 +23,7 @@ SQ = [
 
 # https://www.gsma.com/aboutus/wp-content/uploads/2014/12/snow3gspec.pdf
 # https://github.com/mitshell/CryptoMobile/blob/master/C_alg/SNOW_3G.c
-class SNOW3G(object):
+class SNOW3G(EncryptionAlg):
     """
     SNOW3G stream cipher
 

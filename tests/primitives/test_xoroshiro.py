@@ -1,5 +1,5 @@
 from samson.prngs.xoroshiro import Xoroshiro116Plus, Xoroshiro128Plus
-from samson.prngs.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG
 from samson.utilities.bytes import Bytes
 import unittest
 

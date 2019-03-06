@@ -42,4 +42,4 @@ class HMAC(MAC):
         Returns:
             Bytes: The MAC.
         """
-        return self.hash_obj.hash(self.outer_key_pad + self.hash_obj.hash(self.inner_key_pad + message))
+        return self.hash_obj.hash(self.outer_key_pad + self.hash_obj.hash(self.inner_key_pad + Bytes.wrap(message)))

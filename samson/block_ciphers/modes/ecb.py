@@ -38,9 +38,10 @@ class ECB(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
+        plaintext = Bytes.wrap(plaintext)
+
         if pad:
             plaintext = self.padder.pad(plaintext)
-
 
         ciphertext = Bytes(b'')
         for block in get_blocks(plaintext, self.block_size):
@@ -61,10 +62,11 @@ class ECB(object):
         Returns:
             Bytes: Resulting plaintext.
         """
+        ciphertext = Bytes.wrap(ciphertext)
+
         plaintext = Bytes(b'')
         for block in get_blocks(ciphertext, self.block_size):
             plaintext += self.decryptor(block)
-
 
         if unpad:
             plaintext = self.padder.unpad(plaintext)

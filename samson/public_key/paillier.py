@@ -1,8 +1,9 @@
 from samson.utilities.math import find_prime, mod_inv, gcd
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 
 
-class Paillier(object):
+class Paillier(EncryptionAlg):
     """
     Paillier public key cryptosystem
 

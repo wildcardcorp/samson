@@ -1,5 +1,10 @@
 from enum import Enum
 
+
+class Requirement(Enum):
+    EVENTUALLY_DECRYPTS = 0
+
+
 class Consequence(Enum):
     PLAINTEXT_RECOVERY = 0
     PLAINTEXT_MANIPULATION = 1

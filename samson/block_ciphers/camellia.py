@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
+from samson.core.encryption_alg import EncryptionAlg
 
 MASK8   = 0xFF
 MASK32  = 0xFFFFFFFF
@@ -122,7 +123,7 @@ def ROTL128(x, amount):
 
 # https://tools.ietf.org/html/rfc3713
 # http://info.isl.ntt.co.jp/crypt/eng/camellia/dl/01espec.pdf
-class Camellia(object):
+class Camellia(EncryptionAlg):
     """
     Comparable to AES in Europe.
 

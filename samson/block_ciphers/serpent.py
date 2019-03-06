@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bitstring import Bitstring
+from samson.core.encryption_alg import EncryptionAlg
 
 # https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf
 # https://www.cl.cam.ac.uk/~fms27/serpent/serpent.py.html
@@ -297,7 +298,7 @@ SBOX_INV = [{'0110': '1010', '0111': '0001', '0000': '1011', '0001': '1000', '00
 PHI = 0x9e3779b9
 ROUNDS = 32
 
-class Serpent(object):
+class Serpent(EncryptionAlg):
     """
     Structure: Substitution–permutation network
     Key size: 128, 192, 256 bits
@@ -457,7 +458,7 @@ class Serpent(object):
 
         # Attempt to preserve the user's sanity
         little_endian_ct = self.FP(B_hat)[::-1]
-        return Bytes(little_endian_ct.int(), 'big')
+        return Bytes(little_endian_ct.int(), 'big').zfill(16)
 
 
 
@@ -479,4 +480,4 @@ class Serpent(object):
 
         # Attempt to preserve the user's sanity
         little_endian_pt = Bitstring(self.FP(B_hat)[::-1], 'little', auto_fill=False)
-        return Bytes(little_endian_pt.int(), 'big')
+        return Bytes(little_endian_pt.int(), 'big').zfill(16)

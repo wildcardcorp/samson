@@ -35,7 +35,7 @@ class EAX(object):
         Internal function. Generates a valid tag for the `ciphertext` and `auth_data`.
         """
         cipher_mac = self.cmac.generate(Bytes(2).zfill(self.cipher_obj.block_size) + ciphertext)
-        tag = cipher_mac ^ self.cmac.generate(Bytes(0).zfill(self.cipher_obj.block_size) + self.nonce) ^ self.cmac.generate(Bytes(1).zfill(self.cipher_obj.block_size) + auth_data)
+        tag = cipher_mac ^ self.cmac.generate(Bytes(0).zfill(self.cipher_obj.block_size) + self.nonce) ^ self.cmac.generate(Bytes(1).zfill(self.cipher_obj.block_size) + Bytes.wrap(auth_data))
 
         return tag
 

@@ -47,4 +47,4 @@ class LCGTestCase(unittest.TestCase):
             lcg = LCG(X=seed, a=a, c=c, m=m)
             ref_lcg = wiki_lcg(m, a, c, seed).__next__
 
-            self.assertTrue([lcg.generate() for _ in range(10000)], [ref_lcg() for _ in range(10000)])
+            self.assertEqual([lcg.generate() for _ in range(10000)], [ref_lcg() for _ in range(10000)])

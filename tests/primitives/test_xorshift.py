@@ -1,5 +1,5 @@
 from samson.prngs.xorshift import Xorshift32, Xorshift64, Xorshift128, Xorshift128Plus, Xorshift116Plus, Xorshift1024Star, MASK58
-from samson.prngs.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG
 from samson.utilities.bytes import Bytes
 import unittest
 

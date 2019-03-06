@@ -1,7 +1,8 @@
 from samson.block_ciphers.des import DES
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 
-class TDES(object):
+class TDES(EncryptionAlg):
     """
     3DES in EDE mode.
 

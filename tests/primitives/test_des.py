@@ -12,8 +12,8 @@ class DESTestCase(unittest.TestCase):
         ciphertext1 = des.encrypt(plaintext)
         ciphertext2 = des.decrypt(plaintext)
 
-        self.assertTrue(des.decrypt(ciphertext1), plaintext)
-        self.assertTrue(des.encrypt(ciphertext2), plaintext)
+        self.assertEqual(des.decrypt(ciphertext1), plaintext)
+        self.assertEqual(des.encrypt(ciphertext2), plaintext)
 
 
     def _run_test(self, key, plaintext, test_vector):

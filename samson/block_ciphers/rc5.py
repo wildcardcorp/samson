@@ -1,12 +1,13 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate, right_rotate
+from samson.core.encryption_alg import EncryptionAlg
 import math
 
 P_w = [0xB7E1, 0xB7E15163, 0xB7E151628AED2A6B]
 Q_w = [0x9E37, 0x9E3779B9, 0x9E3779B97F4A7C15]
 
 # https://en.wikipedia.org/wiki/RC5#Algorithm
-class RC5(object):
+class RC5(EncryptionAlg):
     """
     Structure: Feistel Network
     Key size: 0-2040 bits
@@ -32,7 +33,6 @@ class RC5(object):
 
     def __repr__(self):
         return f"<RC5: key={self.key}, num_rounds={self.num_rounds}, block_size={self.block_size}, S={self.S}>"
-
 
     def __str__(self):
         return self.__repr__()
@@ -88,7 +88,7 @@ class RC5(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext = Bytes.wrap(plaintext)
+        plaintext = Bytes.wrap(plaintext).zfill(self.block_size // 4)
 
         A = plaintext[self.block_size // 8:].int()
         B = plaintext[:self.block_size // 8].int()
@@ -100,7 +100,7 @@ class RC5(object):
             A = (left_rotate(A ^ B, B % self.block_size, bits=self.block_size) + self.S[2*i]) % self.mod
             B = (left_rotate(B ^ A, A % self.block_size, bits=self.block_size) + self.S[2*i + 1]) % self.mod
 
-        return Bytes(A, 'little').zfill(self.block_size // 8) + Bytes(B, 'little').zfill(self.block_size // 8)
+        return (Bytes(A, 'little').zfill(self.block_size // 8) + Bytes(B, 'little').zfill(self.block_size // 8))
 
 
 
@@ -114,7 +114,7 @@ class RC5(object):
         Returns:
             Bytes: Resulting plaintext.
         """
-        ciphertext = Bytes.wrap(ciphertext)
+        ciphertext = Bytes.wrap(ciphertext).zfill(self.block_size // 4)
 
         A = ciphertext[:self.block_size // 8].int()
         B = ciphertext[self.block_size // 8:].int()
@@ -126,4 +126,4 @@ class RC5(object):
         A = (A - self.S[0]) % self.mod
         B = (B - self.S[1]) % self.mod
 
-        return (Bytes(A, 'little').zfill(self.block_size // 8) + Bytes(B, 'little').zfill(self.block_size // 8))[::-1]
+        return Bytes((Bytes(A, 'little').zfill(self.block_size // 8) + Bytes(B, 'little').zfill(self.block_size // 8)).int()).zfill(self.block_size // 4)

@@ -195,6 +195,36 @@ ZvlicyXNaRi6YZYwy6myBHPkZ3r7jjpF+CrAFZsF17q+mBSRn6swmt9P7Sw=
 # JWK example from https://tools.ietf.org/html/rfc7517#section-3
 TEST_JWK = '{"kty": "EC", "crv": "P-256", "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"}'
 
+
+# openssl ecparam -name secp521r1 -genkey -param_enc explicit -out private-key.pem
+# openssl req -new -x509 -key private-key.pem -out server.pem -days 730
+TEST_X509 = b"""-----BEGIN CERTIFICATE-----
+MIIEQjCCA6OgAwIBAgIJAL9UTkR+Sat+MAoGCCqGSM49BAMCMFcxCzAJBgNVBAYT
+AlVTMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29t
+cGFueSBMdGQxEzARBgNVBAMMCndoYXR0YWNlcnQwHhcNMTkwMzA0MjI1NTQyWhcN
+MjEwMzAzMjI1NTQyWjBXMQswCQYDVQQGEwJVUzEVMBMGA1UEBwwMRGVmYXVsdCBD
+aXR5MRwwGgYDVQQKDBNEZWZhdWx0IENvbXBhbnkgTHRkMRMwEQYDVQQDDAp3aGF0
+dGFjZXJ0MIICXDCCAc8GByqGSM49AgEwggHCAgEBME0GByqGSM49AQECQgH/////
+////////////////////////////////////////////////////////////////
+/////////////////zCBngRCAf//////////////////////////////////////
+///////////////////////////////////////////////8BEFRlT65YY4cmh+S
+miGgtoVA7qLacluZsxXzuLSJkY7xCeFWGTlR7H6TexZSwL07sb8HNXPfiD0sNPHv
+RR/Ua1A/AAMVANCeiAApHLhTlsxnFzkyhKqg2mS6BIGFBADGhY4GtwQE6c2ePstm
+I5W0QpxkgTkFP7Uh+CivYGtNPbqhS1537+dZKP4dwSei/6jeM0izwYVqQpv5fn4x
+wuW9ZgEYOSlqeJo7wARcil+0LH0b2Zj1RElXm0RoF6+9Fyc+ZiyX7nKZXvQmQMVQ
+uQE/rQdhNTxwhqJywkCIvpR2n9FmUAJCAf//////////////////////////////
+////////////+lGGh4O/L5Zrf8wBSPcJpdA7tcm4iZxHrrtvtx6ROGQJAgEBA4GG
+AAQAvn56JdELJRSZMVIdh/7v+6JGeBwVbAXEl0lcc5HGefBhoLl7eA6DE0raufmo
+o9PBWGoucNTKxu9LS9aEiZBsRBEAfDx2Ip7BcSFv6xGHziNsKe73yactANS/v7Hh
+pKi6qCqmHF5w3Hi0AIE9aSpeBmVm8pmyJOcszjN0CIXDQapvSAajUzBRMB0GA1Ud
+DgQWBBSFKqSyTnvMG0lU8hHHby1wpzgjVjAfBgNVHSMEGDAWgBSFKqSyTnvMG0lU
+8hHHby1wpzgjVjAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA4GMADCBiAJC
+AWUXPGWi8q5u87XVNQ+RwDHKvDfqsktfxLk9IsJoDW9qltTvHGC+p8JV4mcbbQfc
+xRco5gwHlfLQbzHdAnF7QDZAAkIBadKWqL3qYQZswfWHThya7LbuMH6otTTL6fzW
+4JwatM3iGhTXB44I5FC0NR+aTVW3TGFhSQJmQszxgXhsAzh2V08=
+-----END CERTIFICATE-----"""
+
+
 class ECDSATestCase(unittest.TestCase):
 
     def test_k_derivation(self):
@@ -336,6 +366,12 @@ class ECDSATestCase(unittest.TestCase):
         ec = ECDSA.import_key(TEST_JWK)
         jwk = ec.export_public_key(encoding='JWK')
         self.assertEqual(jwk.decode(), TEST_JWK)
+
+
+    def test_import_x509(self):
+        ec = ECDSA.import_key(TEST_X509)
+
+        self.assertEqual((ec.Q.x, ec.Q.y), (2554107651979780898547470509521183687529182997249198893823391333151823525238944910041063056446807005656025463060583743576267474661396576995824204432320250897, 1665734807219490118107295784957644242011665857026226322808593499290511707957041718918818784509283772858782283769948670779295771210635862012480413432810522630))
 
 
     def test_jwk_gauntlet(self):

@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 from copy import deepcopy
 
 P = [
@@ -236,7 +237,7 @@ def round_func(a, b, c, d):
 
 
 # https://en.wikipedia.org/wiki/Blowfish_(cipher)
-class Blowfish(object):
+class Blowfish(EncryptionAlg):
     """
     Structure: Feistel Network
     Key size: 32-448 bits

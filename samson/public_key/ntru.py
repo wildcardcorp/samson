@@ -5,6 +5,7 @@ from samson.utilities.general import shuffle
 from samson.utilities.math import is_power_of_two
 from samson.utilities.bytes import Bytes
 from sympy.ntheory import isprime
+from samson.core.encryption_alg import EncryptionAlg
 import math
 
 
@@ -87,7 +88,7 @@ def invert_poly(f_poly: Poly, R_poly: Poly, p: int) -> Poly:
 
 
 # https://en.wikipedia.org/wiki/NTRUEncrypt
-class NTRU(object):
+class NTRU(EncryptionAlg):
     """
     Nth-degree TRUncated polynomial ring
     """

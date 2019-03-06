@@ -1,8 +1,9 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
 from types import FunctionType
+from samson.core.mac import MAC
 
-class PMAC(object):
+class PMAC(MAC):
     """
     Parallelizable message authentication code.
     http://web.cs.ucdavis.edu/~rogaway/ocb/pmac-bak.htm

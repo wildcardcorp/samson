@@ -1,5 +1,6 @@
 from samson.utilities.manipulation import left_rotate, get_blocks
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 import math
 from copy import deepcopy
 
@@ -26,7 +27,7 @@ def QUARTER_ROUND(a: int, b: int, c: int, d: int) -> (int, int, int, int):
     return a, b, c, d
 
 
-class Salsa(object):
+class Salsa(EncryptionAlg):
     """
     Salsa stream cipher
 

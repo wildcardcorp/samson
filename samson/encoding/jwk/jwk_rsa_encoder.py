@@ -8,6 +8,17 @@ class JWKRSAEncoder(object):
     """
 
     @staticmethod
+    def check(buffer):
+        try:
+            if issubclass(type(buffer), (bytes, bytearray)):
+                buffer = buffer.decode()
+
+            jwk = json.loads(buffer)
+            return jwk['kty'] == 'RSA'
+        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+            return False
+
+    @staticmethod
     def encode(rsa_key: object, is_private: bool=False) -> str:
         """
         Encodes the key as a JWK JSON string.
@@ -47,7 +58,9 @@ class JWKRSAEncoder(object):
         Returns:
             (int, int, int, int): RSA parameters formatted as (n, e, p, q).
         """
-        if type(buffer) is bytes:
+        from samson.public_key.rsa import RSA
+
+        if issubclass(type(buffer), (bytes, bytearray)):
             buffer = buffer.decode()
 
         jwk = json.loads(buffer)
@@ -61,4 +74,9 @@ class JWKRSAEncoder(object):
             p = 2
             q = 3
 
-        return n, e, p, q
+
+        rsa = RSA(2, p=p, q=q, e=e)
+        rsa.n = n
+        rsa.bits = rsa.n.bit_length()
+
+        return rsa

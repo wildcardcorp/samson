@@ -34,6 +34,7 @@ def start_repl():
     import IPython
     import sys
     from samson import VERSION
+    from traitlets.config import Config
 
     banner = f"""
 {LOGO}
@@ -43,7 +44,17 @@ Python {sys.version}
 IPython {IPython.__version__}
 """
 
-    IPython.start_ipython(display_banner=False, exec_lines=[start_exec, f'print("""{banner}""")'])
+    conf = Config()
+    conf.TerminalIPythonApp.display_banner = False
+    conf.InteractiveShellApp.exec_lines = [
+        start_exec,
+        f'print("""{banner}""")'
+    ]
+
+    conf.InteractiveShell.confirm_exit = False
+    conf.TerminalInteractiveShell.term_title_format = f"samson v{VERSION}"
+
+    IPython.start_ipython(config=conf)
 
 
 

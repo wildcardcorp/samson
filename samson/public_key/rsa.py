@@ -1,19 +1,19 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
-from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.core.encryption_alg import EncryptionAlg
 
 from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.rsa_public_key import RSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 from samson.encoding.jwk.jwk_rsa_encoder import JWKRSAEncoder
+from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
+from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
+from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate
 
 from samson.encoding.pem import pem_encode, pem_decode
-from pyasn1.codec.der import encoder, decoder
-from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from samson.utilities.bytes import Bytes
-from json import JSONDecodeError
-import math
 import random
+
+SSH_PUBLIC_HEADER = b'ssh-rsa'
 
 class RSA(EncryptionAlg):
     """
@@ -111,14 +111,14 @@ class RSA(EncryptionAlg):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS8', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS1', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
             encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS8' and 'OpenSSH'.
+            encoding     (str): Encoding scheme to use. Currently supports 'PKCS1' and 'OpenSSH'.
             marker       (str): Marker to use in PEM formatting (if applicable).
             encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
@@ -127,8 +127,8 @@ class RSA(EncryptionAlg):
         Returns:
             bytes: Bytes-encoded RSA instance.
         """
-        if encoding.upper() == 'PKCS8'.upper():
-            encoded = export_der([0, self.n, self.e, self.alt_d, self.p, self.q, self.dP, self.dQ, self.Qi])
+        if encoding.upper() == 'PKCS1'.upper():
+            encoded = PKCS1RSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
@@ -158,14 +158,14 @@ class RSA(EncryptionAlg):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS8', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS1', marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
             encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS8', 'OpenSSH', and 'SSH2'.
+            encoding    (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', and 'SSH2'.
             marker      (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
@@ -173,24 +173,8 @@ class RSA(EncryptionAlg):
         """
         use_rfc_4716 = False
 
-        if encoding.upper() == 'PKCS8':
-            seq = Sequence()
-            seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
-            seq.setComponentByPosition(1, Null())
-
-            param_seq = SequenceOf()
-            param_seq.append(Integer(self.n))
-            param_seq.append(Integer(self.e))
-
-            param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
-            param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
-            param_bs = BitString(param_bs)
-
-            top_seq = Sequence()
-            top_seq.setComponentByPosition(0, seq)
-            top_seq.setComponentByPosition(1, param_bs)
-
-            encoded = encoder.encode(top_seq)
+        if encoding.upper() == 'PKCS1':
+            encoded = PKCS1RSAPublicKey.encode(self)
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
@@ -221,18 +205,16 @@ class RSA(EncryptionAlg):
         Returns:
             RSA: RSA instance.
         """
-        try:
-            n, e, p, q = JWKRSAEncoder.decode(buffer)
-            rsa = RSA(2, p=p, q=q, e=e)
-            rsa.n = n
-        except (JSONDecodeError, UnicodeDecodeError) as _:
+        # JWK
+        if JWKRSAEncoder.check(buffer):
+            rsa = JWKRSAEncoder.decode(buffer)
+        else:
             if buffer.startswith(b'----'):
                 buffer = pem_decode(buffer, passphrase)
 
-            ssh_header = b'ssh-rsa'
-
-            if ssh_header in buffer:
-                priv, pub = parse_openssh_key(buffer, ssh_header, RSAPublicKey, RSAPrivateKey, passphrase)
+            # SSH
+            if SSH_PUBLIC_HEADER in buffer:
+                priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, RSAPublicKey, RSAPrivateKey, passphrase)
 
                 if priv:
                     n, e, p, q = priv.n, priv.e, priv.p, priv.q
@@ -242,27 +224,16 @@ class RSA(EncryptionAlg):
                 rsa = RSA(2, p=p, q=q, e=e)
                 rsa.n = n
             else:
-                items = bytes_to_der_sequence(buffer)
+                # X.509
+                if X509RSACertificate.check(buffer):
+                    rsa = X509RSACertificate.decode(buffer)
 
                 # PKCS#1
-                if len(items) == 9 and int(items[0]) == 0:
-                    items = [int(item) for item in items]
-                    del items[6:]
-                    del items[0]
-                    n, e, _d, p, q = items
-                    rsa = RSA(0, p=p, q=q, e=e)
+                elif PKCS1RSAPrivateKey.check(buffer):
+                    rsa = PKCS1RSAPrivateKey.decode(buffer)
 
-                elif len(items) == 2:
-                    if type(items[1]) is BitString:
-                        if str(items[0][0]) == '1.2.840.113549.1.1.1':
-                            bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
-                            items = list(bitstring_seq)
-                        else:
-                            raise ValueError('Unable to decode RSA key.')
-
-                    n, e = [int(item) for item in items]
-                    rsa = RSA(2, e=e)
-                    rsa.n = n
+                elif PKCS1RSAPublicKey.check(buffer):
+                    rsa = PKCS1RSAPublicKey.decode(buffer)
                 else:
                     raise ValueError("Unable to parse provided RSA key.")
 

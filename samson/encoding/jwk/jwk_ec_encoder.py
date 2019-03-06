@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
 from fastecdsa.curve import P192, P224, P256, P384, P521, Curve
+from fastecdsa.point import Point
 import json
 
 JWK_CURVE_NAME_LOOKUP = {
@@ -18,6 +19,18 @@ class JWKECEncoder(object):
     """
     JWK encoder for ECDSA
     """
+
+    @staticmethod
+    def check(buffer):
+        try:
+            if issubclass(type(buffer), (bytes, bytearray)):
+                buffer = buffer.decode()
+
+            jwk = json.loads(buffer)
+            return jwk['kty'] == 'EC'
+        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+            return False
+
 
     @staticmethod
     def encode(ec_key: object, is_private: bool=False) -> str:
@@ -55,7 +68,9 @@ class JWKECEncoder(object):
         Returns:
             (Curve, int, int, int): ECDSA parameters formatted as (curve, x, y, d).
         """
-        if type(buffer) is bytes:
+        from samson.public_key.ecdsa import ECDSA
+
+        if issubclass(type(buffer), (bytes, bytearray)):
             buffer = buffer.decode()
 
         jwk = json.loads(buffer)
@@ -68,4 +83,8 @@ class JWKECEncoder(object):
         else:
             d = 0
 
-        return curve, x, y, d
+
+        Q = Point(x, y, curve)
+        ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
+        ecdsa.Q = Q
+        return ecdsa

@@ -1,4 +1,3 @@
-from math import ceil
 from samson.utilities.bytes import Bytes
 from types import FunctionType
 from samson.kdfs.pbkdf2 import PBKDF2
@@ -40,7 +39,7 @@ def ROMix(block, iterations):
         X.byteorder = 'little'
         j = X[-64:].int() % iterations
         X = BlockMix(X ^ V[j])
-    
+
     return X
 
 
@@ -90,6 +89,6 @@ class Scrypt(object):
 
         for i in range(self.parallelization_factor):
             B[i] = ROMix(B[i], self.cost)
-        
+
         expensive_salt = b''.join(B)
         return PBKDF2(self.hash_fn, self.desired_len, 1).derive(password, expensive_salt)

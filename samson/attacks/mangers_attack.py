@@ -3,7 +3,7 @@ from samson.oracles.padding_oracle import PaddingOracle
 from samson.public_key.rsa import RSA
 from samson.utilities.runtime import RUNTIME
 from samson.ace.decorators import define_exploit
-from samson.ace.ace import Consequence, Requirement
+from samson.ace.consequence import Consequence, Requirement
 import math
 
 import logging

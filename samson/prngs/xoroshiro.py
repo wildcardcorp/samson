@@ -1,6 +1,6 @@
 from samson.utilities.manipulation import left_rotate
 from samson.prngs.xorshift import DEFAULT_SHFT_R
-from samson.prngs.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG
 
 MASK58 = 0x3FFFFFFFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF

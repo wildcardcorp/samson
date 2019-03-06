@@ -1,6 +1,7 @@
 from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import int_to_bytes, bytes_to_bitstring
+from samson.core.encryption_alg import EncryptionAlg
 
 # https://asecuritysite.com/encryption/kasumi
 S7 = (
@@ -125,7 +126,7 @@ def fun_fo(KO_i, KI_i, x):
 
 
 # I WANT TO GET OFF MR. BONES' WILD RIDE
-class KASUMI(FeistelNetwork):
+class KASUMI(FeistelNetwork, EncryptionAlg):
     """
     Structure: Feistel Network
     Key size: 128
@@ -161,8 +162,8 @@ class KASUMI(FeistelNetwork):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)
+        half = len(plaintext) // 2
         L_i, R_i = plaintext[:half], plaintext[half:]
 
         return FeistelNetwork.encrypt(self, self.key, R_i + L_i)
@@ -178,7 +179,7 @@ class KASUMI(FeistelNetwork):
         Returns:
             Bytes: Resulting plaintext.
         """
-        plaintext = FeistelNetwork.decrypt(self, self.key, ciphertext)
+        plaintext = FeistelNetwork.decrypt(self, self.key, Bytes.wrap(ciphertext))
 
         half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)

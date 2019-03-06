@@ -11,8 +11,8 @@ class SerpentTestCase(unittest.TestCase):
         ciphertext1 = cipher_obj.encrypt(plaintext)
         ciphertext2 = cipher_obj.decrypt(plaintext)
 
-        self.assertTrue(cipher_obj.decrypt(ciphertext1), plaintext)
-        self.assertTrue(cipher_obj.encrypt(ciphertext2), plaintext)
+        self.assertEqual(cipher_obj.decrypt(ciphertext1), plaintext)
+        self.assertEqual(cipher_obj.encrypt(ciphertext2), plaintext)
 
 
 
@@ -20,7 +20,7 @@ class SerpentTestCase(unittest.TestCase):
         serpent = Serpent(key)
         ciphertext = serpent.encrypt(plaintext)
         self.assertEqual(ciphertext, Bytes(expected_ciphertext))
-        self.assertEqual(serpent.decrypt(ciphertext), Bytes(plaintext))
+        self.assertEqual(serpent.decrypt(ciphertext), Bytes(plaintext).zfill(16))
 
         # for _ in range(99):
         #     ciphertext = serpent.encrypt(ciphertext)

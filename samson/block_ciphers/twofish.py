@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import poly_to_int, int_to_poly
 from samson.utilities.manipulation import right_rotate, left_rotate
+from samson.core.encryption_alg import EncryptionAlg
 
 GF_MOD = 2**8 + 2**6 + 2**5 + 2**3 + 1
 GF_MOD_POLY = int_to_poly(GF_MOD)
@@ -124,7 +125,7 @@ def EXPAND_KEY(M_e, M_o, k):
 
 
 # https://www.schneier.com/academic/paperfiles/paper-twofish-paper.pdf
-class Twofish(object):
+class Twofish(EncryptionAlg):
     """
     Structure: Feistel Network
     Key size: 128, 192, 256 bits
@@ -197,7 +198,7 @@ class Twofish(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext = Bytes.wrap(plaintext)
+        plaintext = Bytes.wrap(plaintext)[::-1]
         pt_chunks = [chunk.zfill(4).int() for chunk in plaintext.chunk(4)]
 
         # Whitening
@@ -252,4 +253,4 @@ class Twofish(object):
 
         R = [R[(i+2) % 4] ^ self.K[i] for i in range(len(ct_chunks))]
 
-        return Bytes(b''.join([int.to_bytes(r, 4, 'little') for r in R]))
+        return Bytes(b''.join([int.to_bytes(r, 4, 'little') for r in R]), 'little')[::-1]

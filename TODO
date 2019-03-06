@@ -44,6 +44,19 @@ X   OCB
 
     X   OCB3
 
+
+X   X.509
+    OK  Parsing
+    X   Generating
+
+X   PKCS8
+    X   RSA
+    X   DSA
+    X   ECDSA
+
+X   Add PublicKey core
+    X   Add encoding fingerprinter to automatically decode keys
+
 OK  EAX
 OK  PMAC
 X   STREAM
@@ -58,11 +71,14 @@ X   Composable exploits and ACE
         X   Non-CSPRNGs
 
 
-0.4.0
+
+Future
 ===============
 X   RC6
-OK  scrypt
 X   Argon2
+X   Yarrow
+X   Fortuna
+X   Blum blum shub
 X   SM3
 X   SM4
 X   Primitive analysis

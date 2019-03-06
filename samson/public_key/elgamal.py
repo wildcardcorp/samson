@@ -1,8 +1,9 @@
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.utilities.bytes import Bytes
 from samson.utilities.math import mod_inv
+from samson.core.encryption_alg import EncryptionAlg
 
-class ElGamal(object):
+class ElGamal(EncryptionAlg):
     """
     ElGamal public key encryption
     """

@@ -75,6 +75,7 @@ class CBC(object):
             Bytes: Resulting plaintext.
         """
         plaintext = b''
+        ciphertext = Bytes.wrap(ciphertext)
 
         if len(ciphertext) % self.block_size != 0:
             raise Exception("Ciphertext is not a multiple of the block size")

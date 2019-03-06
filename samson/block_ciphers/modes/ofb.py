@@ -36,6 +36,8 @@ class OFB(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
+        plaintext = Bytes.wrap(plaintext)
+
         num_blocks = ceil(len(plaintext) / self.block_size)
         keystream = self.cbc.encrypt(b'\x00' * self.block_size * num_blocks, False)
 

@@ -1,4 +1,4 @@
-from samson.prngs.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG
 
 # https://en.wikipedia.org/wiki/Xorshift
 

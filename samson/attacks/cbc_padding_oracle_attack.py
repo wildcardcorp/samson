@@ -2,7 +2,7 @@ from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.runtime import RUNTIME
 from samson.ace.decorators import define_exploit
-from samson.ace.ace import Consequence, Requirement
+from samson.ace.consequence import Consequence, Requirement
 import struct
 
 import logging

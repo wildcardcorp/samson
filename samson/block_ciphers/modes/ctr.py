@@ -39,6 +39,7 @@ class CTR(object):
             Bytes: Resulting ciphertext.
         """
         keystream = Bytes(b'')
+        plaintext = Bytes.wrap(plaintext)
 
         num_blocks = ceil(len(plaintext) / self.block_size)
         for _ in range(num_blocks):

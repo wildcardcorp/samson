@@ -1,6 +1,5 @@
 from samson.encoding.general import bytes_to_bitstring
 from math import log, sqrt
-from samson.stream_ciphers.rc4 import RC4
 import operator
 import json
 import difflib
@@ -229,6 +228,7 @@ def generate_rc4_bias_map(ciphertexts):
 
 
 def generate_random_rc4_bias_map(data=b'\x00' * 51, key_size=128, sample_size=2**20):
+    from samson.stream_ciphers.rc4 import RC4
     ciphertexts = []
 
     for _ in range(sample_size):

@@ -13,7 +13,7 @@ PKI_PARAMS = {
     'ecdsa': 'curve=nistp192'
 }
 
-ENCODING_PARAMS = [[], ['--encoding=OpenSSH'], ['--encoding=pkcs8'], ['--pub'], ['--pub', '--encoding=ssh2'], ['--encoding=jwk'], ['--encoding=jwk', '--pub']]
+ENCODING_PARAMS = [[], ['--encoding=OpenSSH'], ['--encoding=PKCS1'], ['--pub'], ['--pub', '--encoding=ssh2'], ['--encoding=jwk'], ['--encoding=jwk', '--pub']]
 
 class CLITestCase(unittest.TestCase):
     def test_hashes(self):
@@ -32,7 +32,7 @@ class CLITestCase(unittest.TestCase):
                 params += [f"--args={PKI_PARAMS[pki_name]}"]
 
             for encoding in ENCODING_PARAMS:
-                if pki_name == 'eddsa' and len(encoding) == 1 and 'pkcs8' in encoding[0]:
+                if pki_name == 'eddsa' and len(encoding) == 1 and 'PKCS1' in encoding[0]:
                     continue
                 elif pki_name not in ['rsa', 'ecdsa'] and len(encoding) > 0 and 'jwk' in encoding[0]:
                     continue

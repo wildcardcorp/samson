@@ -1,5 +1,5 @@
 from samson.prngs.xorshift import DEFAULT_SHFT_R, MASK32
-from samson.prngs.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG
 
 # https://github.com/XMPPwocky/nodebeefcl/blob/master/beef.py
 # https://github.com/v8/v8/blob/ceade6cf239e0773213d53d55c36b19231c820b5/src/js/math.js#L143

@@ -3,9 +3,10 @@ from samson.utilities.math import mod_inv, lll, generate_superincreasing_seq, fi
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix, eye
+from samson.core.encryption_alg import EncryptionAlg
 
 
-class MerkleHellmanKnapsack(object):
+class MerkleHellmanKnapsack(EncryptionAlg):
     """
     Merkle-Hellman Knapsack cryptosystem.
 

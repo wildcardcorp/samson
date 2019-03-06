@@ -1,5 +1,6 @@
 from samson.prngs.flfsr import FLFSR
 from samson.utilities.bytes import Bytes
+from samson.core.encryption_alg import EncryptionAlg
 from sympy.abc import x
 from sympy import Poly
 
@@ -44,7 +45,7 @@ OUTPUT_MATRIX = [
 E0_CHUNK = 5120
 POLY_SIZES = [25, 31, 33, 39]
 
-class E0(object):
+class E0(EncryptionAlg):
     """
     E0 stream cipher
 

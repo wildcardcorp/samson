@@ -1,8 +1,9 @@
 from samson.block_ciphers.modes.cbc import CBC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
+from samson.core.mac import MAC
 
-class CBCMAC(object):
+class CBCMAC(MAC):
     """
     Message authentication code scheme based off of a block cipher in CBC mode.
     """
@@ -39,4 +40,4 @@ class CBCMAC(object):
         """
         cryptor = self.cipher(self.key)
         cbc = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size)
-        return cbc.encrypt(message, pad)[-(cryptor.block_size):]
+        return cbc.encrypt(Bytes.wrap(message), pad)[-(cryptor.block_size):]

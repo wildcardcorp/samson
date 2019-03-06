@@ -1,36 +1,34 @@
 from samson.utilities.runtime import RUNTIME
 from samson.ace.constraints import IdentityConstraint
-from samson.ace.consequence import Consequence
+from samson.ace.consequence import Consequence, Requirement
 from samson.ace.exploit import IdentityExploit
 from samson.ace.state import State
-from enum import Enum
 
 import logging
 log = logging.getLogger(__name__)
 
 
-class Requirement(Enum):
-    EVENTUALLY_DECRYPTS = 0
-
-
-
 def get_runtime_exploits(primitive):
     all_exploits = []
-    for cls in [primitive] + [_ for _ in primitive.__bases__]:
-        if cls in RUNTIME.exploit_mappings:
-            attack  = RUNTIME.exploit_mappings[cls]
-            exploit = RUNTIME.exploits[attack]
-            all_exploits.append(exploit)
+
+    if primitive:
+        for cls in [primitive] + [_ for _ in primitive.__bases__]:
+            if cls in RUNTIME.exploit_mappings:
+                attack  = RUNTIME.exploit_mappings[cls]
+                exploit = RUNTIME.exploits[attack]
+                all_exploits.append(exploit)
 
     return all_exploits
 
 
 def get_runtime_constraints(primitive):
     all_constraints = []
-    for cls in [primitive] + [_ for _ in primitive.__bases__]:
-        if cls in RUNTIME.constraints:
-            constraint  = RUNTIME.constraints[cls]
-            all_constraints.append(constraint)
+
+    if primitive:
+        for cls in [primitive] + [_ for _ in primitive.__bases__]:
+            if cls in RUNTIME.constraints:
+                constraint  = RUNTIME.constraints[cls]
+                all_constraints.append(constraint)
 
     return all_constraints
 

@@ -2,6 +2,8 @@ from samson.utilities.analysis import generate_rc4_bias_map, RC4_BIAS_MAP
 from samson.oracles.encryption_oracle import EncryptionOracle
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.bytes import Bytes
+from samson.ace.decorators import define_exploit
+from samson.ace.consequence import Consequence, Requirement
 import multiprocessing
 import itertools
 import struct
@@ -12,7 +14,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-
+@define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION])
 class RC4PrependAttack(object):
     """
     Performs a plaintext recovery attack.
