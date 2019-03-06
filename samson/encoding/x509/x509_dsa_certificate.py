@@ -1,4 +1,4 @@
-from samson.encoding.pkcs1.pkcs1_dsa_public_key import PKCS1DSAPublicKey
+from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from pyasn1.codec.der import decoder, encoder
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
@@ -23,4 +23,4 @@ class X509DSACertificate(object):
     def decode(buffer: bytes):
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
         pub_info = cert['tbsCertificate']['subjectPublicKeyInfo']
-        return PKCS1DSAPublicKey.decode(encoder.encode(pub_info))
+        return X509DSAPublicKey.decode(encoder.encode(pub_info))

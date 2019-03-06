@@ -4,7 +4,7 @@ from pyasn1.type.univ import ObjectIdentifier, BitString, SequenceOf
 from pyasn1.codec.ber import decoder as ber_decoder
 from fastecdsa.point import Point
 
-class PKCS1ECDSAPublicKey(object):
+class X509ECDSAPublicKey(object):
 
     @staticmethod
     def check(buffer: bytes):

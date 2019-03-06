@@ -6,6 +6,7 @@ from samson.encoding.pem import pem_decode, pem_encode
 from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
 from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.general import PKIEncoding
 
 SSH_PUBLIC_HEADER = b'ssh-ed25519'
 
@@ -162,22 +163,22 @@ class EdDSA(DSA):
         return eddsa
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='OpenSSH', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.OpenSSH, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full EdDSA instance into encoded bytes.
 
         Parameters:
-            encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'OpenSSH'.
-            marker       (str): Marker to use in PEM formatting (if applicable).
-            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-            iv         (bytes): (Optional) IV to use for CBC encryption.
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'OpenSSH'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
+            encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv             (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: Bytes-encoded EdDSA instance.
         """
-        if encoding.upper() == 'OpenSSH'.upper():
+        if encoding == PKIEncoding.OpenSSH:
             public_key = EdDSAPublicKey('public_key', self.a)
             private_key = EdDSAPrivateKey(
                 'private_key',
@@ -194,14 +195,14 @@ class EdDSA(DSA):
         return encoded
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='OpenSSH', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.OpenSSH, marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the EdDSA instance into encoded bytes.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'OpenSSH', and 'SSH2'.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'OpenSSH', and 'SSH2'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
             bytes: Encoding of EdDSA instance.

@@ -1,6 +1,10 @@
 from samson.encoding.general import export_der, bytes_to_der_sequence
 
 class PKCS1DSAPrivateKey(object):
+    """
+    Not in the RFC spec, but OpenSSL supports it.
+    """
+
     @staticmethod
     def check(buffer: bytes):
         items = bytes_to_der_sequence(buffer)

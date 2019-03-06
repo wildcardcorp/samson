@@ -10,8 +10,11 @@ from samson.encoding.openssh.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 from samson.encoding.jwk.jwk_ec_encoder import JWKECEncoder
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
-from samson.encoding.pkcs1.pkcs1_ecdsa_public_key import PKCS1ECDSAPublicKey
+from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
+from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate
+from samson.encoding.x509.x509_ecdsa_explicit_certificate import X509ECDSAExplicitCertificate
+from samson.encoding.general import PKIEncoding
 
 from fastecdsa.point import Point
 import math
@@ -157,15 +160,20 @@ class ECDSA(DSA):
                 ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
                 ecdsa.Q = Q
             else:
-                if X509ECDSACertificate.check(buffer):
+                if X509ECDSAExplicitCertificate.check(buffer):
+                    ecdsa = X509ECDSAExplicitCertificate.decode(buffer)
+
+                elif X509ECDSACertificate.check(buffer):
                     ecdsa = X509ECDSACertificate.decode(buffer)
 
+                elif X509ECDSAPublicKey.check(buffer):
+                    ecdsa = X509ECDSAPublicKey.decode(buffer)
+                
+                elif PKCS8ECDSAPrivateKey.check(buffer):
+                    ecdsa = PKCS8ECDSAPrivateKey.decode(buffer)
+                
                 elif PKCS1ECDSAPrivateKey.check(buffer):
                     ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
-
-                # Is it a public key?
-                elif PKCS1ECDSAPublicKey.check(buffer):
-                    ecdsa = PKCS1ECDSAPublicKey.decode(buffer)
 
                 else:
                     raise ValueError("Unable to parse provided ECDSA key.")
@@ -185,30 +193,38 @@ class ECDSA(DSA):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS1', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.PKCS1, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full ECDSA instance into encoded bytes.
 
         Parameters:
-            encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', and 'JWK'.
-            marker       (str): Marker to use in PEM formatting (if applicable).
-            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-            iv         (bytes): (Optional) IV to use for CBC encryption.
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'PKCS1', 'PKCS8', 'OpenSSH', and 'JWK'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
+            encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv             (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: Encoding of DSA instance.
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
 
-        if encoding.upper() == 'PKCS1'.upper():
+        if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1ECDSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'EC PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
-        elif encoding.upper() == 'OpenSSH'.upper():
+
+        elif encoding == PKIEncoding.PKCS8:
+            encoded = PKCS8ECDSAPrivateKey.encode(self)
+
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+
+
+        elif encoding == PKIEncoding.OpenSSH:
             curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
             x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
@@ -224,7 +240,7 @@ class ECDSA(DSA):
 
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
 
-        elif encoding.upper() == 'JWK':
+        elif encoding == PKIEncoding.JWK:
             encoded = JWKECEncoder.encode(self, is_private=True).encode('utf-8')
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
@@ -233,14 +249,14 @@ class ECDSA(DSA):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS1', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.X509, marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the ECDSA instance into encoded bytes.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', 'SSH2', and 'JWK'.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'X509', 'OpenSSH', 'SSH2', and 'JWK'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
             bytes: Encoding of ECDSA instance.
@@ -250,19 +266,19 @@ class ECDSA(DSA):
         x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
         use_rfc_4716 = False
-        encoding_upper = encoding.upper()
+        
 
-        if encoding_upper == 'PKCS1':
-            encoded = PKCS1ECDSAPublicKey.encode(self)
+        if encoding == PKIEncoding.X509:
+            encoded = X509ECDSAPublicKey.encode(self)
 
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        elif 'SSH' in encoding_upper:
+        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
             public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding_upper, b'ecdsa-sha2-' + curve, public_key)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ecdsa-sha2-' + curve, public_key)
 
-        elif encoding_upper == 'JWK':
+        elif encoding == PKIEncoding.JWK:
             encoded = JWKECEncoder.encode(self, is_private=False).encode('utf-8')
             default_pem = False
         else:

@@ -6,8 +6,11 @@ from samson.encoding.openssh.rsa_public_key import RSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
 from samson.encoding.jwk.jwk_rsa_encoder import JWKRSAEncoder
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
+from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
 from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate
+from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
+from samson.encoding.general import PKIEncoding
 
 from samson.encoding.pem import pem_encode, pem_decode
 from samson.utilities.bytes import Bytes
@@ -111,29 +114,37 @@ class RSA(EncryptionAlg):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS1', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.PKCS1, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
-            encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS1' and 'OpenSSH'.
-            marker       (str): Marker to use in PEM formatting (if applicable).
-            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-            iv         (bytes): (Optional) IV to use for CBC encryption.
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'PKCS1', 'PKCS8', 'JWK', and 'OpenSSH'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
+            encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv             (bytes): (Optional) IV to use for CBC encryption.
         
         Returns:
             bytes: Bytes-encoded RSA instance.
         """
-        if encoding.upper() == 'PKCS1'.upper():
+        if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1RSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
-        elif encoding.upper() == 'OpenSSH'.upper():
+
+        elif encoding == PKIEncoding.PKCS8:
+            encoded = PKCS8RSAPrivateKey.encode(self)
+
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+
+
+        elif encoding == PKIEncoding.OpenSSH:
             public_key = RSAPublicKey('public_key', self.n, self.e)
             private_key = RSAPrivateKey(
                 'private_key',
@@ -149,7 +160,7 @@ class RSA(EncryptionAlg):
 
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
 
-        elif encoding.upper() == 'JWK':
+        elif encoding == PKIEncoding.JWK:
             encoded = JWKRSAEncoder.encode(self, is_private=True).encode('utf-8')
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
@@ -158,32 +169,40 @@ class RSA(EncryptionAlg):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS1', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.PKCS1, marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the RSA instance into encoded bytes.
         See https://tools.ietf.org/html/rfc2313#section-7.2.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', and 'SSH2'.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'PKCS1', 'X509', 'JWK', 'OpenSSH', and 'SSH2'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
             bytes: Encoding of RSA instance.
         """
         use_rfc_4716 = False
 
-        if encoding.upper() == 'PKCS1':
+        if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1RSAPublicKey.encode(self)
+            default_marker = 'RSA PUBLIC KEY'
+            default_pem = True
+
+        elif encoding == PKIEncoding.X509:
+            encoded = X509RSAPublicKey.encode(self)
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        elif encoding.upper() == 'JWK':
+        elif encoding== PKIEncoding.JWK:
             encoded = JWKRSAEncoder.encode(self).encode('utf-8')
             default_pem = False
-        else:
+            
+        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
             public_key = RSAPublicKey('public_key', self.n, self.e)
             encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-rsa', public_key)
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
 
 
         if (encode_pem is None and default_pem) or encode_pem:
@@ -221,12 +240,18 @@ class RSA(EncryptionAlg):
                 else:
                     n, e, p, q = pub.n, pub.e, 2, 3
 
-                rsa = RSA(2, p=p, q=q, e=e)
+                rsa = RSA(8, p=p, q=q, e=e)
                 rsa.n = n
             else:
                 # X.509
                 if X509RSACertificate.check(buffer):
                     rsa = X509RSACertificate.decode(buffer)
+                
+                elif X509RSAPublicKey.check(buffer):
+                    rsa = X509RSAPublicKey.decode(buffer)
+                
+                elif PKCS8RSAPrivateKey.check(buffer):
+                    rsa = PKCS8RSAPrivateKey.decode(buffer)
 
                 # PKCS#1
                 elif PKCS1RSAPrivateKey.check(buffer):

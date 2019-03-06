@@ -75,7 +75,7 @@ class JWKRSAEncoder(object):
             q = 3
 
 
-        rsa = RSA(2, p=p, q=q, e=e)
+        rsa = RSA(8, p=p, q=q, e=e)
         rsa.n = n
         rsa.bits = rsa.n.bit_length()
 

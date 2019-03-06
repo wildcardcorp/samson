@@ -1,37 +1,14 @@
-from samson.utilities.bytes import Bytes
-from samson.encoding.general import bytes_to_der_sequence
-from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
-from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
-from pyasn1.codec.der import encoder, decoder
-import math
+from samson.encoding.general import export_der, bytes_to_der_sequence
 
 class PKCS1RSAPublicKey(object):
-    
     @staticmethod
     def check(buffer: bytes):
         items = bytes_to_der_sequence(buffer)
-        return not PKCS1RSAPrivateKey.check(buffer) and len(items) == 2
-
+        return len(items) == 2
 
     @staticmethod
     def encode(rsa_key: object):
-        seq = Sequence()
-        seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
-        seq.setComponentByPosition(1, Null())
-
-        param_seq = SequenceOf()
-        param_seq.append(Integer(rsa_key.n))
-        param_seq.append(Integer(rsa_key.e))
-
-        param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
-        param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
-        param_bs = BitString(param_bs)
-
-        top_seq = Sequence()
-        top_seq.setComponentByPosition(0, seq)
-        top_seq.setComponentByPosition(1, param_bs)
-
-        encoded = encoder.encode(top_seq)
+        encoded = export_der([rsa_key.n, rsa_key.e])
         return encoded
 
 
@@ -40,17 +17,12 @@ class PKCS1RSAPublicKey(object):
         from samson.public_key.rsa import RSA
         items = bytes_to_der_sequence(buffer)
 
-        if type(items[1]) is BitString:
-            if str(items[0][0]) == '1.2.840.113549.1.1.1':
-                bitstring_seq = decoder.decode(Bytes(int(items[1])))[0]
-                items = list(bitstring_seq)
-            else:
-                raise ValueError('Unable to decode RSA key.')
+        items = [int(item) for item in items]
 
-        n, e = [int(item) for item in items]
-        rsa = RSA(2, e=e)
+        n, e = items
+
+        rsa = RSA(8, e=e)
         rsa.n = n
-
         rsa.bits = rsa.n.bit_length()
 
         return rsa

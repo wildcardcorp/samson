@@ -4,9 +4,11 @@ from samson.utilities.bytes import Bytes
 from samson.encoding.openssh.dsa_private_key import DSAPrivateKey
 from samson.encoding.openssh.dsa_public_key import DSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
-from samson.encoding.pkcs1.pkcs1_dsa_public_key import PKCS1DSAPublicKey
+from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
+from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate
+from samson.encoding.general import PKIEncoding
 
 from samson.encoding.pem import pem_encode, pem_decode
 from samson.hashes.sha2 import SHA256
@@ -155,13 +157,15 @@ class DSA(object):
         else:
             if X509DSACertificate.check(buffer):
                 dsa = X509DSACertificate.decode(buffer)
+            
+            elif PKCS8DSAPrivateKey.check(buffer):
+                dsa = PKCS8DSAPrivateKey.decode(buffer)
 
             elif PKCS1DSAPrivateKey.check(buffer):
                 dsa = PKCS1DSAPrivateKey.decode(buffer)
 
-            # Is public key?
-            elif PKCS1DSAPublicKey.check(buffer):
-                dsa = PKCS1DSAPublicKey.decode(buffer)
+            elif X509DSAPublicKey.check(buffer):
+                dsa = X509DSAPublicKey.decode(buffer)
 
             else:
                 raise ValueError("Unable to parse provided DSA key.")
@@ -170,28 +174,34 @@ class DSA(object):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: str='PKCS1', marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
+    def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.PKCS1, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
         """
         Exports the full DSA instance into encoded bytes.
 
         Parameters:
-            encode_pem  (bool): Whether or not to PEM-encode as well.
-            encoding     (str): Encoding scheme to use. Currently supports 'PKCS1' and 'OpenSSH'.
-            marker       (str): Marker to use in PEM formatting (if applicable).
-            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-            iv         (bytes): (Optional) IV to use for CBC encryption.
-        
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'PKCS1', 'PKCS8', and 'OpenSSH'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
+            encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv             (bytes): (Optional) IV to use for CBC encryption.
+
         Returns:
             bytes: Encoding of DSA instance.
         """
-        if encoding.upper() == 'PKCS1'.upper():
+        if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1DSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'DSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
-        elif encoding.upper() == 'OpenSSH'.upper():
+        elif encoding == PKIEncoding.PKCS8:
+            encoded = PKCS8DSAPrivateKey.encode(self)
+
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+
+        elif encoding == PKIEncoding.OpenSSH:
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
             private_key = DSAPrivateKey(
                 'private_key',
@@ -212,29 +222,30 @@ class DSA(object):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: str='PKCS1', marker: str=None) -> bytes:
+    def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.X509, marker: str=None) -> bytes:
         """
         Exports the only the public parameters of the DSA instance into encoded bytes.
 
         Parameters:
-            encode_pem (bool): Whether or not to PEM-encode as well.
-            encoding    (str): Encoding scheme to use. Currently supports 'PKCS1', 'OpenSSH', and 'SSH2'.
-            marker      (str): Marker to use in PEM formatting (if applicable).
+            encode_pem      (bool): Whether or not to PEM-encode as well.
+            encoding (PKIEncoding): Encoding scheme to use. Currently supports 'X509', 'OpenSSH', and 'SSH2'.
+            marker           (str): Marker to use in PEM formatting (if applicable).
         
         Returns:
             bytes: Encoding of DSA instance.
         """
         use_rfc_4716 = False
-        encoding_upper = encoding.upper()
 
-        if encoding_upper == 'PKCS1':
-            encoded = PKCS1DSAPublicKey.encode(self)
+        if encoding == PKIEncoding.X509:
+            encoded = X509DSAPublicKey.encode(self)
             default_marker = 'PUBLIC KEY'
             default_pem = True
 
-        else:
+        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
             public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding_upper, b'ssh-dss', public_key)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-dss', public_key)
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
 
 
         if (encode_pem is None and default_pem) or encode_pem:

@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.encoding.general import PKIEncoding
 from samson.public_key.eddsa import EdDSA
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA512
@@ -98,9 +99,9 @@ class EdDSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = eddsa.export_private_key(encoding='OpenSSH', encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = eddsa.export_public_key(encoding='OpenSSH')
-            pub_ssh2    = eddsa.export_public_key(encoding='SSH2')
+            priv        = eddsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = eddsa.export_public_key(encoding=PKIEncoding.OpenSSH)
+            pub_ssh2    = eddsa.export_public_key(encoding=PKIEncoding.SSH2)
 
             new_priv = EdDSA.import_key(priv, passphrase=passphrase)
             new_pub_openssh = EdDSA.import_key(pub_openssh)

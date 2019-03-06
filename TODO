@@ -49,17 +49,19 @@ X   X.509
     OK  Parsing
     X   Generating
 
-X   PKCS8
-    X   RSA
-    X   DSA
-    X   ECDSA
+OK  PKCS8
+    OK  RSA
+    OK  DSA
+    OK  ECDSA
+
+OK  Switch encoding names to Enum instead of string
+X   Document new parsers
 
 X   Add PublicKey core
     X   Add encoding fingerprinter to automatically decode keys
 
 OK  EAX
 OK  PMAC
-X   STREAM
 
 X   Composable exploits and ACE
     OK  RUNTIME primitive property/exploit loading
@@ -83,3 +85,4 @@ X   SM3
 X   SM4
 X   Primitive analysis
 X   CAST
+X   STREAM

@@ -2,6 +2,7 @@ from fastecdsa.curve import P192, P224, P256, P384, P521
 from fastecdsa.point import Point
 from samson.utilities.bytes import Bytes
 from samson.public_key.ecdsa import ECDSA
+from samson.encoding.general import PKIEncoding
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
@@ -198,7 +199,7 @@ TEST_JWK = '{"kty": "EC", "crv": "P-256", "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8T
 
 # openssl ecparam -name secp521r1 -genkey -param_enc explicit -out private-key.pem
 # openssl req -new -x509 -key private-key.pem -out server.pem -days 730
-TEST_X509 = b"""-----BEGIN CERTIFICATE-----
+TEST_X509_CERT_EXPLICIT = b"""-----BEGIN CERTIFICATE-----
 MIIEQjCCA6OgAwIBAgIJAL9UTkR+Sat+MAoGCCqGSM49BAMCMFcxCzAJBgNVBAYT
 AlVTMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29t
 cGFueSBMdGQxEzARBgNVBAMMCndoYXR0YWNlcnQwHhcNMTkwMzA0MjI1NTQyWhcN
@@ -225,7 +226,44 @@ xRco5gwHlfLQbzHdAnF7QDZAAkIBadKWqL3qYQZswfWHThya7LbuMH6otTTL6fzW
 -----END CERTIFICATE-----"""
 
 
+TEST_X509_CERT = b"""-----BEGIN CERTIFICATE-----
+MIICVTCCAbegAwIBAgIJAObYauBtx7ErMAoGCCqGSM49BAMCMEIxCzAJBgNVBAYT
+AlVTMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29t
+cGFueSBMdGQwHhcNMTkwMzA2MjE0MDU0WhcNMjEwMzA1MjE0MDU0WjBCMQswCQYD
+VQQGEwJVUzEVMBMGA1UEBwwMRGVmYXVsdCBDaXR5MRwwGgYDVQQKDBNEZWZhdWx0
+IENvbXBhbnkgTHRkMIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQANWXWMh6bFqzp
+3LQBHkYmud7BUh4bmSCA9aE679LLcE+EZS0/d/6b8mxI8kQwlXONHU+YEmhc0mfd
+ixV2/LXRX/QB1LSkArpSkBU5O2rmzyb+1AscrDLiLOi8PaD1fvdFbxmhiPsinBGo
+DUvvgEqmDajD80XI41mi/xCAYQfmrjHE9T+jUzBRMB0GA1UdDgQWBBRmpRseBj0D
+ybJF+rxlfd79MSY+3TAfBgNVHSMEGDAWgBRmpRseBj0DybJF+rxlfd79MSY+3TAP
+BgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA4GLADCBhwJBUxtG7EgaBBJlpXo9
+xhF5tgd4wEHMZbrtfkp4/0LBHYDz+bifFchqK5o1+t7epNt8zBqjfan59rUSKWKX
+60ed+PYCQgE1m+Jq6SUjoQRBA9+TMsNJh7w+dpLp+gNnLrKCOStsLiq3or0yiyE/
+GAaGuoXhVJxq9PmRV8ccmKIXNDI2bEHkUw==
+-----END CERTIFICATE-----"""
+
+
+TEST_X509 = b"""-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQANWXWMh6bFqzp3LQBHkYmud7BUh4b
+mSCA9aE679LLcE+EZS0/d/6b8mxI8kQwlXONHU+YEmhc0mfdixV2/LXRX/QB1LSk
+ArpSkBU5O2rmzyb+1AscrDLiLOi8PaD1fvdFbxmhiPsinBGoDUvvgEqmDajD80XI
+41mi/xCAYQfmrjHE9T8=
+-----END PUBLIC KEY-----"""
+
+
+TEST_PKCS8 = b"""-----BEGIN PRIVATE KEY-----
+MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIAqj9wsNV/s+i0RFbY
+3Hcj0kkPWHpFpqexgPygAH/9pgd4zfl77qQH6ytwc2KI/I9Q2m0W5xqpjXawagnw
+BigRxmOhgYkDgYYABAA1ZdYyHpsWrOnctAEeRia53sFSHhuZIID1oTrv0stwT4Rl
+LT93/pvybEjyRDCVc40dT5gSaFzSZ92LFXb8tdFf9AHUtKQCulKQFTk7aubPJv7U
+CxysMuIs6Lw9oPV+90VvGaGI+yKcEagNS++ASqYNqMPzRcjjWaL/EIBhB+auMcT1
+Pw==
+-----END PRIVATE KEY-----"""
+
+
 class ECDSATestCase(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
 
     def test_k_derivation(self):
         ecdsa = ECDSA(P256.G)
@@ -349,9 +387,9 @@ class ECDSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = ecdsa.export_private_key(encoding='OpenSSH', encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = ecdsa.export_public_key(encoding='OpenSSH')
-            pub_ssh2    = ecdsa.export_public_key(encoding='SSH2')
+            priv        = ecdsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = ecdsa.export_public_key(encoding=PKIEncoding.OpenSSH)
+            pub_ssh2    = ecdsa.export_public_key(encoding=PKIEncoding.SSH2)
 
             new_priv = ECDSA.import_key(priv, passphrase=passphrase)
             new_pub_openssh = ECDSA.import_key(pub_openssh)
@@ -364,14 +402,9 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_import_jwk(self):
         ec = ECDSA.import_key(TEST_JWK)
-        jwk = ec.export_public_key(encoding='JWK')
+        jwk = ec.export_public_key(encoding=PKIEncoding.JWK)
         self.assertEqual(jwk.decode(), TEST_JWK)
 
-
-    def test_import_x509(self):
-        ec = ECDSA.import_key(TEST_X509)
-
-        self.assertEqual((ec.Q.x, ec.Q.y), (2554107651979780898547470509521183687529182997249198893823391333151823525238944910041063056446807005656025463060583743576267474661396576995824204432320250897, 1665734807219490118107295784957644242011665857026226322808593499290511707957041718918818784509283772858782283769948670779295771210635862012480413432810522630))
 
 
     def test_jwk_gauntlet(self):
@@ -380,14 +413,43 @@ class ECDSATestCase(unittest.TestCase):
             curve = random.choice(curves)
             ecdsa = ECDSA(curve.G)
 
-            priv = ecdsa.export_private_key(encoding='JWK')
-            pub  = ecdsa.export_public_key(encoding='JWK')
+            priv = ecdsa.export_private_key(encoding=PKIEncoding.JWK)
+            pub  = ecdsa.export_public_key(encoding=PKIEncoding.JWK)
 
             new_priv = ECDSA.import_key(priv)
             new_pub  = ECDSA.import_key(pub)
 
             self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
             self.assertEqual((new_pub.G, new_pub.Q), (ecdsa.G, ecdsa.Q))
+
+
+
+    def test_import_x509_explicit(self):
+        ec = ECDSA.import_key(TEST_X509_CERT_EXPLICIT)
+        self.assertEqual((ec.Q.x, ec.Q.y), (2554107651979780898547470509521183687529182997249198893823391333151823525238944910041063056446807005656025463060583743576267474661396576995824204432320250897, 1665734807219490118107295784957644242011665857026226322808593499290511707957041718918818784509283772858782283769948670779295771210635862012480413432810522630))
+
+
+    def test_import_x509_cert(self):
+        ec = ECDSA.import_key(TEST_X509_CERT)
+        self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
+
+
+    def test_import_x509(self):
+        ec = ECDSA.import_key(TEST_X509)
+        ec_bytes = ec.export_public_key(encoding=PKIEncoding.X509)
+        self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
+        self.assertEqual(ec_bytes.replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
+
+
+
+    def test_import_pkcs8(self):
+        ec = ECDSA.import_key(TEST_PKCS8)
+        ec_bytes = ec.export_private_key(encoding=PKIEncoding.PKCS8)
+
+        self.assertEqual(ec.d, 2282649980877248464928985540593193992740494509534471044083643023670157012821680477618689736007052097550343217684448593053345246736083446705198105618319263331)
+        self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
+        self.assertEqual(ec_bytes.replace(b'\n', b''), TEST_PKCS8.replace(b'\n', b''))
+
 
 
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5

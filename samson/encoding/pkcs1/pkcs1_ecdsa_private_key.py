@@ -38,6 +38,10 @@ class PublicPoint(BitString):
 
 
 class PKCS1ECDSAPrivateKey(object):
+    """
+    Not in the RFC spec, but OpenSSL supports it.
+    """
+
     @staticmethod
     def check(buffer: bytes):
         items = bytes_to_der_sequence(buffer)

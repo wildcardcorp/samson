@@ -279,3 +279,13 @@ def poly_to_int(poly: Poly) -> int:
         int: Integer representation.
     """
     return int(''.join([str(bit) for bit in poly.all_coeffs()]), 2)
+
+
+from enum import Enum
+class PKIEncoding(Enum):
+    PKCS1 = 0
+    PKCS8 = 1
+    X509 = 2
+    OpenSSH = 3
+    SSH2 = 4
+    JWK = 5
