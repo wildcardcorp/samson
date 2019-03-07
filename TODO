@@ -47,7 +47,8 @@ X   OCB
 
 X   X.509
     OK  Parsing
-    X   Generating
+    X   Generating certs
+
 
 OK  PKCS8
     OK  RSA
@@ -55,9 +56,16 @@ OK  PKCS8
     OK  ECDSA
 
 OK  Switch encoding names to Enum instead of string
+    OK  Replace in primitives
+    OK  Create CLI mappings
+
 X   Document new parsers
 
 X   Add PublicKey core
+    X   Unify encoding interfaces
+        X   JWK
+        X   OpenSSH
+
     X   Add encoding fingerprinter to automatically decode keys
 
 OK  EAX

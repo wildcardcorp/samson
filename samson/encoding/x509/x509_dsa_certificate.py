@@ -4,6 +4,9 @@ from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 
 class X509DSACertificate(object):
+    ALG_OID = '1.2.840.10040.4.1'
+    PUB_KEY_ENCODER = X509RSAParams
+    PUB_KEY_DECODER = X509DSAPublicKey
 
     @staticmethod
     def check(buffer: bytes):

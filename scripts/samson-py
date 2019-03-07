@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from samson.utilities.cli import start_repl, HASHES, EC_CURVES, ED_CURVES, PKI
+from samson.utilities.cli import start_repl, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
 import argparse
 import sys
 
@@ -87,12 +87,12 @@ if __name__ == '__main__':
                 
                 if arguments.pub:
                     if arguments.encoding:
-                        print(pki_obj.export_public_key(encoding=arguments.encoding).decode())
+                        print(pki_obj.export_public_key(encoding=ENCODING_MAPPING[arguments.encoding.upper()]).decode())
                     else:
                         print(pki_obj.export_public_key().decode())
                 else:
                     if arguments.encoding:
-                        print(pki_obj.export_private_key(encoding=arguments.encoding).decode())
+                        print(pki_obj.export_private_key(encoding=ENCODING_MAPPING[arguments.encoding.upper()]).decode())
                     else:
                         print(pki_obj.export_private_key().decode())
                     

@@ -286,6 +286,7 @@ class PKIEncoding(Enum):
     PKCS1 = 0
     PKCS8 = 1
     X509 = 2
-    OpenSSH = 3
-    SSH2 = 4
-    JWK = 5
+    X509_CERT = 3
+    OpenSSH = 4
+    SSH2 = 5
+    JWK = 6

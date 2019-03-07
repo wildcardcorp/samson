@@ -45,7 +45,7 @@ class RSA(EncryptionAlg):
         else:
             next_p = p
             next_q = q
-            while gcd(self.e, phi) != 1:
+            while gcd(self.e, phi) != 1 or next_p == next_q:
                 if not p:
                     next_p = find_prime(bits // 2)
 
@@ -192,6 +192,11 @@ class RSA(EncryptionAlg):
         elif encoding == PKIEncoding.X509:
             encoded = X509RSAPublicKey.encode(self)
             default_marker = 'PUBLIC KEY'
+            default_pem = True
+
+        elif encoding == PKIEncoding.X509_CERT:
+            encoded = X509RSACertificate.encode(self)
+            default_marker = 'CERTIFICATE'
             default_pem = True
 
         elif encoding== PKIEncoding.JWK:

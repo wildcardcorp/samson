@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
+from samson.encoding.x509.x509_rsa_params import X509RSAParams
 from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
 from pyasn1.codec.der import encoder, decoder
 import math
@@ -21,14 +22,8 @@ class X509RSAPublicKey(object):
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
         seq.setComponentByPosition(1, Null())
-
-        param_seq = SequenceOf()
-        param_seq.append(Integer(rsa_key.n))
-        param_seq.append(Integer(rsa_key.e))
-
-        param_bs = bin(Bytes(encoder.encode(param_seq)).int())[2:]
-        param_bs = param_bs.zfill(math.ceil(len(param_bs) / 8) * 8)
-        param_bs = BitString(param_bs)
+        
+        param_bs = X509RSAParams.encode(rsa_key)
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, seq)

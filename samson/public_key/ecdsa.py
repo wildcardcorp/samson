@@ -160,10 +160,10 @@ class ECDSA(DSA):
                 ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
                 ecdsa.Q = Q
             else:
-                if X509ECDSAExplicitCertificate.check(buffer):
-                    ecdsa = X509ECDSAExplicitCertificate.decode(buffer)
+                # if X509ECDSAExplicitCertificate.check(buffer):
+                #     ecdsa = X509ECDSAExplicitCertificate.decode(buffer)
 
-                elif X509ECDSACertificate.check(buffer):
+                if X509ECDSACertificate.check(buffer):
                     ecdsa = X509ECDSACertificate.decode(buffer)
 
                 elif X509ECDSAPublicKey.check(buffer):
