@@ -157,7 +157,7 @@ class DSA(object):
         else:
             if X509DSACertificate.check(buffer):
                 dsa = X509DSACertificate.decode(buffer)
-            
+
             elif PKCS8DSAPrivateKey.check(buffer):
                 dsa = PKCS8DSAPrivateKey.decode(buffer)
 
@@ -239,6 +239,11 @@ class DSA(object):
         if encoding == PKIEncoding.X509:
             encoded = X509DSAPublicKey.encode(self)
             default_marker = 'PUBLIC KEY'
+            default_pem = True
+
+        elif encoding == PKIEncoding.X509_CERT:
+            encoded = X509DSACertificate.encode(self)
+            default_marker = 'CERTIFICATE'
             default_pem = True
 
         elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:

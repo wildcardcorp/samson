@@ -1,9 +1,10 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
-from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence
+from samson.encoding.x509.x509_dsa_subject_public_key import X509DSASubjectPublicKey
+from samson.encoding.x509.x509_dsa_params import X509DSAParams
+from pyasn1.type.univ import ObjectIdentifier, Sequence
 from pyasn1.codec.der import encoder, decoder
-import math
 
 class X509DSAPublicKey(object):
 
@@ -15,16 +16,13 @@ class X509DSAPublicKey(object):
 
     @staticmethod
     def encode(dsa_key: object):
-        seq_of = SequenceOf()
-        seq_of.extend([Integer(dsa_key.p), Integer(dsa_key.q), Integer(dsa_key.g)])
+        dsa_params = X509DSAParams.encode(dsa_key)
 
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10040, 4, 1]))
-        seq.setComponentByPosition(1, seq_of)
+        seq.setComponentByPosition(1, dsa_params)
 
-        y_bits = bin(Bytes(encoder.encode(Integer(dsa_key.y))).int())[2:]
-        y_bits = y_bits.zfill(math.ceil(len(y_bits) / 8) * 8)
-        y_bits = BitString(y_bits)
+        y_bits = X509DSASubjectPublicKey.encode(dsa_key)
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, seq)

@@ -45,15 +45,17 @@ X   OCB
     X   OCB3
 
 
-X   X.509
+OK  X.509
     OK  Parsing
-    X   Generating certs
+    OK  Generating certs
+    ?   Maybe ECDH
 
 
 OK  PKCS8
     OK  RSA
     OK  DSA
     OK  ECDSA
+    OK  EdDSA
 
 OK  Switch encoding names to Enum instead of string
     OK  Replace in primitives

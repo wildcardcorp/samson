@@ -147,10 +147,11 @@ class MontgomeryPoint(object):
 
 
 
-
 class Curve25519(MontgomeryCurve):
+    oid = '1.3.101.110'
+
     def __init__(self):
-        super().__init__(p=2**255 - 19, A=486662, a24=121665, U=9, V=1478161944758954479102059356840998688726460613461647528896488183775558623740)
+        super().__init__(p=2**255 - 19, A=486662, a24=121665, U=9, V=14781619447589544791020593568409986887264606134616475288964881837755586237401)
 
 
     def clamp_to_curve(self, x: int) -> MontgomeryPoint:
@@ -171,6 +172,8 @@ class Curve25519(MontgomeryCurve):
 
 
 class Curve448(MontgomeryCurve):
+    oid = '1.3.101.111'
+
     def __init__(self):
         super().__init__(p=2**448 - 2**224 - 1, A=156326, a24=39081, U=5, V=355293926785568175264127502063783334808976399387714271831880898435169088786967410002932673765864550910142774147268105838985595290606362)
 
@@ -205,9 +208,10 @@ class TwistedEdwardsCurve(object):
 
     # https://tools.ietf.org/html/rfc8032#section-5
     # https://tools.ietf.org/html/rfc8032#section-3
-    def __init__(self, a: int, c: int, n: int, b: int, magic: bytes, q: int, l: int, d: int, B: (int, int)):
+    def __init__(self, oid: str, a: int, c: int, n: int, b: int, magic: bytes, q: int, l: int, d: int, B: (int, int)):
         """
         Parameters:
+            oid      (str): Curve OID.
             a        (int): Twist parameter. a=1 is untwisted, the special case.
             c        (int): Base 2 logarithm of cofactor
             n        (int): Defines the number of bits in EdDSA scalars.
@@ -218,6 +222,7 @@ class TwistedEdwardsCurve(object):
             d        (int): A non-zero element in the finite field GF(p), not equal to 1, in the case of an Edwards curve, or not equal to -1, in the case of a twisted Edwards curve
             B ((int, int)): Base point.
         """
+        self.oid = oid
         self.a = a
         self.c = c
         self.n = n
@@ -381,5 +386,13 @@ class TwistedEdwardsPoint(object):
 
 
 
-EdwardsCurve25519 = TwistedEdwardsCurve(a=-1, c=3, n=254, b=256, magic=b'', q=2**255 - 19, l=2**252 + 27742317777372353535851937790883648493, d=-121665 * pow(121666, 2**255 - 19 -2, 2**255 - 19), B=(15112221349535400772501151409588531511454012693041857206046113283949847762202, 46316835694926478169428394003475163141307993866256225615783033603165251855960))
-EdwardsCurve448   = TwistedEdwardsCurve(a=1, c=2, n=447, b=456, magic=b'SigEd448\x00\x00', q=2**448 - 2**224 - 1, l=2**446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d, d=-39081, B=(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660))
+EdwardsCurve25519 = TwistedEdwardsCurve(oid='1.3.101.112', a=-1, c=3, n=254, b=256, magic=b'', q=2**255 - 19, l=2**252 + 27742317777372353535851937790883648493, d=-121665 * pow(121666, 2**255 - 19 -2, 2**255 - 19), B=(15112221349535400772501151409588531511454012693041857206046113283949847762202, 46316835694926478169428394003475163141307993866256225615783033603165251855960))
+EdwardsCurve448   = TwistedEdwardsCurve(oid='1.3.101.113', a=1, c=2, n=447, b=456, magic=b'SigEd448\x00\x00', q=2**448 - 2**224 - 1, l=2**446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d, d=-39081, B=(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660))
+
+
+EDCURVE_OID_LOOKUP = {
+    Curve25519.oid: Curve25519(),
+    Curve448.oid: Curve448(),
+    EdwardsCurve25519.oid: EdwardsCurve25519,
+    EdwardsCurve448.oid: EdwardsCurve448,
+}

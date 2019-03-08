@@ -62,8 +62,6 @@ class Bcrypt(object):
                 self.expand_key(bf, Bytes(b'').zfill(salt_len), password, key_len=key_len)
                 self.expand_key(bf, Bytes(b'').zfill(salt_len), salt)
 
-
-
         return bf
 
 

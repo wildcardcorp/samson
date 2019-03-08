@@ -6,6 +6,8 @@ from samson.encoding.pem import pem_decode, pem_encode
 from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
 from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
+from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.general import PKIEncoding
 
 SSH_PUBLIC_HEADER = b'ssh-ed25519'
@@ -155,10 +157,17 @@ class EdDSA(DSA):
                 a, h = priv.a, priv.h
             else:
                 a, h = pub.a, 0
+
+            eddsa = EdDSA(curve=EdwardsCurve25519, h=h, a=a, d=0, clamp=False)
+
+        elif PKCS8EdDSAPrivateKey.check(buffer):
+            eddsa = PKCS8EdDSAPrivateKey.decode(buffer)
+
+        elif X509EdDSAPublicKey.check(buffer):
+            eddsa = X509EdDSAPublicKey.decode(buffer)
+
         else:
             raise ValueError("Unable to parse provided EdDSA key.")
-
-        eddsa = EdDSA(curve=EdwardsCurve25519, h=h, a=a, d=0, clamp=False)
 
         return eddsa
 
@@ -189,6 +198,13 @@ class EdDSA(DSA):
             )
 
             encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+
+        elif encoding == PKIEncoding.PKCS8:
+            encoded = PKCS8EdDSAPrivateKey.encode(self)
+
+            if encode_pem:
+                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -209,8 +225,19 @@ class EdDSA(DSA):
         """
         use_rfc_4716 = False
 
-        public_key = EdDSAPublicKey('public_key', self.a)
-        encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-ed25519', public_key)
+        if encoding == PKIEncoding.X509:
+            encoded = X509EdDSAPublicKey.encode(self)
+
+            default_marker = 'PUBLIC KEY'
+            default_pem = True
+
+        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
+            public_key = EdDSAPublicKey('public_key', self.a)
+            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-ed25519', public_key)
+
+        else:
+            raise ValueError(f'Unsupported encoding "{encoding}"')
+
 
         if (encode_pem is None and default_pem) or encode_pem:
             encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)

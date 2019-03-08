@@ -18,6 +18,7 @@ class JWKRSAEncoder(object):
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
+
     @staticmethod
     def encode(rsa_key: object, is_private: bool=False) -> str:
         """

@@ -1,15 +1,13 @@
-from samson.utilities.bytes import Bytes
 from pyasn1.codec.der import decoder, encoder
-from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null, OctetString, Any
+from pyasn1.type.univ import ObjectIdentifier, BitString, Any
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from datetime import datetime
-import math
-
 
 class X509Certificate(object):
     ALG_OID = None
+    PARAM_ENCODER = None
     PUB_KEY_ENCODER = None
     PUB_KEY_DECODER = None
 
@@ -24,10 +22,14 @@ class X509Certificate(object):
 
 
     @classmethod
-    def encode(cls, rsa_key: object):
+    def encode(cls, pki_key: object):
+        alg_oid = cls.ALG_OID if type(cls.ALG_OID) is str else cls.ALG_OID(pki_key)
+
         alg_id = rfc2459.AlgorithmIdentifier()
-        alg_id['algorithm']  = ObjectIdentifier([int(item) for item in cls.ALG_OID.split('.')])
-        alg_id['parameters'] = Any(b'\x05\x00')
+        alg_id['algorithm']  = ObjectIdentifier([int(item) for item in alg_oid.split('.')])
+
+        if cls.PARAM_ENCODER:
+            alg_id['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
 
         serial_num = rfc2459.CertificateSerialNumber(0)
 
@@ -42,19 +44,10 @@ class X509Certificate(object):
 
         pub_info = rfc2459.SubjectPublicKeyInfo()
         pub_info['algorithm']        = alg_id
-        pub_info['subjectPublicKey'] = cls.PUB_KEY_ENCODER.encode(rsa_key)
+        pub_info['subjectPublicKey'] = cls.PUB_KEY_ENCODER.encode(pki_key)
 
         issuer = rfc2459.Name()
         issuer.setComponentByPosition(0, rfc2459.RDNSequence())
-        # issuer[0].setComponentByPosition(0, rfc2459.RelativeDistinguishedName())
-        # issuer[0][0].setComponentByPosition(0, rfc2459.AttributeTypeAndValue())
-        # issuer[0][0][0].setComponentByPosition(0, rfc2459.AttributeType(ObjectIdentifier([2, 5, 4, 6])))
-        # issuer[0][0][0].setComponentByPosition(1, rfc2459.AttributeValue(OctetString(0x13025553)))
-        # issuer[0][0][0][0] = '2.5.4.6'
-        # issuer[0][0][0][1] = 0x13025553
-
-        #return encoder.encode(issuer, asn1Spec=rfc2459.Name())
-
 
         tbs_cert = rfc2459.TBSCertificate()
         tbs_cert['version']              = 2
@@ -79,5 +72,5 @@ class X509Certificate(object):
     @classmethod
     def decode(cls, buffer: bytes):
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
-        buffer = Bytes(int(cert['tbsCertificate']['subjectPublicKeyInfo']['subjectPublicKey']))
+        buffer = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
         return cls.PUB_KEY_DECODER.decode(buffer)

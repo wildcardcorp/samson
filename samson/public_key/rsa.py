@@ -136,13 +136,11 @@ class RSA(EncryptionAlg):
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
 
-
         elif encoding == PKIEncoding.PKCS8:
             encoded = PKCS8RSAPrivateKey.encode(self)
 
             if encode_pem:
                 encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
-
 
         elif encoding == PKIEncoding.OpenSSH:
             public_key = RSAPublicKey('public_key', self.n, self.e)
@@ -202,7 +200,7 @@ class RSA(EncryptionAlg):
         elif encoding== PKIEncoding.JWK:
             encoded = JWKRSAEncoder.encode(self).encode('utf-8')
             default_pem = False
-            
+
         elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
             public_key = RSAPublicKey('public_key', self.n, self.e)
             encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-rsa', public_key)
@@ -251,10 +249,10 @@ class RSA(EncryptionAlg):
                 # X.509
                 if X509RSACertificate.check(buffer):
                     rsa = X509RSACertificate.decode(buffer)
-                
+
                 elif X509RSAPublicKey.check(buffer):
                     rsa = X509RSAPublicKey.decode(buffer)
-                
+
                 elif PKCS8RSAPrivateKey.check(buffer):
                     rsa = PKCS8RSAPrivateKey.decode(buffer)
 

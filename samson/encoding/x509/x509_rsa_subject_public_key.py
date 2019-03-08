@@ -1,10 +1,9 @@
 from samson.utilities.bytes import Bytes
-from samson.encoding.general import bytes_to_der_sequence
-from pyasn1.type.univ import Integer, ObjectIdentifier, BitString, SequenceOf, Sequence, Null
-from pyasn1.codec.der import encoder, decoder
+from pyasn1.type.univ import Integer, BitString, SequenceOf
+from pyasn1.codec.der import encoder
 import math
 
-class X509RSAParams(object):
+class X509RSASubjectPublicKey(object):
 
     @staticmethod
     def encode(rsa_key: object):

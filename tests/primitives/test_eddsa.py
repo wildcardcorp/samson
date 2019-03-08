@@ -63,6 +63,17 @@ euMpFa0COjJ4Pk0WBhJMdN3+U8UNKqU6meEg8=
 -----END OPENSSH PRIVATE KEY-----""", b'd133d14b43d1a42f')
 
 
+# https://tools.ietf.org/html/rfc8410#section-10.3
+TEST_PKCS8 = b"""-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEINTuctv5E1hK1bbY8fdp+K06/nwoy/HU++CXqI9EdVhC
+-----END PRIVATE KEY-----"""
+
+
+TEST_X509 = b"""-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
+-----END PUBLIC KEY-----"""
+
+
 # https://tools.ietf.org/html/rfc8032#section-7.1
 class EdDSATestCase(unittest.TestCase):
     def test_import_ssh(self):
@@ -110,6 +121,23 @@ class EdDSATestCase(unittest.TestCase):
             self.assertEqual((new_priv.h, new_priv.a, new_priv.A), (eddsa.h, eddsa.a, eddsa.A))
             self.assertEqual((new_pub_openssh.a, new_pub_openssh.A), (eddsa.a, eddsa.A))
             self.assertEqual((new_pub_ssh2.a, new_pub_ssh2.A), (eddsa.a, eddsa.A))
+
+
+
+    def test_import_pkcs8(self):
+        priv = EdDSA.import_key(TEST_PKCS8)
+
+        priv_out = priv.export_private_key(encoding=PKIEncoding.PKCS8)
+
+        self.assertEqual((priv.d, priv.curve), (Bytes(0xD4EE72DBF913584AD5B6D8F1F769F8AD3AFE7C28CBF1D4FBE097A88F44755842), EdwardsCurve25519))
+        self.assertEqual(priv_out.replace(b'\n', b''), TEST_PKCS8.replace(b'\n', b''))
+
+
+    def test_import_x509(self):
+        eddsa = EdDSA.import_key(TEST_X509)
+
+        self.assertEqual((eddsa.A.x, eddsa.A.y), (14952151952356719083710889065620775312428310390022181962301901207657981878023, 44054905936511465773410409843262024357620586324426155423091388570442095968025))
+        self.assertEqual(eddsa.export_public_key(encoding=PKIEncoding.X509).replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
 
 
 

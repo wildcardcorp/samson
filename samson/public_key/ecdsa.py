@@ -13,7 +13,6 @@ from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate
-from samson.encoding.x509.x509_ecdsa_explicit_certificate import X509ECDSAExplicitCertificate
 from samson.encoding.general import PKIEncoding
 
 from fastecdsa.point import Point
@@ -160,18 +159,15 @@ class ECDSA(DSA):
                 ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
                 ecdsa.Q = Q
             else:
-                # if X509ECDSAExplicitCertificate.check(buffer):
-                #     ecdsa = X509ECDSAExplicitCertificate.decode(buffer)
-
                 if X509ECDSACertificate.check(buffer):
                     ecdsa = X509ECDSACertificate.decode(buffer)
 
                 elif X509ECDSAPublicKey.check(buffer):
                     ecdsa = X509ECDSAPublicKey.decode(buffer)
-                
+
                 elif PKCS8ECDSAPrivateKey.check(buffer):
                     ecdsa = PKCS8ECDSAPrivateKey.decode(buffer)
-                
+
                 elif PKCS1ECDSAPrivateKey.check(buffer):
                     ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
 
@@ -266,12 +262,19 @@ class ECDSA(DSA):
         x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
 
         use_rfc_4716 = False
-        
+
 
         if encoding == PKIEncoding.X509:
             encoded = X509ECDSAPublicKey.encode(self)
 
             default_marker = 'PUBLIC KEY'
+            default_pem = True
+
+
+        elif encoding == PKIEncoding.X509_CERT:
+            encoded = X509ECDSACertificate.encode(self)
+
+            default_marker = 'CERTIFICATE'
             default_pem = True
 
         elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
@@ -281,6 +284,7 @@ class ECDSA(DSA):
         elif encoding == PKIEncoding.JWK:
             encoded = JWKECEncoder.encode(self, is_private=False).encode('utf-8')
             default_pem = False
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 

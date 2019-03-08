@@ -16,6 +16,7 @@ class PKCS1RSAPublicKey(object):
     def decode(buffer: bytes):
         from samson.public_key.rsa import RSA
         items = bytes_to_der_sequence(buffer)
+        print(items)
 
         items = [int(item) for item in items]
 

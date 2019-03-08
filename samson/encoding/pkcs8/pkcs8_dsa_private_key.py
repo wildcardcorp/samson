@@ -1,5 +1,4 @@
-from samson.encoding.general import export_der, bytes_to_der_sequence
-from samson.utilities.bytes import Bytes
+from samson.encoding.general import bytes_to_der_sequence
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import decoder, encoder
 
