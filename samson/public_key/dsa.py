@@ -1,9 +1,9 @@
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 
-from samson.encoding.openssh.dsa_private_key import DSAPrivateKey
-from samson.encoding.openssh.dsa_public_key import DSAPublicKey
-from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
+from samson.encoding.openssh.openssh_dsa_public_key import OpenSSHDSAPublicKey
+from samson.encoding.openssh.ssh2_dsa_public_key import SSH2DSAPublicKey
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
@@ -12,8 +12,6 @@ from samson.encoding.general import PKIEncoding
 
 from samson.encoding.pem import pem_encode, pem_decode
 from samson.hashes.sha2 import SHA256
-
-SSH_PUBLIC_HEADER = b'ssh-dss'
 
 class DSA(object):
     """
@@ -143,32 +141,30 @@ class DSA(object):
         if buffer.startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
-        if SSH_PUBLIC_HEADER in buffer:
-            priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, passphrase)
 
-            if priv:
-                p, q, g, y, x = priv.p, priv.q, priv.g, priv.y, priv.x
-            else:
-                p, q, g, y, x = pub.p, pub.q, pub.g, pub.y, 0
+        if OpenSSHDSAPrivateKey.check(buffer, passphrase):
+            dsa = OpenSSHDSAPrivateKey.decode(buffer, passphrase)
 
-            dsa = DSA(None, p=p, q=q, g=g, x=x)
-            dsa.y = y
+        elif OpenSSHDSAPublicKey.check(buffer):
+            dsa = OpenSSHDSAPublicKey.decode(buffer)
+
+        elif SSH2DSAPublicKey.check(buffer):
+            dsa = SSH2DSAPublicKey.decode(buffer)
+
+        elif X509DSACertificate.check(buffer):
+            dsa = X509DSACertificate.decode(buffer)
+
+        elif PKCS8DSAPrivateKey.check(buffer):
+            dsa = PKCS8DSAPrivateKey.decode(buffer)
+
+        elif PKCS1DSAPrivateKey.check(buffer):
+            dsa = PKCS1DSAPrivateKey.decode(buffer)
+
+        elif X509DSAPublicKey.check(buffer):
+            dsa = X509DSAPublicKey.decode(buffer)
 
         else:
-            if X509DSACertificate.check(buffer):
-                dsa = X509DSACertificate.decode(buffer)
-
-            elif PKCS8DSAPrivateKey.check(buffer):
-                dsa = PKCS8DSAPrivateKey.decode(buffer)
-
-            elif PKCS1DSAPrivateKey.check(buffer):
-                dsa = PKCS1DSAPrivateKey.decode(buffer)
-
-            elif X509DSAPublicKey.check(buffer):
-                dsa = X509DSAPublicKey.decode(buffer)
-
-            else:
-                raise ValueError("Unable to parse provided DSA key.")
+            raise ValueError("Unable to parse provided DSA key.")
 
         return dsa
 
@@ -193,28 +189,20 @@ class DSA(object):
             encoded = PKCS1DSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'DSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS1DSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding == PKIEncoding.PKCS8:
             encoded = PKCS8DSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS8DSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding == PKIEncoding.OpenSSH:
-            public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            private_key = DSAPrivateKey(
-                'private_key',
-                check_bytes=None,
-                p=self.p,
-                q=self.q,
-                g=self.g,
-                y=self.y,
-                x=self.x,
-                host=b'nohost@localhost'
-            )
+            encoded = OpenSSHDSAPrivateKey.encode(self, encode_pem, marker, encryption, iv, passphrase)
 
-            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+            # if encode_pem:
+            #     encoded = pem_encode(encoded, marker or OpenSSHDSAPrivateKey.DEFAULT_MARKER)#, encryption=encryption, passphrase=passphrase, iv=iv)
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -238,17 +226,24 @@ class DSA(object):
 
         if encoding == PKIEncoding.X509:
             encoded = X509DSAPublicKey.encode(self)
-            default_marker = 'PUBLIC KEY'
-            default_pem = True
+            default_marker = X509DSAPublicKey.DEFAULT_MARKER
+            default_pem = X509DSAPublicKey.DEFAULT_PEM
 
         elif encoding == PKIEncoding.X509_CERT:
             encoded = X509DSACertificate.encode(self)
-            default_marker = 'CERTIFICATE'
-            default_pem = True
+            default_marker = X509DSACertificate.DEFAULT_MARKER
+            default_pem = X509DSACertificate.DEFAULT_PEM
 
-        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
-            public_key = DSAPublicKey('public_key', self.p, self.q, self.g, self.y)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-dss', public_key)
+        elif encoding == PKIEncoding.OpenSSH:
+            encoded = OpenSSHDSAPublicKey.encode(self)
+            default_marker = OpenSSHDSAPublicKey.DEFAULT_MARKER
+            default_pem = OpenSSHDSAPublicKey.DEFAULT_PEM
+
+        elif encoding == PKIEncoding.SSH2:
+            encoded = SSH2DSAPublicKey.encode(self)
+            default_marker = SSH2DSAPublicKey.DEFAULT_MARKER
+            default_pem = SSH2DSAPublicKey.DEFAULT_PEM
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 

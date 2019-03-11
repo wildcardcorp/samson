@@ -1,16 +1,21 @@
 from samson.encoding.general import bytes_to_der_sequence
+from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.utilities.bytes import Bytes
 from samson.utilities.ecc import EDCURVE_OID_LOOKUP
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import encoder, decoder
+from pyasn1.error import PyAsn1Error
 import math
 
 # https://tools.ietf.org/html/rfc8410
-class PKCS8EdDSAPrivateKey(object):
+class PKCS8EdDSAPrivateKey(PKCS8Base):
     @staticmethod
     def check(buffer: bytes):
-        items = bytes_to_der_sequence(buffer)
-        return len(items) == 3 and str(items[1][0])[:7] == '1.3.101'
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return len(items) == 3 and str(items[1][0])[:7] == '1.3.101'
+        except PyAsn1Error as _:
+            return False
 
 
     @staticmethod

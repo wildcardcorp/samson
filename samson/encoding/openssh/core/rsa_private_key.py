@@ -1,5 +1,5 @@
-from samson.encoding.openssh.packed_bytes import PackedBytes
-from samson.encoding.openssh.literal import Literal
+from samson.encoding.openssh.core.packed_bytes import PackedBytes
+from samson.encoding.openssh.core.literal import Literal
 from samson.encoding.openssh.general import check_decrypt
 from samson.utilities.bytes import Bytes
 from samson.padding.incremental_padding import IncrementalPadding

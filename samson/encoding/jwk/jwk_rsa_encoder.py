@@ -7,6 +7,10 @@ class JWKRSAEncoder(object):
     JWK encoder for RSA
     """
 
+    DEFAULT_MARKER = None
+    DEFAULT_PEM = False
+    USE_RFC_4716 = False
+
     @staticmethod
     def check(buffer):
         try:

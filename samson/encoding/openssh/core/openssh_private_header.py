@@ -1,6 +1,6 @@
-from samson.encoding.openssh.packed_bytes import PackedBytes
-from samson.encoding.openssh.literal import Literal
-from samson.encoding.openssh.kdf_params import KDFParams
+from samson.encoding.openssh.core.packed_bytes import PackedBytes
+from samson.encoding.openssh.core.literal import Literal
+from samson.encoding.openssh.core.kdf_params import KDFParams
 from samson.utilities.bytes import Bytes
 from types import FunctionType
 

@@ -1,13 +1,12 @@
-from fastecdsa.curve import P192, P224, P256, P384, P521
 from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
 from samson.encoding.pem import pem_encode, pem_decode
 
-from samson.encoding.openssh.ecdsa_private_key import ECDSAPrivateKey
-from samson.encoding.openssh.ecdsa_public_key import ECDSAPublicKey
-from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.openssh.openssh_ecdsa_private_key import OpenSSHECDSAPrivateKey
+from samson.encoding.openssh.openssh_ecdsa_public_key import OpenSSHECDSAPublicKey
+from samson.encoding.openssh.ssh2_ecdsa_public_key import SSH2ECDSAPublicKey
 from samson.encoding.jwk.jwk_ec_encoder import JWKECEncoder
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
@@ -17,19 +16,6 @@ from samson.encoding.general import PKIEncoding
 
 from fastecdsa.point import Point
 import math
-
-
-SSH_CURVE_NAME_LOOKUP = {
-    P192: b'nistp192',
-    P224: b'nistp224',
-    P256: b'nistp256',
-    P384: b'nistp384',
-    P521: b'nistp521'
-}
-
-SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
-
-SSH_PUBLIC_HEADER = b'ecdsa-'
 
 # https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 class ECDSA(DSA):
@@ -145,34 +131,29 @@ class ECDSA(DSA):
             if buffer.startswith(b'----'):
                 buffer = pem_decode(buffer, passphrase)
 
-            if SSH_PUBLIC_HEADER in buffer:
-                priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, passphrase)
+            if OpenSSHECDSAPrivateKey.check(buffer, passphrase):
+                ecdsa = OpenSSHECDSAPrivateKey.decode(buffer, passphrase)
 
-                if priv:
-                    curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
-                else:
-                    curve, x_y_bytes, d = pub.curve, pub.x_y_bytes, 1
+            elif OpenSSHECDSAPublicKey.check(buffer):
+                ecdsa = OpenSSHECDSAPublicKey.decode(buffer)
 
-                curve = SSH_INVERSE_CURVE_LOOKUP[curve.decode()]
+            elif SSH2ECDSAPublicKey.check(buffer):
+                ecdsa = SSH2ECDSAPublicKey.decode(buffer)
 
-                Q = Point(*ECDSA.decode_point(x_y_bytes), curve)
-                ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
-                ecdsa.Q = Q
+            elif X509ECDSACertificate.check(buffer):
+                ecdsa = X509ECDSACertificate.decode(buffer)
+
+            elif X509ECDSAPublicKey.check(buffer):
+                ecdsa = X509ECDSAPublicKey.decode(buffer)
+
+            elif PKCS8ECDSAPrivateKey.check(buffer):
+                ecdsa = PKCS8ECDSAPrivateKey.decode(buffer)
+
+            elif PKCS1ECDSAPrivateKey.check(buffer):
+                ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
+
             else:
-                if X509ECDSACertificate.check(buffer):
-                    ecdsa = X509ECDSACertificate.decode(buffer)
-
-                elif X509ECDSAPublicKey.check(buffer):
-                    ecdsa = X509ECDSAPublicKey.decode(buffer)
-
-                elif PKCS8ECDSAPrivateKey.check(buffer):
-                    ecdsa = PKCS8ECDSAPrivateKey.decode(buffer)
-
-                elif PKCS1ECDSAPrivateKey.check(buffer):
-                    ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
-
-                else:
-                    raise ValueError("Unable to parse provided ECDSA key.")
+                raise ValueError("Unable to parse provided ECDSA key.")
 
         return ecdsa
 
@@ -204,37 +185,22 @@ class ECDSA(DSA):
         Returns:
             bytes: Encoding of DSA instance.
         """
-        zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-
         if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1ECDSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'EC PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS1ECDSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
 
         elif encoding == PKIEncoding.PKCS8:
             encoded = PKCS8ECDSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS8ECDSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
 
         elif encoding == PKIEncoding.OpenSSH:
-            curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
-            x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
-
-            public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-            private_key = ECDSAPrivateKey(
-                'private_key',
-                check_bytes=None,
-                curve=curve,
-                x_y_bytes=x_y_bytes,
-                d=self.d,
-                host=b'nohost@localhost'
-            )
-
-            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+            encoded = OpenSSHECDSAPrivateKey.encode(self, encode_pem, marker, encryption, iv, passphrase)
 
         elif encoding == PKIEncoding.JWK:
             encoded = JWKECEncoder.encode(self, is_private=True).encode('utf-8')
@@ -257,33 +223,31 @@ class ECDSA(DSA):
         Returns:
             bytes: Encoding of ECDSA instance.
         """
-        zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-        curve = SSH_CURVE_NAME_LOOKUP[self.G.curve]
-        x_y_bytes = b'\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))
-
         use_rfc_4716 = False
-
 
         if encoding == PKIEncoding.X509:
             encoded = X509ECDSAPublicKey.encode(self)
-
-            default_marker = 'PUBLIC KEY'
-            default_pem = True
-
+            default_marker = X509ECDSAPublicKey.DEFAULT_MARKER
+            default_pem = X509ECDSAPublicKey.DEFAULT_PEM
 
         elif encoding == PKIEncoding.X509_CERT:
             encoded = X509ECDSACertificate.encode(self)
+            default_marker = X509ECDSACertificate.DEFAULT_MARKER
+            default_pem = X509ECDSACertificate.DEFAULT_PEM
 
-            default_marker = 'CERTIFICATE'
-            default_pem = True
+        elif encoding == PKIEncoding.OpenSSH:
+            encoded = OpenSSHECDSAPublicKey.encode(self)
+            default_marker = OpenSSHECDSAPublicKey.DEFAULT_MARKER
+            default_pem = OpenSSHECDSAPublicKey.DEFAULT_PEM
 
-        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
-            public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ecdsa-sha2-' + curve, public_key)
+        elif encoding == PKIEncoding.SSH2:
+            encoded = SSH2ECDSAPublicKey.encode(self)
+            default_marker = SSH2ECDSAPublicKey.DEFAULT_MARKER
+            default_pem = SSH2ECDSAPublicKey.DEFAULT_PEM
 
         elif encoding == PKIEncoding.JWK:
             encoded = JWKECEncoder.encode(self, is_private=False).encode('utf-8')
-            default_pem = False
+            default_pem = JWKECEncoder.DEFAULT_PEM
 
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')

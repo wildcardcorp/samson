@@ -11,6 +11,10 @@ class X509Certificate(object):
     PUB_KEY_ENCODER = None
     PUB_KEY_DECODER = None
 
+    DEFAULT_MARKER = 'CERTIFICATE'
+    DEFAULT_PEM = True
+    USE_RFC_4716 = False
+
 
     @classmethod
     def check(cls, buffer: bytes):

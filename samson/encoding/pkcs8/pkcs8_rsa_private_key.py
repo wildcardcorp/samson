@@ -1,9 +1,10 @@
 from samson.encoding.general import bytes_to_der_sequence
+from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, Null, OctetString
 from pyasn1.codec.der import encoder
 
-class PKCS8RSAPrivateKey(object):
+class PKCS8RSAPrivateKey(PKCS8Base):
     @staticmethod
     def check(buffer: bytes):
         items = bytes_to_der_sequence(buffer)

@@ -1,12 +1,13 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_der_sequence
+from samson.encoding.x509.x509_public_key_base import X509PublicKeyBase
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
 from samson.encoding.x509.x509_dsa_subject_public_key import X509DSASubjectPublicKey
 from samson.encoding.x509.x509_dsa_params import X509DSAParams
 from pyasn1.type.univ import ObjectIdentifier, Sequence
 from pyasn1.codec.der import encoder, decoder
 
-class X509DSAPublicKey(object):
+class X509DSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
     def check(buffer: bytes):

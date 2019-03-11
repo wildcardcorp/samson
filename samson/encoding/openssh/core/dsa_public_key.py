@@ -1,4 +1,4 @@
-from samson.encoding.openssh.packed_bytes import PackedBytes
+from samson.encoding.openssh.core.packed_bytes import PackedBytes
 from samson.utilities.bytes import Bytes
 
 class DSAPublicKey(object):

@@ -1,6 +1,6 @@
-from samson.encoding.openssh.literal import Literal
-from samson.encoding.openssh.kdf_params import KDFParams
-from samson.encoding.openssh.openssh_private_header import OpenSSHPrivateHeader
+from samson.encoding.openssh.core.literal import Literal
+from samson.encoding.openssh.core.kdf_params import KDFParams
+from samson.encoding.openssh.core.openssh_private_header import OpenSSHPrivateHeader
 from samson.encoding.pem import pem_encode
 from samson.encoding.general import PKIEncoding
 from samson.utilities.bytes import Bytes
@@ -81,9 +81,9 @@ def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes,
     Internal function. Generates OpenSSH public key parameters for various PKI.
 
     Parameters:
-        encoding      (PKIEncoding): Encoding to use. Currently supports 'OpenSSH' and 'SSH2'.
-        ssh_header          (bytes): PKI-specific SSH header.
-        public_key         (object): OpenSSH public key object.
+        encoding (PKIEncoding): Encoding to use. Currently supports 'OpenSSH' and 'SSH2'.
+        ssh_header     (bytes): PKI-specific SSH header.
+        public_key    (object): OpenSSH public key object.
     
     Returns:
         (bytes, bool, str, bool): PKI public key parameters formatted as (encoded, default_pem, default_marker, use_rfc_4716).

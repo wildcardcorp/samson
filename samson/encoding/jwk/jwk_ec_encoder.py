@@ -20,6 +20,10 @@ class JWKECEncoder(object):
     JWK encoder for ECDSA
     """
 
+    DEFAULT_MARKER = None
+    DEFAULT_PEM = False
+    USE_RFC_4716 = False
+
     @staticmethod
     def check(buffer):
         try:

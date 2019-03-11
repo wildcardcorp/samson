@@ -1,10 +1,15 @@
 from samson.encoding.general import export_der, bytes_to_der_sequence
 
 class PKCS1RSAPublicKey(object):
+    DEFAULT_MARKER = 'RSA PUBLIC KEY'
+    DEFAULT_PEM = True
+    USE_RFC_4716 = False
+
     @staticmethod
     def check(buffer: bytes):
         items = bytes_to_der_sequence(buffer)
         return len(items) == 2
+
 
     @staticmethod
     def encode(rsa_key: object):

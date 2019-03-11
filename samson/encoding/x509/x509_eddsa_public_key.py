@@ -1,17 +1,22 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
+from samson.encoding.x509.x509_public_key_base import X509PublicKeyBase
 from samson.encoding.x509.x509_eddsa_subject_public_key import X509EdDSASubjectPublicKey
 from samson.utilities.ecc import EDCURVE_OID_LOOKUP
 from pyasn1.type.univ import ObjectIdentifier, SequenceOf, Sequence
 from pyasn1.codec.der import encoder
+from pyasn1.error import PyAsn1Error
 
-class X509EdDSAPublicKey(object):
+class X509EdDSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
     def check(buffer: bytes):
-        items = bytes_to_der_sequence(buffer)
-        return not PKCS8EdDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0])[:7] == '1.3.101'
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return not PKCS8EdDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0])[:7] == '1.3.101'
+        except PyAsn1Error as _:
+            return False
 
 
     @staticmethod

@@ -4,6 +4,7 @@ from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from samson.utilities.bytes import Bytes
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
+from pyasn1.error import PyAsn1Error
 import math
 
 def parse_ec_params(items, curve_idx, pub_point_idx):
@@ -42,10 +43,16 @@ class PKCS1ECDSAPrivateKey(object):
     Not in the RFC spec, but OpenSSL supports it.
     """
 
+    DEFAULT_MARKER = 'EC PRIVATE KEY'
+    DEFAULT_PEM = True
+
     @staticmethod
     def check(buffer: bytes):
-        items = bytes_to_der_sequence(buffer)
-        return len(items) == 4 and int(items[0]) == 1
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return len(items) == 4 and int(items[0]) == 1
+        except PyAsn1Error as _:
+            return False
 
 
     @staticmethod

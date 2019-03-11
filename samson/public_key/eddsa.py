@@ -3,15 +3,13 @@ from samson.public_key.dsa import DSA
 from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
 from samson.hashes.sha2 import SHA512
 from samson.encoding.pem import pem_decode, pem_encode
-from samson.encoding.openssh.eddsa_private_key import EdDSAPrivateKey
-from samson.encoding.openssh.eddsa_public_key import EdDSAPublicKey
-from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+
+from samson.encoding.openssh.openssh_eddsa_private_key import OpenSSHEdDSAPrivateKey
+from samson.encoding.openssh.openssh_eddsa_public_key import OpenSSHEdDSAPublicKey
+from samson.encoding.openssh.ssh2_eddsa_public_key import SSH2EdDSAPublicKey
 from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
 from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.general import PKIEncoding
-
-SSH_PUBLIC_HEADER = b'ssh-ed25519'
-
 
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
 # Fit to RFC8032 (https://tools.ietf.org/html/rfc8032#appendix-A)
@@ -150,15 +148,14 @@ class EdDSA(DSA):
         if buffer.startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
-        if SSH_PUBLIC_HEADER in buffer:
-            priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, EdDSAPublicKey, EdDSAPrivateKey, passphrase)
+        if OpenSSHEdDSAPrivateKey.check(buffer, passphrase):
+            eddsa = OpenSSHEdDSAPrivateKey.decode(buffer, passphrase)
 
-            if priv:
-                a, h = priv.a, priv.h
-            else:
-                a, h = pub.a, 0
+        elif OpenSSHEdDSAPublicKey.check(buffer):
+            eddsa = OpenSSHEdDSAPublicKey.decode(buffer)
 
-            eddsa = EdDSA(curve=EdwardsCurve25519, h=h, a=a, d=0, clamp=False)
+        elif SSH2EdDSAPublicKey.check(buffer):
+            eddsa = SSH2EdDSAPublicKey.decode(buffer)
 
         elif PKCS8EdDSAPrivateKey.check(buffer):
             eddsa = PKCS8EdDSAPrivateKey.decode(buffer)
@@ -188,22 +185,13 @@ class EdDSA(DSA):
             bytes: Bytes-encoded EdDSA instance.
         """
         if encoding == PKIEncoding.OpenSSH:
-            public_key = EdDSAPublicKey('public_key', self.a)
-            private_key = EdDSAPrivateKey(
-                'private_key',
-                check_bytes=None,
-                a=self.a,
-                h=self.h,
-                host=b'nohost@localhost'
-            )
-
-            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+            encoded = OpenSSHEdDSAPrivateKey.encode(self, encode_pem, marker, encryption, iv, passphrase)
 
         elif encoding == PKIEncoding.PKCS8:
             encoded = PKCS8EdDSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS8EdDSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
@@ -227,13 +215,18 @@ class EdDSA(DSA):
 
         if encoding == PKIEncoding.X509:
             encoded = X509EdDSAPublicKey.encode(self)
+            default_marker = X509EdDSAPublicKey.DEFAULT_MARKER
+            default_pem = X509EdDSAPublicKey.DEFAULT_PEM
 
-            default_marker = 'PUBLIC KEY'
-            default_pem = True
+        elif encoding == PKIEncoding.OpenSSH:
+            encoded = OpenSSHEdDSAPublicKey.encode(self)
+            default_marker = OpenSSHEdDSAPublicKey.DEFAULT_MARKER
+            default_pem = OpenSSHEdDSAPublicKey.DEFAULT_PEM
 
-        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
-            public_key = EdDSAPublicKey('public_key', self.a)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-ed25519', public_key)
+        elif encoding == PKIEncoding.SSH2:
+            encoded = SSH2EdDSAPublicKey.encode(self)
+            default_marker = SSH2EdDSAPublicKey.DEFAULT_MARKER
+            default_pem = SSH2EdDSAPublicKey.DEFAULT_PEM
 
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')

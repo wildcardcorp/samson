@@ -1,9 +1,9 @@
 from samson.utilities.math import gcd, lcm, mod_inv, find_prime
 from samson.core.encryption_alg import EncryptionAlg
 
-from samson.encoding.openssh.rsa_private_key import RSAPrivateKey
-from samson.encoding.openssh.rsa_public_key import RSAPublicKey
-from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key, generate_openssh_public_key_params
+from samson.encoding.openssh.openssh_rsa_private_key import OpenSSHRSAPrivateKey
+from samson.encoding.openssh.openssh_rsa_public_key import OpenSSHRSAPublicKey
+from samson.encoding.openssh.ssh2_rsa_public_key import SSH2RSAPublicKey
 from samson.encoding.jwk.jwk_rsa_encoder import JWKRSAEncoder
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
@@ -15,8 +15,6 @@ from samson.encoding.general import PKIEncoding
 from samson.encoding.pem import pem_encode, pem_decode
 from samson.utilities.bytes import Bytes
 import random
-
-SSH_PUBLIC_HEADER = b'ssh-rsa'
 
 class RSA(EncryptionAlg):
     """
@@ -134,29 +132,16 @@ class RSA(EncryptionAlg):
             encoded = PKCS1RSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'RSA PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS1RSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding == PKIEncoding.PKCS8:
             encoded = PKCS8RSAPrivateKey.encode(self)
 
             if encode_pem:
-                encoded = pem_encode(encoded, marker or 'PRIVATE KEY', encryption=encryption, passphrase=passphrase, iv=iv)
+                encoded = pem_encode(encoded, marker or PKCS8RSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
 
         elif encoding == PKIEncoding.OpenSSH:
-            public_key = RSAPublicKey('public_key', self.n, self.e)
-            private_key = RSAPrivateKey(
-                'private_key',
-                check_bytes=None,
-                n=self.n,
-                e=self.e,
-                d=self.alt_d,
-                q_mod_p=mod_inv(self.q, self.p),
-                p=self.p,
-                q=self.q,
-                host=b'nohost@localhost'
-            )
-
-            encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+            encoded = OpenSSHRSAPrivateKey.encode(self, encode_pem, marker, encryption, iv, passphrase)
 
         elif encoding == PKIEncoding.JWK:
             encoded = JWKRSAEncoder.encode(self, is_private=True).encode('utf-8')
@@ -184,26 +169,33 @@ class RSA(EncryptionAlg):
 
         if encoding == PKIEncoding.PKCS1:
             encoded = PKCS1RSAPublicKey.encode(self)
-            default_marker = 'RSA PUBLIC KEY'
-            default_pem = True
+            default_marker = PKCS1RSAPublicKey.DEFAULT_MARKER
+            default_pem = PKCS1RSAPublicKey.DEFAULT_PEM
 
         elif encoding == PKIEncoding.X509:
             encoded = X509RSAPublicKey.encode(self)
-            default_marker = 'PUBLIC KEY'
-            default_pem = True
+            default_marker = X509RSAPublicKey.DEFAULT_MARKER
+            default_pem = X509RSAPublicKey.DEFAULT_PEM
 
         elif encoding == PKIEncoding.X509_CERT:
             encoded = X509RSACertificate.encode(self)
-            default_marker = 'CERTIFICATE'
-            default_pem = True
+            default_marker = X509RSACertificate.DEFAULT_MARKER
+            default_pem = X509RSACertificate.DEFAULT_PEM
 
         elif encoding== PKIEncoding.JWK:
             encoded = JWKRSAEncoder.encode(self).encode('utf-8')
-            default_pem = False
+            default_pem = JWKRSAEncoder.DEFAULT_PEM
 
-        elif encoding in [PKIEncoding.OpenSSH, PKIEncoding.SSH2]:
-            public_key = RSAPublicKey('public_key', self.n, self.e)
-            encoded, default_pem, default_marker, use_rfc_4716 = generate_openssh_public_key_params(encoding, b'ssh-rsa', public_key)
+        elif encoding == PKIEncoding.OpenSSH:
+            encoded = OpenSSHRSAPublicKey.encode(self)
+            default_marker = OpenSSHRSAPublicKey.DEFAULT_MARKER
+            default_pem = OpenSSHRSAPublicKey.DEFAULT_PEM
+
+        elif encoding == PKIEncoding.SSH2:
+            encoded = SSH2RSAPublicKey.encode(self)
+            default_marker = SSH2RSAPublicKey.DEFAULT_MARKER
+            default_pem = SSH2RSAPublicKey.DEFAULT_PEM
+
         else:
             raise ValueError(f'Unsupported encoding "{encoding}"')
 
@@ -235,35 +227,34 @@ class RSA(EncryptionAlg):
                 buffer = pem_decode(buffer, passphrase)
 
             # SSH
-            if SSH_PUBLIC_HEADER in buffer:
-                priv, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, RSAPublicKey, RSAPrivateKey, passphrase)
+            if OpenSSHRSAPrivateKey.check(buffer, passphrase):
+                rsa = OpenSSHRSAPrivateKey.decode(buffer, passphrase)
 
-                if priv:
-                    n, e, p, q = priv.n, priv.e, priv.p, priv.q
-                else:
-                    n, e, p, q = pub.n, pub.e, 2, 3
+            elif OpenSSHRSAPublicKey.check(buffer):
+                rsa = OpenSSHRSAPublicKey.decode(buffer)
 
-                rsa = RSA(8, p=p, q=q, e=e)
-                rsa.n = n
+            elif SSH2RSAPublicKey.check(buffer):
+                rsa = SSH2RSAPublicKey.decode(buffer)
+
+            # X.509
+            elif X509RSACertificate.check(buffer):
+                rsa = X509RSACertificate.decode(buffer)
+
+            elif X509RSAPublicKey.check(buffer):
+                rsa = X509RSAPublicKey.decode(buffer)
+
+            # PKCS8
+            elif PKCS8RSAPrivateKey.check(buffer):
+                rsa = PKCS8RSAPrivateKey.decode(buffer)
+
+            # PKCS#1
+            elif PKCS1RSAPrivateKey.check(buffer):
+                rsa = PKCS1RSAPrivateKey.decode(buffer)
+
+            elif PKCS1RSAPublicKey.check(buffer):
+                rsa = PKCS1RSAPublicKey.decode(buffer)
             else:
-                # X.509
-                if X509RSACertificate.check(buffer):
-                    rsa = X509RSACertificate.decode(buffer)
-
-                elif X509RSAPublicKey.check(buffer):
-                    rsa = X509RSAPublicKey.decode(buffer)
-
-                elif PKCS8RSAPrivateKey.check(buffer):
-                    rsa = PKCS8RSAPrivateKey.decode(buffer)
-
-                # PKCS#1
-                elif PKCS1RSAPrivateKey.check(buffer):
-                    rsa = PKCS1RSAPrivateKey.decode(buffer)
-
-                elif PKCS1RSAPublicKey.check(buffer):
-                    rsa = PKCS1RSAPublicKey.decode(buffer)
-                else:
-                    raise ValueError("Unable to parse provided RSA key.")
+                raise ValueError("Unable to parse provided RSA key.")
 
         rsa.bits = rsa.n.bit_length()
         return rsa

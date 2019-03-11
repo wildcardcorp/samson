@@ -1,8 +1,9 @@
 from samson.encoding.general import bytes_to_der_sequence
+from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import decoder, encoder
 
-class PKCS8DSAPrivateKey(object):
+class PKCS8DSAPrivateKey(PKCS8Base):
 
     @staticmethod
     def check(buffer: bytes):

@@ -1,4 +1,5 @@
 from samson.encoding.general import bytes_to_der_sequence
+from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PublicPoint
 from samson.utilities.bytes import Bytes
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
@@ -6,13 +7,18 @@ from pyasn1.codec.der import encoder, decoder
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
+from pyasn1.error import PyAsn1Error
 import math
 
-class PKCS8ECDSAPrivateKey(object):
+class PKCS8ECDSAPrivateKey(PKCS8Base):
+
     @staticmethod
     def check(buffer: bytes):
-        items = bytes_to_der_sequence(buffer)
-        return len(items) == 3 and str(items[1][0]) == '1.2.840.10045.2.1'
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return len(items) == 3 and str(items[1][0]) == '1.2.840.10045.2.1'
+        except PyAsn1Error as _:
+            return False
 
 
     @staticmethod

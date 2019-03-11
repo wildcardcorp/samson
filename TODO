@@ -70,6 +70,13 @@ X   Add PublicKey core
 
     X   Add encoding fingerprinter to automatically decode keys
 
+
+X   Allow kwargs to pass in to encoding
+    X   OpenSSH can have arbitrary hostnames
+    X   X509Certificate can generate arbitrary RDN sequences/sigs
+    X   X509Certificate can sign/self-sign
+
+
 OK  EAX
 OK  PMAC
 
