@@ -61,7 +61,7 @@ IPython {IPython.__version__}
 from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3
 from samson.public_key.all import RSA, DSA, ECDSA, EdDSA
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
-from samson.encoding.general import PKIEncoding
+from samson.encoding.general import PKIEncoding, PKIAutoParser
 from fastecdsa.curve import P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
 
 HASHES = {
@@ -88,7 +88,8 @@ PKI = {
     'rsa': RSA,
     'dsa': DSA,
     'ecdsa': ECDSA,
-    'eddsa': EdDSA
+    'eddsa': EdDSA,
+    'auto': PKIAutoParser
 }
 
 

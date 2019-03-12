@@ -97,6 +97,19 @@ SWmPi/r70ltxQCIDstoJqaGE/0xD5S8W4T9IO3kbNr9boPEdQ8paf+CNZfVU4CTYgxjCQe
 vlSTJVvZVKoQFKC4Lw==
 ---- END SSH2 PUBLIC KEY ----"""
 
+
+TEST_SSH2_PUB_NO_CMT = b"""---- BEGIN SSH2 PUBLIC KEY ----
+AAAAB3NzaC1kc3MAAACBAIAAAAAAAAAAieGFUhig59rDgTb/r6cu2nhZ8hceJeZerGmMFw
+JXiwfcKhB22iQcdsYtN02Diepa7/0yJqBTDMVl879rUJKROevqwE9Iw8hK+3ltYeWk+aj9
+qBKrWUlCMsfStN61CqGO6eEyv6haxDdNf5CRq8PQFe/IcaWERxuxAAAAFQD09H8FeUslYX
+S7pumzlqdwflY8WwAAAIBZWMnTiYsiSxJnLAuY4Gxg35I8uLyZnRGUWP71OLj6QEbI21MD
+nbYgwJTJ+gd+84m1MipVmUanGQP5kPH34OAl4tf3z0lK/xoEcPW2TDa2JaCX8WUf53UyNV
+b+ALNgjIh4koeEgOmQQb5gGmIWbKaJS91BpwVOyJ91a6n8lTAikQAAAIB/LGGoOyuL/zra
+hx7LuyMWF/ruvSxiky4FPA2KorGG0xjY32k1GPQTw5818Itybr4CLB2jsw8oo6SHPVdSvZ
+SWmPi/r70ltxQCIDstoJqaGE/0xD5S8W4T9IO3kbNr9boPEdQ8paf+CNZfVU4CTYgxjCQe
+vlSTJVvZVKoQFKC4Lw==
+---- END SSH2 PUBLIC KEY ----"""
+
 # Generated using ssh-keygen and OpenSSL
 # ssh-keygen -t dsa -N 'super secret passphrase' -f test_dsa_key -m PEM
 # openssl dsa -aes192 -in test_dsa_key -text
@@ -437,7 +450,7 @@ class DSATestCase(unittest.TestCase):
 
     def test_import_export_private(self):
         dsa = DSA.import_key(TEST_PRIV)
-        der_bytes = dsa.export_private_key()
+        der_bytes = dsa.export_private_key(encoding=PKIEncoding.PKCS1)
         new_dsa = DSA.import_key(der_bytes)
 
         self.assertEqual((dsa.p, dsa.q, dsa.g, dsa.x), (new_dsa.p, new_dsa.q, new_dsa.g, new_dsa.x))
@@ -495,47 +508,52 @@ class DSATestCase(unittest.TestCase):
 
 
     def test_import_ssh(self):
-        dsa_pub = DSA.import_key(TEST_SSH2_PUB)
-        self.assertEqual(dsa_pub.p, 89884656743115795391714060562757515397425322659982333453951503557945186260897603074467021329267150667179270601498386514202185870349356296751727808353958732563710461587745543679948630665057517430779539542454135056582551841462788758130134369220761262066732236795930452718468922387238066961216943830683854773169)
-        self.assertEqual(dsa_pub.q, 1398446195032410252040217410173702390108694920283)
-        self.assertEqual(dsa_pub.g, 62741477437088172631393589185350035491867729832629398027831312004924312513744633269784278916027520183601208756530710011458232054971579879048852582591127008356159595963890332524237209902067360056459538632225446131921069339325466545201845714001580950381286256953162223728420823439838953735559776779136624763537)
-        self.assertEqual(dsa_pub.y, 89304173996622136803697185034716185066873574928118988908946173912972803079394854332431645751271541413754929474728944725753979110082470431256515341756380336480154766674026631800266177718504673102950377953224324965826950742525966269191766953261195015149626105144609044917769140962813589211397528346030252275759)
+        dsa_pub = DSA.import_key(TEST_SSH_PUB)
+        dsa_ssh2_pub = DSA.import_key(TEST_SSH2_PUB)
+        self.assertEqual(dsa_ssh2_pub.p, 89884656743115795391714060562757515397425322659982333453951503557945186260897603074467021329267150667179270601498386514202185870349356296751727808353958732563710461587745543679948630665057517430779539542454135056582551841462788758130134369220761262066732236795930452718468922387238066961216943830683854773169)
+        self.assertEqual(dsa_ssh2_pub.q, 1398446195032410252040217410173702390108694920283)
+        self.assertEqual(dsa_ssh2_pub.g, 62741477437088172631393589185350035491867729832629398027831312004924312513744633269784278916027520183601208756530710011458232054971579879048852582591127008356159595963890332524237209902067360056459538632225446131921069339325466545201845714001580950381286256953162223728420823439838953735559776779136624763537)
+        self.assertEqual(dsa_ssh2_pub.y, 89304173996622136803697185034716185066873574928118988908946173912972803079394854332431645751271541413754929474728944725753979110082470431256515341756380336480154766674026631800266177718504673102950377953224324965826950742525966269191766953261195015149626105144609044917769140962813589211397528346030252275759)
+
+        self.assertEqual(dsa_pub.export_public_key(encoding=PKIEncoding.OpenSSH).replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
+        self.assertEqual(dsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
 
 
 
-    def test_import_openssh(self):
-        for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
-            if passphrase:
-                with self.assertRaises(ValueError):
-                    DSA.import_key(key)
 
-            dsa = DSA.import_key(key, passphrase=passphrase)
-            self.assertEqual(dsa.y, pow(dsa.g, dsa.x, dsa.p))
-            self.assertLess(dsa.x, dsa.q)
-            self.assertTrue(isprime(dsa.p))
-            self.assertTrue(isprime(dsa.q))
+    # def test_import_openssh(self):
+    #     for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
+    #         if passphrase:
+    #             with self.assertRaises(ValueError):
+    #                 DSA.import_key(key)
+
+    #         dsa = DSA.import_key(key, passphrase=passphrase)
+    #         self.assertEqual(dsa.y, pow(dsa.g, dsa.x, dsa.p))
+    #         self.assertLess(dsa.x, dsa.q)
+    #         self.assertTrue(isprime(dsa.p))
+    #         self.assertTrue(isprime(dsa.q))
 
 
-    def test_openssh_gauntlet(self):
-        num_runs = 6
-        num_enc = num_runs // 3
-        for i in range(num_runs):
-            dsa = DSA()
-            passphrase = None
-            if i < num_enc:
-                passphrase = Bytes.random(Bytes.random(1).int())
+    # def test_openssh_gauntlet(self):
+    #     num_runs = 6
+    #     num_enc = num_runs // 3
+    #     for i in range(num_runs):
+    #         dsa = DSA()
+    #         passphrase = None
+    #         if i < num_enc:
+    #             passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = dsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = dsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-            pub_ssh2    = dsa.export_public_key(encoding=PKIEncoding.SSH2)
+    #         priv        = dsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
+    #         pub_openssh = dsa.export_public_key(encoding=PKIEncoding.OpenSSH)
+    #         pub_ssh2    = dsa.export_public_key(encoding=PKIEncoding.SSH2)
 
-            new_priv = DSA.import_key(priv, passphrase=passphrase)
-            new_pub_openssh = DSA.import_key(pub_openssh)
-            new_pub_ssh2 = DSA.import_key(pub_ssh2)
+    #         new_priv = DSA.import_key(priv, passphrase=passphrase)
+    #         new_pub_openssh = DSA.import_key(pub_openssh)
+    #         new_pub_ssh2 = DSA.import_key(pub_ssh2)
 
-            self.assertEqual((new_priv.p, new_priv.q, new_priv.g, new_priv.x, new_priv.y), (dsa.p, dsa.q, dsa.g, dsa.x, dsa.y))
-            self.assertEqual((new_pub_openssh.p, new_pub_openssh.q, new_pub_openssh.g, new_pub_openssh.y), (dsa.p, dsa.q, dsa.g, dsa.y))
-            self.assertEqual((new_pub_ssh2.p, new_pub_ssh2.q, new_pub_ssh2.g, new_pub_ssh2.y), (dsa.p, dsa.q, dsa.g, dsa.y))
+    #         self.assertEqual((new_priv.p, new_priv.q, new_priv.g, new_priv.x, new_priv.y), (dsa.p, dsa.q, dsa.g, dsa.x, dsa.y))
+    #         self.assertEqual((new_pub_openssh.p, new_pub_openssh.q, new_pub_openssh.g, new_pub_openssh.y), (dsa.p, dsa.q, dsa.g, dsa.y))
+    #         self.assertEqual((new_pub_ssh2.p, new_pub_ssh2.q, new_pub_ssh2.g, new_pub_ssh2.y), (dsa.p, dsa.q, dsa.g, dsa.y))
 
 
 

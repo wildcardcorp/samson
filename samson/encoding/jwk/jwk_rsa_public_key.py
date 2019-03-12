@@ -2,9 +2,9 @@ from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
 import json
 
-class JWKRSAEncoder(object):
+class JWKRSAPublicKey(object):
     """
-    JWK encoder for RSA
+    JWK encoder for RSA public keys
     """
 
     DEFAULT_MARKER = None
@@ -12,19 +12,30 @@ class JWKRSAEncoder(object):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer):
+    def check(buffer, **kwargs):
         try:
             if issubclass(type(buffer), (bytes, bytearray)):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'RSA'
+            return jwk['kty'] == 'RSA' and not ('d' in jwk)
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
 
     @staticmethod
-    def encode(rsa_key: object, is_private: bool=False) -> str:
+    def build_pub(rsa_key):
+        jwk = {
+            'kty': 'RSA',
+            'n': url_b64_encode(Bytes(rsa_key.n)).decode(),
+            'e': url_b64_encode(Bytes(rsa_key.e)).decode(),
+        }
+
+        return jwk
+
+
+    @staticmethod
+    def encode(rsa_key: object, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -35,25 +46,12 @@ class JWKRSAEncoder(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = {
-            'kty': 'RSA',
-            'n': url_b64_encode(Bytes(rsa_key.n)).decode(),
-            'e': url_b64_encode(Bytes(rsa_key.e)).decode(),
-        }
-
-        if is_private:
-            jwk['d']  = url_b64_encode(Bytes(rsa_key.alt_d)).decode()
-            jwk['p']  = url_b64_encode(Bytes(rsa_key.p)).decode()
-            jwk['q']  = url_b64_encode(Bytes(rsa_key.q)).decode()
-            jwk['dp'] = url_b64_encode(Bytes(rsa_key.dP)).decode()
-            jwk['dq'] = url_b64_encode(Bytes(rsa_key.dQ)).decode()
-            jwk['qi'] = url_b64_encode(Bytes(rsa_key.Qi)).decode()
-
-        return json.dumps(jwk)
+        jwk = JWKRSAPublicKey.build_pub(rsa_key)
+        return json.dumps(jwk).encode('utf-8')
 
 
     @staticmethod
-    def decode(buffer: bytes) -> (int, int, int, int):
+    def decode(buffer: bytes, **kwargs) -> (int, int, int, int):
         """
         Decodes a JWK JSON string into ECDSA parameters.
 

@@ -1,10 +1,10 @@
 from samson.encoding.general import export_der, bytes_to_der_sequence
 from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, tag
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
+from samson.encoding.pem import PEMEncodable
 from samson.utilities.bytes import Bytes
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve
-from pyasn1.error import PyAsn1Error
 import math
 
 def parse_ec_params(items, curve_idx, pub_point_idx):
@@ -38,32 +38,34 @@ class PublicPoint(BitString):
 
 
 
-class PKCS1ECDSAPrivateKey(object):
+class PKCS1ECDSAPrivateKey(PEMEncodable):
     """
     Not in the RFC spec, but OpenSSL supports it.
     """
 
     DEFAULT_MARKER = 'EC PRIVATE KEY'
     DEFAULT_PEM = True
+    USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer: bytes):
+    def check(buffer: bytes, **kwargs):
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 4 and int(items[0]) == 1
-        except PyAsn1Error as _:
+        except Exception as _:
             return False
 
 
     @staticmethod
-    def encode(ecdsa_key: object):
+    def encode(ecdsa_key: object, **kwargs):
         zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
         encoded = export_der([1, Bytes(ecdsa_key.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(ecdsa_key.G.curve.oid)]) + ecdsa_key.G.curve.oid)[0].asTuple(), ecdsa_key.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
+        encoded = PKCS1ECDSAPrivateKey.transport_encode(encoded, **kwargs)
         return encoded
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes, **kwargs):
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 

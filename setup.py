@@ -39,6 +39,7 @@ setup(name='samson-crypto',
       author_email='daniel.cronce@wildcardcorp.com',
       keywords='cryptography security cryptanalysis',
       url="https://github.com/wildcardcorp/samson",
+      data_files = [('man/man1', ['man/artifacts/samson.1'])],
       packages=[
           "samson",
           "samson/ace",

@@ -91,6 +91,15 @@ rJrqYgbsrqtuBW0uwbu4DMv9FdCdCjxC03luH1c+uGxEj+zXVMWcWASR3t44PeM3x7X9vV
 nq7eX2jkh79IOiuGygoXKh
 ---- END SSH2 PUBLIC KEY ----"""
 
+TEST_SSH2_PUB_NO_CMT = b"""---- BEGIN SSH2 PUBLIC KEY ----
+AAAAB3NzaC1yc2EAAAADAQABAAABAQDIAHiuX7nHdeGrod3RZKX1BLaQw0flgghr51zLTl
+WL4A8+5iGGea4u+llvCykPDnMiIN0NL1Ydj6AAsk8zsvYh9/VjgxTtuHK8oI4Um8xXqNhG
+gRs8PRNKo1SNQqRkcXTEAnUTjYdu3Iluk7JlVr1g8i7lEu8wC2wcLGhTqSf5jsKXfo/aVU
+rJrqYgbsrqtuBW0uwbu4DMv9FdCdCjxC03luH1c+uGxEj+zXVMWcWASR3t44PeM3x7X9vV
+1qNjL26xzzGA/KXov3nIVDwmhRkF287pRd57UgJCGzwYGGJwGlQZZH6xOfT14+znt+FcKR
+nq7eX2jkh79IOiuGygoXKh
+---- END SSH2 PUBLIC KEY ----"""
+
 
 # Generated using ssh-keygen and OpenSSL
 # ssh-keygen -t rsa -N 'super secret passphrase' -f test_rsa_key -m PEM
@@ -409,7 +418,7 @@ vF2o/WsGf840G3PBQsGef1nQPiwEU=
 -----END OPENSSH PRIVATE KEY-----""", b'611d58216f198c4e')
 
 # https://tools.ietf.org/html/rfc7517#appendix-A.2
-TEST_JWK = '{"kty": "RSA", "n": "t6Q8PWSi1dkJj9hTP8hNYFlvadM7DflW9mWepOJhJ66w7nyoK1gPNqFMSQRyO125Gp-TEkodhWr0iujjHVx7BcV0llS4w5ACGgPrcAd6ZcSR0-Iqom-QFcNP8Sjg086MwoqQU_LYywlAGZ21WSdS_PERyGFiNnj3QQlO8Yns5jCtLCRwLHL0Pb1fEv45AuRIuUfVcPySBWYnDyGxvjYGDSM-AqWS9zIQ2ZilgT-GqUmipg0XOC0Cc20rgLe2ymLHjpHciCKVAbY5-L32-lSeZO-Os6U15_aXrk9Gw8cPUaX1_I8sLGuSiVdt3C_Fn2PZ3Z8i744FPFGGcG1qs2Wz-Q", "e": "AQAB", "d": "GRtbIQmhOZtyszfgKdg4u_N-R_mZGU_9k7JQ_jn1DnfTuMdSNprTeaSTyWfSNkuaAwnOEbIQVy1IQbWVV25NY3ybc_IhUJtfri7bAXYEReWaCl3hdlPKXy9UvqPYGR0kIXTQRqns-dVJ7jahlI7LyckrpTmrM8dWBo4_PMaenNnPiQgO0xnuToxutRZJfJvG4Ox4ka3GORQd9CsCZ2vsUDmsXOfUENOyMqADC6p1M3h33tsurY15k9qMSpG9OX_IJAXmxzAh_tWiZOwk2K4yxH9tS3Lq1yX8C1EWmeRDkK2ahecG85-oLKQt5VEpWHKmjOi_gJSdSgqcN96X52esAQ", "p": "2rnSOV4hKSN8sS4CgcQHFbs08XboFDqKum3sc4h3GRxrTmQdl1ZK9uw-PIHfQP0FkxXVrx-WE-ZEbrqivH_2iCLUS7wAl6XvARt1KkIaUxPPSYB9yk31s0Q8UK96E3_OrADAYtAJs-M3JxCLfNgqh56HDnETTQhH3rCT5T3yJws", "q": "1u_RiFDP7LBYh3N4GXLT9OpSKYP0uQZyiaZwBtOCBNJgQxaj10RWjsZu0c6Iedis4S7B_coSKB0Kj9PaPaBzg-IySRvvcQuPamQu66riMhjVtG6TlV8CLCYKrYl52ziqK0E_ym2QnkwsUX7eYTB7LbAHRK9GqocDE5B0f808I4s", "dp": "KkMTWqBUefVwZ2_Dbj1pPQqyHSHjj90L5x_MOzqYAJMcLMZtbUtwKqvVDq3tbEo3ZIcohbDtt6SbfmWzggabpQxNxuBpoOOf_a_HgMXK_lhqigI4y_kqS1wY52IwjUn5rgRrJ-yYo1h41KR-vz2pYhEAeYrhttWtxVqLCRViD6c", "dq": "AvfS0-gRxvn0bwJoMSnFxYcK1WnuEjQFluMGfwGitQBWtfZ1Er7t1xDkbN9GQTB9yqpDoYaN06H7CFtrkxhJIBQaj6nkF5KKS3TQtQ5qCzkOkmxIe3KRbBymXxkb5qwUpX5ELD5xFc6FeiafWYY63TmmEAu_lRFCOJ3xDea-ots", "qi": "lSQi-w9CpyUReMErP1RsBLk7wNtOvs5EQpPqmuMvqW57NBUczScEoPwmUqqabu9V0-Py4dQ57_bapoKRu1R90bvuFnU63SHWEFglZQvJDMeAvmj4sm-Fp0oYu_neotgQ0hzbI5gry7ajdYy9-2lNx_76aBZoOUu9HCJ-UsfSOI8"}'
+TEST_JWK = b'{"kty": "RSA", "n": "t6Q8PWSi1dkJj9hTP8hNYFlvadM7DflW9mWepOJhJ66w7nyoK1gPNqFMSQRyO125Gp-TEkodhWr0iujjHVx7BcV0llS4w5ACGgPrcAd6ZcSR0-Iqom-QFcNP8Sjg086MwoqQU_LYywlAGZ21WSdS_PERyGFiNnj3QQlO8Yns5jCtLCRwLHL0Pb1fEv45AuRIuUfVcPySBWYnDyGxvjYGDSM-AqWS9zIQ2ZilgT-GqUmipg0XOC0Cc20rgLe2ymLHjpHciCKVAbY5-L32-lSeZO-Os6U15_aXrk9Gw8cPUaX1_I8sLGuSiVdt3C_Fn2PZ3Z8i744FPFGGcG1qs2Wz-Q", "e": "AQAB", "d": "GRtbIQmhOZtyszfgKdg4u_N-R_mZGU_9k7JQ_jn1DnfTuMdSNprTeaSTyWfSNkuaAwnOEbIQVy1IQbWVV25NY3ybc_IhUJtfri7bAXYEReWaCl3hdlPKXy9UvqPYGR0kIXTQRqns-dVJ7jahlI7LyckrpTmrM8dWBo4_PMaenNnPiQgO0xnuToxutRZJfJvG4Ox4ka3GORQd9CsCZ2vsUDmsXOfUENOyMqADC6p1M3h33tsurY15k9qMSpG9OX_IJAXmxzAh_tWiZOwk2K4yxH9tS3Lq1yX8C1EWmeRDkK2ahecG85-oLKQt5VEpWHKmjOi_gJSdSgqcN96X52esAQ", "p": "2rnSOV4hKSN8sS4CgcQHFbs08XboFDqKum3sc4h3GRxrTmQdl1ZK9uw-PIHfQP0FkxXVrx-WE-ZEbrqivH_2iCLUS7wAl6XvARt1KkIaUxPPSYB9yk31s0Q8UK96E3_OrADAYtAJs-M3JxCLfNgqh56HDnETTQhH3rCT5T3yJws", "q": "1u_RiFDP7LBYh3N4GXLT9OpSKYP0uQZyiaZwBtOCBNJgQxaj10RWjsZu0c6Iedis4S7B_coSKB0Kj9PaPaBzg-IySRvvcQuPamQu66riMhjVtG6TlV8CLCYKrYl52ziqK0E_ym2QnkwsUX7eYTB7LbAHRK9GqocDE5B0f808I4s", "dp": "KkMTWqBUefVwZ2_Dbj1pPQqyHSHjj90L5x_MOzqYAJMcLMZtbUtwKqvVDq3tbEo3ZIcohbDtt6SbfmWzggabpQxNxuBpoOOf_a_HgMXK_lhqigI4y_kqS1wY52IwjUn5rgRrJ-yYo1h41KR-vz2pYhEAeYrhttWtxVqLCRViD6c", "dq": "AvfS0-gRxvn0bwJoMSnFxYcK1WnuEjQFluMGfwGitQBWtfZ1Er7t1xDkbN9GQTB9yqpDoYaN06H7CFtrkxhJIBQaj6nkF5KKS3TQtQ5qCzkOkmxIe3KRbBymXxkb5qwUpX5ELD5xFc6FeiafWYY63TmmEAu_lRFCOJ3xDea-ots", "qi": "lSQi-w9CpyUReMErP1RsBLk7wNtOvs5EQpPqmuMvqW57NBUczScEoPwmUqqabu9V0-Py4dQ57_bapoKRu1R90bvuFnU63SHWEFglZQvJDMeAvmj4sm-Fp0oYu_neotgQ0hzbI5gry7ajdYy9-2lNx_76aBZoOUu9HCJ-UsfSOI8"}'
 
 # openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
 TEST_X509_CERT = b"""-----BEGIN CERTIFICATE-----
@@ -566,7 +575,7 @@ class RSATestCase(unittest.TestCase):
 
     def test_import_export_private(self):
         rsa = RSA.import_key(TEST_PRIV)
-        der_bytes = rsa.export_private_key()
+        der_bytes = rsa.export_private_key(encoding=PKIEncoding.PKCS1)
         new_rsa = RSA.import_key(der_bytes)
 
         self.assertEqual((rsa.n, rsa.e, rsa.alt_d), (0x545702789299c59544f0a48037d5fcbe285b5c214d26469f7f52423763d01b331d0f7c9dfd5e98435b362e083875d101e10bf862a34a20cd38cd68743770b1ee57ce7f04e4335729aecacdc662b9b1e0f438f1a691538001d9c8f3374dc1dabf2e9fb316be636b0d2393f511c5bc7373c1666562322dc3911163e338b83bdf7d9a622c81b9edd19cd1699cae8c2def325de313e070d7733fc7ca95e0b12ef6a43095626e1fa3b19681a6e6b2828eb6b3487cb7bb58370086b108e9eaf9f20a53b8f44c9fe7ab7ad545d70b3c5f470190ece9e7172824e05747e1c431a664ab6bd2f914bf64e4dcac0575c493f52a488737f85742fb52aa4555f144ab8e601713, 0x10001, 7637900981413881127344732199207423148450857019726723094659043462794313258767201253269496359678839942555541437712415706663660985252940123204794095993626699211163986533562336773310103190916142252882331767886927729021516529141672972169957951166501750445256177733568843099186777096376892875529534391517354389358568809006385725873288954661635538351606457829485241023554979084645466210495420866845750976009860684015622002855709494103022482640146893844516679296838305756556603312962721311081086887412291530082263197989863828789712221961262494351622769754044860656696333724061992404959980518191241190042534000830303328685273))
@@ -637,43 +646,45 @@ class RSATestCase(unittest.TestCase):
         self.assertEqual(rsa_priv.q, 147975660846396990587026799132395215581845148822588177668939892854130080870127891229734413269282872842954263443501467315040323804831400031921589112815742747614415764378548901698763469577356909867186752247509564255224167675065755796937983163876790155687818626513794653480829583948160749345458911841406938261219)
         self.assertEqual(rsa_priv.alt_d, 19762369934989515131049274315841316326050549933114536766674916078250573730800216520650633877972440419194814420402043176472759537753254149225125134250003994948721187698467807920387489440310994705791482721107511012797884534895932222871683633147680034924999627916905359454912445366494543706676734716375543152258328317139760580320162173490414588340925370831975060554770385250590880497700813834231770436219310405458193997653119990344803085718020467915664214557758416316811073003911746514622779992001874409075037973245976299609023867178313200550274791579981490063847585903047671618462828834780979891650959756006736369309609)
 
-
-
-    def test_import_openssh(self):
-        for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
-            if passphrase:
-                with self.assertRaises(ValueError):
-                    RSA.import_key(key)
-
-            rsa = RSA.import_key(key, passphrase=passphrase)
-            self.assertEqual(rsa.p * rsa.q, rsa.n)
-            self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
-            self.assertTrue(isprime(rsa.p))
-            self.assertTrue(isprime(rsa.q))
+        self.assertEqual(rsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
 
 
 
-    def test_openssh_gauntlet(self):
-        num_runs = 6
-        num_enc = num_runs // 3
-        for i in range(num_runs):
-            bits = 128 + (Bytes.random(2).int() % (4096 - 128))
-            rsa = RSA(bits)
-            passphrase = None
-            if i < num_enc:
-                passphrase = Bytes.random(Bytes.random(1).int())
+    # def test_import_openssh(self):
+    #     for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
+    #         if passphrase:
+    #             with self.assertRaises(ValueError):
+    #                 RSA.import_key(key)
 
-            priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-            pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2)
+    #         rsa = RSA.import_key(key, passphrase=passphrase)
+    #         self.assertEqual(rsa.p * rsa.q, rsa.n)
+    #         self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
+    #         self.assertTrue(isprime(rsa.p))
+    #         self.assertTrue(isprime(rsa.q))
 
-            new_priv = RSA.import_key(priv, passphrase=passphrase)
-            new_pub_openssh = RSA.import_key(pub_openssh)
-            new_pub_ssh2 = RSA.import_key(pub_ssh2)
 
-            self.assertEqual((new_priv.d, new_priv.e, new_priv.n, new_priv.p, new_priv.q), (rsa.d, rsa.e, rsa.n, rsa.p, rsa.q))
-            self.assertEqual((new_pub_openssh.e, new_pub_openssh.n), (rsa.e, rsa.n))
-            self.assertEqual((new_pub_ssh2.e, new_pub_ssh2.n), (rsa.e, rsa.n))
+
+    # def test_openssh_gauntlet(self):
+    #     num_runs = 6
+    #     num_enc = num_runs // 3
+    #     for i in range(num_runs):
+    #         bits = 128 + (Bytes.random(2).int() % (4096 - 128))
+    #         rsa = RSA(bits)
+    #         passphrase = None
+    #         if i < num_enc:
+    #             passphrase = Bytes.random(Bytes.random(1).int())
+
+    #         priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
+    #         pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH)
+    #         pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2)
+
+    #         new_priv = RSA.import_key(priv, passphrase=passphrase)
+    #         new_pub_openssh = RSA.import_key(pub_openssh)
+    #         new_pub_ssh2 = RSA.import_key(pub_ssh2)
+
+    #         self.assertEqual((new_priv.d, new_priv.e, new_priv.n, new_priv.p, new_priv.q), (rsa.d, rsa.e, rsa.n, rsa.p, rsa.q))
+    #         self.assertEqual((new_pub_openssh.e, new_pub_openssh.n), (rsa.e, rsa.n))
+    #         self.assertEqual((new_pub_ssh2.e, new_pub_ssh2.n), (rsa.e, rsa.n))
 
 
 
@@ -681,7 +692,7 @@ class RSATestCase(unittest.TestCase):
         rsa = RSA.import_key(TEST_JWK)
         priv_jwk = rsa.export_private_key(encoding=PKIEncoding.JWK)
 
-        self.assertEqual(priv_jwk.decode(), TEST_JWK)
+        self.assertEqual(priv_jwk, TEST_JWK)
 
 
 
@@ -733,9 +744,11 @@ class RSATestCase(unittest.TestCase):
 
 
     def test_import_pkcs8(self):
+        from samson.encoding.pem import pem_decode
         rsa_priv = RSA.import_key(TEST_PKCS8_PRIV)
 
         priv_out = rsa_priv.export_private_key(encoding=PKIEncoding.PKCS8)
+        print(pem_decode(priv_out))
 
         self.assertEqual((rsa_priv.p, rsa_priv.q, rsa_priv.d, rsa_priv.e), (166139291584298120902443024169830845883823889075313984939917653208853637890905161126081148766441591539160401657770377684418968678267217917397922110840150169955546544901086157269951344598822644183037291254655299911780341794815716113854851191488541745191877611504429644948688088285889033976663223284567224856833, 150119113690962013024882886767787358736438702874024877639987005001513857060716647340813407248335373915813194132699511163987634021103271207272747869072785907538172094131387346081221837644849184613482205496553768651031911865532714182752679665482800511607578006666579667465077298743858640016483407400610361062117, 261443907406365378354663085808874736386503755521058985081882965637470767771213025297791271476414073951003560905113869260605140573834934363441563582910410964978725003553295056860481290987047183978890184230384420847820829849525721267527923689830443383138481525900699205548045140667247267145170931395629543661831064542899777508230897484324075615967481549633013603167452463475949339014097601443520652166671659780291518107163852587423275987949452420808289251299490423174099687524419810127240076379136338103470684200785820699599792642573784713209902559428358302232211377555678297104998775430839041504293459045414977936385, 65537))
         self.assertEqual(priv_out.replace(b'\n', b''), TEST_PKCS8_PRIV.replace(b'\n', b''))

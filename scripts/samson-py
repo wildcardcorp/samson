@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 from samson.utilities.cli import start_repl, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
+from samson.utilities.bytes import Bytes
 import argparse
 import sys
 
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
+parser.add_argument('--eval', action='store_true')
 
 hash_parser = subparsers.add_parser('hash')
 hash_parser.description = f"Available hash types: {', '.join([k for k,v in HASHES.items()])}"
@@ -21,6 +23,8 @@ pki_parser.description = f"""Available PKI types: {', '.join([k for k,v in PKI.i
 Available ECDSA curves: {', '.join([k for k,v in EC_CURVES.items()])}
 
 Available EdDSA curves: {', '.join([k for k,v in ED_CURVES.items()])}
+
+Available encodings: {', '.join([k for k,v in ENCODING_MAPPING.items()])}
 """
 
 
@@ -30,7 +34,7 @@ pki_parser.add_argument('--args', nargs="?")
 pki_parser.add_argument('filename', nargs="?")
 pki_parser.add_argument('--pub', action='store_true')
 pki_parser.add_argument('--encoding', nargs="?")
-
+pki_parser.add_argument('--encoding-args', nargs="?")
 
 
 arguments = parser.parse_args()
@@ -44,17 +48,52 @@ def try_parse(val):
     return val
 
 
+PARSE_METHOD = try_parse
+
+
+def export_pki(pki_obj, arguments):
+    if arguments.encoding:
+        encoding = ENCODING_MAPPING[arguments.encoding.upper()]
+
+    if arguments.encoding_args:
+        encoding_args = {k: PARSE_METHOD(v) for k,v in [arg.split('=') for arg in arguments.encoding_args.split(',')]}
+    else:
+        encoding_args = {}
+
+
+    if arguments.pub:
+        if arguments.encoding:
+            print(pki_obj.export_public_key(encoding=encoding, **encoding_args).decode())
+        else:
+            print(pki_obj.export_public_key().decode())
+    else:
+        if arguments.encoding:
+            print(pki_obj.export_private_key(encoding=encoding, **encoding_args).decode())
+        else:
+            print(pki_obj.export_private_key().decode())
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         start_repl()
     else:
+        if arguments.eval:
+            PARSE_METHOD = eval
+
         if arguments.command == 'hash':
             hash_cls = HASHES[arguments.type.lower()]
 
             text = arguments.text
 
             if not text:
-                text = sys.stdin.read()
+                #text = sys.stdin.read()
+                text = sys.stdin.buffer.read()
+            
+            if arguments.eval:
+                text = PARSE_METHOD(text)
+
+            if type(text) is str:
+                text = text.encode('utf-8')
 
             if arguments.args:
                 dict_args = {k: int(v) for k,v in [arg.split('=') for arg in arguments.args.split(',')]}
@@ -62,7 +101,7 @@ if __name__ == '__main__':
                 dict_args = {}
 
             hash_obj = hash_cls(**dict_args)
-            print(hash_obj.hash(text.encode('utf-8')).hex().decode())
+            print(hash_obj.hash(text).hex().decode())
 
         elif arguments.command == 'pki':
             pki_type = arguments.type.lower()
@@ -79,24 +118,13 @@ if __name__ == '__main__':
                     del dict_args["curve"]
                 elif pki_type == 'eddsa':
                     dict_args["curve"] = ED_CURVES[dict_args["curve"]]
-                
+
 
 
             if arguments.action == 'generate':
                 pki_obj = pki_cls(**dict_args)
-                
-                if arguments.pub:
-                    if arguments.encoding:
-                        print(pki_obj.export_public_key(encoding=ENCODING_MAPPING[arguments.encoding.upper()]).decode())
-                    else:
-                        print(pki_obj.export_public_key().decode())
-                else:
-                    if arguments.encoding:
-                        print(pki_obj.export_private_key(encoding=ENCODING_MAPPING[arguments.encoding.upper()]).decode())
-                    else:
-                        print(pki_obj.export_private_key().decode())
-                    
-                    
+                export_pki(pki_obj, arguments)
+
             elif arguments.action == 'parse':
                 if arguments.filename:
                     with open(arguments.filename, 'rb') as f:
@@ -105,5 +133,9 @@ if __name__ == '__main__':
                 else:
                     key_to_parse = sys.stdin.read().encode('utf-8')
 
-                print(pki_cls.import_key(key_to_parse))
-    
+                pki_obj = pki_cls.import_key(key_to_parse)
+
+                if arguments.encoding:
+                    export_pki(pki_obj, arguments)
+                else:
+                    print(pki_obj)

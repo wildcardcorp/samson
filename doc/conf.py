@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__name__), '../samson'))
 # -- Project information -----------------------------------------------------
 
 project = u'samson'
-copyright = u'2018, Daniel Cronce'
+copyright = u'2019, Wildcard Corp'
 author = u'Daniel Cronce'
 
 # The short X.Y version
@@ -144,7 +144,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'samson', u'samson Documentation',
+    (master_doc, 'samson', u'cryptographic CLI tool',
      [author], 1)
 ]
 

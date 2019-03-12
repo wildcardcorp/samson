@@ -32,17 +32,21 @@ class OpenSSHECDSAPrivateKey(object):
     DEFAULT_PEM = True
 
     @staticmethod
-    def check(buffer: bytes, passphrase: bytes=None):
+    def check(buffer: bytes, **kwargs):
         try:
-            priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, passphrase)
-            return priv is not None
+            priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, kwargs.get('passphrase'))
+            return priv is not None and SSH_PUBLIC_HEADER in buffer
         except ValueError as _:
             return False
 
 
     @staticmethod
-    def encode(ecdsa_key: object, encode_pem=None, marker=None, encryption=None, iv=None, passphrase=None):
+    def encode(ecdsa_key: object, **kwargs):
         curve, x_y_bytes = seriailize_public_point(ecdsa_key)
+
+        user = kwargs.get('user')
+        if user and type(user) is str:
+            user = user.encode('utf-8')
 
         public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
         private_key = ECDSAPrivateKey(
@@ -51,17 +55,17 @@ class OpenSSHECDSAPrivateKey(object):
             curve=curve,
             x_y_bytes=x_y_bytes,
             d=ecdsa_key.d,
-            host=b'nohost@localhost'
+            host=user or b'nohost@localhost'
         )
 
-        encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+        encoded = generate_openssh_private_key(public_key, private_key, kwargs.get('encode_pem'), kwargs.get('marker'), kwargs.get('encryption'), kwargs.get('iv'), kwargs.get('passphrase'))
         return encoded
 
 
     @staticmethod
-    def decode(buffer: bytes, passphrase: bytes=None):
+    def decode(buffer: bytes, **kwargs):
         from samson.public_key.ecdsa import ECDSA
-        priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, passphrase)
+        priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, kwargs.get('passphrase'))
 
         curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
         curve = SSH_INVERSE_CURVE_LOOKUP[curve.decode()]

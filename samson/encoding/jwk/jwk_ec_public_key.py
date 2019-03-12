@@ -14,10 +14,9 @@ JWK_CURVE_NAME_LOOKUP = {
 
 JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
 
-
-class JWKECEncoder(object):
+class JWKECPublicKey(object):
     """
-    JWK encoder for ECDSA
+    JWK encoder for ECDSA public keys
     """
 
     DEFAULT_MARKER = None
@@ -25,19 +24,32 @@ class JWKECEncoder(object):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer):
+    def check(buffer, **kwargs):
         try:
             if issubclass(type(buffer), (bytes, bytearray)):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'EC'
+            return jwk['kty'] == 'EC' and not ('d' in jwk)
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
 
+
     @staticmethod
-    def encode(ec_key: object, is_private: bool=False) -> str:
+    def build_pub(ec_key):
+        jwk = {
+            'kty': 'EC',
+            'crv': JWK_CURVE_NAME_LOOKUP[ec_key.G.curve],
+            'x': url_b64_encode(Bytes(ec_key.Q.x)).decode(),
+            'y': url_b64_encode(Bytes(ec_key.Q.y)).decode(),
+        }
+
+        return jwk
+
+
+    @staticmethod
+    def encode(ec_key: object, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -48,21 +60,12 @@ class JWKECEncoder(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = {
-            'kty': 'EC',
-            'crv': JWK_CURVE_NAME_LOOKUP[ec_key.G.curve],
-            'x': url_b64_encode(Bytes(ec_key.Q.x)).decode(),
-            'y': url_b64_encode(Bytes(ec_key.Q.y)).decode(),
-        }
-
-        if is_private:
-            jwk['d'] = url_b64_encode(Bytes(ec_key.d)).decode()
-
-        return json.dumps(jwk)
+        jwk = JWKECPublicKey.build_pub(ec_key)
+        return json.dumps(jwk).encode('utf-8')
 
 
     @staticmethod
-    def decode(buffer: bytes) -> (Curve, int, int, int):
+    def decode(buffer: bytes, **kwargs) -> (Curve, int, int, int):
         """
         Decodes a JWK JSON string into ECDSA parameters.
 

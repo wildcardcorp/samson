@@ -32,7 +32,7 @@ def check_decrypt(params: bytes, decryptor: FunctionType) -> (bytes, bytes):
 
 
 
-def generate_openssh_private_key(public_key: object, private_key: object, encode_pem: bool, marker: str, encryption: str, iv: bytes, passphrase: bytes) -> bytes:
+def generate_openssh_private_key(public_key: object, private_key: object, encode_pem: bool=True, marker: str=None, encryption: str=None, iv: bytes=None, passphrase: bytes=None) -> bytes:
     """
     Internal function. Generates OpenSSH private keys for various PKI.
 
@@ -68,15 +68,15 @@ def generate_openssh_private_key(public_key: object, private_key: object, encode
     if passphrase:
         encryptor, padding_size = header.generate_encryptor(passphrase)
 
-    packed_key = header.pack() + public_key.pack(public_key) + private_key.pack(private_key, encryptor, padding_size)
+    encoded = header.pack() + public_key.pack(public_key) + private_key.pack(private_key, encryptor, padding_size)
     if encode_pem:
-        encoded = pem_encode(packed_key, marker or 'OPENSSH PRIVATE KEY')
+        encoded = pem_encode(encoded, marker or 'OPENSSH PRIVATE KEY')
 
     return encoded
 
 
 
-def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes, public_key: object) -> (bytes, bool, str, bool):
+def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes, public_key: object, user: bytes=None) -> (bytes, bool, str, bool):
     """
     Internal function. Generates OpenSSH public key parameters for various PKI.
 
@@ -88,23 +88,19 @@ def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes,
     Returns:
         (bytes, bool, str, bool): PKI public key parameters formatted as (encoded, default_pem, default_marker, use_rfc_4716).
     """
-    use_rfc_4716 = False
-    default_marker = None
-
     if encoding == PKIEncoding.OpenSSH:
-        encoded = ssh_header + b' ' + base64.b64encode(public_key.pack(public_key)[4:]) + b' nohost@localhost'
-        default_pem = False
+        if user and type(user) is str:
+            user = user.encode('utf-8')
+            
+        encoded = ssh_header + b' ' + base64.b64encode(public_key.pack(public_key)[4:]) + b' ' + (user or b'nohost@localhost')
 
     elif encoding == PKIEncoding.SSH2:
         encoded = public_key.pack(public_key)[4:]
-        default_marker = 'SSH2 PUBLIC KEY'
-        default_pem = True
-        use_rfc_4716 = True
 
     else:
         raise ValueError(f'Unsupported encoding "{encoding}"')
 
-    return encoded, default_pem, default_marker, use_rfc_4716
+    return encoded
 
 
 

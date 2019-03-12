@@ -5,22 +5,21 @@ from samson.encoding.x509.x509_public_key_base import X509PublicKeyBase
 from samson.encoding.x509.x509_ecdsa_subject_public_key import X509ECDSASubjectPublicKey
 from pyasn1.type.univ import ObjectIdentifier, SequenceOf, Sequence
 from pyasn1.codec.der import encoder
-from pyasn1.error import PyAsn1Error
 from fastecdsa.point import Point
 
 class X509ECDSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes):
+    def check(buffer: bytes, **kwargs):
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS1ECDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1'
-        except PyAsn1Error as _:
+        except Exception as _:
             return False
 
 
     @staticmethod
-    def encode(ecdsa_key: object):
+    def encode(ecdsa_key: object, **kwargs):
         curve_seq = [
             ObjectIdentifier([1, 2, 840, 10045, 2, 1]),
             X509ECDSAParams.encode(ecdsa_key)
@@ -32,11 +31,13 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, encoded)
         top_seq.setComponentByPosition(1, X509ECDSASubjectPublicKey.encode(ecdsa_key))
-        return encoder.encode(top_seq)
+        
+        encoded = encoder.encode(top_seq)
+        return X509ECDSAPublicKey.transport_encode(encoded, **kwargs)
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes, **kwargs):
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 

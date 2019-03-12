@@ -290,3 +290,32 @@ class PKIEncoding(Enum):
     OpenSSH = 4
     SSH2 = 5
     JWK = 6
+
+
+
+class PKIAutoParser(object):
+    
+    @staticmethod
+    def import_key(buffer: bytes, passphrase: bytes=None):
+        from samson.core.encodable_pki import EncodablePKI, ORDER
+        from samson.encoding.pem import pem_decode
+
+        subclasses = [EncodablePKI]
+
+        for subclass in subclasses:
+            subclasses.extend(subclass.__subclasses__())
+
+
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer, passphrase)
+
+        for encoding in ORDER:
+            for subclass in subclasses:
+                for encoding_type in [subclass.PRIV_ENCODINGS, subclass.PUB_ENCODINGS]:
+                    if encoding in encoding_type:
+                        encoder = encoding_type[encoding]
+
+                        if encoder.check(buffer, passphrase=passphrase):
+                            return encoder.decode(buffer, passphrase=passphrase)
+
+        raise ValueError(f"Unable to parse provided key.")

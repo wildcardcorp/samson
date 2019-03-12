@@ -57,24 +57,35 @@ OK  PKCS8
     OK  ECDSA
     OK  EdDSA
 
+
 OK  Switch encoding names to Enum instead of string
     OK  Replace in primitives
     OK  Create CLI mappings
 
+
 X   Document new parsers
+    X   Add class/function documentation
+    X   Update README
 
-X   Add PublicKey core
-    X   Unify encoding interfaces
-        X   JWK
-        X   OpenSSH
 
-    X   Add encoding fingerprinter to automatically decode keys
+OK  Add PublicKey core
+    OK  Unify encoding interfaces
+        OK  JWK
+        OK  OpenSSH
+
+    OK  Add encoding fingerprinter to automatically decode keys
 
 
 X   Allow kwargs to pass in to encoding
-    X   OpenSSH can have arbitrary hostnames
+    OK  OpenSSH can have arbitrary hostnames
     X   X509Certificate can generate arbitrary RDN sequences/sigs
+        X   Make an RDN parser?
+
     X   X509Certificate can sign/self-sign
+        X   RSA
+        X   DSA
+        X   ECDSA
+        X   Verify with `openssl verify -CAfile x509_cert.pem x509_cert.pem`? (Wait, this always returns OK?)
 
 
 OK  EAX
@@ -88,7 +99,23 @@ X   Composable exploits and ACE
     X   ACE correctly detects
         X   Small key size
         X   Non-CSPRNGs
+        X   Meet in the middle attacks
 
+
+
+X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
+OK  samson-py should be able to convert between PKI encodings
+X   samson-py should be able to take in new parameters for exporting (cert details, OpenSSH hostname, encryption)
+OK  samson-py should have a man page
+
+X   Ensure samson installs correctly
+    X   Library
+    X   REPL
+    X   CLI
+    X   Man page
+    X   Supported OSs
+        X   Fedora 29
+        X   Kali
 
 
 Future

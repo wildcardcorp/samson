@@ -6,6 +6,7 @@ from samson.encoding.general import PKIEncoding
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
+import json
 import random
 import unittest
 
@@ -80,6 +81,12 @@ olQYA8QG5Tg6TBlQR7g/Pn8sFttdlji0QeAYios9UOCJI1VNZqToO1cea6L+YEh76qwoc=
 
 ---- END SSH2 PUBLIC KEY ----"""
 
+
+TEST_SSH2_PUB_NO_CMT = b"""---- BEGIN SSH2 PUBLIC KEY ----
+AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBN+ojPNDZKMd9K6MDW
+olQYA8QG5Tg6TBlQR7g/Pn8sFttdlji0QeAYios9UOCJI1VNZqToO1cea6L+YEh76qwoc=
+
+---- END SSH2 PUBLIC KEY ----"""
 
 # Generated using ssh-keygen and OpenSSL
 # ssh-keygen -t ecdsa -N 'super secret passphrase' -f test_ecdsa_key -m PEM
@@ -194,8 +201,10 @@ ZvlicyXNaRi6YZYwy6myBHPkZ3r7jjpF+CrAFZsF17q+mBSRn6swmt9P7Sw=
 
 
 # JWK example from https://tools.ietf.org/html/rfc7517#section-3
-TEST_JWK = '{"kty": "EC", "crv": "P-256", "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"}'
+TEST_JWK = b'{"kty": "EC", "crv": "P-256", "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"}'
 
+# Generated from https://mkjwk.org/
+TEST_JWK_PRIV = b'{"kty": "EC", "d": "wGybSwZmblxJ7LUlIc7gB9f2-pHIsXLRXoY-J7VouKE", "use": "sig", "crv": "P-256", "x": "IiF1LRHbsKruh0OY-HYPQGwdKowBoV8fKlPcAzqS774", "y": "n2PCpTDDdZloPtxmajIogALMl8TkRfIm7I4rF3wHv9U", "alg": "ES256"}'
 
 # openssl ecparam -name secp521r1 -genkey -param_enc explicit -out private-key.pem
 # openssl req -new -x509 -key private-key.pem -out server.pem -days 730
@@ -283,7 +292,7 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_import_export_private(self):
         ecdsa = ECDSA.import_key(TEST_PRIV)
-        der_bytes = ecdsa.export_private_key()
+        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1)
         new_ecdsa = ECDSA.import_key(der_bytes)
 
         self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
@@ -293,7 +302,7 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_import_export_private_521(self):
         ecdsa = ECDSA.import_key(TEST_PRIV_521)
-        der_bytes = ecdsa.export_private_key()
+        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1)
         new_ecdsa = ECDSA.import_key(der_bytes)
 
         self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
@@ -306,7 +315,7 @@ class ECDSATestCase(unittest.TestCase):
         ecdsa_pub  = ECDSA.import_key(TEST_PUB)
         ecdsa_priv = ECDSA.import_key(TEST_PRIV)
 
-        der_bytes = ecdsa_pub.export_public_key()
+        der_bytes = ecdsa_pub.export_public_key(encoding=PKIEncoding.X509)
         new_pub  = ECDSA.import_key(der_bytes)
 
         self.assertEqual(ecdsa_pub.Q, ecdsa_priv.Q)
@@ -362,6 +371,9 @@ class ECDSATestCase(unittest.TestCase):
         self.assertEqual((ecdsa_ssh2_pub.G, ecdsa_ssh2_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
         self.assertEqual(ecdsa_priv.d * ecdsa_priv.G, ecdsa_priv.Q)
 
+        self.assertEqual(ecdsa_pub.export_public_key(encoding=PKIEncoding.OpenSSH).replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
+        self.assertEqual(ecdsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
+
 
 
     def test_import_openssh(self):
@@ -403,7 +415,16 @@ class ECDSATestCase(unittest.TestCase):
     def test_import_jwk(self):
         ec = ECDSA.import_key(TEST_JWK)
         jwk = ec.export_public_key(encoding=PKIEncoding.JWK)
-        self.assertEqual(jwk.decode(), TEST_JWK)
+        self.assertEqual(jwk, TEST_JWK)
+
+        ec = ECDSA.import_key(TEST_JWK_PRIV)
+        jwk = ec.export_private_key(encoding=PKIEncoding.JWK)
+
+        as_dict = json.loads(TEST_JWK_PRIV.decode())
+        del as_dict['use']
+        del as_dict['alg']
+
+        self.assertEqual(json.loads(jwk.decode()), as_dict)
 
 
 

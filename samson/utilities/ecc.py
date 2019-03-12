@@ -249,7 +249,6 @@ class TwistedEdwardsCurve(object):
 
 
     def clamp_to_curve(self, x: int, swap_bit_order: bool=True) -> int:
-        from samson.utilities.manipulation import get_blocks
         """
         Coerces `x` to a valid x-coordinate on the curve.
 
@@ -260,6 +259,8 @@ class TwistedEdwardsCurve(object):
         Returns:
             int: Valid x-coordinate.
         """
+        from samson.utilities.manipulation import get_blocks
+        
         as_bits = bin(x)[2:].zfill(self.b)
         if swap_bit_order:
             as_bits = ''.join([block[::-1] for block in get_blocks(as_bits, 8)])

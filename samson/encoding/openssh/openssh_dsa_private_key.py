@@ -9,16 +9,20 @@ class OpenSSHDSAPrivateKey(object):
     DEFAULT_PEM = True
 
     @staticmethod
-    def check(buffer: bytes, passphrase: bytes=None):
+    def check(buffer: bytes, **kwargs):
         try:
-            priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, passphrase)
-            return priv is not None
+            priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, kwargs.get('passphrase'))
+            return priv is not None and SSH_PUBLIC_HEADER in buffer
         except ValueError as _:
             return False
 
 
     @staticmethod
-    def encode(dsa_key: object, encode_pem=None, marker=None, encryption=None, iv=None, passphrase=None):
+    def encode(dsa_key: object, **kwargs):
+        user = kwargs.get('user')
+        if user and type(user) is str:
+            user = user.encode('utf-8')
+
         public_key  = DSAPublicKey('public_key', dsa_key.p, dsa_key.q, dsa_key.g, dsa_key.y)
         private_key = DSAPrivateKey(
             'private_key',
@@ -28,17 +32,17 @@ class OpenSSHDSAPrivateKey(object):
             g=dsa_key.g,
             y=dsa_key.y,
             x=dsa_key.x,
-            host=b'nohost@localhost'
+            host=user or b'nohost@localhost'
         )
 
-        encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
+        encoded = generate_openssh_private_key(public_key, private_key, kwargs.get('encode_pem'), kwargs.get('marker'), kwargs.get('encryption'), kwargs.get('iv'), kwargs.get('passphrase'))
         return encoded
 
 
     @staticmethod
-    def decode(buffer: bytes, passphrase: bytes=None):
+    def decode(buffer: bytes, **kwargs):
         from samson.public_key.dsa import DSA
-        priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, passphrase)
+        priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, kwargs.get('passphrase'))
 
         p, q, g, y, x = priv.p, priv.q, priv.g, priv.y, priv.x
 

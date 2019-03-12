@@ -11,9 +11,9 @@ class SSH2ECDSAPublicKey(OpenSSHECDSAPublicKey):
 
 
     @staticmethod
-    def encode(ecdsa_key: object):
+    def encode(ecdsa_key: object, **kwargs):
         curve, x_y_bytes = seriailize_public_point(ecdsa_key)
         public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-        encoded, _, _, _ = generate_openssh_public_key_params(PKIEncoding.SSH2, b'ecdsa-sha2-' + curve, public_key)
+        encoded = generate_openssh_public_key_params(PKIEncoding.SSH2, b'ecdsa-sha2-' + curve, public_key)
 
-        return encoded
+        return SSH2ECDSAPublicKey.transport_encode(encoded, **kwargs)

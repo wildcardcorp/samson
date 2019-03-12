@@ -156,3 +156,13 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=Non
         end_delim = '-----'
 
     return f"{begin_delim}BEGIN {marker}{end_delim}\n{additional_headers}".encode('utf-8') + data + f"\n{begin_delim}END {marker}{end_delim}".encode('utf-8')
+
+
+class PEMEncodable(object):
+
+    @classmethod
+    def transport_encode(cls, buffer: bytes, **kwargs):
+        if (kwargs.get('encode_pem') is None and cls.DEFAULT_PEM) or kwargs.get('encode_pem'):
+            buffer = pem_encode(buffer, kwargs.get('marker') or cls.DEFAULT_MARKER, encryption=kwargs.get('encryption'), passphrase=kwargs.get('passphrase'), iv=kwargs.get('iv'), use_rfc_4716=cls.USE_RFC_4716)
+        
+        return buffer

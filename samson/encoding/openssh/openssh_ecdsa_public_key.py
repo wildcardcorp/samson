@@ -3,31 +3,32 @@ from samson.encoding.openssh.core.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.openssh_ecdsa_private_key import OpenSSHECDSAPrivateKey, SSH_PUBLIC_HEADER, SSH_INVERSE_CURVE_LOOKUP, seriailize_public_point
 from samson.encoding.openssh.general import parse_openssh_key, generate_openssh_public_key_params
 from samson.encoding.general import PKIEncoding
+from samson.encoding.pem import PEMEncodable
 from fastecdsa.point import Point
 
-class OpenSSHECDSAPublicKey(object):
+class OpenSSHECDSAPublicKey(PEMEncodable):
     DEFAULT_MARKER = None
     DEFAULT_PEM = False
     USE_RFC_4716 = False
 
 
     @staticmethod
-    def check(buffer: bytes):
+    def check(buffer: bytes, **kwargs):
         return SSH_PUBLIC_HEADER in buffer and not OpenSSHECDSAPrivateKey.check(buffer)
 
 
     @staticmethod
-    def encode(ecdsa_key: object):
+    def encode(ecdsa_key: object, **kwargs):
         curve, x_y_bytes = seriailize_public_point(ecdsa_key)
         public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
-        encoded, _, _, _ = generate_openssh_public_key_params(PKIEncoding.OpenSSH, b'ecdsa-sha2-' + curve, public_key)
+        encoded = generate_openssh_public_key_params(PKIEncoding.OpenSSH, b'ecdsa-sha2-' + curve, public_key, user=kwargs.get('user'))
 
-        return encoded
+        return OpenSSHECDSAPublicKey.transport_encode(encoded, **kwargs)
 
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes, **kwargs):
         from samson.public_key.ecdsa import ECDSA
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, None)
 
