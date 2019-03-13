@@ -1,7 +1,7 @@
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.public_key.rsa import RSA
 from samson.attacks.pkcs1v15_padding_oracle_attack import PKCS1v15PaddingOracleAttack
-from samson.padding.pkcs1v15 import PKCS1v15
+from samson.padding.pkcs1v15_padding import PKCS1v15Padding
 import unittest
 
 import logging
@@ -10,7 +10,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s',
 key_length = 256
 rsa = RSA(key_length)
 
-padding = PKCS1v15(key_length)
+padding = PKCS1v15Padding(key_length)
 
 def oracle_func(ciphertext):
     plaintext = b'\x00' + rsa.decrypt(ciphertext)

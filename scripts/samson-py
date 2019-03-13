@@ -56,6 +56,9 @@ def export_pki(pki_obj, arguments):
         encoding = ENCODING_MAPPING[arguments.encoding.upper()]
 
     if arguments.encoding_args:
+        print([arg for arg in arguments.encoding_args.split(',')])
+
+        print(arguments.encoding_args.split("'"))
         encoding_args = {k: PARSE_METHOD(v) for k,v in [arg.split('=') for arg in arguments.encoding_args.split(',')]}
     else:
         encoding_args = {}
@@ -86,7 +89,6 @@ if __name__ == '__main__':
             text = arguments.text
 
             if not text:
-                #text = sys.stdin.read()
                 text = sys.stdin.buffer.read()
             
             if arguments.eval:

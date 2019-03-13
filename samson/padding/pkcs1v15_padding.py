@@ -2,21 +2,22 @@ from samson.utilities.bytes import Bytes
 import math
 
 # https://tools.ietf.org/html/rfc8017#section-7.2.1
-class PKCS1v15(object):
+class PKCS1v15Padding(object):
     """
     PCKS#1 v1.5 RSA padding
     """
 
-    def __init__(self, key_bit_length: int):
+    def __init__(self, key_bit_length: int, block_type: int=2):
         """
         Parameters:
             key_bit_length (int): Length of the RSA modulus in bits.
         """
         self.key_byte_length = math.ceil(key_bit_length / 8)
+        self.block_type = block_type
 
 
     def __repr__(self):
-        return f"<PKCS1v15: key_byte_length={self.key_byte_length}>"
+        return f"<PKCS1v15Padding: key_byte_length={self.key_byte_length}>"
 
     def __str__(self):
         return self.__repr__()
@@ -32,11 +33,20 @@ class PKCS1v15(object):
         Returns:
             Bytes: Padded plaintext.
         """
+        block_type = bytes([self.block_type])
         pad_len = self.key_byte_length - 3 - len(plaintext)
         assert pad_len >= 8
 
-        padding = Bytes.random(pad_len) | Bytes(0x01).stretch(pad_len)
-        return b'\x00\x02' + padding + b'\x00' + plaintext
+        if self.block_type == 0:
+            padding = Bytes(b'').zfill(pad_len)
+
+        elif self.block_type == 1:
+            padding = Bytes(b'\xff').stretch(pad_len)
+
+        elif self.block_type == 2:
+            padding = Bytes.random(pad_len) | Bytes(0x01).stretch(pad_len)
+
+        return b'\x00' + block_type + padding + b'\x00' + plaintext
 
 
 
@@ -55,4 +65,10 @@ class PKCS1v15(object):
             raise Exception('Invalid padding ;)')
 
         header_removed = plaintext[2:]
-        return header_removed[header_removed.index(b'\x00') + 1:]
+        first_zero = header_removed.index(b'\x00')
+        data_idx = first_zero
+
+        while not header_removed[data_idx + 1]:
+            data_idx += 1
+
+        return header_removed[data_idx + 1:]

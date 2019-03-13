@@ -18,6 +18,7 @@ BCRYPT_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_BCRYPT, B64_CHARS)
 B64_TO_URL_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_URL)
 URL_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_URL, B64_CHARS)
 
+
 def bcrypt_b64_encode(bytestring: bytes) -> bytes:
     """
     Encodes a bytestring with bcrypt's version of base64.

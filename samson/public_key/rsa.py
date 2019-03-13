@@ -126,7 +126,7 @@ class RSA(EncryptionAlg, EncodablePKI):
         Returns:
             Bytes: Decrypted plaintext.
         """
-        plaintext = pow(ciphertext, self.d, self.n)
+        plaintext = pow(Bytes.wrap(ciphertext).int(), self.d, self.n)
         return Bytes(plaintext, 'big')
 
 

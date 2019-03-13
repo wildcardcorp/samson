@@ -8,12 +8,6 @@ X   CAST
 X   Differential power analysis
 X   Flush+Reload key recovery
 
-X   Create cryptosystem object - parses formatted text into a functional cryptosystem
-    X   TLS
-    X   JOSE
-    X   Fernet
-    X   PASETO
-
 
 CURRENT
 ---------------
@@ -51,45 +45,22 @@ OK  X.509
     ?   Maybe ECDH
 
 
-OK  PKCS8
-    OK  RSA
-    OK  DSA
-    OK  ECDSA
-    OK  EdDSA
-
-
-OK  Switch encoding names to Enum instead of string
-    OK  Replace in primitives
-    OK  Create CLI mappings
-
-
 X   Document new parsers
     X   Add class/function documentation
     X   Update README
 
 
-OK  Add PublicKey core
-    OK  Unify encoding interfaces
-        OK  JWK
-        OK  OpenSSH
-
-    OK  Add encoding fingerprinter to automatically decode keys
-
-
 X   Allow kwargs to pass in to encoding
     OK  OpenSSH can have arbitrary hostnames
-    X   X509Certificate can generate arbitrary RDN sequences/sigs
-        X   Make an RDN parser?
+    OK  X509Certificate can generate arbitrary RDN sequences/sigs
+        OK  Make an RDN parser?
 
     X   X509Certificate can sign/self-sign
-        X   RSA
+        OK  RSA
         X   DSA
         X   ECDSA
-        X   Verify with `openssl verify -CAfile x509_cert.pem x509_cert.pem`? (Wait, this always returns OK?)
+        X   Generate a CA cert and verify with `openssl verify -CAfile ca.crt leaf.crt`
 
-
-OK  EAX
-OK  PMAC
 
 X   Composable exploits and ACE
     OK  RUNTIME primitive property/exploit loading
@@ -104,9 +75,7 @@ X   Composable exploits and ACE
 
 
 X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
-OK  samson-py should be able to convert between PKI encodings
-X   samson-py should be able to take in new parameters for exporting (cert details, OpenSSH hostname, encryption)
-OK  samson-py should have a man page
+OK  samson-py should be able to take in new parameters for exporting (cert details, OpenSSH hostname, encryption)
 
 X   Ensure samson installs correctly
     X   Library

@@ -1,11 +1,15 @@
 from samson.encoding.pem import PEMEncodable
+from samson.encoding.asn1 import parse_rdn
 from pyasn1.codec.der import decoder, encoder
-from pyasn1.type.univ import ObjectIdentifier, BitString, Any
+from pyasn1.type import tag
+from pyasn1.type.univ import ObjectIdentifier, BitString, Any, OctetString, Boolean, SequenceOf
 from pyasn1_modules import rfc2459, rfc3447
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
+from samson.hashes.sha1 import SHA1
 from datetime import datetime
+
 
 class X509Certificate(PEMEncodable):
     ALG_OID = None
@@ -60,41 +64,78 @@ class X509Certificate(PEMEncodable):
         pub_info['algorithm']        = alg_id
         pub_info['subjectPublicKey'] = cls.PUB_KEY_ENCODER.encode(pki_key)
 
-
         # Issuer RDN
         issuer = rfc2459.Name()
-        issuer.setComponentByPosition(0, rfc2459.RDNSequence())
+        issuer.setComponentByPosition(0, parse_rdn(kwargs.get('issuer') or 'CN=ca'))
+
+        # Subject RDN
+        subject = rfc2459.Name()
+        subject.setComponentByPosition(0, parse_rdn(kwargs.get('subject') or 'CN=ca'))
+
+        # Signature algorithm
+        signature_alg = rfc2459.AlgorithmIdentifier()
+        signature_alg['algorithm']  = ObjectIdentifier([int(item) for item in '1.2.840.113549.1.1.11'.split('.')])
+
+        if cls.PARAM_ENCODER:
+            signature_alg['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
+
+
+        # Extensions
+        extensions = rfc2459.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
+
+        if kwargs.get('ca') and kwargs.get('ca') == True:
+            # SKI
+            pkey_bytes = Bytes(int(pub_info['subjectPublicKey']))
+
+            ski_ext = rfc2459.Extension()
+            ski_ext['extnID']    = ObjectIdentifier([2, 5, 29, 14])
+            ski_ext['extnValue'] = OctetString(encoder.encode(rfc2459.SubjectKeyIdentifier(SHA1().hash(pkey_bytes))))
+
+            # CA basic constraint
+            ca_value = rfc2459.BasicConstraints()
+            ca_value.setComponentByName('cA', True)
+
+            ca_ext = rfc2459.Extension()
+            ca_ext.setComponentByName('extnID', '2.5.29.19')
+            ca_ext.setComponentByName('critical', True)
+            ca_ext.setComponentByName('extnValue', OctetString(encoder.encode(ca_value)))
+
+            extensions.setComponentByPosition(0, ski_ext)
+            extensions.setComponentByPosition(1, ca_ext)
 
 
         # Put together the TBSCert
         tbs_cert = rfc2459.TBSCertificate()
         tbs_cert['version']              = 2
         tbs_cert['serialNumber']         = serial_num
-        tbs_cert['signature']            = rfc3447.sha1WithRSAEncryption
+        tbs_cert['signature']            = signature_alg
         tbs_cert['issuer']               = issuer
         tbs_cert['validity']             = validity
-        tbs_cert['subject']              = issuer
+        tbs_cert['subject']              = subject
         tbs_cert['subjectPublicKeyInfo'] = pub_info
         tbs_cert['issuerUniqueID']       = kwargs.get('issuer_unique_id') or 10
         tbs_cert['subjectUniqueID']      = kwargs.get('subject_unique_id') or 11
 
+        if len(extensions):
+            tbs_cert['extensions'] = extensions
+
 
         # Compute or inject the TBSCert signature
-        if kwargs.get('signature_value'):
+        if kwargs.get('signature_value') is not None:
             sig_value = Bytes.wrap(kwargs.get('signature_value')).int()
         else:
-            from samson.hashes.sha1 import SHA1
             # TODO: Sign the cert
-            #signing_key = kwargs.get('signing_key') or pki_key
-            sig_value = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
-            sig_value = SHA1().hash(sig_value)
-            sig_value = Bytes(pki_key.encrypt(sig_value))
+            signing_key = kwargs.get('signing_key') or pki_key
+            encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
+
+            alg = cls.SIGNING_ALGS[kwargs.get('signing_alg') or cls.SIGNING_DEFAULT]
+            sig_value = alg(signing_key, encoded_tbs).int()
 
 
         # Build the Cert object
         cert = rfc2459.Certificate()
         cert['tbsCertificate']     = tbs_cert
-        cert['signatureAlgorithm'] = alg_id
+        cert['signatureAlgorithm'] = signature_alg
         cert['signatureValue']     = BitString(sig_value)
 
         encoded = encoder.encode(cert, asn1Spec=rfc2459.Certificate())
