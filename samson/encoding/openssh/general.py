@@ -91,7 +91,7 @@ def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes,
     if encoding == PKIEncoding.OpenSSH:
         if user and type(user) is str:
             user = user.encode('utf-8')
-            
+
         encoded = ssh_header + b' ' + base64.b64encode(public_key.pack(public_key)[4:]) + b' ' + (user or b'nohost@localhost')
 
     elif encoding == PKIEncoding.SSH2:

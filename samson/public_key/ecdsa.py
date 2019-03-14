@@ -2,7 +2,6 @@ from samson.utilities.math import mod_inv
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
-from samson.encoding.pem import pem_encode, pem_decode
 
 from samson.encoding.openssh.openssh_ecdsa_private_key import OpenSSHECDSAPrivateKey
 from samson.encoding.openssh.openssh_ecdsa_public_key import OpenSSHECDSAPublicKey
@@ -128,59 +127,6 @@ class ECDSA(DSA):
         return x, y
 
 
-    # https://tools.ietf.org/html/rfc5656
-    # https://github.com/golang/crypto/blob/master/ssh/keys.go
-    # https://stackoverflow.com/questions/5929050/how-does-asn-1-encode-an-object-identifier
-    # @staticmethod
-    # def import_key(buffer: bytes, passphrase: bytes=None):
-    #     """
-    #     Builds an ECDSA instance from DER and/or PEM-encoded bytes.
-
-    #     Parameters:
-    #         buffer     (bytes): DER and/or PEM-encoded bytes.
-    #         passphrase (bytes): Passphrase to decrypt DER-bytes (if applicable).
-        
-    #     Returns:
-    #         ECDSA: ECDSA instance.
-    #     """
-    #     if buffer.startswith(b'----'):
-    #             buffer = pem_decode(buffer, passphrase)
-
-
-    #     if JWKECPrivateKey.check(buffer, passphrase=passphrase):
-    #         ecdsa = JWKECPrivateKey.decode(buffer, passphrase=passphrase)
-
-    #     elif JWKECPublicKey.check(buffer):
-    #         ecdsa = JWKECPublicKey.decode(buffer)
-
-    #     elif OpenSSHECDSAPrivateKey.check(buffer, passphrase=passphrase):
-    #         ecdsa = OpenSSHECDSAPrivateKey.decode(buffer, passphrase=passphrase)
-
-    #     elif OpenSSHECDSAPublicKey.check(buffer):
-    #         ecdsa = OpenSSHECDSAPublicKey.decode(buffer)
-
-    #     elif SSH2ECDSAPublicKey.check(buffer):
-    #         ecdsa = SSH2ECDSAPublicKey.decode(buffer)
-
-    #     elif X509ECDSACertificate.check(buffer):
-    #         ecdsa = X509ECDSACertificate.decode(buffer)
-
-    #     elif X509ECDSAPublicKey.check(buffer):
-    #         ecdsa = X509ECDSAPublicKey.decode(buffer)
-
-    #     elif PKCS8ECDSAPrivateKey.check(buffer):
-    #         ecdsa = PKCS8ECDSAPrivateKey.decode(buffer)
-
-    #     elif PKCS1ECDSAPrivateKey.check(buffer):
-    #         ecdsa = PKCS1ECDSAPrivateKey.decode(buffer)
-
-    #     else:
-    #         raise ValueError("Unable to parse provided ECDSA key.")
-
-    #     return ecdsa
-
-
-
     def format_public_point(self) -> str:
         """
         Internal function used for exporting the key. Formats `Q` into a bitstring.
@@ -189,95 +135,3 @@ class ECDSA(DSA):
         pub_point_bs = bin((b'\x00\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))).int())[2:]
         pub_point_bs = pub_point_bs.zfill(math.ceil(len(pub_point_bs) / 8) * 8)
         return pub_point_bs
-
-
-
-    # def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.PKCS1, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None) -> bytes:
-    #     """
-    #     Exports the full ECDSA instance into encoded bytes.
-
-    #     Parameters:
-    #         encode_pem      (bool): Whether or not to PEM-encode as well.
-    #         encoding (PKIEncoding): Encoding scheme to use. Currently supports 'PKCS1', 'PKCS8', 'OpenSSH', and 'JWK'.
-    #         marker           (str): Marker to use in PEM formatting (if applicable).
-    #         encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
-    #         passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
-    #         iv             (bytes): (Optional) IV to use for CBC encryption.
-        
-    #     Returns:
-    #         bytes: Encoding of DSA instance.
-    #     """
-    #     if encoding == PKIEncoding.PKCS1:
-    #         encoded = PKCS1ECDSAPrivateKey.encode(self)
-
-    #         if encode_pem:
-    #             encoded = pem_encode(encoded, marker or PKCS1ECDSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
-
-
-    #     elif encoding == PKIEncoding.PKCS8:
-    #         encoded = PKCS8ECDSAPrivateKey.encode(self)
-
-    #         if encode_pem:
-    #             encoded = pem_encode(encoded, marker or PKCS8ECDSAPrivateKey.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv)
-
-
-    #     elif encoding == PKIEncoding.OpenSSH:
-    #         encoded = OpenSSHECDSAPrivateKey.encode(self, encode_pem, marker, encryption, iv, passphrase)
-
-    #     elif encoding == PKIEncoding.JWK:
-    #         encoded = JWKECPrivateKey.encode(self)
-
-    #     else:
-    #         raise ValueError(f'Unsupported encoding "{encoding}"')
-
-    #     return encoded
-
-
-
-    # def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.X509, marker: str=None) -> bytes:
-    #     """
-    #     Exports the only the public parameters of the ECDSA instance into encoded bytes.
-
-    #     Parameters:
-    #         encode_pem      (bool): Whether or not to PEM-encode as well.
-    #         encoding (PKIEncoding): Encoding scheme to use. Currently supports 'X509', 'OpenSSH', 'SSH2', and 'JWK'.
-    #         marker           (str): Marker to use in PEM formatting (if applicable).
-        
-    #     Returns:
-    #         bytes: Encoding of ECDSA instance.
-    #     """
-    #     use_rfc_4716 = False
-
-    #     if encoding == PKIEncoding.X509:
-    #         encoded = X509ECDSAPublicKey.encode(self)
-    #         default_marker = X509ECDSAPublicKey.DEFAULT_MARKER
-    #         default_pem = X509ECDSAPublicKey.DEFAULT_PEM
-
-    #     elif encoding == PKIEncoding.X509_CERT:
-    #         encoded = X509ECDSACertificate.encode(self)
-    #         default_marker = X509ECDSACertificate.DEFAULT_MARKER
-    #         default_pem = X509ECDSACertificate.DEFAULT_PEM
-
-    #     elif encoding == PKIEncoding.OpenSSH:
-    #         encoded = OpenSSHECDSAPublicKey.encode(self)
-    #         default_marker = OpenSSHECDSAPublicKey.DEFAULT_MARKER
-    #         default_pem = OpenSSHECDSAPublicKey.DEFAULT_PEM
-
-    #     elif encoding == PKIEncoding.SSH2:
-    #         encoded = SSH2ECDSAPublicKey.encode(self)
-    #         default_marker = SSH2ECDSAPublicKey.DEFAULT_MARKER
-    #         default_pem = SSH2ECDSAPublicKey.DEFAULT_PEM
-    #         use_rfc_4716 = SSH2ECDSAPublicKey.USE_RFC_4716
-
-    #     elif encoding == PKIEncoding.JWK:
-    #         encoded = JWKECPublicKey.encode(self)
-    #         default_pem = JWKECPublicKey.DEFAULT_PEM
-
-    #     else:
-    #         raise ValueError(f'Unsupported encoding "{encoding}"')
-
-
-    #     if (encode_pem is None and default_pem) or encode_pem:
-    #         encoded = pem_encode(encoded, marker or default_marker, use_rfc_4716=use_rfc_4716)
-
-    #     return encoded

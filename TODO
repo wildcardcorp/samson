@@ -50,18 +50,6 @@ X   Document new parsers
     X   Update README
 
 
-X   Allow kwargs to pass in to encoding
-    OK  OpenSSH can have arbitrary hostnames
-    OK  X509Certificate can generate arbitrary RDN sequences/sigs
-        OK  Make an RDN parser?
-
-    X   X509Certificate can sign/self-sign
-        OK  RSA
-        X   DSA
-        X   ECDSA
-        X   Generate a CA cert and verify with `openssl verify -CAfile ca.crt leaf.crt`
-
-
 X   Composable exploits and ACE
     OK  RUNTIME primitive property/exploit loading
     X   RUNTIME programmatic search
@@ -75,7 +63,6 @@ X   Composable exploits and ACE
 
 
 X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
-OK  samson-py should be able to take in new parameters for exporting (cert details, OpenSSH hostname, encryption)
 
 X   Ensure samson installs correctly
     X   Library

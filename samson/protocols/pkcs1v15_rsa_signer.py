@@ -2,15 +2,15 @@ from samson.padding.pkcs1v15_padding import PKCS1v15Padding
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.asn1 import HASH_OID_LOOKUP, INVERSE_HASH_OID_LOOKUP
 from samson.utilities.bytes import Bytes
-from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString, Null
-from pyasn1.codec.der import encoder, decoder
+from pyasn1.type.univ import Sequence, OctetString, Null
+from pyasn1.codec.der import encoder
 
 class PKCS1v15RSASigner(object):
     def __init__(self, rsa, hash_obj):
         self.rsa = rsa
         self.padder = PKCS1v15Padding(rsa.bits, block_type=1)
         self.hash_obj = hash_obj
-    
+
 
     def sign(self, plaintext):
         alg_id = Sequence()
@@ -35,7 +35,7 @@ class PKCS1v15RSASigner(object):
 
             if not strict_type_match:
                 hash_obj = INVERSE_HASH_OID_LOOKUP[items[0][0]]()
-            
+
             hashed_value = Bytes(items[1])
 
             # TODO: constant time?

@@ -36,5 +36,7 @@ class CLITestCase(unittest.TestCase):
                     continue
                 elif pki_name not in ['rsa', 'ecdsa'] and len(encoding) > 0 and 'jwk' in encoding[0]:
                     continue
+                elif pki_name == 'auto':
+                    continue
 
                 check_output(["samson", "pki", "generate", *params] + encoding)

@@ -20,7 +20,7 @@ class PKCS8EdDSAPrivateKey(PKCS8Base):
     @staticmethod
     def encode(eddsa_key: object, **kwargs):
         alg_id = SequenceOf()
-        alg_id.setComponentByPosition(0, ObjectIdentifier([int(item) for item in eddsa_key.curve.oid.split('.')]))
+        alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
 
         zero_fill = math.ceil(eddsa_key.d.int().bit_length() / 8)
         priv_key = OctetString(encoder.encode(OctetString(Bytes.wrap(eddsa_key.d).zfill(zero_fill))))

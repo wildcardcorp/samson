@@ -144,7 +144,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'samson', u'cryptographic CLI tool',
+    (master_doc, 'samson', u'cryptography CLI tool',
      [author], 1)
 ]
 

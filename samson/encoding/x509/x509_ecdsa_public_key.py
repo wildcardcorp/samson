@@ -31,7 +31,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, encoded)
         top_seq.setComponentByPosition(1, X509ECDSASubjectPublicKey.encode(ecdsa_key))
-        
+
         encoded = encoder.encode(top_seq)
         return X509ECDSAPublicKey.transport_encode(encoded, **kwargs)
 

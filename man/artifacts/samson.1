@@ -1,8 +1,8 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "SAMSON" "1" "Mar 12, 2019" "" "samson"
+.TH "SAMSON" "1" "Mar 14, 2019" "" "samson"
 .SH NAME
-samson \- cryptographic CLI tool
+samson \- cryptography CLI tool
 .
 .nr rst2man-indent-level 0
 .
@@ -99,6 +99,8 @@ This help is for the command\-line interface which provides a subset of samson\(
 \fBsamson pki parse auto x509_cert.crt\fP \- parse certificate from file and automatically determine the encoding and algorithm
 .sp
 \fBsamson pki parse auto x509_cert.pem \-\-pub \-\-encoding=X509\fP \- same as above, but output it as a X509 public key
+.sp
+\fBsamson pki generate rsa \-\-args=bits=2048 \-\-pub \-\-encoding=x509_cert \-\-encoding\-args=ca=1,serial_number=#666#,issuer=#\(aqCN=hiya,O=hiya\-corp,L=Rack City\(aq# | openssl x509 \-text\fP \- generate CA cert with RDN \(aqCN=hiya,O=hiya\-corp,L=Rack City\(aq. To prevent argument parsing of the RDN string, use the preprocessor macro \(aq#\(aq to signify a literal.
 .SH AUTHOR
 Daniel Cronce
 .SH COPYRIGHT

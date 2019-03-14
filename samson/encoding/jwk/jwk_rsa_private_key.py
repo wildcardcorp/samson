@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.encoding.general import url_b64_decode, url_b64_encode
+from samson.encoding.general import url_b64_encode
 from samson.encoding.jwk.jwk_rsa_public_key import JWKRSAPublicKey
 import json
 

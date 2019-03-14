@@ -11,5 +11,5 @@ class PKCS8Base(PEMEncodable):
     # def transport_encode(cls, buffer: bytes, **kwargs):
     #     if kwargs.get('encode_pem'):
     #         buffer = pem_encode(buffer, kwargs.get('marker') or cls.DEFAULT_MARKER, encryption=kwargs.get('encryption'), passphrase=kwargs.get('passphrase'), iv=kwargs.get('iv'))
-        
+
     #     return buffer

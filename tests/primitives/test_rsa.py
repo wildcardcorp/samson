@@ -650,41 +650,41 @@ class RSATestCase(unittest.TestCase):
 
 
 
-    # def test_import_openssh(self):
-    #     for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
-    #         if passphrase:
-    #             with self.assertRaises(ValueError):
-    #                 RSA.import_key(key)
+    def test_import_openssh(self):
+        for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
+            if passphrase:
+                with self.assertRaises(ValueError):
+                    RSA.import_key(key)
 
-    #         rsa = RSA.import_key(key, passphrase=passphrase)
-    #         self.assertEqual(rsa.p * rsa.q, rsa.n)
-    #         self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
-    #         self.assertTrue(isprime(rsa.p))
-    #         self.assertTrue(isprime(rsa.q))
+            rsa = RSA.import_key(key, passphrase=passphrase)
+            self.assertEqual(rsa.p * rsa.q, rsa.n)
+            self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
+            self.assertTrue(isprime(rsa.p))
+            self.assertTrue(isprime(rsa.q))
 
 
 
-    # def test_openssh_gauntlet(self):
-    #     num_runs = 6
-    #     num_enc = num_runs // 3
-    #     for i in range(num_runs):
-    #         bits = 128 + (Bytes.random(2).int() % (4096 - 128))
-    #         rsa = RSA(bits)
-    #         passphrase = None
-    #         if i < num_enc:
-    #             passphrase = Bytes.random(Bytes.random(1).int())
+    def test_openssh_gauntlet(self):
+        num_runs = 6
+        num_enc = num_runs // 3
+        for i in range(num_runs):
+            bits = 128 + (Bytes.random(2).int() % (4096 - 128))
+            rsa = RSA(bits)
+            passphrase = None
+            if i < num_enc:
+                passphrase = Bytes.random(Bytes.random(1).int())
 
-    #         priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-    #         pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-    #         pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2)
+            priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH)
+            pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2)
 
-    #         new_priv = RSA.import_key(priv, passphrase=passphrase)
-    #         new_pub_openssh = RSA.import_key(pub_openssh)
-    #         new_pub_ssh2 = RSA.import_key(pub_ssh2)
+            new_priv = RSA.import_key(priv, passphrase=passphrase)
+            new_pub_openssh = RSA.import_key(pub_openssh)
+            new_pub_ssh2 = RSA.import_key(pub_ssh2)
 
-    #         self.assertEqual((new_priv.d, new_priv.e, new_priv.n, new_priv.p, new_priv.q), (rsa.d, rsa.e, rsa.n, rsa.p, rsa.q))
-    #         self.assertEqual((new_pub_openssh.e, new_pub_openssh.n), (rsa.e, rsa.n))
-    #         self.assertEqual((new_pub_ssh2.e, new_pub_ssh2.n), (rsa.e, rsa.n))
+            self.assertEqual((new_priv.d, new_priv.e, new_priv.n, new_priv.p, new_priv.q), (rsa.d, rsa.e, rsa.n, rsa.p, rsa.q))
+            self.assertEqual((new_pub_openssh.e, new_pub_openssh.n), (rsa.e, rsa.n))
+            self.assertEqual((new_pub_ssh2.e, new_pub_ssh2.n), (rsa.e, rsa.n))
 
 
 

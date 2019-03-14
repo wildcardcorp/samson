@@ -2,12 +2,13 @@ from samson.encoding.pem import PEMEncodable
 from samson.encoding.asn1 import parse_rdn
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
-from pyasn1.type.univ import ObjectIdentifier, BitString, Any, OctetString, Boolean, SequenceOf
-from pyasn1_modules import rfc2459, rfc3447
+from pyasn1.type.univ import ObjectIdentifier, BitString, Any, OctetString
+from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
+from samson.encoding.asn1 import SIGNING_ALG_OIDS
 from datetime import datetime
 
 
@@ -37,7 +38,7 @@ class X509Certificate(PEMEncodable):
         alg_oid = cls.ALG_OID if type(cls.ALG_OID) is str else cls.ALG_OID(pki_key)
 
         alg_id = rfc2459.AlgorithmIdentifier()
-        alg_id['algorithm']  = ObjectIdentifier([int(item) for item in alg_oid.split('.')])
+        alg_id['algorithm']  = ObjectIdentifier(alg_oid)
 
         if cls.PARAM_ENCODER:
             alg_id['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
@@ -73,8 +74,10 @@ class X509Certificate(PEMEncodable):
         subject.setComponentByPosition(0, parse_rdn(kwargs.get('subject') or 'CN=ca'))
 
         # Signature algorithm
+        signing_alg = kwargs.get('signing_alg') or cls.SIGNING_DEFAULT
+
         signature_alg = rfc2459.AlgorithmIdentifier()
-        signature_alg['algorithm']  = ObjectIdentifier([int(item) for item in '1.2.840.113549.1.1.11'.split('.')])
+        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg]
 
         if cls.PARAM_ENCODER:
             signature_alg['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
@@ -120,15 +123,14 @@ class X509Certificate(PEMEncodable):
             tbs_cert['extensions'] = extensions
 
 
-        # Compute or inject the TBSCert signature
+        # Inject or compute the TBSCert signature
         if kwargs.get('signature_value') is not None:
             sig_value = Bytes.wrap(kwargs.get('signature_value')).int()
         else:
-            # TODO: Sign the cert
             signing_key = kwargs.get('signing_key') or pki_key
             encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
 
-            alg = cls.SIGNING_ALGS[kwargs.get('signing_alg') or cls.SIGNING_DEFAULT]
+            alg = cls.SIGNING_ALGS[signing_alg]
             sig_value = alg(signing_key, encoded_tbs).int()
 
 

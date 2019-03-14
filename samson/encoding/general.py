@@ -295,7 +295,7 @@ class PKIEncoding(Enum):
 
 
 class PKIAutoParser(object):
-    
+
     @staticmethod
     def import_key(buffer: bytes, passphrase: bytes=None):
         from samson.core.encodable_pki import EncodablePKI, ORDER

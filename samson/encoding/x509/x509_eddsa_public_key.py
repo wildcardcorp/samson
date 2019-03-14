@@ -21,7 +21,7 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
     @staticmethod
     def encode(eddsa_key: object, **kwargs):
         alg_id = SequenceOf()
-        alg_id.setComponentByPosition(0, ObjectIdentifier([int(item) for item in eddsa_key.curve.oid.split('.')]))
+        alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
 
         seq = Sequence()
         seq.setComponentByPosition(0, alg_id)

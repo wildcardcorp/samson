@@ -260,7 +260,7 @@ class TwistedEdwardsCurve(object):
             int: Valid x-coordinate.
         """
         from samson.utilities.manipulation import get_blocks
-        
+
         as_bits = bin(x)[2:].zfill(self.b)
         if swap_bit_order:
             as_bits = ''.join([block[::-1] for block in get_blocks(as_bits, 8)])

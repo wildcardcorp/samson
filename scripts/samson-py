@@ -36,7 +36,6 @@ pki_parser.add_argument('--pub', action='store_true')
 pki_parser.add_argument('--encoding', nargs="?")
 pki_parser.add_argument('--encoding-args', nargs="?")
 
-
 arguments = parser.parse_args()
 
 def try_parse(val):
@@ -56,10 +55,21 @@ def export_pki(pki_obj, arguments):
         encoding = ENCODING_MAPPING[arguments.encoding.upper()]
 
     if arguments.encoding_args:
-        print([arg for arg in arguments.encoding_args.split(',')])
+        # Process 'hash' literals
+        literals = [arg for arg in arguments.encoding_args.split('#')]
+        preprocessed_literals = {}
 
-        print(arguments.encoding_args.split("'"))
-        encoding_args = {k: PARSE_METHOD(v) for k,v in [arg.split('=') for arg in arguments.encoding_args.split(',')]}
+        if len(literals) > 1:
+            for i in range(1, len(literals), 2):
+                preprocessed_literals[f'#{i}'] = literals[i]
+                literals[i] = f'#{i}'
+        
+
+        processed_args = [arg.split('=') for arg in ''.join(literals).split(',')]
+        for i, (_, v)in enumerate(processed_args):
+            processed_args[i][1] = preprocessed_literals.get(v) or v
+
+        encoding_args = {k: PARSE_METHOD(v) for k,v in processed_args}
     else:
         encoding_args = {}
 
