@@ -25,9 +25,10 @@ X   Document timing attack setup
 0.3.0
 ===============
 X   More encoders/decoders/cryptosystems
-    OK  JWK (https://tools.ietf.org/html/rfc7517#section-3)
+    OK  JWK (https://tools.ietf.org/html/rfc7517#section-3) (https://github.com/latchset/jwcrypto/blob/master/jwcrypto/tests.py)
         OK  RSA
         OK  ECDSA
+        OK  OCT/AES-KW
 
     X   JWK Encryption (key wrapping)
 
@@ -47,7 +48,14 @@ OK  X.509
 
 X   Document new parsers
     X   Add class/function documentation
-    X   Update README
+
+
+OK  Update README
+    OK  Include new features
+    OK  Change CBCPaddingOracle attack to use "new" PKCS7
+
+
+OK  Add CBC tests
 
 
 X   Composable exploits and ACE
@@ -61,6 +69,7 @@ X   Composable exploits and ACE
         X   Meet in the middle attacks
 
 
+X   ACE should be able to register multiple exploits per class
 
 X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
 

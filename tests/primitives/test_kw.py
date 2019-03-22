@@ -6,7 +6,7 @@ import unittest
 class KWTestCase(unittest.TestCase):
     def __run_test(self, kek, cek, expected_wrapping, iv=KW.RFC3394_IV, pad=False):
         rij = Rijndael(kek)
-        kw = KW(rij.encrypt, rij.decrypt, iv=iv)
+        kw  = KW(rij.encrypt, rij.decrypt, iv=iv)
         wrapped_key = kw.encrypt(cek, pad=pad)
 
         self.assertEqual(wrapped_key, expected_wrapping)

@@ -7,9 +7,9 @@ def has_exploit(attack):
     return real_decorator
 
 
-def creates_constraint(attack):
+def creates_constraint(primitive):
     def real_decorator(cls):
-        RUNTIME.constraints[cls] = attack
+        RUNTIME.constraints[cls] = primitive
         return cls
     return real_decorator
 

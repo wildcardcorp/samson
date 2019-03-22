@@ -126,7 +126,10 @@ class RuntimeConfiguration(object):
 
 
     def register_exploit_mapping(self, cls, attack):
-        self.exploit_mappings[cls] = attack
+        if cls not in self.exploit_mappings:
+            self.exploit_mappings[cls] = []
+
+        self.exploit_mappings[cls].append(attack)
 
 
 RUNTIME = RuntimeConfiguration()

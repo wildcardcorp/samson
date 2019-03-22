@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv
+from samson.utilities.math import mod_inv, find_prime
 from samson.utilities.bytes import Bytes
 
 from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
@@ -10,6 +10,7 @@ from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate
 from samson.core.encodable_pki import EncodablePKI
 from samson.encoding.general import PKIEncoding
+from sympy import isprime
 
 from samson.hashes.sha2 import SHA256
 
@@ -41,9 +42,32 @@ class DSA(EncodablePKI):
             g           (int): (Optional) Generator.
             x           (int): (Optional) Private key.
         """
-        self.p = p or 0x00c74772759167e757e0d33a6e2a2f2643f89f6f82448862910272e9f8168717b2c442f3d071ba9107ad7244a741ea9f4edd40c7815fd852234d5780a8ef8ab40b2c52f7da002610fc3e27c9735957595f8e07112ce92423daae19d09f5528c18775d7bba8a608638f3020fb075d55e8dee7987511713e45736bf278676feebf277a3c6fe2ae9e801181d3c53da617d07625416a678aeba7b126ab23e8958ba4ffa1a402f16cacbf3342fa749f06c27ec2656e6d66b4de054cbb64cbf961e24c6ac9e8f7c1407a565929f62bb50cccdc7757a7945faff754368ac61771918a54c179865c70b7b6d5c5814e1db518ef94782b6cb30305c4823a8cd4eaab0cbc3759
-        self.q = q or 0x00bdb896139445a9c83238ff68bce7596733e15db37a1a98fc8bb789872939b24b
-        self.g = g or 0x0b98ff89c7ad854caba5a164e956b18727489d0181d32a33f82623d15b9d42084e92086db9be27ddfbbe91feac716085d0823230e99d0b00a38ba2745d5cacc128f4ab9c153fc0dadc09962892eff544020e2859c9f4ba124489ce20a2fef3ed0677c651906e0718a2b3cdaee6bf9bdee6a2284ba60ac17dc97e245f436c1ead3dda342e2eb0c5db9756e6cfe3fe09dc331dca41f42b706cd935862f610834b3cf247a230451465f0d642350e53fa114a91ec82a2b8241bb37377ac35a3a686ff2bf94426ba60589de05e84189fb4a8e2e42fee3538994ceeed36ac3bbb86ffa46ca039fa6345d89112accfb7157e5aa9ea065db74fe4f45a820cc8f8ad05eb6
+        # Parameter generation
+        if not q:
+            q = find_prime(N)
+
+            # Start somewhere in 2**(L-1); ensure it's even
+            i = Bytes.random((L-1) // 8).int() // 2 * 2
+
+            # Construct the base as an even multiple of `q`
+            base = 2**(L-1) // (2*q) * 2
+            while not isprime((base + i) * q + 1):
+                i += 2
+
+            p = (base + i) * q + 1
+            assert (p-1) % q == 0
+
+            # Construct `g`
+            while True:
+                h = Bytes.random(N // 8).int() % (p-1)
+                g = pow(h, (p-1) // q, p)
+
+                if h > 1 and h < (p-1) and g > 1:
+                    break
+
+        self.p = p
+        self.q = q
+        self.g = g
 
         self.x = x or Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q
         self.y = pow(self.g, self.x, self.p)

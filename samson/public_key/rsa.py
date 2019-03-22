@@ -17,6 +17,10 @@ from samson.utilities.bytes import Bytes
 from samson.core.encodable_pki import EncodablePKI
 import random
 
+from samson.ace.decorators import creates_constraint
+from samson.ace.constraints import RSAConstraint
+
+@creates_constraint(RSAConstraint())
 class RSA(EncryptionAlg, EncodablePKI):
     """
     Rivest-Shamir-Adleman public key cryptosystem

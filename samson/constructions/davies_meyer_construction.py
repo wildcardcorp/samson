@@ -11,7 +11,7 @@ class DaviesMeyerConstruction(object):
         """
         Parameters:
             initial_state (bytes): Bytes-like initial state that is the correct size for the underlying cipher.
-            encryptor      (func): Function that takes in a plaintext and returns a ciphertext.
+            encryptor      (func): Function that takes in a key and plaintext and returns a ciphertext.
         """
         self.initial_state = Bytes.wrap(initial_state)
         self.block_size = len(self.initial_state)

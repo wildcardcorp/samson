@@ -7,7 +7,7 @@ class Requirement(Enum):
 
 class Consequence(Enum):
     PLAINTEXT_RECOVERY = 0
-    PLAINTEXT_MANIPULATION = 1
+    ENCRYPTION_BYPASS = 1
     KEY_RECOVERY = 2
 
 
@@ -21,8 +21,30 @@ class CompositeConsequence(object):
         self.composition_func = composition_func
 
 
+    def __repr__(self):
+        return f'CompositeConsequence: {self.consequences}>'
+
+
     def __eq__(self, other):
         if type(other) is CompositeConsequence:
             other = other.consequences
 
         return self.composition_func(other, self.consequences)
+
+
+
+
+class Manipulation(Enum):
+    PT_BIT_LEVEL = 0
+    PT_MULTIPLICATIVE = 1
+
+    def __hash__(self):
+        return self.value
+
+    def __eq__(self, other):
+        return type(self) == type(other) and (self.value == other.value or (self in MANIPULATION_GRAPH and other in MANIPULATION_GRAPH[self]))
+
+
+MANIPULATION_GRAPH = {
+    Manipulation.PT_MULTIPLICATIVE: [Manipulation.PT_BIT_LEVEL]
+}

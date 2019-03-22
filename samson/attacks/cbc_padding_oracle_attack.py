@@ -2,14 +2,15 @@ from samson.utilities.bytes import Bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.runtime import RUNTIME
 from samson.ace.decorators import define_exploit
-from samson.ace.consequence import Consequence, Requirement
+from samson.ace.consequence import Consequence, Requirement, Manipulation
 import struct
 
 import logging
 log = logging.getLogger(__name__)
 
 # https://grymoire.wordpress.com/2014/12/05/cbc-padding-oracle-attacks-simplified-key-concepts-and-pitfalls/
-@define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION])
+# @define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION])
+@define_exploit(consequence=Consequence.ENCRYPTION_BYPASS, requirements=[Requirement.EVENTUALLY_DECRYPTS, Manipulation.PT_BIT_LEVEL])
 class CBCPaddingOracleAttack(object):
     """
     Performs a CBC padding oracle attack.

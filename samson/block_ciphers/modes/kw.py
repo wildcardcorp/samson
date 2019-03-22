@@ -103,4 +103,4 @@ class KW(object):
             plaintext = plaintext[:A[len(self.iv):].int()]
 
 
-        return plaintext
+        return Bytes.wrap(plaintext)

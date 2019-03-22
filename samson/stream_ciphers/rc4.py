@@ -1,9 +1,11 @@
 from samson.utilities.bytes import Bytes
 from samson.core.encryption_alg import EncryptionAlg
 from samson.ace.decorators import has_exploit
+from samson.ace.exploit import BitlevelMalleability
 from samson.attacks.rc4_prepend_attack import RC4PrependAttack
 
 @has_exploit(RC4PrependAttack)
+@has_exploit(BitlevelMalleability)
 class RC4(EncryptionAlg):
     """
     Rivest Cipher 4 (RC4)

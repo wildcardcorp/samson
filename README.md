@@ -36,71 +36,69 @@ samson's key focuses are:
                                                                 
                                                                 
                                                                 
-    v0.1.0 -- https://github.com/wildcardcorp/samson
+    v0.1.11 -- https://github.com/wildcardcorp/samson
 
-Python 3.6.7 (default, Nov 23 2018, 12:11:28) 
-[GCC 8.2.1 20181105 (Red Hat 8.2.1-5)]
-IPython 6.5.0
+Python 3.5.3 (89428233efed, Apr 12 2018, 16:18:00)
+[PyPy 5.10.1 with GCC 8.0.1 20180324 (Red Hat 8.0.1-0.20)]
+IPython 7.1.1
 
 
-In [1]: RC4(b'what a key!').generate(12) ^ b'Hello world!'
+In [1]: RC4(b'what a key!').generate(12) ^ b'Hello world!'                                                                                  
 Out[1]: <Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder=big>
 
-In [2]: gcm = GCM(Rijndael(Bytes.random(32)).encrypt)
-   ...: data = b"Auth'd data"
-   ...: nonce = Bytes.random(8)
-   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data)
-   ...: gcm.decrypt(nonce, ciphertext, data)
-   ...: 
-   ...: 
+In [2]: gcm = GCM(Rijndael(Bytes.random(32)).encrypt) 
+   ...: data = b"Auth'd data" 
+   ...: nonce = Bytes.random(8) 
+   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data) 
+   ...: gcm.decrypt(nonce, ciphertext, data)                                                                                                
 Out[2]: <Bytes: b'Hello world!', byteorder=big>
 
-In [3]: bf = Blowfish(b"world's worst key")
-   ...: cbc = CBC(bf.encrypt, bf.decrypt, block_size=8, iv=Bytes.random(8))
-   ...: 
-   ...: def oracle_func(attempt):
-   ...:     try:
-   ...:         PKCS7().unpad(cbc.decrypt(attempt, unpad=False), allow_padding_oracle=True)
-   ...:         return True
-   ...:     except Exception as _:
-   ...:         return False
-   ...: 
-   ...: 
-   ...: ciphertext = cbc.encrypt(b'secret plaintext')
-   ...: attack = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv)
-   ...: recovered_plaintext = attack.execute(ciphertext)
-   ...: 
-   ...: 
-2018-12-17 16:24:03,152 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 0
-2018-12-17 16:24:03,152 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x01'
-2018-12-17 16:24:03,153 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,154 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,155 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,156 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,156 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,157 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,158 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,159 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'
-2018-12-17 16:24:03,159 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 1
-2018-12-17 16:24:03,168 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'
-2018-12-17 16:24:03,176 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'x'
-2018-12-17 16:24:03,183 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'
-2018-12-17 16:24:03,191 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'
-2018-12-17 16:24:03,199 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'n'
-2018-12-17 16:24:03,206 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'i'
-2018-12-17 16:24:03,213 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'a'
-2018-12-17 16:24:03,220 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'l'
-2018-12-17 16:24:03,220 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 2
-2018-12-17 16:24:03,228 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'p'
-2018-12-17 16:24:03,230 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b' '
-2018-12-17 16:24:03,239 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'
-2018-12-17 16:24:03,246 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'
-2018-12-17 16:24:03,254 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'r'
-2018-12-17 16:24:03,261 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'c'
-2018-12-17 16:24:03,268 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'
-2018-12-17 16:24:03,276 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b's'
+In [3]: bf = Blowfish(b"world's worst key") 
+   ...: cbc = CBC(bf.encrypt, bf.decrypt, block_size=8, iv=Bytes.random(8)) 
+   ...:  
+   ...: def oracle_func(attempt): 
+   ...:     try: 
+   ...:         _ = cbc.decrypt(attempt) 
+   ...:         return True 
+   ...:     except Exception as _: 
+   ...:         return False 
+   ...:  
+   ...:  
+   ...: ciphertext = cbc.encrypt(b'secret plaintext') 
+   ...: attack = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv) 
+   ...: recovered_plaintext = attack.execute(ciphertext)                                                                                    
+2019-03-21 16:03:02,300 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 0                                             
+2019-03-21 16:03:02,327 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x01'                                      
+2019-03-21 16:03:02,329 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,339 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,344 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,356 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,378 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,379 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,381 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,393 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
+2019-03-21 16:03:02,394 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 1                                             
+2019-03-21 16:03:02,431 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
+2019-03-21 16:03:02,442 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'x'                                         
+2019-03-21 16:03:02,449 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
+2019-03-21 16:03:02,458 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
+2019-03-21 16:03:02,474 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'n'                                         
+2019-03-21 16:03:02,479 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'i'                                         
+2019-03-21 16:03:02,495 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'a'                                         
+2019-03-21 16:03:02,499 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'l'                                         
+2019-03-21 16:03:02,499 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 2                                             
+2019-03-21 16:03:02,529 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'p'                                         
+2019-03-21 16:03:02,531 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b' '                                         
+2019-03-21 16:03:02,554 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
+2019-03-21 16:03:02,561 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
+2019-03-21 16:03:02,564 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'r'                                         
+2019-03-21 16:03:02,565 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'c'                                         
+2019-03-21 16:03:02,568 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
+2019-03-21 16:03:02,579 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b's'                                         
+Blocks cracked: 100%|█████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 10.70blocks/s]
+Bytes cracked: 100%|██████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 127.34bytes/s]
 
-In [4]: recovered_plaintext
+In [4]: recovered_plaintext                                                                                                                 
 Out[4]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder=big>
 ```
 
@@ -134,12 +132,11 @@ aVWaJ33ydRV+hspPO02jvSABAkAPaMHmQcEN8c8bOWc5VjH8kxcV5iHUw88WH9hEKpHTsk
 j+LYTu11aOZXFh4dmw5jHd1gjA4bD24c0f5NN7vQLJ
 -----END RSA PRIVATE KEY-----
 
-
-[root@localhost ~]# samson pki generate rsa --args=bits=128,p=7
------BEGIN RSA PRIVATE KEY-----
-MD0CAQACCQRsJXO1QfNPyQIDAQABAgkCcRw0yU5C5DUCAQcCCQChvDUZ5NmdrwIBBQIJAI
-vnlXuftgsrAgEC
------END RSA PRIVATE KEY-----
+[root@localhost ~]# samson pki generate rsa --args=bits=128,p=7 --encoding=pkcs8
+-----BEGIN PRIVATE KEY-----
+MFMCAQAwDQYJKoZIhvcNAQEBBQAEPzA9AgEAAgkEI+1gRNRD9i8CAwEAAQIJAIiZ98pCij
+jhAgEHAgkAl2sNwLCb/pkCAQUCCQCImffKQoo44QIBBQ==
+-----END PRIVATE KEY-----
 
 [root@localhost ~]# samson pki generate rsa --args=bits=256 --pub
 -----BEGIN PUBLIC KEY-----
@@ -147,12 +144,19 @@ MDwwDQYJKoZIhvcNAQEBBQADKwAwKAIhAKItLmP4OG4LIOgWZRt+MFOifSHsoow9NcwAwt
 p3Xx0NAgMBAAE=
 -----END PUBLIC KEY-----
 
-[root@localhost ~]# samson pki generate ecdsa --args=curve=nistp256
------BEGIN EC PRIVATE KEY-----
-MHcCAQEEIJi3UXr8EQ5YtBs3Av55J9mFTcgHdd4ZI8VNi62dwA0xoAoGCCqGSM49AwEHoU
-QDQgAEHDlmxAnUm6yFJrp7lfzipJPWhYoc3uL1a9q+/6c8AiICIBPBkfkxhttBF9DdT3U3
-XmtOsZIPWcYxT68yomeTvw==
------END EC PRIVATE KEY-----
+[root@localhost ~]# samson pki generate ecdsa --args=curve=nistp256 --encoding=openssh
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQQnJDxj9BKhFg50vqrwzDGtJtmmlhK3
+E1l1k6L1eHlLO9MGu2JnTzV6tRFNDuCqs9QkCUDkm3sTYq+9tspJ9ISLAAAAsJ0TFlidEx
+ZYAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCckPGP0EqEWDnS+
+qvDMMa0m2aaWErcTWXWTovV4eUs70wa7YmdPNXq1EU0O4Kqz1CQJQOSbexNir722ykn0hI
+sAAAAhALJ58WavKVYz2fG3koYq3Pthpmg9MJVmStjRyZMYqCrmAAAAEG5vaG9zdEBsb2Nh
+bGhvc3QBAgMEBQYH
+-----END OPENSSH PRIVATE KEY-----
+
+[root@localhost ~]# samson pki generate eddsa --args=curve=ed25519 --encoding=openssh --pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG0Ru2OL3mSV1aOopjhcxK+pg6fTYcyxOfBy4cjJQ0T4 nohost@localhost
 
 [root@localhost ~]# openssl genrsa 128 | samson pki parse rsa
 Generating RSA private key, 128 bit long modulus
@@ -160,6 +164,20 @@ Generating RSA private key, 128 bit long modulus
 ..+++++++++++++++++++++++++++
 e is 65537 (0x010001)
 <RSA: bits=128, p=18204634713468071783, q=14777058483132963961, e=65537, n=269010951824990204830693900060300012463, phi=134505475912495102398856103431849488360, d=14600484545241469070379515690589701393, alt_d=14600484545241469070379515690589701393>
+
+[root@localhost ~]# samson pki generate ecdsa --args=curve=p521 --pub --encoding=x509_cert --encoding-args=ca=1,serial_number=666,issuer=#'CN=hiya,O=hiya-corp,L=Rack City'#
+-----BEGIN CERTIFICATE-----
+MIICAzCCAV6gAwIBAgICApowEQYIKoZIzj0EAwIGBSuBBAAjMDcxDTALBgNVBAMTBGhpeW
+ExEjAQBgNVBAoTCWhpeWEtY29ycDESMBAGA1UEBwwJUmFjayBDaXR5MB4XDTE5MDMxNTA5
+MDMwMloXDTIwMDMxNTA5MDMwMlowDTELMAkGA1UEAxMCY2EwgZswEAYHKoZIzj0CAQYFK4
+EEACMDgYYABADfi2+eDb9LhtBKZx61bQEG/2uunKr64EGv5+CBNGQEz4RL8fC6wXG14vj0
+m+It8FtADxeyud+59/MpZFk34HH4UgCvec9lWIGC/VspYySEtMyiMQGxFcGjSF30xMHmxV
+VdtCd0lwpno8swFynZbKyrTFpQPRE2xQKKi/dUh1MGBYeAhoECBKCCAgSwozIwMDAdBgNV
+HQ4EFgQUpFMCF9swcVSxvdGnBNrfB4PRdcIwDwYDVR0TAQH/BAUwAwEB/zARBggqhkjOPQ
+QDAgYFK4EEACMDgYsCwgYcCQgCtM/WKF1HGFVNXRvL+38bFgbtjkAc6lkgnv76bdngWhZj
+KzxOGlBrUMD0vXbjp0wpDnpynBxYXNZxHIrERMolw1wJBS72VR5m4ubujrW2ynM5p9hoc3
+0SK8pZp5HLipmI9gjF/ywqZZGskyFt/nK4wfU3CaoOPOxI86AC5nbwn6f5Y4wA
+-----END CERTIFICATE-----
 ```
 
 

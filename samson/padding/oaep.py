@@ -101,9 +101,9 @@ class OAEP(object):
         Unpads the `plaintext`.
 
         Parameters:
-            plaintext         (bytes): Plaintext to pad.
-            allow_mangers      (bool): Whether or not to explicitly help Manger's attack.
-            skip_label_check   (bool): Whether or not to skip checking the label.
+            plaintext       (bytes): Plaintext to pad.
+            allow_mangers    (bool): Whether or not to explicitly help Manger's attack.
+            skip_label_check (bool): Whether or not to skip checking the label.
         
         Returns:
             Bytes: Unpadded plaintext.

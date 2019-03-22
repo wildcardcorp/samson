@@ -14,11 +14,13 @@ def get_runtime_exploits(primitive):
     if primitive:
         for cls in [primitive] + [_ for _ in primitive.__bases__]:
             if cls in RUNTIME.exploit_mappings:
-                attack  = RUNTIME.exploit_mappings[cls]
-                exploit = RUNTIME.exploits[attack]
-                all_exploits.append(exploit)
+                attacks = RUNTIME.exploit_mappings[cls]
+                for attack in attacks:
+                    exploit = RUNTIME.exploits[attack]
+                    all_exploits.append(exploit)
 
     return all_exploits
+
 
 
 def get_runtime_constraints(primitive):
@@ -62,7 +64,12 @@ class SymEnc(object):
             all_exploits.extend(get_runtime_exploits(primitive))
             all_constraints.extend(get_runtime_constraints(primitive))
 
-        new_state = State(state, self, all_constraints, all_exploits)
+        #current_state = state
+
+        new_state = State(state, self, [], all_exploits)
+        for constraint in all_constraints:
+            constraint.apply(new_state)
+
         return new_state
 
 
@@ -113,10 +120,9 @@ class MAC(object):
         if current_state.owner != self:
             log.warning(f'{self} cannot validate state due to not being owner on {state.exposed_state}. ACE will just pretend they are equivalent.')
 
-        # Propagate the MACConstraint
-        while current_state != None:
-            current_state.constraints.append(MACConstraint())
-            current_state = current_state.child
+        # # Propagate the MACConstraint
+        mac_constraint = MACConstraint()
+        mac_constraint.apply(current_state)
 
         state.exposed_state = state.exposed_state.child
 
@@ -125,12 +131,18 @@ class MAC(object):
 
 
 class ACE(object):
+    def __init__(self):
+        self.revealed = []
+        self.goal_state = None
+        self.goal_consequence = None
+
+
     def execute(self, func):
         func(self)
 
 
     def goal(self, state, consequence):
-        self.final_state = state
+        self.goal_state = state
         current_state = state
 
         while current_state.child != None:
@@ -144,10 +156,17 @@ class ACE(object):
         self.goal_consequence = consequence
 
 
+    # Reveal a state to the attacker
+    def reveal(self, state):
+        self.revealed.append(state)
+
 
     @RUNTIME.report
     def solve(self):
-        current_state = self.final_state
+        # for revealed_state in self.revealed:
+        #     pass
+
+        current_state = self.goal_state
         exploit_chain = []
 
         while current_state != None:
@@ -178,7 +197,7 @@ class ACE(object):
                             current_state.requirements_satisfied.append(Consequence.KEY_RECOVERY)
 
                             # Let's restart
-                            current_state = self.final_state
+                            current_state = self.goal_state
                             return_to_top = True
                             break
                     else:
@@ -199,10 +218,20 @@ class ACE(object):
                 # 3  ) This is not the goal consequence
                 if all([requirement in current_state.requirements_satisfied for requirement in exploit.requirements]) and not needed_consequences:
                     for constraint in current_state.constraints:
+                        # print(f'Needed? {exploit.consequence == constraint.needed_consequence}')
+                        # print(f'Directly prevented? {exploit.consequence == constraint.prevents_consequence}')
+                        # print(f'Indirectly prevented? {any([constraint.needed_consequence == other_constraint.prevents_consequence for other_constraint in current_state.constraints if other_constraint != constraint])}')
+                        # print(f'Is goal? {(current_state.child is None and exploit.consequence != self.goal_consequence)}')
+
+                        # print('Provided', exploit.consequence)
+                        # print('Needed', constraint.needed_consequence)
+                        # print('Evaluated', exploit)
+                        # print(constraint)
+                        # print(current_state)
 
                         # See if the attack will work
                         if (exploit.consequence == constraint.needed_consequence \
-                                or (exploit.consequence != constraint.prevents_consequence)) \
+                                and (exploit.consequence != constraint.prevents_consequence)) \
                             and not any([constraint.needed_consequence == other_constraint.prevents_consequence for other_constraint in current_state.constraints if other_constraint != constraint]) \
                             and not (current_state.child is None and exploit.consequence != self.goal_consequence):
 
@@ -210,7 +239,7 @@ class ACE(object):
                             has_exploit = True
                             break
                 else:
-                    # For debugging purposes
+                    # Just so the exception raises correctly
                     constraint = None
 
                 # Break out of exploit loop if we're already satisfied

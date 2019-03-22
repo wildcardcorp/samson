@@ -6,4 +6,4 @@ class Readable(object):
         return self.__repr__()
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return type(self) == type(other) and self.__dict__ == other.__dict__

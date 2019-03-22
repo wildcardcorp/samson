@@ -3,7 +3,7 @@ from samson.oracles.encryption_oracle import EncryptionOracle
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.bytes import Bytes
 from samson.ace.decorators import define_exploit
-from samson.ace.consequence import Consequence, Requirement
+from samson.ace.consequence import Consequence, Requirement, Manipulation
 import multiprocessing
 import itertools
 import struct
@@ -14,7 +14,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-@define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Consequence.PLAINTEXT_MANIPULATION])
+@define_exploit(consequence=Consequence.PLAINTEXT_RECOVERY, requirements=[Requirement.EVENTUALLY_DECRYPTS, Manipulation.PT_BIT_LEVEL.PT_BIT_LEVEL])
 class RC4PrependAttack(object):
     """
     Performs a plaintext recovery attack.

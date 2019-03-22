@@ -35,13 +35,12 @@ class PKCS7(object):
 
 
 
-    def unpad(self, plaintext: bytes, allow_padding_oracle: bool=False) -> Bytes:
+    def unpad(self, plaintext: bytes) -> Bytes:
         """
         Unpads the plaintext.
 
         Parameters:
-            plaintext           (bytes): Plaintext to unpad.
-            allow_padding_oracle (bool): Whether or not to explicitly create a padding oracle.
+            plaintext (bytes): Plaintext to unpad.
         
         Returns:
             Bytes: Unpadded plaintext.
@@ -50,7 +49,7 @@ class PKCS7(object):
         last_byte = last_block[-1]
 
         original_text, padding = plaintext[:len(plaintext) - last_byte], last_block[-last_byte:]
-        if allow_padding_oracle and (len(padding) != last_byte or sum([last_byte != pad_char for pad_char in padding]) != 0):
+        if len(padding) != last_byte or sum([last_byte != pad_char for pad_char in padding]) != 0:
             raise Exception('Invalid padding ;)')
 
         return original_text

@@ -43,8 +43,7 @@ def encrypt_data():
 
 def decrypt_data(data):
     try:
-        plaintext = cbc.decrypt(bytes(data), unpad=False)
-        padder.unpad(plaintext, allow_padding_oracle=True)
+        _ = cbc.decrypt(bytes(data))
         return True
     except Exception as e:
         if 'Invalid padding' in str(e):
