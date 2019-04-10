@@ -38,19 +38,16 @@ class ChaCha(Salsa):
         """
         Parameters:
             key      (bytes): Key (128 or 256 bits).
-            nonce    (bytes): Nonce (8 bytes).
+            nonce    (bytes): Nonce (12 bytes).
             rounds     (int): Number of rounds to perform.
             constant (bytes): Constant used in generating the keystream (16 bytes).
         """
-        self.key = key
-        self.nonce = nonce
-        self.rounds = rounds
-        self.constant = constant
+        super().__init__(key, nonce, rounds, constant)
 
 
 
     def __repr__(self):
-        return f"<ChaCha: key={self.key}, nonce={self.nonce}, rounds={self.rounds}, constant={self.constant}>"
+        return f"<ChaCha: key={self.key}, counter={self.counter}, nonce={self.nonce}, rounds={self.rounds}, constant={self.constant}>"
 
     def __str__(self):
         return self.__repr__()

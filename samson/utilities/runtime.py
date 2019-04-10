@@ -4,6 +4,9 @@ from types import FunctionType
 import logging
 import inspect
 
+
+URANDOM = open("/dev/urandom", "rb")
+
 class RuntimeConfiguration(object):
     """
     Global runtime configuration. Allows for the dynamic configuration of existing samson code.
@@ -38,6 +41,9 @@ class RuntimeConfiguration(object):
                 self.GRND_INT = mpz
             except ImportError:
                 self.GRND_INT = int
+
+
+        self.random = lambda size: URANDOM.read(size)
 
 
         # Initialize exploit mappings

@@ -46,11 +46,12 @@ class Salsa(EncryptionAlg):
         self.nonce = nonce
         self.rounds = rounds
         self.constant = constant
+        self.counter = 0
 
 
 
     def __repr__(self):
-        return f"<Salsa: key={self.key}, nonce={self.nonce}, rounds={self.rounds}, constant={self.constant}>"
+        return f"<Salsa: key={self.key}, counter={self.counter}, nonce={self.nonce}, rounds={self.rounds}, constant={self.constant}>"
 
     def __str__(self):
         return self.__repr__()
@@ -132,6 +133,12 @@ class Salsa(EncryptionAlg):
         Returns:
             Bytes: Keystream.
         """
-        num_chunks = math.ceil(length / 64)
+        num_chunks  = math.ceil(length / 64)
+        start_chunk = self.counter // 64
 
-        return sum(list(self.yield_state(num_chunks=num_chunks)))[:length]
+        counter_mod = self.counter % 64
+
+        keystream = sum(list(self.yield_state(start_chunk=start_chunk, num_chunks=num_chunks)))[counter_mod:counter_mod+length]
+        self.counter += length
+
+        return keystream

@@ -30,7 +30,7 @@ X   More encoders/decoders/cryptosystems
         OK  ECDSA
         OK  OCT/AES-KW
 
-    X   JWK Encryption (key wrapping)
+    X   PGP
 
 
 X   OCB
@@ -69,7 +69,17 @@ X   Composable exploits and ACE
         X   Meet in the middle attacks
 
 
-X   ACE should be able to register multiple exploits per class
+OK  ACE should be able to register multiple exploits per class
+X   Asymmetric encryption in ACE
+
+X   Refactor ACE tests
+    X   Stop weird three-function thing
+    X   Rename variables (what is enc_perm?)
+
+X   Does 'exploit.py/register_knowns' need to exist any more? Why not just use decorators?
+
+X   ACE should be able to enumerate all attack paths
+
 
 X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
 

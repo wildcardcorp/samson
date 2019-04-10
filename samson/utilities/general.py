@@ -1,6 +1,19 @@
 import random
 
-URANDOM = open("/dev/urandom", "rb")
+# URANDOM = open("/dev/urandom", "rb")
+
+
+# def urand(size: int=16) -> bytes:
+#     """
+#     Reads bytes from /dev/urandom.
+
+#     Parameters:
+#         size (int): Number of bytes to read.
+    
+#     Returns:
+#         bytes: Random bytes.
+#     """
+#     return URANDOM.read(size)
 
 
 def rand_bytes(size: int=16) -> bytes:
@@ -13,7 +26,8 @@ def rand_bytes(size: int=16) -> bytes:
     Returns:
         bytes: Random bytes.
     """
-    return URANDOM.read(size)
+    from samson.utilities.runtime import RUNTIME
+    return RUNTIME.random(size)
 
 
 

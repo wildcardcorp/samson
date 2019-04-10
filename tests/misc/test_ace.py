@@ -1,4 +1,4 @@
-from samson.ace.ace import SymEnc, MAC, ACE
+from samson.ace.ace import SymEnc, MAC, ACE, AsymmetricKey
 from samson.ace.consequence import Consequence, Manipulation
 from samson.ace.state import Plaintext
 from samson.ace.exploit import KeyPossession
@@ -42,6 +42,7 @@ class ACETestCase(unittest.TestCase):
     #         ctx.perms = Plaintext()
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
     #         ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
 
 
@@ -60,6 +61,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -82,6 +85,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -105,6 +110,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -128,6 +135,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -136,11 +145,11 @@ class ACETestCase(unittest.TestCase):
     #         ctx.goal(pt, Manipulation.PT_BIT_LEVEL)
 
 
-    #     self._run_test(setup, first_msg, receive, [], False)
+    #     self._run_test(setup, first_msg, receive, None, False)
 
 
 
-    # def test_double_enc_swapped(self):
+    # def test_double_enc_bypass(self):
     #     def setup(ctx):
     #         ctx.stream_enc = SymEnc(RC4, None, None)
     #         ctx.sym_enc    = SymEnc(Rijndael, CBC, None)
@@ -152,6 +161,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -177,6 +188,8 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+            
     #         next_enc = ctx.asym_enc.decrypt(ctx.enc_perms)
     #         pt = ctx.sym_enc.decrypt(next_enc)
 
@@ -186,6 +199,183 @@ class ACETestCase(unittest.TestCase):
 
 
     #     self._run_test(setup, first_msg, receive, None, False)
+
+
+
+    # def test_just_mac_pt_recovery(self):
+    #     def setup(ctx):
+    #         ctx.mac = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms  = Plaintext()
+    #         ctx.enc_mac = ctx.mac.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac)
+
+    #         _ = ctx.mac.validate(ctx.enc_mac)
+    #         ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
+
+
+    #     self._run_test(setup, first_msg, receive, [], True)
+
+
+
+    # def test_just_mac_pt_manipulation(self):
+    #     def setup(ctx):
+    #         ctx.mac = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms   = Plaintext()
+    #         ctx.enc_mac = ctx.mac.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac)
+
+    #         _ = ctx.mac.validate(ctx.enc_mac)
+    #         ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+    #     self._run_test(setup, first_msg, receive, None, False)
+
+
+
+    # def test_just_mac_twice(self):
+    #     def setup(ctx):
+    #         ctx.mac = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms   = Plaintext()
+    #         ctx.enc_mac_a = ctx.mac.generate(ctx.perms)
+    #         ctx.enc_mac_b = ctx.mac.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac_a)
+    #         ctx.reveal(ctx.enc_mac_b)
+
+    #         _ = ctx.mac.validate(ctx.enc_mac_a)
+    #         _ = ctx.mac.validate(ctx.enc_mac_b)
+    #         ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
+
+
+    #     self._run_test(setup, first_msg, receive, [], True)
+
+
+
+    # def test_just_mac_no_validation(self):
+    #     def setup(ctx):
+    #         ctx.mac = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms   = Plaintext()
+    #         ctx.enc_mac = ctx.mac.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac)
+
+    #         ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+    #     self._run_test(setup, first_msg, receive, [], True)
+
+
+    # # TODO: We shouldn't have to specify Consequence.KEY_RECOVERY; we should just have to revealed the key
+    # def test_just_mac_key_reveal(self):
+    #     def setup(ctx):
+    #         ctx.mac = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms   = Plaintext()
+    #         ctx.enc_mac = ctx.mac.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac)
+
+    #         ctx.enc_mac.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
+
+    #         _ = ctx.mac.validate(ctx.enc_mac)
+    #         ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+    #     self._run_test(setup, first_msg, receive, [KeyPossession()], True)
+
+
+    # def test_double_mac_single_reveal(self):
+    #     def setup(ctx):
+    #         ctx.mac_a = MAC(HMAC, Plaintext())
+    #         ctx.mac_b = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms  = Plaintext()
+    #         ctx.enc_mac_a = ctx.mac_a.generate(ctx.perms)
+    #         ctx.enc_mac_b = ctx.mac_b.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.perms)
+    #         ctx.reveal(ctx.enc_mac_a)
+    #         ctx.reveal(ctx.enc_mac_b)
+    #         ctx.reveal(ctx.mac_a.key)
+
+    #         # The attacker can manipulate the ciphertext
+    #         ctx.enc_mac_a.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
+    #         ctx.enc_mac_b.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
+
+    #         _ = ctx.mac_a.validate(ctx.enc_mac_a)
+    #         _ = ctx.mac_b.validate(ctx.enc_mac_b)
+    #         ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+    #     self._run_test(setup, first_msg, receive, None, False)
+
+
+
+    def test_double_mac_double_reveal(self):
+        def setup(ctx):
+            ctx.mac_a = MAC(HMAC, Plaintext())
+            ctx.mac_b = MAC(HMAC, Plaintext())
+
+
+        def first_msg(ctx):
+            ctx.perms  = Plaintext()
+            ctx.enc_mac_a = ctx.mac_a.generate(ctx.perms)
+            ctx.enc_mac_b = ctx.mac_b.generate(ctx.perms)
+
+
+        def receive(ctx):
+            ctx.reveal(ctx.perms)
+
+            # Why do we have to reveal these?!
+            # ANS: Because exploits are tied to state, not to the constraints
+            # ctx.reveal(ctx.enc_mac_a)
+            # ctx.reveal(ctx.enc_mac_b)
+
+            # The attacker can manipulate the ciphertext
+            ctx.enc_mac_a.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
+            ctx.enc_mac_b.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
+
+            _ = ctx.mac_a.validate(ctx.enc_mac_a)
+            _ = ctx.mac_b.validate(ctx.enc_mac_b)
+            ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+        self._run_test(setup, first_msg, receive, [KeyPossession()], True)
 
 
 
@@ -202,6 +392,9 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_mac)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
     #         ctx.enc_mac.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
@@ -212,6 +405,40 @@ class ACETestCase(unittest.TestCase):
 
 
     #     self._run_test(setup, first_msg, receive, None, False)
+
+
+
+    # # Secure... except we also give the attacker the plaintext
+    # def test_encrypt_then_mac_but_give_pt(self):
+    #     def setup(ctx):
+    #         ctx.sym_enc = SymEnc(Rijndael, CBC, None)
+    #         ctx.mac     = MAC(HMAC, None)
+
+
+    #     def first_msg(ctx):
+    #         perms = Plaintext()
+    #         ctx.enc_perms = ctx.sym_enc.encrypt(perms)
+    #         ctx.enc_mac = ctx.mac.generate(ctx.enc_perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_mac)
+
+    #         # The attacker can manipulate the ciphertext
+    #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
+    #         ctx.enc_mac.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
+
+    #         _ = ctx.mac.validate(ctx.enc_mac)
+    #         pt = ctx.sym_enc.decrypt(ctx.enc_perms)
+
+    #         # Woops
+    #         ctx.reveal(pt)
+    #         ctx.goal(pt, Consequence.PLAINTEXT_RECOVERY)
+
+
+    #     self._run_test(setup, first_msg, receive, [], True)
+
 
 
 
@@ -228,6 +455,9 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_mac)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
     #         ctx.enc_mac.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
@@ -253,6 +483,9 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.mac_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
 
@@ -307,6 +540,9 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_key)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
     #         ctx.enc_key.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
@@ -369,6 +605,9 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_key)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
     #         ctx.enc_key.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
@@ -406,6 +645,10 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.enc_key)
+    #         ctx.reveal(ctx.mac_perms)
+
     #         # The attacker can manipulate the ciphertext
     #         ctx.enc_perms.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
     #         ctx.enc_key.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
@@ -422,26 +665,26 @@ class ACETestCase(unittest.TestCase):
 
 
 
-    def test_enc_key_but_we_have_the_key(self):
-        def setup(ctx):
-            key         = Plaintext()
-            ctx.sym_enc = SymEnc(Rijndael, CBC, key)
+    # def test_enc_key_but_we_have_the_key(self):
+    #     def setup(ctx):
+    #         key         = Plaintext()
+    #         ctx.sym_enc = SymEnc(Rijndael, CBC, key)
 
 
-        def first_msg(ctx):
-            ctx.perms     = Plaintext()
-            ctx.enc_perms = ctx.sym_enc.encrypt(ctx.perms)
+    #     def first_msg(ctx):
+    #         ctx.perms     = Plaintext()
+    #         ctx.enc_perms = ctx.sym_enc.encrypt(ctx.perms)
 
 
-        def receive(ctx):
-            # Give the attacker the key
-            #ctx.enc_perms.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
-            ctx.reveal(ctx.enc_perms)
+    #     def receive(ctx):
+    #         # Give the attacker the key
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.enc_perms.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
 
-            ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
+    #         ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
 
 
-        self._run_test(setup, first_msg, receive, [KeyPossession()], True)
+    #     self._run_test(setup, first_msg, receive, [KeyPossession()], True)
 
 
 
@@ -457,10 +700,33 @@ class ACETestCase(unittest.TestCase):
 
 
     #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+
     #         # Give the attacker the key
-    #         ctx.enc_perms.propagate_requirement_satisfied(Consequence.)
+    #         #ctx.enc_perms.propagate_requirement_satisfied(Consequence.)
 
     #         ctx.goal(ctx.enc_perms, Consequence.PLAINTEXT_RECOVERY)
+
+
+    #     self._run_test(setup, first_msg, receive, [KeyPossession()], True)
+
+
+
+    # def test_asymmetric(self):
+    #     def setup(ctx):
+    #         ctx.key     = AsymmetricKey(size=2048)
+    #         ctx.sym_enc = SymEnc(RSA, OAEP, ctx.key.private)
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms     = Plaintext()
+    #         ctx.enc_perms = ctx.sym_enc.encrypt(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.reveal(ctx.enc_perms)
+    #         ctx.reveal(ctx.key.public)
+    #         ctx.goal(ctx.perms, Consequence.PLAINTEXT_RECOVERY)
 
 
     #     self._run_test(setup, first_msg, receive, [KeyPossession()], True)

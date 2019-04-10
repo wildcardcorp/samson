@@ -32,6 +32,15 @@ class State(object):
 
 
 
+    def remove_constraint(self, constraint):
+        current_state = self
+
+        while current_state != None:
+            current_state.constraints.remove(constraint)
+            current_state = current_state.child
+
+
+
 class Plaintext(State):
     def __init__(self):
         super().__init__(constraints=[IdentityConstraint(needed_consequence=Consequence.PLAINTEXT_RECOVERY)], exploits=[IdentityExploit(Consequence.PLAINTEXT_RECOVERY), IdentityExploit(Manipulation.PT_BIT_LEVEL)])
