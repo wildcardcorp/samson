@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv, find_prime
+from samson.utilities.math import mod_inv, find_prime, random_int
 from samson.utilities.bytes import Bytes
 
 from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
@@ -69,7 +69,7 @@ class DSA(EncodablePKI):
         self.q = q
         self.g = g
 
-        self.x = x or Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q
+        self.x = x or random_int(self.q)
         self.y = pow(self.g, self.x, self.p)
         self.hash_obj = hash_obj
 
@@ -94,7 +94,7 @@ class DSA(EncodablePKI):
         Returns:
             (int, int): Signature formatted as (r, s).
         """
-        k = k or max(1, Bytes.random((self.q.bit_length() + 7) // 8).int() % self.q)
+        k = k or max(1, random_int(self.q))
         inv_k = mod_inv(k, self.q)
         r = pow(self.g, k, self.p) % self.q
         s = (inv_k * (self.hash_obj.hash(message).int() + self.x * r)) % self.q

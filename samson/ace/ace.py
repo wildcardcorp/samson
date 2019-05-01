@@ -135,7 +135,7 @@ class MAC(object):
         state.exposed_state = state.exposed_state.child
 
         return state
-    
+
 
 
 
@@ -168,6 +168,13 @@ class ACE(object):
     # Reveal a state to the attacker
     def reveal(self, state):
         self.revealed.add(state)
+    
+
+    def taint(self, state):
+        from samson.ace.consequence import Manipulation
+        self.reveal(state)
+        state.propagate_requirement_satisfied(Manipulation.PT_BIT_LEVEL)
+
 
 
     @RUNTIME.report
@@ -276,14 +283,14 @@ class ACE(object):
                 trace_found = True
             except RuntimeError:
                 pass
-            
+
             if trace_found:
                 break
-        
+
 
         if not trace_found:
             raise RuntimeError(f'No suitable exploit found. Last consequence not fulfilled: {constraint.needed_consequence if constraint else "None (no constraint evaluated due to requirements)"}')
-            
+
 
         exploit_chain = [exploit for exploit in exploit_chain if not issubclass(type(exploit), IdentityExploit)]
         return exploit_chain

@@ -30,7 +30,21 @@ X   More encoders/decoders/cryptosystems
         OK  ECDSA
         OK  OCT/AES-KW
 
+    X   JWT
+        ?   HS
+        ?   ES
+        ?   RS
+        X   PS
+
     X   PGP
+
+
+X  Test JWT
+   X   HS
+   X   ES
+   X   RS
+   X   PS
+
 
 
 X   OCB
@@ -50,12 +64,11 @@ X   Document new parsers
     X   Add class/function documentation
 
 
-OK  Update README
-    OK  Include new features
-    OK  Change CBCPaddingOracle attack to use "new" PKCS7
+X   Document these classes
+    OK  JWT
+    X   JWA
+    X   PKCS1v15RSASigner
 
-
-OK  Add CBC tests
 
 
 X   Composable exploits and ACE

@@ -17,3 +17,6 @@ from samson.stream_ciphers.all import *
 from samson.utilities.all import *
 
 from samson.encoding.general import *
+from samson.encoding.pem import pem_decode, pem_encode
+from samson.encoding.jwt import JWT
+from samson.encoding.jwa import JWA

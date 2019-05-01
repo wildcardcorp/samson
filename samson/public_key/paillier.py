@@ -1,4 +1,4 @@
-from samson.utilities.math import find_prime, mod_inv, gcd
+from samson.utilities.math import find_prime, mod_inv, gcd, random_int
 from samson.utilities.bytes import Bytes
 from samson.core.encryption_alg import EncryptionAlg
 
@@ -50,9 +50,9 @@ class Paillier(EncryptionAlg):
         m = Bytes.wrap(plaintext).to_int()
         assert m < self.n
 
-        r = Bytes.random(self.n.bit_length() + 7 // 8).to_int()
+        r = random_int(self.n)
         while gcd(r, self.n) != 1:
-            r = Bytes.random(self.n.bit_length() + 7 // 8).to_int()
+            r = random_int(self.n)
 
         n_sqr = self.n ** 2
         return pow(self.g, m, n_sqr) * pow(r, self.n, n_sqr)

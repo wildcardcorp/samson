@@ -189,7 +189,7 @@ class ACETestCase(unittest.TestCase):
 
     #     def receive(ctx):
     #         ctx.reveal(ctx.enc_perms)
-            
+
     #         next_enc = ctx.asym_enc.decrypt(ctx.enc_perms)
     #         pt = ctx.sym_enc.decrypt(next_enc)
 
@@ -359,14 +359,15 @@ class ACETestCase(unittest.TestCase):
 
 
         def receive(ctx):
-            ctx.reveal(ctx.perms)
+            ctx.taint(ctx.perms)
 
-            # Why do we have to reveal these?!
-            # ANS: Because exploits are tied to state, not to the constraints
-            # ctx.reveal(ctx.enc_mac_a)
-            # ctx.reveal(ctx.enc_mac_b)
+            # ACTUALLY, this SHOULDN'T work if we just reveal them. We need to be able
+            # to REPLACE (read Manip.BIT_LEVEL).
 
-            # The attacker can manipulate the ciphertext
+            ctx.reveal(ctx.enc_mac_a)
+            ctx.reveal(ctx.enc_mac_b)
+
+            # The attacker has the key
             ctx.enc_mac_a.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
             ctx.enc_mac_b.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
 
@@ -375,7 +376,37 @@ class ACETestCase(unittest.TestCase):
             ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
 
 
-        self._run_test(setup, first_msg, receive, [KeyPossession()], True)
+        self._run_test(setup, first_msg, receive, None, False)
+
+
+    # def test_double_mac_double_taint(self):
+    #     def setup(ctx):
+    #         ctx.mac_a = MAC(HMAC, Plaintext())
+    #         ctx.mac_b = MAC(HMAC, Plaintext())
+
+
+    #     def first_msg(ctx):
+    #         ctx.perms  = Plaintext()
+    #         ctx.enc_mac_a = ctx.mac_a.generate(ctx.perms)
+    #         ctx.enc_mac_b = ctx.mac_b.generate(ctx.perms)
+
+
+    #     def receive(ctx):
+    #         ctx.taint(ctx.perms)
+
+    #         ctx.taint(ctx.enc_mac_a)
+    #         ctx.taint(ctx.enc_mac_b)
+
+    #         # The attacker has the key
+    #         ctx.enc_mac_a.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
+    #         ctx.enc_mac_b.propagate_requirement_satisfied(Consequence.KEY_RECOVERY)
+
+    #         _ = ctx.mac_a.validate(ctx.enc_mac_a)
+    #         _ = ctx.mac_b.validate(ctx.enc_mac_b)
+    #         ctx.goal(ctx.perms, Manipulation.PT_BIT_LEVEL)
+
+
+    #     self._run_test(setup, first_msg, receive, [KeyPossession()], True)
 
 
 

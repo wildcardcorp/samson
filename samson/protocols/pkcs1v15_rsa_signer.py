@@ -6,13 +6,13 @@ from pyasn1.type.univ import Sequence, OctetString, Null
 from pyasn1.codec.der import encoder
 
 class PKCS1v15RSASigner(object):
-    def __init__(self, rsa, hash_obj):
+    def __init__(self, rsa, hash_obj: object):
         self.rsa = rsa
         self.padder = PKCS1v15Padding(rsa.bits, block_type=1)
         self.hash_obj = hash_obj
 
 
-    def sign(self, plaintext):
+    def sign(self, plaintext: bytes) -> Bytes:
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, HASH_OID_LOOKUP[type(self.hash_obj)])
         alg_id.setComponentByPosition(1, Null())
@@ -25,7 +25,7 @@ class PKCS1v15RSASigner(object):
         return self.rsa.decrypt(self.padder.pad(der_encoded))
 
 
-    def verify(self, plaintext, signature, strict_type_match=True):
+    def verify(self, plaintext: bytes, signature: bytes, strict_type_match: bool=True) -> bool:
         try:
             padded = Bytes(self.rsa.encrypt(signature))
             der_encoded = self.padder.unpad(padded)

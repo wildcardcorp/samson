@@ -1,4 +1,5 @@
 from samson.public_key.elgamal import ElGamal
+from samson.utilities.bytes import Bytes
 import unittest
 
 # https://github.com/Legrandin/pycrypto/blob/7834db2809024536cdfd7fef0b5657dd390bd780/lib/Crypto/SelfTest/PublicKey/test_ElGamal.py
@@ -34,3 +35,12 @@ class ElGamalTestCase(unittest.TestCase):
         expected_ciphertext = (0x290F8530C2CC312EC46178724F196F308AD4C523CEABB001FACB0506BFED676083FE0F27AC688B5C749AB3CB8A80CD6F7094DBA421FB19442F5A413E06A9772B, 0x1D69AAAD1DC50493FB1B8E8721D621D683F3BF1321BE21BC4A43E11B40C9D4D9C80DE3AAC2AB60D31782B16B61112E68220889D53C4C3136EE6F6CE61F8A23A0)
 
         self._run_test(g, p, key, pub, k, plaintext, expected_ciphertext)
+
+
+
+    def test_gauntlet(self):
+        for _ in range(100):
+            elgamal = ElGamal()
+            plaintext = Bytes.random(8)
+            ciphertext = elgamal.encrypt(plaintext)
+            self.assertEqual(plaintext, elgamal.decrypt(ciphertext))

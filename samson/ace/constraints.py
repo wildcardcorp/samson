@@ -33,7 +33,7 @@ class MACConstraint(PropagatingConstraint):
         self.prevents_consequence = Manipulation.PT_BIT_LEVEL
         self.needed_consequence   = Consequence.KEY_RECOVERY
         self.owner = owner
-    
+
 
     def __eq__(self, other):
         return type(self) == type(other) and self.owner == other.owner

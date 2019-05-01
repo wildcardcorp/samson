@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv
+from samson.utilities.math import mod_inv, random_int
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
@@ -49,7 +49,7 @@ class ECDSA(DSA):
         """
         self.G = G
         self.q = self.G.curve.q
-        self.d = d or max(1, Bytes.random(self.q.bit_length() + 7 // 8).int() % self.q)
+        self.d = Bytes.wrap(d).int() if d else max(1, random_int(self.q))
         self.Q = self.d * self.G
         self.hash_obj = hash_obj
 
@@ -77,7 +77,7 @@ class ECDSA(DSA):
         s = 0
 
         while s == 0 or r == 0:
-            k = k or max(1, Bytes.random(self.q .bit_length() + 7 // 8).int() % self.q)
+            k = k or max(1, random_int(self.q))
             inv_k = mod_inv(k, self.q)
 
             z = self.hash_obj.hash(message).int()

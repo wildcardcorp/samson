@@ -1,6 +1,6 @@
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.utilities.bytes import Bytes
-from samson.utilities.math import mod_inv
+from samson.utilities.math import mod_inv, random_int
 from samson.core.encryption_alg import EncryptionAlg
 
 class ElGamal(EncryptionAlg):
@@ -41,7 +41,7 @@ class ElGamal(EncryptionAlg):
         Returns:
             (int, int): Formatted as (ephemeral key, ciphertext).
         """
-        K_e = k or max(1, Bytes.random().int() % self.p)
+        K_e = k or max(1, random_int(self.p))
         c_1 = pow(self.g, K_e, self.p)
         s = pow(self.pub, K_e, self.p)
         plaintext = Bytes.wrap(plaintext)

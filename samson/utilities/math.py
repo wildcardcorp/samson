@@ -292,18 +292,44 @@ def find_coprime(p: int, search_range: list) -> int:
 
 
 
-def find_prime(bits: int) -> int:
+def random_int(n: int) -> int:
+    """
+    Finds a unbiased, uniformly-random integer between 0 and `n`-1.
+
+    Parameters:
+        n (int): Upper bound.
+    
+    Returns:
+        int: Random integer.
+    """
+    byte_length = math.ceil(n.bit_length() / 8)
+    max_bit = 2**n.bit_length()
+    q = max_bit // n
+    max_num = n * q - 1
+    while True:
+        attempt = int.from_bytes(rand_bytes(byte_length), 'big') % max_bit
+        if attempt <= max_num:
+            return attempt % n
+
+
+
+def find_prime(bits: int, ensure_halfway: bool=True) -> int:
     """
     Finds a prime of `bits` bits.
 
     Parameters:
-        bits (int): Bit length of prime.
+        bits            (int): Bit length of prime.
+        ensure_halfway (bool): Ensures the prime is at least halfway into the bitspace to prevent multiplications being one bit short (e.g. 256-bit int * 256-bit int = 511-bit int).
     
     Returns:
         int: Prime.
     """
-    rand_num = int.from_bytes(rand_bytes(math.ceil(bits / 8)), 'big')
+    rand_num = random_int(2**bits)
     rand_num |= 2**(bits - 1)
+
+    if ensure_halfway:
+        rand_num |= 2**(bits - 2)
+
     return next_prime(rand_num)
 
 

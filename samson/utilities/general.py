@@ -1,24 +1,9 @@
 import random
 
-# URANDOM = open("/dev/urandom", "rb")
-
-
-# def urand(size: int=16) -> bytes:
-#     """
-#     Reads bytes from /dev/urandom.
-
-#     Parameters:
-#         size (int): Number of bytes to read.
-    
-#     Returns:
-#         bytes: Random bytes.
-#     """
-#     return URANDOM.read(size)
-
 
 def rand_bytes(size: int=16) -> bytes:
     """
-    Reads bytes from /dev/urandom.
+    Reads bytes from RUNTIME.random.
 
     Parameters:
         size (int): Number of bytes to read.
