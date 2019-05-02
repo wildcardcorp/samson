@@ -4,7 +4,7 @@ from samson.ace.decorators import has_exploit
 from samson.attacks.mangers_attack import MangersAttack
 from types import FunctionType
 
-def MGF1(seed: bytes, length: int) -> Bytes:
+def MGF1(seed: bytes, length: int, hash_obj: object=SHA1()) -> Bytes:
     """
     Peforms the mask generation function v1 from RFC3447 B.2.1.
 
@@ -16,10 +16,9 @@ def MGF1(seed: bytes, length: int) -> Bytes:
         Bytes: Mask.
     """
     mask = b''
-    sha1 = SHA1()
 
-    for i in range((length + 19) // 20):
-        mask += sha1.hash(seed + Bytes(i).zfill(4))
+    for i in range((length + hash_obj.digest_size - 1) // hash_obj.digest_size):
+        mask += hash_obj.hash(seed + Bytes(i).zfill(4))
 
     return mask[:length]
 
@@ -39,7 +38,7 @@ class OAEP(object):
             modulus_len (int): Length of the RSA modulus, i.e. RSA bit strength.
             mgf        (func): Mask generation function. Takes in `seed` and `length` and returns bytes.
             hash_obj (object): Instantiated object with compatible hash interface.
-            label     (bytes): (Optional) 
+            label     (bytes): (Optional) Arbitrary and application-specific 'label.'
         """
         self.mgf = mgf
         self.hash_obj = hash_obj

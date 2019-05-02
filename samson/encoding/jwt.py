@@ -4,36 +4,25 @@ from samson.encoding.jwa import JWA_ALG_MAP, JWA
 import json
 
 
-def build_header(alg, additional_headers):
-    header = {"typ": "JWT", "alg": alg.value}
-    header.update(additional_headers)
-    
-    return header
-
-
 class JWT(object):
     """
     JSON Web Token
     """
 
-    # def __init__(self, alg: JWA, body: dict, sig: bytes, **additional_headers):
-    def __init__(self, header: dict, body: dict, sig: bytes):
+    def __init__(self, header: str, body: str, sig: bytes):
         """
         Parameters:
-            alg                     (JWA): JWA algorithm to use for signing and verification.
-            body                   (dict): Body to be signed or verified.
-            sig                   (bytes): Signature value.
-            **additional_headers (kwargs): Additional key-value pairs to place in JWT header.
+            alg   (str): JWA algorithm to use for signing and verification.
+            body  (str): Body to be signed or verified.
+            sig (bytes): Signature value.
         """
-        #self.alg  = alg
         self.header = header
         self.body   = body
-        #self.additional_headers  = additional_headers
         self.sig    = sig
     
 
     def __repr__(self):
-        return f"<JWT: header={self.header}, body={self.body}, sig={self.sig}"#, additional_headers={self.additional_headers}>"
+        return f"<JWT: header={self.header}, body={self.body}, sig={self.sig}>"
 
     def __str__(self):
         return self.__repr__()
@@ -47,10 +36,7 @@ class JWT(object):
         Returns:
             Bytes: BASE64-URL encoded JWT.
         """
-        #header = build_header(self.alg, self.additional_headers)
-        str_header = self.header.copy()
-        str_header['alg'] = str_header['alg'].value
-        return Bytes(b'.'.join([url_b64_encode(part) for part in [json.dumps(str_header).encode('utf-8'), json.dumps(self.body).encode('utf-8'), self.sig]]))
+        return Bytes(b'.'.join([url_b64_encode(part) for part in [self.header.encode('utf-8'), self.body.encode('utf-8'), self.sig]]))
 
 
     @staticmethod
@@ -67,11 +53,10 @@ class JWT(object):
         parts = token.split(b'.')
         decoded = [url_b64_decode(part) for part in parts]
 
-        header = json.loads(decoded[0].decode())
-        body   = json.loads(decoded[1].decode())
+        header = decoded[0].decode()
+        body   = decoded[1].decode()
 
-        header['alg'] = JWA[header['alg']]
-        return JWT(header, body, Bytes.wrap(decoded[2]), **{k:v for k,v in header.items() if k not in ['alg', 'typ']})
+        return JWT(header, body, Bytes.wrap(decoded[2]))
     
 
     @staticmethod
@@ -88,13 +73,15 @@ class JWT(object):
         Returns:
             JWT: JWT representation.
         """
-        #header = build_header(alg, additional_headers)
         header = {'typ': 'JWT', 'alg': alg}
         header.update(additional_headers)
 
         str_header = header.copy()
         str_header['alg'] = str_header['alg'].value
-        return JWT(header, body, JWA_ALG_MAP[alg].sign(key, url_b64_encode(json.dumps(str_header).encode('utf-8')) + b'.' + url_b64_encode(json.dumps(body).encode('utf-8'))))#, **additional_headers)
+
+        str_header = json.dumps(str_header)
+        str_body   = json.dumps(body)
+        return JWT(str_header, str_body, JWA_ALG_MAP[alg].sign(key, url_b64_encode(str_header.encode('utf-8')) + b'.' + url_b64_encode(str_body.encode('utf-8'))))
     
 
     def verify(self, key: object) -> bool:
@@ -107,7 +94,6 @@ class JWT(object):
         Returns:
             bool: Whether or not it passed verification.
         """
-        str_header = self.header.copy()
-        str_header['alg'] = str_header['alg'].value
-        #header = build_header(self.alg, self.additional_headers)
-        return JWA_ALG_MAP[self.header['alg']].verify(key, url_b64_encode(json.dumps(str_header).encode('utf-8')) + b'.' + url_b64_encode(json.dumps(self.body).encode('utf-8')), self.sig)
+        jwa  = JWA[json.loads(self.header)['alg']]
+        data = url_b64_encode(self.header.encode('utf-8')) + b'.' + url_b64_encode(self.body.encode('utf-8'))
+        return JWA_ALG_MAP[jwa].verify(key, data, self.sig)

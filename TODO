@@ -31,18 +31,18 @@ X   More encoders/decoders/cryptosystems
         OK  OCT/AES-KW
 
     X   JWT
-        ?   HS
-        ?   ES
-        ?   RS
+        OK  HS
+        OK  ES
+        OK  RS
         X   PS
 
     X   PGP
 
 
 X  Test JWT
-   X   HS
-   X   ES
-   X   RS
+   OK  HS
+   OK  ES
+   OK  RS
    X   PS
 
 
