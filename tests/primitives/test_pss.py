@@ -12,7 +12,15 @@ import unittest
 
 # First set of mod 1024 and second set of mod 2048
 class RSAPSSTestCase(unittest.TestCase):
-    def _run_verification_test(self, p, q, e, hash_obj, salt_len, Msg, S, should_succeed):
+    def test_gauntlet(self):
+        pss = PSS(hash_obj=SHA256(), mgf=lambda x, y: MGF1(x, y, SHA256()), salt_len=20, modulus_len=2048)
+        for _ in range(100):
+            plaintext = Bytes.random(20)
+            sig       = pss.sign(plaintext)
+            self.assertTrue(pss.verify(plaintext, sig))
+
+
+    def _run_verification_test(self, p, q, e, hash_obj, salt_len, salt, Msg, S, should_succeed):
         try:
             rsa = RSA(bits=0, p=p, q=q, e=e)
         except Exception as e:
@@ -24,86 +32,104 @@ class RSAPSSTestCase(unittest.TestCase):
         pss = PSS(hash_obj=hash_obj, mgf=lambda x, y: MGF1(x, y, hash_obj), salt_len=salt_len, modulus_len=rsa.n.bit_length())
         s   = Bytes(rsa.encrypt(S))
         self.assertEqual(pss.verify(Msg, s), should_succeed)
+
+        sig = pss.sign(Msg, Bytes(salt))
+
+        if should_succeed:
+            self.assertEqual(sig, s)
+            self.assertEqual(rsa.decrypt(sig), Bytes(S))
+        else:
+            self.assertTrue(pss.verify(Msg, sig))
     
 
     def _run_sha1_1024(self, e, Msg, S, should_succeed):
         p = 0xf71840f8a6472ebdc7f54d9884e86428ebd368324d87298fa00d9ccfb3d9afc21e0e2a10b15eb4a08f80cca7268a36a762f4900866a6a07419f9543ac3101a8b
         q = 0xf520558d02718b19a113fec43f4d086b76bb50e6d83772f1b07131b60a19a2baa553715df82a9e5dece4c79a5388949bcd9cf6a6c8c010903e681e195d3b5937
         hash_obj = SHA1()
+        salt = 0x2393183e18581e6924cd38f24192d1acc145633a
 
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha224_1024(self, e, Msg, S, should_succeed):
         p = 0xf97368d645469607f92ab0d0423bf04e8de43c0435a7b213462e6dadbd51951d416e5c746d6c722c967b24c4621a8768bb104f1340abd4d67144cafb2a41e445
         q = 0xfcc85f04da172b8cc0974631d9d04cb6ebfc08cce8d1aed61d7bef9827847d2a6e17a340cc6dacdb2098f7b80436cb755610f9b8be8108f35b28e3e072bfe6c7
         hash_obj = SHA224()
+        salt = 0x2393183e18581e6924cd38f24192d1acc145633a
         
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha256_1024(self, e, Msg, S, should_succeed):
         p = 0xf211076bb2440d08bbb7f0931b1e1dace7850b5bf676ee99c3df5ffc232dee014e8ef49084bf4164e13fd93b0135ba1b74ca0436eb11cef0857fd1a7f2fe9741
         q = 0xca15838b90298be9ffb5357308cbb183b0669bd3d9eaf9a43bff56c3408d142cb9dd53a0d6e58659f7e6ee1e86cff4ace0a9da911fa86f5421e2f368f1f7c96b
         hash_obj = SHA256()
+        salt = 0x507372afffebc2d67cd714e38e367776e34b377a
         
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha384_1024(self, e, Msg, S, should_succeed):
         p = 0xbe896fbffc3ce442d802f495c9f4b3a80d675e0534f5ec78b3a37c6608bc0ab7d6f19f03c2ab4e57b766b82f75f59747fb902ad033e64e00ad9e768982750e21
         q = 0xbb5a8363372ba9dd2b6d29c34f4da96bd50b8de51834f9cd79aa127ad74805c12feb858786d608870b9ee8b6d8afe0edd6212b8b75e6aef7b56dc45e2508d05f
         hash_obj = SHA384()
+        salt = 0xfa785c07aac7933ad34b469f6a782de1fdf26b67
         
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha512_1024(self, e, Msg, S, should_succeed):
         p = 0xfdef121ca20ae2f6dc84a3f9eedfaeeab3f65997f8ff9ebfaf8e5864da78f683e69c7ebf813725a102a48e86f34cae464c59bb8990515d6d4e90bf2e6086c1c9
         q = 0xdc815f8f3eb9f778ccb8cd18ba9cc1c0b39c71718c0ea3901ecd763c4e7334f26376cc09c376a23e3fcf6ca29503a59c4f11a53311f05d93e521697a4f70ed69
         hash_obj = SHA512()
+        salt = 0xd44bee9eb335dc0fee17bb22e8dc9c35ce06c504
         
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha1_2048(self, e, Msg, S, should_succeed):
         p = 0xd616e377575b1c3f083cff1896fe1a01662fb510f32e9e88cb22ad2617de679ef5bbc82577d8f4a1e696f3b70c55af9ca915c1c79e77efdcd59d351aa2ad4396834e01a263aca37137742d56b254b9e643ef2800e287f80b400ecde56e6475b39c75b9abff873362e4bc9dda4e4a999289399d22eaff06c8591bfccdcc02a5fb
         q = 0xf557188f0018d0f76c14e56018b6db18f444d000726fa7eaea62f89ed92556a4bb22cd50156240172dcb58fbf2aff54406f72cbdac02f244b58f4b780845db310857ebeac14b538064a08266e42a3eb8c64a131250b805c198920609febf4bc4fd601fea5b5a367c91c58e1ab57e46844b85cecfac243f895073cb46f3f6bc0f
         hash_obj = SHA1()
+        salt = 0x86f350b8b70569c2dd0939ff5d2364531fe34975
 
-        self._run_verification_test(p, q, e, hash_obj, 20, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
     def _run_sha224_2048(self, e, Msg, S, should_succeed):
         p = 0xcbe5d944cf8a45d06256ff0304b83ed50889d0ed03c4273f319fa33c5d919fd38c5776ce20a61807cd37cbb5be50f92fa87fba50882d655f835420a4ff445cfaea32b52c4671f4b64369d794894ba9cef526d77451cbb118fe3968e385ad9e4719c5d92d913791b52d52f2584148ec1c0c46c12bfc18edce356922b25453e583
         q = 0xc70b9709d14424a0c32027396776c7004a0521801b2220f9b52b443651043d3e111ebd015bd17ca675382f526632bc434e111ccc8e4031a8cbd0755163c440a389610799f78c2382adb7b2dce16cc0d3bdf5869491b82af271d2245269f79ddda04c67688f7820655a6edbf5c16ce06e29addc86a44d9fa500f5d065bd594465
         hash_obj = SHA224()
+        salt = 0xbb86906194b31fb6d28931febeb80d76747e427ea1628ef08c25ffb0
 
-        self._run_verification_test(p, q, e, hash_obj, 28, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 28, salt, Msg, S, should_succeed)
 
 
     def _run_sha256_2048(self, e, Msg, S, should_succeed):
         p = 0xdb099c2cb4c0deca479d72af24b0d04d6af292355b68d238dd1f5e9c3af8665b9e24e3225a2ead22bf0922ca210770406262a221af0059f4e07a24d7108348a31688ab992db145e69d350f1e97120564d1e9a09548d6b5a69fb1b48fee890044ef0e9e16638e4806a1f2def9cf5ef5b6e4298c2a89005bf0d6deaa357e06adb1
         q = 0xb6537094bc44544589ca442e6140635c7e94ffbe8e185df65d440dbd91ff25f1b80a1a08d3b219f48d4b31ef02495d3889fe3569f6b5e080a7c5fa618433f20909240e2e81c17ec5739794831ad7497dc0699a3b53a0e56a54902c79332a580fed649af3a9619abc8ed85562ef2f003a240a3b08cbcc4db3fa0e584260d59dff
         hash_obj = SHA256()
+        salt = 0xd66f72f10b69001a5b59cf1092ad274d5056c4e95ccccfbe3b530dcb027e57d6
 
-        self._run_verification_test(p, q, e, hash_obj, 32, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 32, salt, Msg, S, should_succeed)
 
 
     def _run_sha384_2048(self, e, Msg, S, should_succeed):
         p = 0xce24108e9e2cb68b86277da0b8666a28df823237872967ae5a7190d2de18b5b3ec40f4f89b39088afa33ce36da58b4a4f5ebcf75045fa3857abcd706e7b61d042421c665ce21c415281f4a1db899f2d149dd1cb8f28e6d692b446d23058b9908858d9d3ea5a5ca12719b33d989a00281a823f8cc55ceb8fbc31ec8aba6d790ef
         q = 0xb9d4618196c2f80092a21a95fbf81a6bb21f877bcfb4640fe4cd30b3b2d5fedb22b81d36d2d17232958127d099f2c2b5bcdf342d373f3982e855dd8d5a644f704835a4d6a5ae77a3a3cebeaa07bb577f76ac7e197348c5de5264e038511616412e1f77fd6178e4ea67f00cfa7390fecc715d2cb34cc972bc532c1992279f7bbb
         hash_obj = SHA384()
+        salt = 0x2018c6663a97230486803e6f5040e217d76c5ee1fea8d92844c7e602f63459c4a49058c8d19cb56dee5a7b608a6fc61a
 
-        self._run_verification_test(p, q, e, hash_obj, 48, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 48, salt, Msg, S, should_succeed)
 
 
     def _run_sha512_2048(self, e, Msg, S, should_succeed):
         p = 0xe6587147e771024192e5227cf8e50cd7204cc2538c785ec7794ca9826e7c96e1fb61bd0c09647d46047488ea8f8c409f6652580d326b4d7d236e83d17e386ecda1b2e7a3ce7b2ec05af24e975dd5b57b3b01fd303ec66a2f98d5931b9dacfb11aa9d43e0c239a3740ae85272122416ab9261e8131de3bc53d0181f0a07a388a1
         q = 0xbc15fdd376cbce9394576dfaf90d418dc456f73b29bdc08c753d62dbbd6f68bd92875b41d3835af0753f9566b2b966a41aa5cbf27bf80e876c03c48ccffa5837739e1aeca2b24904ee01f2b54d07692dbceae48772371bc618fcfe453d9a8eb84111e5efe7f9da46a7e4b9b75378acc3352b331f15dc495172fcc1f8aecfca03
         hash_obj = SHA512()
+        salt = 0xe536e467ed1f6a54ea19ebc7eb470ba6cd63ae16af600b42a74e0358b37fb0d3f3e8400015c904bb1091c47a15fc568ec27e6ea59ae4b892b2392451ace68245
 
-        self._run_verification_test(p, q, e, hash_obj, 64, Msg, S, should_succeed)
+        self._run_verification_test(p, q, e, hash_obj, 64, salt, Msg, S, should_succeed)
 
 
 

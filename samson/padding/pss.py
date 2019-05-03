@@ -17,7 +17,7 @@ class PSS(object):
             modulus_len (int): Length of the RSA modulus, i.e. RSA bit strength.
             mgf        (func): Mask generation function. Takes in `seed` and `length` and returns bytes.
             hash_obj (object): Instantiated object with compatible hash interface.
-            salt_len  (bytes): Length of salt to generate if salt is not explicitly provided.
+            salt_len    (int): Length of salt to generate if salt is not explicitly provided.
         """
         self.modulus_len = modulus_len
         self.mgf = mgf
@@ -33,40 +33,40 @@ class PSS(object):
 
 
     # https://tools.ietf.org/html/rfc8017#section-9.1.1
-    def pad(self, plaintext: bytes, salt: bytes=None) -> Bytes:
+    def sign(self, plaintext: bytes, salt: bytes=None) -> Bytes:
         """
         Pads and hashes the `plaintext`.
 
         Parameters:
-            plaintext (bytes): Plaintext to pad.
+            plaintext (bytes): Plaintext to sign.
             salt      (bytes): (Optional) Random salt.
         
         Returns:
             Bytes: Probablistic signature.
         """
         plaintext = Bytes.wrap(plaintext)
-        mHash = self.hash_obj.hash(plaintext)
+        mHash     = self.hash_obj.hash(plaintext)
 
-        salt = salt or Bytes.random(self.salt_len)
+        salt    = salt or Bytes.random(self.salt_len)
         m_prime = b'\x00' * 8 + mHash + salt
 
         H = self.hash_obj.hash(m_prime)
 
-        # self.modulus_len is emBits in spec
-        emLen = (self.modulus_len + 7) // 8
-        ps_len = emLen - self.hash_obj.digest_size - self.salt_len - 2
+        em_bits = self.modulus_len - 1
+        em_len  = (em_bits + 7) // 8
+        ps_len = em_len - self.hash_obj.digest_size - self.salt_len - 2
 
         if ps_len < 0:
             raise ValueError("Plaintext is too long")
 
         PS = Bytes(b'').zfill(ps_len)
 
-        DB = PS + b'\x01' + salt
-        db_mask = self.mgf(H, emLen - self.hash_obj.digest_size - 1)
+        DB        = PS + b'\x01' + salt
+        db_mask   = self.mgf(H, em_len - self.hash_obj.digest_size - 1)
         masked_db = DB ^ db_mask
 
         # Set the leftmost 8emLen - emBits bits of the leftmost octet in maskedDB to zero.
-        masked_db &= (2**(len(masked_db) * 8) - 1) >> ((8 * emLen) - self.modulus_len)
+        masked_db &= (2**(len(masked_db) * 8) - 1) >> ((8 * em_len) - em_bits)
 
         return masked_db + H + b'\xbc'
     
@@ -84,11 +84,13 @@ class PSS(object):
             bool: Whether or not the plaintext is verified.
         """
         plaintext = Bytes.wrap(plaintext)
-        signature = Bytes.wrap(signature)
+        signature = Bytes.wrap(signature).zfill((self.modulus_len + 7) // 8)
         mHash     = self.hash_obj.hash(plaintext)
 
-        emLen = (self.modulus_len + 7) // 8
-        if emLen < (self.hash_obj.digest_size + self.salt_len + 2):
+        em_bits = self.modulus_len - 1
+        em_len  = (em_bits + 7) // 8
+
+        if em_len < (self.hash_obj.digest_size + self.salt_len + 2):
             return False
 
         if bytes([signature[-1]]) != b'\xbc':
@@ -97,29 +99,29 @@ class PSS(object):
 
         # Let maskedDB be the leftmost emLen - hLen - 1 octets of EM,
         #    and let H be the next hLen octets.
-        mask_len  = emLen - self.hash_obj.digest_size - 1
+        mask_len  = em_len - self.hash_obj.digest_size - 1
         masked_db = signature[:mask_len]
         H         = signature[mask_len:mask_len + self.hash_obj.digest_size]
 
         # If the leftmost 8emLen - emBits bits of the leftmost octet in
         #    maskedDB are not all equal to zero, output "inconsistent" and
         #    stop.
-        mod_bits = self.modulus_len - 1
-        if masked_db & (2**(len(masked_db) * 8) - 1) >> ((8 * emLen) - mod_bits) != masked_db:
+        left_mask = (2**(len(masked_db) * 8) - 1) >> ((8 * em_len) - em_bits)
+        if masked_db & left_mask != masked_db:
             return False
 
         db_mask = self.mgf(H, mask_len)
         DB      = masked_db ^ db_mask
-        DB     &= (2**(len(masked_db) * 8) - 1) >> ((8 * emLen) - mod_bits)
+        DB     &= left_mask
 
         # If the emLen - hLen - sLen - 2 leftmost octets of DB are not
         #    zero or if the octet at position emLen - hLen - sLen - 1 (the
         #    leftmost position is "position 1") does not have hexadecimal
         #    value 0x01, output "inconsistent" and stop.
-        if DB[:emLen - self.hash_obj.digest_size - self.salt_len - 1].int() != 1:
+        if DB[:em_len - self.hash_obj.digest_size - self.salt_len - 1].int() != 1:
             return False
 
-        salt    = DB[-self.salt_len:]
+        salt    = DB[-self.salt_len:] if self.salt_len else b''
         m_prime = b'\x00' * 8 + mHash + salt
         h_prime = self.hash_obj.hash(m_prime)
 

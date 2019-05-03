@@ -25,25 +25,8 @@ X   Document timing attack setup
 0.3.0
 ===============
 X   More encoders/decoders/cryptosystems
-    OK  JWK (https://tools.ietf.org/html/rfc7517#section-3) (https://github.com/latchset/jwcrypto/blob/master/jwcrypto/tests.py)
-        OK  RSA
-        OK  ECDSA
-        OK  OCT/AES-KW
-
-    X   JWT
-        OK  HS
-        OK  ES
-        OK  RS
-        X   PS
-
     X   PGP
 
-
-X  Test JWT
-   OK  HS
-   OK  ES
-   OK  RS
-   X   PS
 
 
 
@@ -68,6 +51,10 @@ X   Document these classes
     OK  JWT
     X   JWA
     X   PKCS1v15RSASigner
+
+
+X   So, JWT should really be JWS.
+X   Implement JWE
 
 
 

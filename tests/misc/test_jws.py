@@ -1,10 +1,11 @@
-from samson.encoding.jwt import JWT
-from samson.encoding.jwa import JWA
+from samson.protocols.jwt.jws import JWS
+from samson.protocols.jwt.jwa import JWASignatureAlg
 from samson.public_key.rsa import RSA
 from samson.public_key.ecdsa import ECDSA
 from samson.utilities.bytes import Bytes
-from fastecdsa.curve import P256, P384, P521
 from samson.hashes.sha2 import SHA256, SHA384, SHA512
+from fastecdsa.curve import P256, P384, P521
+import json
 import unittest
 
 RS1_KEY = RSA.import_key(b"""-----BEGIN PRIVATE KEY-----
@@ -116,11 +117,12 @@ bOsQ44F+Gb9beySSMIV3O9seMrQgZicBIKJ2uSx94w==
 ES3_KEY.hash_obj = SHA512()
 
 
-BODY = {
+BODY = json.dumps({
     "sub": "1234567890",
     "name": "John Doe",
     "iat": 1516239022
-}
+}).encode('utf-8')
+
 
 HS256_TESTS = [
     (b'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', b'your-256-bit-secret'),
@@ -176,16 +178,25 @@ ES512_TESTS = [
     (b'eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCIsImtpZCI6InhaRGZacHJ5NFA5dlpQWnlHMmZOQlJqLTdMejVvbVZkbTd0SG9DZ1NOZlkiLCJoZHIiOiJoaXlhIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.AbrYssu4xKthQ7cYfd_RI-UaunmoRDjRNeEBQ5VgBYB5TIdvt7uy6Q7_wKwQ-rbBxycC4OKTH2VfUKOBchSYbjIjAB4JXgCQZOlP-KJR8oaMRnBS4S38_4EyJ-3kgYlRgje8a9dAra3r3y4QPr7XT5rQNq4Vn9E-RbmLa0Ai9JObbOKd', ES3_KEY)
 ]
 
-# Tests generated from https://jwt.io/
-class JWTTestCase(unittest.TestCase):
+PS256_TESTS = [
+    (b'eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.OBhCNHh2JMlGtmTx1AwXLPhu_9kupskyXgnyk4g5xNaEnaESt6iSv6n5XyDzXa1iW2yp4iTMP0MhfiumCUqDLFM0j6aMz0N0dKs--mJPtCqq74iM_nqPG0ErM8_mj-8d1aabwIis7vf2NOL5eQcE_j18aqPTzz3TCkWQOCdd2peeCVp0HvyoWcTUY-Ti4Uw6pnS0wohWphDkq3a7iBTxyjQuAwHQjFV4Th0Jzq40-6C4W1kfZCoLmqLSZWhzD4Y1G3NLSVh_c7OkkHgegXqDYKE44IpCYAaSlRWkr9Lxu7x4LJiT_i87Z5vpP4JwLZoGrB5Z99rX_kRJHNuJCTI8mA', RS1_KEY),
+    (b'eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.jJ-lDbBNcZv57CLfijmsvFyhcESt0miV-Nx-78iCefefgUkysulR6IwqWy0fVCIUWTHAq3hU-wnTvBhk-84IxzokYWRI5CQgaeN0YJiwXHHYjk9uw4YxyRE-nQsePdVXqYPN1i3rHSEXVJdgmdI6lGyyaeJ1OfW2Zjrd4dmIF_c8P14zB9tdnd6LMqBUcSugoZ6bOssFU5N3dczfWVl7fOSvcoaY8JJjLAplvCkPyRE-eN6T_wlxpZq5h4kPup202lYOfew98f0jDKReBXzqh1hn2VCGfAkvaONhcpN4Q-c_Lx9AUssPXUXJ-5Nw5G1t1JKFWe7uuFqwgDtPWSoHpw', RS2_KEY),
+    (b'eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEyIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.FF4l5RVc--12gqFlBZzeVks_B74wMWF_mnh-UO85sOfAZwZ2Uq-55KlA57QYNLjD-I7pYx7jUvC_Ll0WObayG1fWXWT1mz90MuFLgkk6MXHUBYICDeOiuMCTPVpHmmk8KVb9F4x6U31beYXbQHXfsCKAageZ6nLUGMDosBSwFeM3sIgHEtEkAioclYiaIZjKcE9JQWaFTbl_uaprR-C1A_VoZxwAoEGJsHxdNtSqa0aA6TN3L1FQK6Agj6hPYvDnG9VCkH4c3w-BOGbfNsil3qJmaMiJJ0zxLhNqx6VC5Hbh6E690l40rtuB81Fq0d07AKm94FpsncV5lS1mMdjZew', RS3_KEY)
+]
+
+PS384_TESTS = [
+    (b'eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.foXJcGrODV8-s_EjYDMGPMwdW96YELPMqK2UpizMmxADu7qk1OJ2lYVbe9l571joDQfSDBhYzIbS4zaM_QjcwyNQe5yQmaZWpXY2X0CIH3dMotYmClhj-YCfO2gaZFZvFiVCDurXKVuJWhbist5sT_XKnwOuYIvnSv3d12Ybh5jkqH0opzwb2kdQ86lcQJD_6tW9i2n0XG8bGn0cDEGK_Ra6rsGvBYijue5Vdgqy7USLhWvAV9JPKXQQDRA9rWkqYVrRkO4Cb7YgLEm2KouLoQ4sWKjXOwg6B3Ec-yF9I6XRxdvLcLEtYALRsIfU1NFrQ1FdnmStmvtpZOUwCFXGsA', RS1_KEY),
+    (b'eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.VbUVUhZ8a_3fSHMxEReCBQ69Lyy7pVeuYUOYEbtVw08B7bBHKNW7xZEHbmtFRlW4KO11S8-I2NEY36W8MIPjITG5_Em1pjsca0sp8ZRirwAfrflM2qIzBGzV3F2i8Nysiium6EkRBDQMZW1QmFHiBVtOJpyPeQAf8DTbMjXMETer1-buXGRqQusgYCC1Q6XehNDLeh7NB1Ob-m4oGoucGYQ7GmdLnYQWmQeoMs4XJI4p2N7e8zM7t78XH2V6Y26s-9CjIYraxRqfaJgtyJEf0Jeb9NsEQ4AwKMWn-EyS6297x8Zuux_4bn1vnHccrNejhnAOf6oFybJBsE024oMYxw', RS2_KEY),
+    (b'eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCIsImtpZCI6IjEyIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.nXt2Tt_4u7lAA_BqTGj6S8fgbcV5tJ0D5q3evmXEUDzw78m2Fx-VnwBIn6-mW_YlqY1YCmpjQzvFXDFwwGfxs6ropyc2ga8r9AArkYbtAmaQ74yDzeqbekwYcJt-YFzXfyb9A3Nm8BtXntFC-r4CPWlvm_jeLtb0fs788A3EfTKO2pb3rkZr6X9kyYGidfB-5XWj1ZypeJDB-Bk8l5HODk_-ZD388M5DzxAUA3nG5q9gtom3l3Yd1Egdh1OHnqDYvekFYkLE_tREG9fGUPGHrQYcpW7TCE2V0sy92sfgNOMJb-5PbgobjcgpjDEw_ExOzwAYkeKLqjfcaFs4YKFqKQ', RS3_KEY)
+]
+
+# Tests generated from https://jws.io/
+class JWSTestCase(unittest.TestCase):
     def _run_tests(self, test_suite):
         for token, key in test_suite:
-            print(token, key)
-            jwt = JWT.parse(token)
-            print(jwt)
-            print(jwt.encode())
-            self.assertTrue(jwt.verify(key))
-    
+            jws = JWS.parse(token)
+            self.assertTrue(jws.verify(key))
+
 
     def test_hs256(self):
         self._run_tests(HS256_TESTS)
@@ -223,26 +234,40 @@ class JWTTestCase(unittest.TestCase):
         self._run_tests(ES512_TESTS)
 
 
+    def test_ps256(self):
+        self._run_tests(PS256_TESTS)
+
+
+    def test_ps384(self):
+        self._run_tests(PS384_TESTS)
+
+
     def test_gauntlet(self):
-        for jwa in [JWA.HS256, JWA.HS384, JWA.HS512]:
+        for jwa in [JWASignatureAlg.HS256, JWASignatureAlg.HS384, JWASignatureAlg.HS512]:
             for _ in range(50):
                 key = Bytes.random(16)
-                jwt = JWT.create(jwa, BODY, key)
+                jws = JWS.create(jwa, BODY, key)
 
-                self.assertTrue(jwt.verify(key))
+                self.assertTrue(jws.verify(key))
 
 
-        for jwa, curve, hash_obj in [(JWA.ES256, P256, SHA256()), (JWA.ES384, P384, SHA384()), (JWA.ES512, P521, SHA512())]:
+        for jwa, curve, hash_obj in [(JWASignatureAlg.ES256, P256, SHA256()), (JWASignatureAlg.ES384, P384, SHA384()), (JWASignatureAlg.ES512, P521, SHA512())]:
             for _ in range(10):
                 key = ECDSA(G=curve.G, hash_obj=hash_obj)
-                jwt = JWT.create(jwa, BODY, key)
+                jws = JWS.create(jwa, BODY, key)
 
-                self.assertTrue(jwt.verify(key))
+                self.assertTrue(jws.verify(key))
     
 
-        for jwa in [JWA.RS256, JWA.RS384, JWA.RS512, JWA.PS256, JWA.PS384, JWA.PS512]:
+        for jwa in [JWASignatureAlg.RS256, JWASignatureAlg.RS384, JWASignatureAlg.RS512, JWASignatureAlg.PS256, JWASignatureAlg.PS384, JWASignatureAlg.PS512]:
             for _ in range(10):
                 key = RSA(2048)
-                jwt = JWT.create(jwa, BODY, key)
+                jws = JWS.create(jwa, BODY, key)
 
-                self.assertTrue(jwt.verify(key))
+                correct = jws.verify(key)
+
+                if not correct:
+                    print(key)
+                    print(jws)
+
+                self.assertTrue(correct)
