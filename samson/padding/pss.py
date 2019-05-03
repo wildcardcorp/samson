@@ -69,7 +69,7 @@ class PSS(object):
         masked_db &= (2**(len(masked_db) * 8) - 1) >> ((8 * em_len) - em_bits)
 
         return masked_db + H + b'\xbc'
-    
+
 
     # https://tools.ietf.org/html/rfc8017#section-9.1.2
     def verify(self, plaintext: bytes, signature: bytes) -> bool:

@@ -66,9 +66,9 @@ class DaviesMeyerConstruction(object):
         its input, and, therefore, infinitely produces itself.
 
         Parameters:
-            block_cipher  (type): Block cipher type.
-            message       (bytes): Message you want to be fixed point.
-            block_size      (int): Block size of `block_cipher`.
+            block_cipher (type): Block cipher type.
+            message     (bytes): Message you want to be fixed point.
+            block_size    (int): Block size of `block_cipher`.
 
         Returns:
             DaviesMeyerConstruction: A DaviesMeyerConstruction with the initial state set to the fixed point.

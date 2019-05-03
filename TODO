@@ -28,8 +28,6 @@ X   More encoders/decoders/cryptosystems
     X   PGP
 
 
-
-
 X   OCB
     OK  OCB2
         OK  Auth tag forgery
@@ -53,7 +51,6 @@ X   Document these classes
     X   PKCS1v15RSASigner
 
 
-X   So, JWT should really be JWS.
 X   Implement JWE
 
 

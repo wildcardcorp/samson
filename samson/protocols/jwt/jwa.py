@@ -1,6 +1,5 @@
 from samson.macs.hmac import HMAC
 from samson.hashes.sha2 import SHA2, SHA256, SHA384, SHA512
-from samson.public_key.ecdsa import ECDSA
 from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
 from samson.padding.pss import PSS, MGF1
 from samson.utilities.bytes import Bytes
@@ -73,7 +72,7 @@ class JWA_ACBC_HS(object):
     def __init__(self, hash_obj: SHA2):
         self.hash_obj    = hash_obj
         self.native_size = self.hash_obj.digest_size // 2
-    
+
 
     def generate_encryption_params(self) -> Bytes:
         return Bytes.random(self.native_size * 2), Bytes.random(16)
@@ -91,7 +90,7 @@ class JWA_ACBC_HS(object):
         return ciphertext, hmac
 
 
-    def decrypt(self, key: object, ciphertext: bytes, iv: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
+    def decrypt(self, key: bytes, iv: bytes, ciphertext: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
         mac_key, enc_key = key.chunk(self.native_size)
 
         hmac = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.native_size]
@@ -109,7 +108,7 @@ class JWA_ACBC_HS(object):
 class JWA_AGCM(object):
     def __init__(self, size):
         self.native_size = size // 8
-    
+
 
     def generate_encryption_params(self) -> Bytes:
         return Bytes.random(self.native_size), Bytes.random(12)
@@ -124,7 +123,7 @@ class JWA_AGCM(object):
         return ct_and_tag[:-16], ct_and_tag[-16:]
 
 
-    def decrypt(self, key: object, ciphertext: bytes, iv: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
+    def decrypt(self, key: bytes, iv: bytes, ciphertext: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
         rij = Rijndael(key)
         gcm = GCM(rij.encrypt)
 

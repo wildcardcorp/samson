@@ -19,7 +19,7 @@ class JWS(object):
         self.header = header
         self.body   = body
         self.sig    = sig
-    
+
 
     def __repr__(self):
         return f"<JWS: header={self.header}, body={self.body}, sig={self.sig}>"
@@ -27,7 +27,7 @@ class JWS(object):
     def __str__(self):
         return self.__repr__()
 
-    
+
 
     def serialize(self) -> Bytes:
         """
@@ -73,7 +73,7 @@ class JWS(object):
 
         json_header = json.dumps(header).encode('utf-8')
         return JWS(json_header, body, JWA_ALG_MAP[alg].sign(key, url_b64_encode(json_header) + b'.' + url_b64_encode(body)))
-    
+
 
     def verify(self, key: object) -> bool:
         """

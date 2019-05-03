@@ -1,6 +1,6 @@
 from samson.encoding.general import url_b64_decode, url_b64_encode
 from samson.utilities.bytes import Bytes
-from samson.protocols.jwt.jwa import JWA_ALG_MAP, JWASignatureAlg, JWAContentEncryptionAlg, JWAKeyEncryptionAlg
+from samson.protocols.jwt.jwa import JWA_ALG_MAP, JWAContentEncryptionAlg, JWAKeyEncryptionAlg
 import json
 
 
@@ -60,12 +60,12 @@ class JWE(object):
     @staticmethod
     def create(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, body: bytes, key: object, **additional_headers) -> object:
         """
-        Convenience method to create (and sign) a JWE.
+        Convenience method to create (and encrypt) a JWE.
 
         Parameters:
             alg                     (JWA): JWA algorithm to use for signing and verification.
-            body                  (bytes): Body to be signed or verified.
-            key                  (object): Signing key. Object type depending on the JWASignatureAlg.
+            body                  (bytes): Body to be encrypted
+            key                  (object): Key-encrypting key. Object type depending on the JWAKeyEncryptionAlg.
             **additional_headers (kwargs): Additional key-value pairs to place in JWE header.
 
         Returns:
@@ -99,4 +99,4 @@ class JWE(object):
         enc    = JWAContentEncryptionAlg[header['enc'].replace('-', '_')]
 
         cek    = JWA_ALG_MAP[alg].decrypt(key, self.encrypted_cek)
-        return JWA_ALG_MAP[enc].decrypt(cek, self.encrypted_body, self.iv, url_b64_encode(self.header), self.auth_tag)
+        return JWA_ALG_MAP[enc].decrypt(cek, self.iv, self.encrypted_body, url_b64_encode(self.header), self.auth_tag)

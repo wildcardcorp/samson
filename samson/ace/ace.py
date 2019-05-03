@@ -168,7 +168,7 @@ class ACE(object):
     # Reveal a state to the attacker
     def reveal(self, state):
         self.revealed.add(state)
-    
+
 
     def taint(self, state):
         from samson.ace.consequence import Manipulation

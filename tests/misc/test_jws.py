@@ -257,7 +257,7 @@ class JWSTestCase(unittest.TestCase):
                 jws = JWS.create(jwa, BODY, key)
 
                 self.assertTrue(jws.verify(key))
-    
+
 
         for jwa in [JWASignatureAlg.RS256, JWASignatureAlg.RS384, JWASignatureAlg.RS512, JWASignatureAlg.PS256, JWASignatureAlg.PS384, JWASignatureAlg.PS512]:
             for _ in range(10):

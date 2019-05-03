@@ -40,7 +40,7 @@ class RSAPSSTestCase(unittest.TestCase):
             self.assertEqual(rsa.decrypt(sig), Bytes(S))
         else:
             self.assertTrue(pss.verify(Msg, sig))
-    
+
 
     def _run_sha1_1024(self, e, Msg, S, should_succeed):
         p = 0xf71840f8a6472ebdc7f54d9884e86428ebd368324d87298fa00d9ccfb3d9afc21e0e2a10b15eb4a08f80cca7268a36a762f4900866a6a07419f9543ac3101a8b
@@ -56,7 +56,7 @@ class RSAPSSTestCase(unittest.TestCase):
         q = 0xfcc85f04da172b8cc0974631d9d04cb6ebfc08cce8d1aed61d7bef9827847d2a6e17a340cc6dacdb2098f7b80436cb755610f9b8be8108f35b28e3e072bfe6c7
         hash_obj = SHA224()
         salt = 0x2393183e18581e6924cd38f24192d1acc145633a
-        
+
         self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
@@ -65,7 +65,7 @@ class RSAPSSTestCase(unittest.TestCase):
         q = 0xca15838b90298be9ffb5357308cbb183b0669bd3d9eaf9a43bff56c3408d142cb9dd53a0d6e58659f7e6ee1e86cff4ace0a9da911fa86f5421e2f368f1f7c96b
         hash_obj = SHA256()
         salt = 0x507372afffebc2d67cd714e38e367776e34b377a
-        
+
         self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
@@ -74,7 +74,7 @@ class RSAPSSTestCase(unittest.TestCase):
         q = 0xbb5a8363372ba9dd2b6d29c34f4da96bd50b8de51834f9cd79aa127ad74805c12feb858786d608870b9ee8b6d8afe0edd6212b8b75e6aef7b56dc45e2508d05f
         hash_obj = SHA384()
         salt = 0xfa785c07aac7933ad34b469f6a782de1fdf26b67
-        
+
         self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
@@ -83,7 +83,7 @@ class RSAPSSTestCase(unittest.TestCase):
         q = 0xdc815f8f3eb9f778ccb8cd18ba9cc1c0b39c71718c0ea3901ecd763c4e7334f26376cc09c376a23e3fcf6ca29503a59c4f11a53311f05d93e521697a4f70ed69
         hash_obj = SHA512()
         salt = 0xd44bee9eb335dc0fee17bb22e8dc9c35ce06c504
-        
+
         self._run_verification_test(p, q, e, hash_obj, 20, salt, Msg, S, should_succeed)
 
 
