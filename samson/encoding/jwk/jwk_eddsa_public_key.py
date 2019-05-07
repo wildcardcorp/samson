@@ -1,10 +1,18 @@
 from samson.utilities.bytes import Bytes
+from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.encoding.general import url_b64_decode, url_b64_encode
 import json
 
-class JWKRSAPublicKey(object):
+JWK_CURVE_NAME_LOOKUP = {
+    EdwardsCurve25519: 'Ed25519',
+    EdwardsCurve448: 'Ed448'
+}
+
+JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
+
+class JWKEdDSAPublicKey(object):
     """
-    JWK encoder for RSA public keys
+    JWK encoder for EdDSA public keys
     """
 
     DEFAULT_MARKER = None
@@ -27,76 +35,74 @@ class JWKRSAPublicKey(object):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'RSA' and not ('d' in jwk)
+            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448'] and not 'd' in jwk
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
 
+
     @staticmethod
-    def build_pub(rsa_key: object) -> dict:
+    def build_pub(eddsa_key: object) -> dict:
         """
         Formats the public parameters of the key as a `dict`.
 
         Parameters:
-            rsa_key (RSA): Key to format.
+            eddsa_key (EdDSA): Key to format.
         
         Returns:
             dict: JWK dict with public parameters.
         """
         jwk = {
-            'kty': 'RSA',
-            'n': url_b64_encode(Bytes(rsa_key.n)).decode(),
-            'e': url_b64_encode(Bytes(rsa_key.e)).decode(),
+            'kty': 'OKP',
+            'crv': JWK_CURVE_NAME_LOOKUP[eddsa_key.curve],
+            'x': url_b64_encode(eddsa_key.encode_point(eddsa_key.A)).decode()
         }
 
         return jwk
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs) -> str:
+    def encode(eddsa_key: object, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
         Parameters:
-            rsa_key (RSA): RSA key to encode.
+            eddsa_key (EdDSA): EdDSA key to encode.
         
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKRSAPublicKey.build_pub(rsa_key)
+        jwk = JWKEdDSAPublicKey.build_pub(eddsa_key)
         return json.dumps(jwk).encode('utf-8')
 
 
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> object:
         """
-        Decodes a JWK JSON string into an RSA object.
+        Decodes a JWK JSON string into EdDSA parameters.
 
         Parameters:
             buffer (bytes/str): JWK JSON string.
         
         Returns:
-            RSA: RSA object.
+            (Curve, int, int, int): EdDSA parameters formatted as (curve, x, y, d).
         """
-        from samson.public_key.rsa import RSA
+        from samson.public_key.eddsa import EdDSA
 
         if issubclass(type(buffer), (bytes, bytearray)):
             buffer = buffer.decode()
 
         jwk = json.loads(buffer)
-        n = Bytes(url_b64_decode(jwk['n'].encode('utf-8'))).int()
-        e = Bytes(url_b64_decode(jwk['e'].encode('utf-8'))).int()
 
-        if 'p' in jwk:
-            p = Bytes(url_b64_decode(jwk['p'].encode('utf-8'))).int()
-            q = Bytes(url_b64_decode(jwk['q'].encode('utf-8'))).int()
+        curve = JWK_INVERSE_CURVE_LOOKUP[jwk['crv']]
+        x = Bytes(url_b64_decode(jwk['x'].encode('utf-8')))
+
+        if 'd' in jwk:
+            d = Bytes(url_b64_decode(jwk['d'].encode('utf-8'))).int()
         else:
-            p = 2
-            q = 3
+            d = 0
 
 
-        rsa = RSA(8, p=p, q=q, e=e)
-        rsa.n = n
-        rsa.bits = rsa.n.bit_length()
-
-        return rsa
+        eddsa   = EdDSA(curve=curve, d=d)
+        eddsa.A = eddsa.decode_point(x)
+        return eddsa

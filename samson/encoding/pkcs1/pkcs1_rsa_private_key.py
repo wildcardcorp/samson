@@ -8,8 +8,11 @@ class PKCS1RSAPrivateKey(PEMEncodable):
 
     @staticmethod
     def check(buffer: bytes, **kwargs):
-        items = bytes_to_der_sequence(buffer)
-        return len(items) == 9 and int(items[0]) == 0
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return len(items) == 9 and int(items[0]) == 0
+        except Exception as _:
+            return False
 
 
     @staticmethod

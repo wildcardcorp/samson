@@ -11,7 +11,16 @@ class JWKOctKey(object):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
+        """
+        Checks if `buffer` can be parsed with this encoder.
+
+        Parameters:
+            buffer (bytes): Buffer to check.
+        
+        Returns:
+            bool: Whether or not `buffer` is the correct format.
+        """
         try:
             if issubclass(type(buffer), (bytes, bytearray)):
                 buffer = buffer.decode()

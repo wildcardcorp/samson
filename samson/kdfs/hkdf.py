@@ -38,13 +38,13 @@ class HKDF(object):
         Returns:
             Bytes: Derived key.
         """
-        prk = HMAC(key=salt, hash_obj=self.hash_obj).generate(key)
+        prk  = HMAC(key=salt, hash_obj=self.hash_obj).generate(key)
         hmac = HMAC(key=prk, hash_obj=self.hash_obj)
 
         new_key = b''
-        t = b''
+        t       = b''
         for i in range(math.ceil(self.desired_len / (self.hash_obj.digest_size // 8))):
-            t = hmac.generate(t + info + bytes([i + 1]))
+            t        = hmac.generate(t + info + bytes([i + 1]))
             new_key += t
 
         return new_key[:self.desired_len]

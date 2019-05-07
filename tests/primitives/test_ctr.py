@@ -1,9 +1,9 @@
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.ctr import CTR
+from math import ceil
 import codecs
 import unittest
-from math import ceil
 
 
 TEST_VECS = [

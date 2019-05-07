@@ -22,7 +22,7 @@ class NTRUTestCase(unittest.TestCase):
                 plaintext = Bytes.random(8)
                 ciphertext = ntru.encrypt(plaintext)
 
-                self.assertEqual(ntru.decrypt(ciphertext), plaintext)
+                self.assertEqual(ntru.decrypt(ciphertext).zfill(8), plaintext)
 
 
     # Tests generated manually using https://github.com/jkrauze/ntru
@@ -44,7 +44,6 @@ class NTRUTestCase(unittest.TestCase):
         self.assertEqual(ntru.decrypt(ciphertext), plaintext)
 
 
-
     def test_vec0(self):
         N, q, p  = PARAM_SETS[0]
         f_poly   = Poly(x**164 + x**162 + x**160 - x**159 - x**157 + x**154 - x**151 - x**150 + x**149 + x**147 - x**146 - x**145 + x**144 - x**142 - x**141 + x**140 + x**139 + x**137 + x**134 - x**133 + x**132 - x**131 - x**130 + x**129 - x**126 - x**125 + x**123 - x**121 - x**120 - x**119 - x**117 - x**116 - x**115 + x**114 + x**112 - x**110 + x**109 - x**108 - x**107 - x**106 + x**105 + x**104 + x**103 - x**102 + x**101 - x**100 - x**99 + x**97 - x**95 + x**94 - x**92 - x**90 - x**89 - x**88 + x**87 - x**86 - x**84 - x**81 + x**80 + x**78 + x**75 + x**74 + x**73 + x**71 - x**69 + x**66 - x**64 + x**63 + x**61 + x**59 + x**58 - x**57 + x**56 - x**54 - x**53 - x**52 + x**48 - x**46 - x**44 + x**43 - x**42 - x**41 + x**37 + x**36 - x**35 + x**34 + x**33 + x**32 + x**30 - x**29 - x**28 - x**26 + x**25 - x**24 + x**23 - x**22 - x**21 + x**20 - x**19 + x**18 + x**17 - x**16 + x**14 - x**12 + x**10 + x**9 + x**7 + x**6 + x**2, x, domain='ZZ')
@@ -56,7 +55,6 @@ class NTRUTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(b'\x0f\xdc!\x11&\x08 \xdf<\xf6\x0e\x13\xf6\xc8\xed\xd6\x19\xea\xc7\xc5)\xcc\xfd\xc5\xf0\xc7\x1c\xfb\xcb+>\x0c7\'\xe6\x1b\xe7\xff\xe43\xeb\xc9 \x1f\x17\xe07\xc4\x1e\x13\xd1\xd9\xc6(\t\xfd\xe8\xc3\xf2\xdc\n%\xdf<;"\xd7\xe5836\xf1\xf7\r\x0c\xf6\xea\xd0\xc1-/\x1e\xea>\xdb\x1b\xcc\'\xee\x1f4\xdf\xcf\xd0%<\xdf\x19\xc2\x12\xe8\x06\xf3\xee-\xfe.\xd1\xc8\x08\r\xef\xdd\xd9?\xcd\x1f\xcb\xeb5\xd55\xf4\xf4\x19\xdc\xef\xd9\xda\xc2,\xc6&&@\x13\x1c\x1653\xd3%\x1e\x11\xfd6\xe0\xca\xfc\xc2)"\t\x12\x16\xd5\x07\xc3\x14\xfe\x01\xde\xe93\xf4\x1d\'')
 
         self._run_correctness_test(N, q, p, f_poly, f_p_poly, h_poly, plaintext, rand_poly, expected_ciphertext)
-
 
 
     def test_vec1(self):
@@ -72,7 +70,6 @@ class NTRUTestCase(unittest.TestCase):
         self._run_correctness_test(N, q, p, f_poly, f_p_poly, h_poly, plaintext, rand_poly, expected_ciphertext)
 
 
-
     def test_vec2(self):
         N, q, p  = PARAM_SETS[2]
         f_poly   = Poly(-x**346 + x**345 + x**344 + x**339 - x**337 + x**336 + x**334 + x**333 + x**332 + x**331 - x**329 + x**328 + x**323 - x**321 + x**320 - x**319 + x**318 + x**316 - x**314 - x**313 + x**311 - x**310 + x**309 - x**307 - x**306 + x**304 + x**303 - x**302 - x**300 - x**299 - x**298 + x**297 - x**296 - x**294 - x**292 + x**291 - x**290 + x**289 - x**287 - x**286 + x**283 - x**282 + x**280 + x**279 - x**278 - x**276 - x**275 + x**272 - x**271 + x**270 - x**269 + x**268 + x**267 - x**266 + x**265 - x**264 - x**263 + x**261 + x**258 + x**257 - x**255 - x**254 + x**251 + x**250 - x**249 - x**248 + x**247 + x**246 + x**245 + x**244 + x**243 - x**241 + x**239 + x**237 + x**234 - x**233 + x**232 + x**230 - x**227 + x**225 + x**222 - x**221 - x**219 - x**217 + x**216 + x**215 + x**213 + x**212 - x**211 - x**210 + x**207 + x**204 - x**203 + x**202 + x**201 - x**200 + x**199 - x**196 - x**195 - x**194 + x**192 + x**190 + x**188 - x**186 + x**183 - x**182 - x**181 + x**180 + x**177 - x**175 - x**174 + x**171 - x**170 - x**169 - x**168 - x**167 + x**166 - x**165 - x**164 - x**163 + x**162 - x**161 + x**160 + x**159 - x**151 + x**150 + x**149 + x**148 + x**146 - x**142 + x**141 - x**139 + x**137 - x**136 - x**135 - x**134 + x**132 + x**131 + x**130 - x**129 - x**121 + x**120 - x**119 + x**117 - x**116 - x**114 - x**111 + x**110 - x**109 - x**104 - x**101 + x**100 - x**99 - x**98 - x**97 + x**96 + x**94 - x**93 - x**92 - x**90 - x**89 - x**87 - x**86 - x**85 + x**83 - x**82 - x**81 + x**80 - x**79 - x**77 - x**76 + x**75 + x**74 - x**73 + x**72 - x**71 - x**70 - x**69 - x**68 - x**67 + x**66 + x**65 - x**64 + x**61 + x**60 + x**59 - x**58 + x**57 - x**56 - x**54 - x**53 - x**52 + x**51 + x**50 - x**48 + x**47 + x**46 + x**45 - x**43 - x**41 + x**40 - x**39 + x**38 - x**36 + x**35 + x**34 - x**33 + x**32 + x**30 + x**29 + x**27 - x**26 + x**24 + x**21 + x**19 - x**18 + x**17 + x**16 - x**15 - x**14 - x**12 + x**11 + x**10 + x**8 - x**6 + x**5 + x**4 - x**3 + 1, x, domain='ZZ')
@@ -84,7 +81,6 @@ class NTRUTestCase(unittest.TestCase):
         expected_ciphertext = Bytes(b'\xc8\xfb\x1c\xfd/\x07\n\x0f4\xd2\x0c\xff\x1d\xda\xca %\xe3\x1e#\xd5\xff\x038\xf2\xfd\xf5-\xcb\xd2<,\xd8\x1e7\x16\xd3&\xe7\xc7\xcc\x10\x1a\xee\xe1\xed\xe9\xe0\x0b\xfe+\x19"\xdf\x18\x1e\xd2\x17\xf1\xc1\x1e0\xd1\xec\xf8\xec\x16\xfc$!\xcb\x14\xcf\xf6\xf85(\xc4#\xc2%\t"\xf0\xf3%\xee\x00\xed\x17\xc1\xfe\x0b\t#\xfb\xeb\x04\xed(\xcb\x17\xc2\xe8\xeb\xc1:\xed\xda\xec\x13 \x04\xeb\xce\xdd\x07\xc8\xf6"\xc3\x04\x0e\x10:\x0e\xed\x12\xf9<\x13\xe2\xea=\xcb\xd0\x11\xd6\xc9\x0e\xc7\x0b\x05\'\n\xd1\x11\xe4\xe9\xec\x008\x1a\xf1\xc5<\'#\xc7?6\x18\x058\x19\xfa\xfd6\xf1$;,\xfe. \xcc\x15\xf4\x10\xee\xd83;\x01\x17\xc4\xc3\x11\x18\xc11\xc5\xc2\xf3\xc4\x0e9\xcd\xd0\xd7\x01\xc4\xe9\xf6\xe1\xc9)\xd3\xd9\xc5\xc2\xe5:$.\x19\x17\x04\xe5\xf2!6\x1c\x13\xd5\xe68\xed\x1d\x13\xd19\x17\xd2-\x1b\xeb\xd4\xcb\xe2\xe2\xf1\xec\xe6\x07\xef\xe3\xd9\xcc\xde\xda\xc1\xea\xf7\xef95*<=:\x0f\x0e\x06!\xce\xf3\xd99\x0b\x12= \xc9\xfa\x02\xca\x10\xf9\x0e\xcb\t\xfe\x17\x1c\xc2\xcd\x12\xe7#@\xcd\xd7\x13\xc7@@\xe7$\xf1#\x03+\xd7\xc9\x00\x16\x007\x10\xcd5\xc9\xee\xf8\x08\xe4\xf1\x08$\xf20\xc9\xfd-\x0c\xf4\xca\x16>\xdf\xc6\x04\x12,\xfb\x11\x14\xf5%\x18\xd99.\xe1=\xea')
 
         self._run_correctness_test(N, q, p, f_poly, f_p_poly, h_poly, plaintext, rand_poly, expected_ciphertext)
-
 
 
     def test_vec3(self):

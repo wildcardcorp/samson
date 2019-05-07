@@ -22,7 +22,7 @@ class JWE(object):
         self.encrypted_cek  = encrypted_cek
         self.iv             = iv
         self.encrypted_body = encrypted_body
-        self.auth_tag      = auth_tag
+        self.auth_tag       = auth_tag
 
 
     def __repr__(self):
@@ -58,7 +58,7 @@ class JWE(object):
 
 
     @staticmethod
-    def create(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, body: bytes, key: object, **additional_headers) -> object:
+    def create(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, body: bytes, key: object, cek: bytes=None, iv: bytes=None, **additional_headers) -> object:
         """
         Convenience method to create (and encrypt) a JWE.
 
@@ -66,22 +66,45 @@ class JWE(object):
             alg                     (JWA): JWA algorithm to use for signing and verification.
             body                  (bytes): Body to be encrypted
             key                  (object): Key-encrypting key. Object type depending on the JWAKeyEncryptionAlg.
+            cek                   (bytes): Content-encrypting key for JWAContentEncryptionAlg. Random key will be generated if not specified.
+            iv                    (bytes): IV for JWAContentEncryptionAlg. Random key will be generated if not specified.
             **additional_headers (kwargs): Additional key-value pairs to place in JWE header.
 
         Returns:
             JWE: JWE representation.
         """
         header = {'typ': 'JWT', 'alg': alg.value, 'enc': enc.value}
+        header.update(JWA_ALG_MAP[alg].generate_encryption_params())
         header.update(additional_headers)
 
-        json_header = json.dumps(header).encode('utf-8')
+        generated_params = JWA_ALG_MAP[enc].generate_encryption_params()
 
-        cek, iv                  = JWA_ALG_MAP[enc].generate_encryption_params()
+        if alg == JWAKeyEncryptionAlg.dir:
+            cek = key
+        elif alg == JWAKeyEncryptionAlg.ECDH_ES:
+            cek = JWA_ALG_MAP[alg].derive(key, len(generated_params[0]), header)
+
+        cek, iv = [user_param or generated_param for user_param, generated_param in zip((cek, iv), generated_params)]
+
+        encrypted_cek            = JWA_ALG_MAP[alg].encrypt(key, cek, header)
+        json_header              = json.dumps(header).encode('utf-8')
         encrypted_body, auth_tag = JWA_ALG_MAP[enc].encrypt_and_auth(cek, iv, body, url_b64_encode(json_header))
-        encrypted_cek            = JWA_ALG_MAP[alg].encrypt(key, cek)
 
         return JWE(json_header, encrypted_cek, iv, encrypted_body, auth_tag)
 
+
+    @property
+    def alg(self):
+        header = json.loads(self.header.decode())
+        alg    = JWAKeyEncryptionAlg[header['alg'].replace('+', '_plus_').replace('-', '_')]
+        return alg
+
+
+    @property
+    def enc(self):
+        header = json.loads(self.header.decode())
+        enc    = JWAContentEncryptionAlg[header['enc'].replace('-', '_')]
+        return enc
 
 
     def decrypt(self, key: object) -> Bytes:
@@ -94,9 +117,5 @@ class JWE(object):
         Returns:
             Bytes: The plaintext payload.
         """
-        header = json.loads(self.header.decode())
-        alg    = JWAKeyEncryptionAlg[header['alg'].replace('-', '_')]
-        enc    = JWAContentEncryptionAlg[header['enc'].replace('-', '_')]
-
-        cek    = JWA_ALG_MAP[alg].decrypt(key, self.encrypted_cek)
-        return JWA_ALG_MAP[enc].decrypt(cek, self.iv, self.encrypted_body, url_b64_encode(self.header), self.auth_tag)
+        cek  = JWA_ALG_MAP[self.alg].decrypt(key, self.encrypted_cek, json.loads(self.header.decode()))
+        return JWA_ALG_MAP[self.enc].decrypt(cek, self.iv, self.encrypted_body, url_b64_encode(self.header), self.auth_tag)

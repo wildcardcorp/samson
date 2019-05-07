@@ -2,7 +2,7 @@ from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.x509.x509_dsa_subject_public_key import X509DSASubjectPublicKey
 from samson.encoding.x509.x509_dsa_params import X509DSAParams
 from samson.encoding.x509.x509_certificate import X509Certificate
-from pyasn1.type.univ import Integer, SequenceOf
+from pyasn1.type.univ import Integer, SequenceOf, BitString
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256
@@ -18,7 +18,7 @@ def sign(pki_obj, hash_obj, data):
     seq = SequenceOf()
     seq.extend([Integer(r), Integer(s)])
 
-    return Bytes(encoder.encode(seq))
+    return BitString(Bytes(encoder.encode(seq)).int())
 
 
 class X509DSACertificate(X509Certificate):

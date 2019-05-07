@@ -8,6 +8,8 @@ from samson.encoding.openssh.openssh_eddsa_public_key import OpenSSHEdDSAPublicK
 from samson.encoding.openssh.ssh2_eddsa_public_key import SSH2EdDSAPublicKey
 from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
 from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
+from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
+from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.encoding.general import PKIEncoding
 
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
@@ -20,14 +22,16 @@ class EdDSA(DSA):
 
     PRIV_ENCODINGS = {
         PKIEncoding.OpenSSH: OpenSSHEdDSAPrivateKey,
-        PKIEncoding.PKCS8: PKCS8EdDSAPrivateKey
+        PKIEncoding.PKCS8: PKCS8EdDSAPrivateKey,
+        PKIEncoding.JWK: JWKEdDSAPrivateKey
     }
 
 
     PUB_ENCODINGS = {
         PKIEncoding.OpenSSH: OpenSSHEdDSAPublicKey,
         PKIEncoding.SSH2: SSH2EdDSAPublicKey,
-        PKIEncoding.X509: X509EdDSAPublicKey
+        PKIEncoding.X509: X509EdDSAPublicKey,
+        PKIEncoding.JWK: JWKEdDSAPublicKey
     }
 
     def __init__(self, curve: TwistedEdwardsCurve=EdwardsCurve25519, hash_obj: object=SHA512(), d: int=None, A: TwistedEdwardsPoint=None, a: int=None, h: bytes=None, clamp: bool=True):
@@ -99,7 +103,7 @@ class EdDSA(DSA):
 
 
 
-    def sign(self, message: bytes) -> (int, int):
+    def sign(self, message: bytes) -> Bytes:
         """
         Signs a `message`.
 
@@ -108,7 +112,7 @@ class EdDSA(DSA):
             k         (int): (Optional) Ephemeral key.
         
         Returns:
-            (int, int): Signature formatted as (r, s).
+            Bytes: Signature formatted as r + s.
         """
         r = self.H.hash(self.curve.magic + self.h[self.curve.b//8:] + message)[::-1].int()
         R = self.B * (r % self.curve.l)
@@ -119,13 +123,13 @@ class EdDSA(DSA):
 
 
 
-    def verify(self, message: bytes, sig: (int, int)) -> bool:
+    def verify(self, message: bytes, sig: bytes) -> bool:
         """
         Verifies a `message` against a `sig`.
 
         Parameters:
-            message  (bytes): Message.
-            sig ((int, int)): Signature of `message`.
+            message (bytes): Message.
+            sig     (bytes): Signature of `message`.
         
         Returns:
             bool: Whether the signature is valid or not.

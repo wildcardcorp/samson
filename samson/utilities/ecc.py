@@ -246,6 +246,10 @@ class TwistedEdwardsCurve(object):
     def __eq__(self, other) -> bool:
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
+    def __hash__(self):
+        from samson.utilities.bytes import Bytes
+        return Bytes(self.oid.encode()).int()
+
 
 
     def clamp_to_curve(self, x: int, swap_bit_order: bool=True) -> int:

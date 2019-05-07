@@ -131,14 +131,14 @@ class X509Certificate(PEMEncodable):
             encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
 
             alg = cls.SIGNING_ALGS[signing_alg]
-            sig_value = alg(signing_key, encoded_tbs).int()
+            sig_value = alg(signing_key, encoded_tbs)
 
 
         # Build the Cert object
         cert = rfc2459.Certificate()
         cert['tbsCertificate']     = tbs_cert
         cert['signatureAlgorithm'] = signature_alg
-        cert['signatureValue']     = BitString(sig_value)
+        cert['signatureValue']     = sig_value
 
         encoded = encoder.encode(cert, asn1Spec=rfc2459.Certificate())
         return X509Certificate.transport_encode(encoded, **kwargs)

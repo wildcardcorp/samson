@@ -1,7 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_encode
 from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
-from fastecdsa.curve import Curve
 import json
 
 class JWKECPrivateKey(object):
@@ -14,7 +13,16 @@ class JWKECPrivateKey(object):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
+        """
+        Checks if `buffer` can be parsed with this encoder.
+
+        Parameters:
+            buffer (bytes): Buffer to check.
+        
+        Returns:
+            bool: Whether or not `buffer` is the correct format.
+        """
         try:
             if issubclass(type(buffer), (bytes, bytearray)):
                 buffer = buffer.decode()
@@ -31,8 +39,7 @@ class JWKECPrivateKey(object):
         Encodes the key as a JWK JSON string.
 
         Parameters:
-            ec_key    (ECDSA): ECDSA key to encode.
-            is_private (bool): Whether or not `ec_key` is a private key and to encode private parameters.
+            ec_key (ECDSA): ECDSA key to encode.
         
         Returns:
             str: JWK JSON string.
@@ -44,14 +51,14 @@ class JWKECPrivateKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> (Curve, int, int, int):
+    def decode(buffer: bytes, **kwargs) -> object:
         """
-        Decodes a JWK JSON string into ECDSA parameters.
+        Decodes a JWK JSON string into an ECDSA object.
 
         Parameters:
             buffer (bytes/str): JWK JSON string.
         
         Returns:
-            (Curve, int, int, int): ECDSA parameters formatted as (curve, x, y, d).
+            ECDSA: ECDSA object.
         """
         return JWKECPublicKey.decode(buffer)

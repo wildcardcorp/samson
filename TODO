@@ -38,7 +38,8 @@ X   OCB
 OK  X.509
     OK  Parsing
     OK  Generating certs
-    ?   Maybe ECDH
+    X   Certificate verification
+    X   ECDH
 
 
 X   Document new parsers
@@ -51,8 +52,16 @@ X   Document these classes
     X   PKCS1v15RSASigner
 
 
-X   Implement JWE
+X   Implement JWE/JWS
+    X   "JSON" serialization (non-compact)
+    X   All algorithms
 
+
+X   Swappable backends?
+X   Separate key parameters from use? Explains some gaps in functions vs data
+    X   ECKey, so it can be used in ECDHE and ECDSA
+
+X   Create functions/objects for invalid curve attacks https://auth0.com/blog/critical-vulnerability-in-json-web-encryption/
 
 
 X   Composable exploits and ACE

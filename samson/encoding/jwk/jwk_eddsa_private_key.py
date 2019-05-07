@@ -1,11 +1,10 @@
-from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_encode
-from samson.encoding.jwk.jwk_rsa_public_key import JWKRSAPublicKey
+from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 import json
 
-class JWKRSAPrivateKey(object):
+class JWKEdDSAPrivateKey(object):
     """
-    JWK encoder for RSA private keys
+    JWK encoder for EdDSA private keys
     """
 
     DEFAULT_MARKER = None
@@ -28,30 +27,24 @@ class JWKRSAPrivateKey(object):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'RSA' and 'd' in jwk
+            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448'] and 'd' in jwk
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs) -> str:
+    def encode(eddsa_key: object, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
         Parameters:
-            rsa_key (RSA): RSA key to encode.
+            eddsa_key (EdDSA): EdDSA key to encode.
         
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKRSAPublicKey.build_pub(rsa_key)
-
-        jwk['d']  = url_b64_encode(Bytes(rsa_key.alt_d)).decode()
-        jwk['p']  = url_b64_encode(Bytes(rsa_key.p)).decode()
-        jwk['q']  = url_b64_encode(Bytes(rsa_key.q)).decode()
-        jwk['dp'] = url_b64_encode(Bytes(rsa_key.dP)).decode()
-        jwk['dq'] = url_b64_encode(Bytes(rsa_key.dQ)).decode()
-        jwk['qi'] = url_b64_encode(Bytes(rsa_key.Qi)).decode()
+        jwk = JWKEdDSAPublicKey.build_pub(eddsa_key)
+        jwk['d'] = url_b64_encode(eddsa_key.d).decode()
 
         return json.dumps(jwk).encode('utf-8')
 
@@ -59,12 +52,12 @@ class JWKRSAPrivateKey(object):
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> object:
         """
-        Decodes a JWK JSON string into an RSA object.
+        Decodes a JWK JSON string into an EdDSA object.
 
         Parameters:
             buffer (bytes/str): JWK JSON string.
         
         Returns:
-            RSA: RSA object.
+            EdDSA: EdDSA object.
         """
-        return JWKRSAPublicKey.decode(buffer)
+        return JWKEdDSAPublicKey.decode(buffer)

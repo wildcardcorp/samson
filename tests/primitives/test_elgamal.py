@@ -43,4 +43,4 @@ class ElGamalTestCase(unittest.TestCase):
             elgamal = ElGamal()
             plaintext = Bytes.random(8)
             ciphertext = elgamal.encrypt(plaintext)
-            self.assertEqual(plaintext, elgamal.decrypt(ciphertext))
+            self.assertEqual(plaintext, elgamal.decrypt(ciphertext).zfill(8))

@@ -2,7 +2,9 @@ from samson.protocols.jwt.jws import JWS
 from samson.protocols.jwt.jwa import JWASignatureAlg
 from samson.public_key.rsa import RSA
 from samson.public_key.ecdsa import ECDSA
+from samson.public_key.eddsa import EdDSA
 from samson.utilities.bytes import Bytes
+from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA256, SHA384, SHA512
 from fastecdsa.curve import P256, P384, P521
 import json
@@ -97,6 +99,7 @@ o0NjMxFrNFUyiq3Y7+wa9k06Lg7KL06HN+kaax2/Fp3M
 
 ES1_KEY.hash_obj = SHA256()
 
+
 ES2_KEY = ECDSA.import_key(b"""-----BEGIN PRIVATE KEY-----
 MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDDxg/XHeJj3sTTsO8Jnczsxzc
 jLfwmbJlYMDg2SupAvsrck9iNktrlRlKDX3prWaquhZANiAASzOq9L0SGAfmP1NUxMKunV
@@ -105,6 +108,7 @@ jHB2itCKnpa4Zw6373AEe8xrxLrYvSlg1uPmw=
 -----END PRIVATE KEY-----""")
 
 ES2_KEY.hash_obj = SHA384()
+
 
 ES3_KEY = ECDSA.import_key(b"""-----BEGIN PRIVATE KEY-----
 MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIB94Phb9b/eV0mEt4QHOLB/U
@@ -190,6 +194,7 @@ PS384_TESTS = [
     (b'eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCIsImtpZCI6IjEyIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjJ9.nXt2Tt_4u7lAA_BqTGj6S8fgbcV5tJ0D5q3evmXEUDzw78m2Fx-VnwBIn6-mW_YlqY1YCmpjQzvFXDFwwGfxs6ropyc2ga8r9AArkYbtAmaQ74yDzeqbekwYcJt-YFzXfyb9A3Nm8BtXntFC-r4CPWlvm_jeLtb0fs788A3EfTKO2pb3rkZr6X9kyYGidfB-5XWj1ZypeJDB-Bk8l5HODk_-ZD388M5DzxAUA3nG5q9gtom3l3Yd1Egdh1OHnqDYvekFYkLE_tREG9fGUPGHrQYcpW7TCE2V0sy92sfgNOMJb-5PbgobjcgpjDEw_ExOzwAYkeKLqjfcaFs4YKFqKQ', RS3_KEY)
 ]
 
+
 # Tests generated from https://jws.io/
 class JWSTestCase(unittest.TestCase):
     def _run_tests(self, test_suite):
@@ -242,7 +247,15 @@ class JWSTestCase(unittest.TestCase):
         self._run_tests(PS384_TESTS)
 
 
-    def test_gauntlet(self):
+    # https://tools.ietf.org/html/rfc8037#appendix-A
+    def test_eddsa(self):
+        key   = json.dumps({"kty":"OKP","crv":"Ed25519","d":"nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A","x":"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"}).encode('utf-8')
+        token = b'eyJhbGciOiJFZERTQSJ9.RXhhbXBsZSBvZiBFZDI1NTE5IHNpZ25pbmc.hgyY0il_MGCjP0JzlnLWG1PPOt7-09PGcvMg3AIbQR6dWbhijcNR4ki4iylGjg5BhVsPt9g7sVvpAr_MuM0KAg'
+        jws   = JWS.parse(token)
+        self.assertTrue(jws.verify(EdDSA.import_key(key)))
+
+
+    # def test_gauntlet(self):
         for jwa in [JWASignatureAlg.HS256, JWASignatureAlg.HS384, JWASignatureAlg.HS512]:
             for _ in range(50):
                 key = Bytes.random(16)
@@ -271,3 +284,21 @@ class JWSTestCase(unittest.TestCase):
                     print(jws)
 
                 self.assertTrue(correct)
+
+
+        for i in range(10):
+            if i % 2:
+                curve = EdwardsCurve25519
+            else:
+                curve = EdwardsCurve448
+
+            key = EdDSA(curve=curve)
+            jws = JWS.create(JWASignatureAlg.EdDSA, BODY, key)
+
+            correct = jws.verify(key)
+
+            if not correct:
+                print(key)
+                print(jws)
+
+            self.assertTrue(correct)

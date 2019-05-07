@@ -4,9 +4,11 @@ from samson.encoding.x509.x509_certificate import X509Certificate
 from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
-from pyasn1.type.univ import Any
+from pyasn1.type.univ import Any, BitString
 
-base_sign_func = lambda pki_obj, hash_obj, data: PKCS1v15RSASigner(pki_obj, hash_obj).sign(data)
+def base_sign_func(pki_obj, hash_obj, data):
+    signed = PKCS1v15RSASigner(pki_obj, hash_obj).sign(data)
+    return BitString(bin(signed.int())[2:].zfill(pki_obj.n.bit_length()))
 
 class X509RSAParams(object):
 

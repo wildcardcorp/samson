@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
-from fastecdsa.curve import P192, P224, P256, P384, P521, Curve
+from fastecdsa.curve import P192, P224, P256, P384, P521
 from fastecdsa.point import Point
 import json
 
@@ -24,7 +24,16 @@ class JWKECPublicKey(object):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
+        """
+        Checks if `buffer` can be parsed with this encoder.
+
+        Parameters:
+            buffer (bytes): Buffer to check.
+        
+        Returns:
+            bool: Whether or not `buffer` is the correct format.
+        """
         try:
             if issubclass(type(buffer), (bytes, bytearray)):
                 buffer = buffer.decode()
@@ -37,7 +46,16 @@ class JWKECPublicKey(object):
 
 
     @staticmethod
-    def build_pub(ec_key):
+    def build_pub(ec_key: object) -> dict:
+        """
+        Formats the public parameters of the key as a `dict`.
+
+        Parameters:
+            ec_key (ECDSA): Key to format.
+        
+        Returns:
+            dict: JWK dict with public parameters.
+        """
         jwk = {
             'kty': 'EC',
             'crv': JWK_CURVE_NAME_LOOKUP[ec_key.G.curve],
@@ -54,8 +72,7 @@ class JWKECPublicKey(object):
         Encodes the key as a JWK JSON string.
 
         Parameters:
-            ec_key    (ECDSA): ECDSA key to encode.
-            is_private (bool): Whether or not `ec_key` is a private key and to encode private parameters.
+            ec_key (ECDSA): ECDSA key to encode.
         
         Returns:
             str: JWK JSON string.
@@ -65,15 +82,15 @@ class JWKECPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> (Curve, int, int, int):
+    def decode(buffer: bytes, **kwargs) -> object:
         """
-        Decodes a JWK JSON string into ECDSA parameters.
+        Decodes a JWK JSON string into an ECDSA object.
 
         Parameters:
             buffer (bytes/str): JWK JSON string.
         
         Returns:
-            (Curve, int, int, int): ECDSA parameters formatted as (curve, x, y, d).
+            ECDSA: ECDSA object.
         """
         from samson.public_key.ecdsa import ECDSA
 
@@ -81,6 +98,7 @@ class JWKECPublicKey(object):
             buffer = buffer.decode()
 
         jwk = json.loads(buffer)
+
         curve = JWK_INVERSE_CURVE_LOOKUP[jwk['crv']]
         x = Bytes(url_b64_decode(jwk['x'].encode('utf-8'))).int()
         y = Bytes(url_b64_decode(jwk['y'].encode('utf-8'))).int()

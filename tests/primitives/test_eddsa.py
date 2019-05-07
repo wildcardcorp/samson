@@ -79,6 +79,14 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 -----END PUBLIC KEY-----"""
 
 
+TEST_JWK = b"""{
+   "kty" : "OKP",
+   "crv" : "Ed25519",
+   "x"   : "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+   "d"   : "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A"
+}""".replace(b"\n", b"").replace(b" ", b"")
+
+
 # https://tools.ietf.org/html/rfc8032#section-7.1
 class EdDSATestCase(unittest.TestCase):
     def setUp(self):
@@ -152,6 +160,15 @@ class EdDSATestCase(unittest.TestCase):
         self.assertEqual(eddsa.export_public_key(encoding=PKIEncoding.X509).replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
 
 
+    def test_import_jwk(self):
+        eddsa = EdDSA.import_key(TEST_JWK)
+
+        self.assertEqual((eddsa.A.x, eddsa.A.y), (38815646466658113194383306759739515082307681141926459231621296960732224964046, 11903303657706407974989296177215005343713679411332034699907763981919547054807))
+        self.assertEqual(eddsa.d, b'\x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`')
+        self.assertEqual(eddsa.export_private_key(encoding=PKIEncoding.JWK).replace(b'\n', b'').replace(b' ', b''), TEST_JWK)
+
+
+
 
     def _run_test(self, message, d, curve, hash_alg, expected_public_key=None, expected_sig=None):
         eddsa = EdDSA(d=d, curve=curve, hash_obj=hash_alg)
@@ -202,7 +219,6 @@ class EdDSATestCase(unittest.TestCase):
         self._run_25519_test(message, d, expected_public_key, expected_sig)
 
 
-
     def test_vec1(self):
         message             = Bytes(0x72)
         d                   = 0x4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb
@@ -210,7 +226,6 @@ class EdDSATestCase(unittest.TestCase):
         expected_sig        = Bytes(0x92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00)
 
         self._run_25519_test(message, d, expected_public_key, expected_sig)
-
 
 
     def test_vec2(self):
@@ -222,7 +237,6 @@ class EdDSATestCase(unittest.TestCase):
         self._run_25519_test(message, d, expected_public_key, expected_sig)
 
 
-
     def test_vec3(self):
         message             = Bytes(0xddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f)
         d                   = 0x833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42
@@ -230,7 +244,6 @@ class EdDSATestCase(unittest.TestCase):
         expected_sig        = Bytes(0xdc2a4459e7369633a52b1bf277839a00201009a3efbf3ecb69bea2186c26b58909351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad9bef1177331a704)
 
         self._run_25519_test(message, d, expected_public_key, expected_sig)
-
 
 
     def test_vec4(self):
@@ -241,7 +254,6 @@ class EdDSATestCase(unittest.TestCase):
 
         self._run_448_test(message, d, expected_public_key, expected_sig)
 
-
     def test_vec5(self):
         message             = Bytes(0x03)
         d                   = 0xc4eab05d357007c632f3dbb48489924d552b08fe0c353a0d4a1f00acda2c463afbea67c5e8d2877c5e3bc397a659949ef8021e954e0a12274e
@@ -249,7 +261,6 @@ class EdDSATestCase(unittest.TestCase):
         expected_sig        = Bytes(0x26b8f91727bd62897af15e41eb43c377efb9c610d48f2335cb0bd0087810f4352541b143c4b981b7e18f62de8ccdf633fc1bf037ab7cd779805e0dbcc0aae1cbcee1afb2e027df36bc04dcecbf154336c19f0af7e0a6472905e799f1953d2a0ff3348ab21aa4adafd1d234441cf807c03a00)
 
         self._run_448_test(message, d, expected_public_key, expected_sig)
-
 
 
     def test_vec6(self):
@@ -261,7 +272,6 @@ class EdDSATestCase(unittest.TestCase):
         self._run_448_test(message, d, expected_public_key, expected_sig)
 
 
-
     def test_vec7(self):
         message             = Bytes(0x64a65f3cdedcdd66811e2915)
         d                   = 0x258cdd4ada32ed9c9ff54e63756ae582fb8fab2ac721f2c8e676a72768513d939f63dddb55609133f29adf86ec9929dccb52c1c5fd2ff7e21b
@@ -269,7 +279,6 @@ class EdDSATestCase(unittest.TestCase):
         expected_sig        = Bytes(0x7eeeab7c4e50fb799b418ee5e3197ff6bf15d43a14c34389b59dd1a7b1b85b4ae90438aca634bea45e3a2695f1270f07fdcdf7c62b8efeaf00b45c2c96ba457eb1a8bf075a3db28e5c24f6b923ed4ad747c3c9e03c7079efb87cb110d3a99861e72003cbae6d6b8b827e4e6c143064ff3c00).zfill(114)
 
         self._run_448_test(message, d, expected_public_key, expected_sig)
-
 
 
     def test_vec8(self):
@@ -281,7 +290,6 @@ class EdDSATestCase(unittest.TestCase):
         self._run_448_test(message, d, expected_public_key, expected_sig)
 
 
-
     def test_vec9(self):
         message             = Bytes(0xbd0f6a3747cd561bdddf4640a332461a4a30a12a434cd0bf40d766d9c6d458e5512204a30c17d1f50b5079631f64eb3112182da3005835461113718d1a5ef944)
         d                   = 0xd65df341ad13e008567688baedda8e9dcdc17dc024974ea5b4227b6530e339bff21f99e68ca6968f3cca6dfe0fb9f4fab4fa135d5542ea3f01
@@ -291,7 +299,6 @@ class EdDSATestCase(unittest.TestCase):
         self._run_448_test(message, d, expected_public_key, expected_sig)
 
 
-
     def test_vec10(self):
         message             = Bytes(0x15777532b0bdd0d1389f636c5f6b9ba734c90af572877e2d272dd078aa1e567cfa80e12928bb542330e8409f3174504107ecd5efac61ae7504dabe2a602ede89e5cca6257a7c77e27a702b3ae39fc769fc54f2395ae6a1178cab4738e543072fc1c177fe71e92e25bf03e4ecb72f47b64d0465aaea4c7fad372536c8ba516a6039c3c2a39f0e4d832be432dfa9a706a6e5c7e19f397964ca4258002f7c0541b590316dbc5622b6b2a6fe7a4abffd96105eca76ea7b98816af0748c10df048ce012d901015a51f189f3888145c03650aa23ce894c3bd889e030d565071c59f409a9981b51878fd6fc110624dcbcde0bf7a69ccce38fabdf86f3bef6044819de11)
         d                   = 0x2ec5fe3c17045abdb136a5e6a913e32ab75ae68b53d2fc149b77e504132d37569b7e766ba74a19bd6162343a21c8590aa9cebca9014c636df5
@@ -299,7 +306,6 @@ class EdDSATestCase(unittest.TestCase):
         expected_sig        = Bytes(0xc650ddbb0601c19ca11439e1640dd931f43c518ea5bea70d3dcde5f4191fe53f00cf966546b72bcc7d58be2b9badef28743954e3a44a23f880e8d4f1cfce2d7a61452d26da05896f0a50da66a239a8a188b6d825b3305ad77b73fbac0836ecc60987fd08527c1a8e80d5823e65cafe2a3d00).zfill(114)
 
         self._run_448_test(message, d, expected_public_key, expected_sig)
-
 
 
     def test_vec11(self):

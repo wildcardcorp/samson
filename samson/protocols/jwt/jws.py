@@ -72,7 +72,18 @@ class JWS(object):
         header.update(additional_headers)
 
         json_header = json.dumps(header).encode('utf-8')
-        return JWS(json_header, body, JWA_ALG_MAP[alg].sign(key, url_b64_encode(json_header) + b'.' + url_b64_encode(body)))
+        jws = JWS(json_header, body, b'')
+        jws.recompute_signature(key)
+        return jws
+
+
+    def recompute_signature(self, key: object):
+        self.sig = JWA_ALG_MAP[self.alg].sign(key, url_b64_encode(self.header) + b'.' + url_b64_encode(self.body))
+
+
+    @property
+    def alg(self):
+        return JWASignatureAlg[json.loads(self.header.decode())['alg']]
 
 
     def verify(self, key: object) -> bool:
@@ -85,6 +96,5 @@ class JWS(object):
         Returns:
             bool: Whether or not it passed verification.
         """
-        jwa  = JWASignatureAlg[json.loads(self.header.decode())['alg']]
         data = url_b64_encode(self.header) + b'.' + url_b64_encode(self.body)
-        return JWA_ALG_MAP[jwa].verify(key, data, self.sig)
+        return JWA_ALG_MAP[self.alg].verify(key, data, self.sig)

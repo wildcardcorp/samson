@@ -22,7 +22,7 @@ class PKCS1v15RSASigner(object):
         top_seq.setComponentByPosition(1, OctetString(self.hash_obj.hash(plaintext)))
 
         der_encoded = encoder.encode(top_seq)
-        return self.rsa.decrypt(self.padder.pad(der_encoded))
+        return self.rsa.decrypt(self.padder.pad(der_encoded)).zfill((self.rsa.n.bit_length() + 7) // 8)
 
 
     def verify(self, plaintext: bytes, signature: bytes, strict_type_match: bool=True) -> bool:

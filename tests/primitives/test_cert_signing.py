@@ -36,7 +36,7 @@ class CertSigningTestCase(unittest.TestCase):
             self._run_test(ca, leaf)
 
 
-    def test_edsa(self):
+    def test_ecdsa(self):
         for _ in range(10):
             ca   = ECDSA(P521.G)
             leaf = ECDSA(P521.G)

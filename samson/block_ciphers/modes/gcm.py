@@ -23,7 +23,7 @@ class GCM(object):
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
         """
         self.encryptor = encryptor
-        self.H = self.encryptor(b'\x00' * 16).int()
+        self.H   = self.encryptor(b'\x00' * 16).int()
         self.ctr = CTR(self.encryptor, b'\x00' * 8, 16)
 
         # Precompute the product table
@@ -31,7 +31,7 @@ class GCM(object):
         self.product_table[reverse_bits(1)] = self.H
 
         for i in range(2, 16, 2):
-            self.product_table[reverse_bits(i)] = self.gcm_shift(self.product_table[reverse_bits(i // 2)])
+            self.product_table[reverse_bits(i)]     = self.gcm_shift(self.product_table[reverse_bits(i // 2)])
             self.product_table[reverse_bits(i + 1)] = self.product_table[reverse_bits(i)] ^ self.H
 
 
@@ -46,12 +46,12 @@ class GCM(object):
     def clock_ctr(self, nonce: bytes) -> Bytes:
         nonce = Bytes.wrap(nonce)
         if len(nonce) == 12:
-            self.ctr.nonce = nonce
+            self.ctr.nonce   = nonce
             self.ctr.counter = 1
         else:
             payload = nonce + (b'\x00' * (16 - (len(nonce)) % 16)) + (b'\x00' * 8) + Bytes(len(nonce) * 8).zfill(8)
             J_0 = Bytes(self.update(0, payload)).zfill(16)
-            self.ctr.nonce = J_0[:15]
+            self.ctr.nonce   = J_0[:15]
             self.ctr.counter = J_0[-1]
 
         return self.ctr.encrypt(Bytes(b'').zfill(16))
@@ -71,10 +71,10 @@ class GCM(object):
             Bytes: Resulting ciphertext.
         """
         tag_mask = self.clock_ctr(nonce)
-        data = Bytes.wrap(data)
+        data     = Bytes.wrap(data)
 
         ciphertext = self.ctr.encrypt(plaintext)
-        tag = self.auth(ciphertext, data, tag_mask)
+        tag        = self.auth(ciphertext, data, tag_mask)
 
         return ciphertext + tag
 
@@ -92,11 +92,12 @@ class GCM(object):
         Returns:
             Bytes: Resulting plaintext.
         """
+        authed_ciphertext    = Bytes.wrap(authed_ciphertext)
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
 
         tag_mask = self.clock_ctr(nonce)
-        data = Bytes.wrap(data)
-        tag = self.auth(ciphertext, data, tag_mask)
+        data     = Bytes.wrap(data)
+        tag      = self.auth(ciphertext, data, tag_mask)
 
         # Do I care about constant time?
         if tag != orig_tag:
@@ -121,19 +122,19 @@ class GCM(object):
         for _ in range(0, 128, 4):
             high_bit = ret & 0xF
             ret >>= 4
-            ret ^= GCM_REDUCTION_TABLE[high_bit] << (128 - 16)
-            ret ^= self.product_table[y & 0xF]
-            y >>= 4
+            ret  ^= GCM_REDUCTION_TABLE[high_bit] << (128 - 16)
+            ret  ^= self.product_table[y & 0xF]
+            y   >>= 4
 
         return ret
 
 
     def auth(self, ciphertext: Bytes, ad: Bytes, tag_mask: Bytes) -> Bytes:
-        y = 0
-        y = self.update(y, ad)
-        y = self.update(y, ciphertext)
+        y  = 0
+        y  = self.update(y, ad)
+        y  = self.update(y, ciphertext)
         y ^= (len(ad) << (3 + 64)) | (len(ciphertext) << 3)
-        y = self.mul(y)
+        y  = self.mul(y)
         y ^= tag_mask.int()
         return Bytes(int.to_bytes(y, 16, 'big'))
 
@@ -142,7 +143,7 @@ class GCM(object):
     def update(self, y: int, data: Bytes) -> int:
         for chunk in data.chunk(16):
             y ^= chunk.int()
-            y = self.mul(y)
+            y  = self.mul(y)
 
         extra = len(data) % 16
 
@@ -150,5 +151,5 @@ class GCM(object):
             block = bytearray(16)
             block[:extra] = data[-extra:]
             y ^= int.from_bytes(block, 'big')
-            y = self.mul(y)
+            y  = self.mul(y)
         return y

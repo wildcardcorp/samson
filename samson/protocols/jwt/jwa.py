@@ -1,14 +1,25 @@
 from samson.macs.hmac import HMAC
+from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA2, SHA256, SHA384, SHA512
 from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
+from samson.protocols.ecdhe import ECDHE
+from samson.padding.oaep import OAEP
+from samson.padding.pkcs1v15_padding import PKCS1v15Padding
 from samson.padding.pss import PSS, MGF1
+from samson.public_key.ecdsa import ECDSA
+from samson.kdfs.concatkdf import ConcatKDF
 from samson.utilities.bytes import Bytes
+from samson.encoding.general import url_b64_encode, url_b64_decode, PKIEncoding
+from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
 from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.gcm import GCM
 from samson.block_ciphers.modes.kw import KW
 from fastecdsa.curve import P256, P384, P521, Curve
 from enum import Enum
+import hashlib
+import json
+
 
 class JWA_HS(object):
     def __init__(self, hash_obj: SHA2):
@@ -68,32 +79,44 @@ class JWA_PS(object):
 
 
 
+class JWA_EdDSA(object):
+    def sign(self, key: object, data: bytes) -> Bytes:
+        return key.sign(data)
+
+
+    def verify(self, key: object, data: bytes, sig: Bytes) -> bool:
+        sig.byteorder = 'little'
+        return key.verify(data, sig)
+
+
+
 class JWA_ACBC_HS(object):
     def __init__(self, hash_obj: SHA2):
-        self.hash_obj    = hash_obj
-        self.native_size = self.hash_obj.digest_size // 2
+        self.hash_obj   = hash_obj
+        self.key_size   = self.hash_obj.digest_size
+        self.chunk_size = self.key_size // 2
 
 
     def generate_encryption_params(self) -> Bytes:
-        return Bytes.random(self.native_size * 2), Bytes.random(16)
+        return Bytes.random(self.key_size), Bytes.random(16)
 
 
     def encrypt_and_auth(self, key: bytes, iv: bytes, plaintext: bytes, auth_data: bytes) -> (Bytes, Bytes):
-        mac_key, enc_key = key.chunk(self.native_size)
+        mac_key, enc_key = key.chunk(self.chunk_size)
 
         rij = Rijndael(enc_key)
         cbc = CBC(rij.encrypt, rij.decrypt, iv=iv, block_size=rij.block_size)
 
         ciphertext = cbc.encrypt(plaintext)
-        hmac       = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.native_size]
+        hmac       = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.chunk_size]
 
         return ciphertext, hmac
 
 
     def decrypt(self, key: bytes, iv: bytes, ciphertext: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
-        mac_key, enc_key = key.chunk(self.native_size)
+        mac_key, enc_key = key.chunk(self.chunk_size)
 
-        hmac = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.native_size]
+        hmac = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.chunk_size]
 
         # TODO: Constant time?
         assert hmac == auth_tag
@@ -107,11 +130,11 @@ class JWA_ACBC_HS(object):
 
 class JWA_AGCM(object):
     def __init__(self, size):
-        self.native_size = size // 8
+        self.key_size = size // 8
 
 
     def generate_encryption_params(self) -> Bytes:
-        return Bytes.random(self.native_size), Bytes.random(12)
+        return Bytes.random(self.key_size), Bytes.random(12)
 
 
     def encrypt_and_auth(self, key: bytes, iv: bytes, plaintext: bytes, auth_data: bytes) -> (Bytes, Bytes):
@@ -131,19 +154,175 @@ class JWA_AGCM(object):
 
 
 
-class JWA_AKW(object):
-    def encrypt(self, kek: bytes, cek: bytes) -> Bytes:
+class JWAKeyEncryptionImplementation(object):
+    def generate_encryption_params(self) -> dict:
+        return {}
+
+
+
+class JWA_AKW(JWAKeyEncryptionImplementation):
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        kw = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
+        kw  = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
 
         return kw.encrypt(cek)
 
 
-    def decrypt(self, kek: bytes, encrypted_cek: bytes) -> bool:
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        kw = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
+        kw  = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
 
         return kw.decrypt(encrypted_cek)
+
+
+
+class JWA_RSA1_5(JWAKeyEncryptionImplementation):
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
+        padding = PKCS1v15Padding(kek.n.bit_length())
+        return Bytes(kek.encrypt(padding.pad(cek)))
+
+
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
+        padding = PKCS1v15Padding(kek.n.bit_length())
+        return padding.unpad(kek.decrypt(encrypted_cek))
+
+
+
+class JWA_RSA_OAEP(JWAKeyEncryptionImplementation):
+    def __init__(self, hash_obj: object):
+        self.hash_obj = hash_obj
+        self.mgf      = lambda x, y: MGF1(x, y, self.hash_obj)
+
+
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
+        padding = OAEP(kek.n.bit_length(), mgf=self.mgf, hash_obj=self.hash_obj)
+        return Bytes(kek.encrypt(padding.pad(cek)))
+
+
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
+        padding = OAEP(kek.n.bit_length(), mgf=self.mgf, hash_obj=self.hash_obj)
+        return padding.unpad(kek.decrypt(encrypted_cek))
+
+
+
+class JWA_Dir(JWAKeyEncryptionImplementation):
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
+        return b''
+
+
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
+        return kek
+
+
+
+class JWA_AGCMKW(JWAKeyEncryptionImplementation):
+    def generate_encryption_params(self) -> dict:
+        return {'iv': url_b64_encode(Bytes.random(12)).decode()}
+
+
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
+        rij = Rijndael(kek)
+        gcm = GCM(rij.encrypt)
+
+        ct_and_tag    = gcm.encrypt(url_b64_decode(header['iv'].encode('utf-8')), cek, b'')
+        header['tag'] = url_b64_encode(ct_and_tag[-16:]).decode()
+
+        return ct_and_tag[:-16]
+
+
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
+        rij = Rijndael(kek)
+        gcm = GCM(rij.encrypt)
+
+        return gcm.decrypt(url_b64_decode(header['iv'].encode('utf-8')), encrypted_cek + url_b64_decode(header['tag'].encode('utf-8')), b'')
+
+
+
+class JWA_PBES2_HS_AKW(JWAKeyEncryptionImplementation):
+    def __init__(self, hash_obj: object):
+        self.hash_obj           = hash_obj
+        self.hash_fn            = lambda key, msg: HMAC(key, self.hash_obj).generate(msg)
+        self._underlying_cipher = JWA_AKW()
+
+
+    def generate_encryption_params(self) -> dict:
+        return {'p2s': url_b64_encode(Bytes.random(8)).decode(), 'p2c': 1000}
+
+
+    def derive_key(self, kek: bytes, header: dict) -> Bytes:
+        derived_salt = header['alg'].encode() + b'\x00' + url_b64_decode(header['p2s'].encode('utf-8'))
+        # kdf          = PBKDF2(self.hash_fn, self.hash_obj.digest_size // 2, header['p2c'])
+        # derived_key  = kdf.derive(kek, derived_salt)
+        derived_key = hashlib.pbkdf2_hmac(self.hash_obj().name, kek, derived_salt, header['p2c'], self.hash_obj().digest_size // 2)
+
+        return derived_key
+
+
+    def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
+        return self._underlying_cipher.encrypt(self.derive_key(kek, header), cek, header)
+
+
+    def decrypt(self, kek: bytes, encrypted_cek: bytes, header: dict) -> Bytes:
+        return self._underlying_cipher.decrypt(self.derive_key(kek, header), encrypted_cek, header)
+
+
+
+class JWA_ECDH_ES(JWAKeyEncryptionImplementation):
+    def __init__(self):
+        self.key_alg = 'enc'
+
+    def derive(self, kek: tuple, derived_length: int, header: dict) -> Bytes:
+        if type(kek) is tuple:
+            priv_key, peer_pub = kek
+        elif 'epk' in header:
+            priv_key = kek
+            peer_pub = JWKECPublicKey.decode(json.dumps(header['epk'])).Q
+        else:
+            priv_key = ECDHE(G=kek.curve.G)
+            peer_pub = kek
+
+        if not 'epk' in header:
+            header['epk'] = json.loads(ECDSA(G=priv_key.G, d=priv_key.key).export_public_key(encoding=PKIEncoding.JWK).decode())
+
+
+        agreement_key = Bytes(priv_key.derive_key(peer_pub).x).zfill((priv_key.G.curve.p.bit_length() + 7) // 8)
+
+        apu = url_b64_decode(header['apu'].encode('utf-8')) if 'apu' in header else b''
+        apv = url_b64_decode(header['apv'].encode('utf-8')) if 'apv' in header else b''
+
+        alg_id     = header[self.key_alg].encode('utf-8')
+        other_info = b''.join([Bytes(len(item)).zfill(4) + Bytes.wrap(item) for item in [alg_id, apu, apv]]) + Bytes(derived_length * 8).zfill(4)
+
+        kdf = ConcatKDF(SHA256(), derived_length)
+        return kdf.derive(agreement_key, other_info)
+
+
+    def encrypt(self, kek: tuple, cek: bytes, header: dict) -> Bytes:
+        return b''
+
+
+    def decrypt(self, kek: object, encrypted_cek: bytes, header: dict) -> Bytes:
+        derived_length = JWA_ALG_MAP[JWAContentEncryptionAlg[header['enc'].replace('-', '_')]].key_size
+        return self.derive(kek, derived_length, header)
+
+
+
+class JWA_ECDH_ES_AKW(JWA_ECDH_ES):
+    def __init__(self, key_size):
+        self.key_size = key_size // 8
+        self.key_alg = 'alg'
+
+
+    def encrypt(self, kek: tuple, cek: bytes, header: dict) -> Bytes:
+        derived_key = self.derive(kek, self.key_size, header)
+        kw          = JWA_AKW()
+        return kw.encrypt(derived_key, cek, header)
+
+
+    def decrypt(self, kek: object, encrypted_cek: bytes, header: dict) -> Bytes:
+        derived_key = self.derive(kek, self.key_size, header)
+        kw          = JWA_AKW()
+        return kw.decrypt(derived_key, encrypted_cek, header)
 
 
 
@@ -161,9 +340,11 @@ class JWASignatureAlg(Enum):
     PS256 = 'PS256'
     PS384 = 'PS384'
     PS512 = 'PS512'
+    EdDSA = 'EdDSA'
 
 
 # https://tools.ietf.org/html/rfc7518#section-4.1
+# https://tools.ietf.org/html/rfc8037
 class JWAKeyEncryptionAlg(Enum):
     RSA1_5       = 'RSA1_5'
     RSA_OAEP     = 'RSA-OAEP'
@@ -171,6 +352,17 @@ class JWAKeyEncryptionAlg(Enum):
     A128KW       = 'A128KW'
     A192KW       = 'A192KW'
     A256KW       = 'A256KW'
+    dir          = 'dir'
+    A128GCMKW    = 'A128GCMKW'
+    A192GCMKW    = 'A192GCMKW'
+    A256GCMKW    = 'A256GCMKW'
+    ECDH_ES      = 'ECDH-ES'
+    ECDH_ES_plus_A128KW = 'ECDH-ES+A128KW'
+    ECDH_ES_plus_A192KW = 'ECDH-ES+A192KW'
+    ECDH_ES_plus_A256KW = 'ECDH-ES+A256KW'
+    PBES2_HS256_plus_A128KW    = 'PBES2-HS256+A128KW'
+    PBES2_HS384_plus_A192KW    = 'PBES2-HS384+A192KW'
+    PBES2_HS512_plus_A256KW    = 'PBES2-HS512+A256KW'
 
 
 # https://tools.ietf.org/html/rfc7518#section-5.1
@@ -184,6 +376,7 @@ class JWAContentEncryptionAlg(Enum):
 
 
 JWA_ALG_MAP = {
+    # JWS Signature Algorithms
     JWASignatureAlg.HS256: JWA_HS(SHA256()),
     JWASignatureAlg.HS384: JWA_HS(SHA384()),
     JWASignatureAlg.HS512: JWA_HS(SHA512()),
@@ -196,7 +389,9 @@ JWA_ALG_MAP = {
     JWASignatureAlg.PS256: JWA_PS(SHA256()),
     JWASignatureAlg.PS384: JWA_PS(SHA384()),
     JWASignatureAlg.PS512: JWA_PS(SHA512()),
+    JWASignatureAlg.EdDSA: JWA_EdDSA(),
 
+    # JWE Content-Encryption Algorithms
     JWAContentEncryptionAlg.A128CBC_HS256: JWA_ACBC_HS(SHA256()),
     JWAContentEncryptionAlg.A192CBC_HS384: JWA_ACBC_HS(SHA384()),
     JWAContentEncryptionAlg.A256CBC_HS512: JWA_ACBC_HS(SHA512()),
@@ -204,7 +399,22 @@ JWA_ALG_MAP = {
     JWAContentEncryptionAlg.A192GCM: JWA_AGCM(192),
     JWAContentEncryptionAlg.A256GCM: JWA_AGCM(256),
 
+    # JWE Key-Encryption Algorithms
+    JWAKeyEncryptionAlg.RSA1_5: JWA_RSA1_5(),
+    JWAKeyEncryptionAlg.RSA_OAEP: JWA_RSA_OAEP(SHA1()),
+    JWAKeyEncryptionAlg.RSA_OAEP_256: JWA_RSA_OAEP(SHA256()),
     JWAKeyEncryptionAlg.A128KW: JWA_AKW(),
     JWAKeyEncryptionAlg.A192KW: JWA_AKW(),
-    JWAKeyEncryptionAlg.A256KW: JWA_AKW()
+    JWAKeyEncryptionAlg.A256KW: JWA_AKW(),
+    JWAKeyEncryptionAlg.dir: JWA_Dir(),
+    JWAKeyEncryptionAlg.ECDH_ES: JWA_ECDH_ES(),
+    JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW: JWA_ECDH_ES_AKW(128),
+    JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW: JWA_ECDH_ES_AKW(192),
+    JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW: JWA_ECDH_ES_AKW(256),
+    JWAKeyEncryptionAlg.A128GCMKW: JWA_AGCMKW(),
+    JWAKeyEncryptionAlg.A192GCMKW: JWA_AGCMKW(),
+    JWAKeyEncryptionAlg.A256GCMKW: JWA_AGCMKW(),
+    JWAKeyEncryptionAlg.PBES2_HS256_plus_A128KW: JWA_PBES2_HS_AKW(hashlib.sha256),
+    JWAKeyEncryptionAlg.PBES2_HS384_plus_A192KW: JWA_PBES2_HS_AKW(hashlib.sha384),
+    JWAKeyEncryptionAlg.PBES2_HS512_plus_A256KW: JWA_PBES2_HS_AKW(hashlib.sha512)
 }
