@@ -1,14 +1,40 @@
 from samson.protocols.jwt.jwa import JWAContentEncryptionAlg, JWAKeyEncryptionAlg, JWA_ALG_MAP
 from samson.protocols.jwt.jwe import JWE
 from samson.protocols.ecdhe import ECDHE
+from samson.protocols.dh25519 import DH25519
 from samson.public_key.rsa import RSA
 
 # Have to import because PKIAutoParser can't see the subclass otherwise
-from samson.public_key.ecdsa import ECDSA
 from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey
 from samson.utilities.bytes import Bytes
+from samson.utilities.ecc import Curve25519, Curve448
+from fastecdsa.curve import P256, P384, P521
 import unittest
+
+
+# Key generation functions
+
+def sym_byte_key(length):
+    key = Bytes.random(length)
+    return key, key
+
+
+def gen_rsa_key():
+    rsa = RSA(2048)
+    return rsa, rsa
+
+
+def gen_ec_key(curve):
+    dh_a = ECDHE(G=curve.G)
+    dh_b = ECDHE(G=curve.G)
+    return (dh_a, dh_b.pub), dh_b
+
+
+def gen_ed_key(curve):
+    dh_a = DH25519(curve=curve)
+    dh_b = DH25519(curve=curve)
+    return (dh_a, dh_b.pub), dh_b
 
 
 class JWETestCase(unittest.TestCase):
@@ -66,45 +92,94 @@ class JWETestCase(unittest.TestCase):
         alice_jwk = PKIAutoParser.import_key(alice_key)
         bob_jwk   = PKIAutoParser.import_key(bob_key)
 
-        alice_dh = ECDHE(key=alice_jwk.d, G=alice_jwk.G)
-        bob_dh   = ECDHE(key=bob_jwk.d, G=bob_jwk.G)
+        alice_dh = ECDHE(d=alice_jwk.d, G=alice_jwk.G)
+        bob_dh   = ECDHE(d=bob_jwk.d, G=bob_jwk.G)
 
         header = {'apu': 'QWxpY2U', 'apv': 'Qm9i', 'enc': 'A128GCM'}
 
         alg = JWA_ECDH_ES()
-        self.assertEqual(alg.derive((alice_dh, bob_dh.get_challenge()), 16, header), url_b64_decode(b'VqqN6vgjbSBcIijNcacQGg'))
+        self.assertEqual(alg.derive((alice_dh, bob_dh.pub), 16, header), url_b64_decode(b'VqqN6vgjbSBcIijNcacQGg'))
+
+
+    def _run_ecdh_es_edwards_exchange(self, d, curve, bob_jwk, expected_Z):
+        from samson.protocols.dh25519 import DH25519
+        from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
+
+        alice_dh = DH25519(d=d.int(), curve=curve)
+        bob_dh   = JWKEdDSAPublicKey.decode(bob_jwk)
+        Z        = alice_dh.derive_key(bob_dh.pub)
+
+        self.assertEqual(Z, expected_Z)
+
+
+    # From https://tools.ietf.org/html/rfc8037#appendix-A.6
+    def test_ecdh_es_x25519_derive(self):
+        d          = Bytes(0x77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a)[::-1]
+        curve      = Curve25519()
+        bob_jwk    = b'{"kty":"OKP","crv":"X25519","kid":"Bob","x":"3p7bfXt9wbTTW2HC7OQ1Nz-DQ8hbeGdNrfx-FG-IK08"}'
+        expected_Z = Bytes(0x4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742, 'little')
+        self._run_ecdh_es_edwards_exchange(d, curve, bob_jwk, expected_Z)
+
+
+    # From https://tools.ietf.org/html/rfc8037#appendix-A.7
+    def test_ecdh_es_x448_derive(self):
+        d          = Bytes(0x9a8f4925d1519f5775cf46b04b5800d4ee9ee8bae8bc5565d498c28dd9c9baf574a9419744897391006382a6f127ab1d9ac2d8c0a598726b)[::-1]
+        curve      = Curve448()
+        bob_jwk    = b'{"kty":"OKP","crv":"X448","kid":"Dave","x":"PreoKbDNIPW8_AtZm2_sz22kYnEHvbDU80W0MCfYuXL8PjT7QjKhPKcG3LV67D2uB73BxnvzNgk"}'
+        expected_Z = Bytes(0x07fff4181ac6cc95ec1c16a94a0f74d12da232ce40a77552281d282bb60c0b56fd2464c335543936521c24403085d59a449a5037514a879d, 'little')
+        self._run_ecdh_es_edwards_exchange(d, curve, bob_jwk, expected_Z)
+
 
 
     ALG_SPEC = [
-        (JWAKeyEncryptionAlg.A128KW, lambda: Bytes.random(16)),
-        (JWAKeyEncryptionAlg.A192KW, lambda: Bytes.random(24)),
-        (JWAKeyEncryptionAlg.A256KW, lambda: Bytes.random(32)),
-        (JWAKeyEncryptionAlg.RSA1_5, lambda: RSA(2048)),
-        (JWAKeyEncryptionAlg.RSA_OAEP, lambda: RSA(2048)),
-        (JWAKeyEncryptionAlg.RSA_OAEP_256, lambda: RSA(2048)),
-        (JWAKeyEncryptionAlg.dir, lambda: Bytes.random(64)),
-        (JWAKeyEncryptionAlg.PBES2_HS256_plus_A128KW, lambda: Bytes.random(16)),
-        (JWAKeyEncryptionAlg.PBES2_HS384_plus_A192KW, lambda: Bytes.random(16)),
-        (JWAKeyEncryptionAlg.PBES2_HS512_plus_A256KW, lambda: Bytes.random(16))
+        (JWAKeyEncryptionAlg.A128KW, lambda: sym_byte_key(16)),
+        (JWAKeyEncryptionAlg.A192KW, lambda: sym_byte_key(24)),
+        (JWAKeyEncryptionAlg.A256KW, lambda: sym_byte_key(32)),
+        (JWAKeyEncryptionAlg.A128GCMKW, lambda: sym_byte_key(16)),
+        (JWAKeyEncryptionAlg.A192GCMKW, lambda: sym_byte_key(24)),
+        (JWAKeyEncryptionAlg.A256GCMKW, lambda: sym_byte_key(32)),
+        (JWAKeyEncryptionAlg.RSA1_5, lambda: gen_rsa_key()),
+        (JWAKeyEncryptionAlg.RSA_OAEP, lambda: gen_rsa_key()),
+        (JWAKeyEncryptionAlg.RSA_OAEP_256, lambda: gen_rsa_key()),
+        (JWAKeyEncryptionAlg.dir, lambda: sym_byte_key(64)),
+        (JWAKeyEncryptionAlg.PBES2_HS256_plus_A128KW, lambda: sym_byte_key(16)),
+        (JWAKeyEncryptionAlg.PBES2_HS384_plus_A192KW, lambda: sym_byte_key(16)),
+        (JWAKeyEncryptionAlg.PBES2_HS512_plus_A256KW, lambda: sym_byte_key(16)),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ec_key(P256)),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ec_key(P384)),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ec_key(P521)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ec_key(P256)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ec_key(P384)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ec_key(P521)),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve25519())),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve448())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve25519())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve448())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve25519())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve448())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve25519())),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve448()))
     ]
 
     def test_gauntlet(self):
         for alg, key_gen in self.ALG_SPEC:
             for enc in [JWAContentEncryptionAlg.A128CBC_HS256, JWAContentEncryptionAlg.A192CBC_HS384, JWAContentEncryptionAlg.A256CBC_HS512, JWAContentEncryptionAlg.A128GCM, JWAContentEncryptionAlg.A192GCM, JWAContentEncryptionAlg.A256GCM]:
                 for i in range(5):
-                    key       = key_gen()
+                    enc_key, dec_key = key_gen()
 
                     if alg == JWAKeyEncryptionAlg.dir:
-                        key = key[:len(JWA_ALG_MAP[enc].generate_encryption_params()[0])]
+                        enc_key = enc_key[:len(JWA_ALG_MAP[enc].generate_encryption_params()[0])]
+                        dec_key = enc_key
 
                     plaintext = Bytes.random(128)
-                    jwe       = JWE.create(alg=alg, enc=enc, body=plaintext, key=key)
+                    jwe       = JWE.create(alg=alg, enc=enc, body=plaintext, key=enc_key)
 
                     try:
-                        ciphertext = jwe.decrypt(key)
+                        ciphertext = jwe.decrypt(dec_key)
                     except Exception as e:
                         print('Iteration', i)
-                        print('Key', key)
+                        print('Enc Key', enc_key)
+                        print('Dec Key', dec_key)
                         print('Plaintext', plaintext)
                         print('JWE', jwe)
                         raise e
@@ -149,13 +224,13 @@ class JWETestCase(unittest.TestCase):
 
     def _run_ecdh_decrypt_test(self, jwk, token, expected_payload):
         ecdsa = PKIAutoParser.import_key(jwk)
-        key   = ECDHE(key=ecdsa.d, G=ecdsa.G)
+        key   = ECDHE(d=ecdsa.d, G=ecdsa.G)
         jwe   = JWE.parse(token)
 
         self.assertEqual(jwe.decrypt(key), expected_payload)
         self.assertEqual(jwe.serialize(), token)
 
-        new_jwe = JWE.create(jwe.alg, jwe.enc, expected_payload, key.get_challenge())
+        new_jwe = JWE.create(jwe.alg, jwe.enc, expected_payload, key.pub)
         self.assertEqual(new_jwe.decrypt(key), expected_payload)
 
 

@@ -103,6 +103,11 @@ class EdDSA(DSA):
 
 
 
+    def get_pub_bytes(self) -> Bytes:
+        return self.encode_point(self.A)
+
+
+
     def sign(self, message: bytes) -> Bytes:
         """
         Signs a `message`.

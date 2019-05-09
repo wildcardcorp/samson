@@ -1,43 +1,45 @@
 from fastecdsa.curve import P256
 from fastecdsa.point import Point
-from samson.utilities.general import rand_bytes
+from samson.utilities.bytes import Bytes
 
 class ECDHE(object):
     """
     Elliptical curve Diffie-Hellman (Ephemeral).
     """
 
-    def __init__(self, key: int=None, G: Point=P256.G):
+    def __init__(self, d: int=None, pub: Point=None, G: Point=P256.G):
         """
         Parameters:
-            key (int): Secret key.
+            d   (int): Secret key.
             G (Point): Generator point on an elliptical curve.
         """
-        self.key = key or int.from_bytes(rand_bytes(), 'big')
-        self.G = G
+        self.d = d or Bytes.random(16).int()
+        self.G   = G
+        self.pub = pub
+
+        if not pub:
+            self.recompute_pub()
 
 
 
     def __repr__(self):
-        return f"<ECDHE: key={self.key}, G={self.G}>"
+        return f"<ECDHE: d={self.d}, pub={self.pub}, G={self.G}>"
 
     def __str__(self):
         return self.__repr__()
 
 
-
-    def get_challenge(self) -> Point:
+    def recompute_pub(self) -> Point:
         """
         Gets the challenge.
 
         Returns:
             Point: The challenge.
         """
-        return self.key * self.G
+        self.pub = self.d * self.G
 
 
-
-    def derive_key(self, challenge: Point) -> Point:
+    def derive_point(self, challenge: Point) -> Point:
         """
         Derives the shared key from the other instance's challenge.
 
@@ -47,4 +49,17 @@ class ECDHE(object):
         Returns:
             Point: Shared key.
         """
-        return self.key * challenge
+        return self.d * challenge
+
+
+    def derive_key(self, challenge: Point) -> Bytes:
+        """
+        Derives the shared key from the other instance's challenge.
+
+        Parameters:
+            challenge (Point): The other instance's challenge.
+        
+        Returns:
+            Bytes: Shared key.
+        """
+        return Bytes((self.d * challenge).x).zfill((self.G.curve.p.bit_length() + 7) // 8)

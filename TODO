@@ -47,14 +47,17 @@ X   Document new parsers
 
 
 X   Document these classes
-    OK  JWT
+    OK  JWS
     X   JWA
     X   PKCS1v15RSASigner
 
 
 X   Implement JWE/JWS
     X   "JSON" serialization (non-compact)
-    X   All algorithms
+        OK  JWS
+        X   JWE
+        
+    OK  All algorithms
 
 
 X   Swappable backends?
@@ -62,6 +65,12 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
 X   Create functions/objects for invalid curve attacks https://auth0.com/blog/critical-vulnerability-in-json-web-encryption/
+
+
+X  Miyaguchi–Preneel construction
+X  WHIRLPOOL hash
+X  Rabbit stream cipher
+X  HC-256 stream cipher
 
 
 X   Composable exploits and ACE

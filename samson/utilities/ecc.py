@@ -1,5 +1,6 @@
 from sympy import GF
 from samson.utilities.math import mod_inv
+from samson.utilities.bytes import Bytes
 from fastecdsa.curve import P192, P224, P256, P384, P521
 import math
 
@@ -66,6 +67,8 @@ class MontgomeryCurve(object):
     def __eq__(self, other) -> bool:
         return self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
+    def __hash__(self):
+        return Bytes(self.oid.encode()).int()
 
 
 
@@ -247,7 +250,6 @@ class TwistedEdwardsCurve(object):
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
     def __hash__(self):
-        from samson.utilities.bytes import Bytes
         return Bytes(self.oid.encode()).int()
 
 

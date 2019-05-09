@@ -2,7 +2,7 @@ from samson.encoding.pem import PEMEncodable
 from samson.encoding.asn1 import parse_rdn
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
-from pyasn1.type.univ import ObjectIdentifier, BitString, Any, OctetString
+from pyasn1.type.univ import ObjectIdentifier, Any, OctetString
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime

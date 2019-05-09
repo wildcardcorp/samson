@@ -2,7 +2,7 @@ from samson.public_key.dsa import DSA
 from samson.public_key.ecdsa import ECDSA
 from samson.public_key.rsa import RSA
 from samson.encoding.general import PKIEncoding
-from fastecdsa.curve import P521
+from fastecdsa.curve import P224, P256, P384, P521
 from subprocess import check_call, DEVNULL
 from tempfile import NamedTemporaryFile
 import os
@@ -29,16 +29,18 @@ class CertSigningTestCase(unittest.TestCase):
 
 
     def test_rsa(self):
-        for _ in range(10):
-            ca   = RSA(2048)
-            leaf = RSA(2048)
+        for bits in [512, 1024, 2048, 4096]:
+            for _ in range(5):
+                ca   = RSA(bits)
+                leaf = RSA(bits)
 
-            self._run_test(ca, leaf)
+                self._run_test(ca, leaf)
 
 
     def test_ecdsa(self):
-        for _ in range(10):
-            ca   = ECDSA(P521.G)
-            leaf = ECDSA(P521.G)
+        for curve in [P224, P256, P384, P521]:
+            for _ in range(5):
+                ca   = ECDSA(curve.G)
+                leaf = ECDSA(curve.G)
 
-            self._run_test(ca, leaf)
+                self._run_test(ca, leaf)

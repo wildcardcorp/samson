@@ -68,7 +68,8 @@ class PKCS1v15Padding(object):
         first_zero = header_removed.index(b'\x00')
         data_idx = first_zero
 
-        while not header_removed[data_idx + 1]:
-            data_idx += 1
+        if self.block_type == 0:
+            while not header_removed[data_idx + 1]:
+                data_idx += 1
 
         return header_removed[data_idx + 1:]

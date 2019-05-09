@@ -41,8 +41,11 @@ class DSA(EncodablePKI):
             q           (int): (Optional) Prime modulus.
             g           (int): (Optional) Generator.
             x           (int): (Optional) Private key.
+            L           (int): (Optional) Bit length of `p`.
+            N           (int): (Optional) Bit length of `q`.
         """
         # Parameter generation
+        # https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
         if not q:
             q = find_prime(N)
 

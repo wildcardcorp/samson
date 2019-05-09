@@ -27,7 +27,7 @@ class JWKEdDSAPrivateKey(object):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448'] and 'd' in jwk
+            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448', 'X25519', 'X448'] and 'd' in jwk
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 

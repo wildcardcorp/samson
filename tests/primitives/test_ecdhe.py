@@ -9,25 +9,26 @@ class ECDHETestCase(unittest.TestCase):
             ecdhe1 = ECDHE()
             ecdhe2 = ECDHE()
 
-            ch1 = ecdhe1.get_challenge()
-            ch2 = ecdhe2.get_challenge()
+            ch1 = ecdhe1.pub
+            ch2 = ecdhe2.pub
 
             self.assertEqual(ecdhe1.derive_key(ch2), ecdhe2.derive_key(ch1))
+            self.assertEqual(ecdhe1.derive_point(ch2), ecdhe2.derive_point(ch1))
 
 
     # Tests manually generated from http://www-cs-students.stanford.edu/~tjw/jsbn/ecdh.html
     def _run_correctness_test(self, key_a, key_b, G, expected_chall_a, expected_chall_b, expected_secret):
-        echde_a = ECDHE(key=key_a, G=G)
-        echde_b = ECDHE(key=key_b, G=G)
+        echde_a = ECDHE(d=key_a, G=G)
+        echde_b = ECDHE(d=key_b, G=G)
 
-        chall_a = echde_a.get_challenge()
-        chall_b = echde_b.get_challenge()
+        chall_a = echde_a.pub
+        chall_b = echde_b.pub
 
         self.assertEqual(chall_a, expected_chall_a)
         self.assertEqual(chall_b, expected_chall_b)
 
-        S_a = echde_a.derive_key(chall_b)
-        S_b = echde_b.derive_key(chall_a)
+        S_a = echde_a.derive_point(chall_b)
+        S_b = echde_b.derive_point(chall_a)
 
         self.assertEqual(S_a, expected_secret)
         self.assertEqual(S_b, expected_secret)

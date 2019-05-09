@@ -1,11 +1,13 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
+from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448, Curve25519, Curve448
 from samson.encoding.general import url_b64_decode, url_b64_encode
 import json
 
 JWK_CURVE_NAME_LOOKUP = {
     EdwardsCurve25519: 'Ed25519',
-    EdwardsCurve448: 'Ed448'
+    EdwardsCurve448: 'Ed448',
+    Curve25519(): 'X25519',
+    Curve448(): 'X448'
 }
 
 JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
@@ -35,7 +37,7 @@ class JWKEdDSAPublicKey(object):
                 buffer = buffer.decode()
 
             jwk = json.loads(buffer)
-            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448'] and not 'd' in jwk
+            return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448', 'X25519', 'X448'] and not 'd' in jwk
         except (json.JSONDecodeError, UnicodeDecodeError) as _:
             return False
 
@@ -55,7 +57,7 @@ class JWKEdDSAPublicKey(object):
         jwk = {
             'kty': 'OKP',
             'crv': JWK_CURVE_NAME_LOOKUP[eddsa_key.curve],
-            'x': url_b64_encode(eddsa_key.encode_point(eddsa_key.A)).decode()
+            'x': url_b64_encode(eddsa_key.get_pub_bytes()).decode()
         }
 
         return jwk
@@ -85,17 +87,18 @@ class JWKEdDSAPublicKey(object):
             buffer (bytes/str): JWK JSON string.
         
         Returns:
-            (Curve, int, int, int): EdDSA parameters formatted as (curve, x, y, d).
+            EdDSA: EdDSA object.
         """
         from samson.public_key.eddsa import EdDSA
+        from samson.protocols.dh25519 import DH25519
 
         if issubclass(type(buffer), (bytes, bytearray)):
             buffer = buffer.decode()
 
-        jwk = json.loads(buffer)
+        jwk   = json.loads(buffer)
 
         curve = JWK_INVERSE_CURVE_LOOKUP[jwk['crv']]
-        x = Bytes(url_b64_decode(jwk['x'].encode('utf-8')))
+        x     = Bytes(url_b64_decode(jwk['x'].encode('utf-8')), 'little')
 
         if 'd' in jwk:
             d = Bytes(url_b64_decode(jwk['d'].encode('utf-8'))).int()
@@ -103,6 +106,10 @@ class JWKEdDSAPublicKey(object):
             d = 0
 
 
-        eddsa   = EdDSA(curve=curve, d=d)
-        eddsa.A = eddsa.decode_point(x)
+        if jwk['crv'] in ['Ed25519', 'Ed448']:
+            eddsa   = EdDSA(curve=curve, d=d)
+            eddsa.A = eddsa.decode_point(x)
+        else:
+            eddsa   = DH25519(curve=curve, d=d, pub=x.int())
+
         return eddsa

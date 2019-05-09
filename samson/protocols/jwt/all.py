@@ -1,5 +1,5 @@
 from .jwa import JWASignatureAlg, JWAKeyEncryptionAlg, JWAContentEncryptionAlg
-from .jwe import JWE
-from .jws import JWS
+from .jwe import JWE, JWESet
+from .jws import JWS, JWSSet
 
-__all__ = ["JWASignatureAlg", "JWAKeyEncryptionAlg", "JWAContentEncryptionAlg", "JWE", "JWS"]
+__all__ = ["JWASignatureAlg", "JWAKeyEncryptionAlg", "JWAContentEncryptionAlg", "JWE", "JWESet", "JWS", "JWSSet"]

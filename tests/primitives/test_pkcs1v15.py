@@ -4,12 +4,18 @@ import unittest
 
 class PKCS1v15TestCase(unittest.TestCase):
     def test_gauntlet(self):
-        for i in range(2):
-            pkcs = PKCS1v15Padding(256, block_type=i)
+        for i in range(3):
+            pkcs = PKCS1v15Padding(1024, block_type=i)
 
-            for _ in range(1000):
+            for _ in range(10000):
                 plaintext = Bytes.random(8)
-                self.assertEqual(pkcs.unpad(pkcs.pad(plaintext)).zfill(len(plaintext)), plaintext)
+
+                unpadded = pkcs.unpad(pkcs.pad(plaintext))
+
+                if i == 0:
+                    unpadded = unpadded.zfill(len(plaintext))
+
+                self.assertEqual(unpadded, plaintext)
 
 
 
