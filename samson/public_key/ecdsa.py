@@ -11,7 +11,7 @@ from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
-from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate
+from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
 from samson.encoding.general import PKIEncoding
 
 from fastecdsa.point import Point
@@ -38,6 +38,9 @@ class ECDSA(DSA):
         PKIEncoding.X509_CERT: X509ECDSACertificate,
         PKIEncoding.X509: X509ECDSAPublicKey
     }
+
+    X509_SIGNING_ALGORITHMS = X509ECDSASigningAlgorithms
+    X509_SIGNING_DEFAULT    = X509ECDSASigningAlgorithms.ecdsa_with_SHA256
 
 
     def __init__(self, G: Point, hash_obj: object=SHA256(), d: int=None):

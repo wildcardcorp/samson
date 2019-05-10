@@ -7,7 +7,7 @@ from samson.encoding.openssh.ssh2_dsa_public_key import SSH2DSAPublicKey
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
-from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate
+from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DSASigningAlgorithms
 from samson.core.encodable_pki import EncodablePKI
 from samson.encoding.general import PKIEncoding
 from sympy import isprime
@@ -32,6 +32,9 @@ class DSA(EncodablePKI):
         PKIEncoding.X509_CERT: X509DSACertificate,
         PKIEncoding.X509: X509DSAPublicKey
     }
+
+    X509_SIGNING_ALGORITHMS = X509DSASigningAlgorithms
+    X509_SIGNING_DEFAULT    = X509DSASigningAlgorithms.id_dsa_with_sha256
 
     def __init__(self, hash_obj: object=SHA256(), p: int=None, q: int=None, g: int=None, x: int=None, L: int=2048, N: int=256):
         """

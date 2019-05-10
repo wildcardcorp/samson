@@ -79,6 +79,5 @@ class MD5(MerkleDamgardConstruction):
     def __repr__(self):
         return f"<MD5: initial_state={self.initial_state}, block_size={self.block_size}>"
 
-
     def __str__(self):
         return self.__repr__()

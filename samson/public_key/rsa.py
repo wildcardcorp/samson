@@ -9,7 +9,7 @@ from samson.encoding.jwk.jwk_rsa_private_key import JWKRSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
-from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate
+from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.general import PKIEncoding
 
@@ -42,6 +42,9 @@ class RSA(EncryptionAlg, EncodablePKI):
         PKIEncoding.X509: X509RSAPublicKey,
         PKIEncoding.PKCS1: PKCS1RSAPublicKey
     }
+
+    X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
+    X509_SIGNING_DEFAULT    = X509RSASigningAlgorithms.sha256WithRSAEncryption
 
     def __init__(self, bits: int, p: int=None, q: int=None, e: int=65537):
         """

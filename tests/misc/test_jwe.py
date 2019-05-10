@@ -1,8 +1,9 @@
 from samson.protocols.jwt.jwa import JWAContentEncryptionAlg, JWAKeyEncryptionAlg, JWA_ALG_MAP
-from samson.protocols.jwt.jwe import JWE
+from samson.protocols.jwt.jwe import JWE, JWESet
 from samson.protocols.ecdhe import ECDHE
 from samson.protocols.dh25519 import DH25519
 from samson.public_key.rsa import RSA
+from samson.public_key.ecdsa import ECDSA
 
 # Have to import because PKIAutoParser can't see the subclass otherwise
 from samson.encoding.general import PKIAutoParser
@@ -161,9 +162,11 @@ class JWETestCase(unittest.TestCase):
         (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve448()))
     ]
 
+    CEK_ALGS = [JWAContentEncryptionAlg.A128CBC_HS256, JWAContentEncryptionAlg.A192CBC_HS384, JWAContentEncryptionAlg.A256CBC_HS512, JWAContentEncryptionAlg.A128GCM, JWAContentEncryptionAlg.A192GCM, JWAContentEncryptionAlg.A256GCM]
+
     def test_gauntlet(self):
         for alg, key_gen in self.ALG_SPEC:
-            for enc in [JWAContentEncryptionAlg.A128CBC_HS256, JWAContentEncryptionAlg.A192CBC_HS384, JWAContentEncryptionAlg.A256CBC_HS512, JWAContentEncryptionAlg.A128GCM, JWAContentEncryptionAlg.A192GCM, JWAContentEncryptionAlg.A256GCM]:
+            for enc in self.CEK_ALGS:
                 for i in range(5):
                     enc_key, dec_key = key_gen()
 
@@ -185,6 +188,145 @@ class JWETestCase(unittest.TestCase):
                         raise e
 
                     self.assertEqual(ciphertext, plaintext)
+
+
+
+    def test_recipient_gauntlet(self):
+        for cek_alg in self.CEK_ALGS:
+            for _ in range(10):
+                payload = Bytes.random(Bytes.random(1).int())
+                jweset  = JWESet.create(cek_alg, payload, aad=Bytes.random(Bytes.random(1).int()))
+                jweset.i_know_what_im_doing = True
+
+                key_a = RSA(2048)
+                key_b = jweset.cek
+                key_c = ECDSA(P256.G)
+                key_d = ECDSA(P256.G)
+                key_e = b"Eve'sTerriblePassword2019"
+                key_f = Bytes.random(32)
+
+
+                jweset.add_recipient(alg=JWAKeyEncryptionAlg.RSA_OAEP, kid='Alice', key=key_a)
+                jweset.add_recipient(alg=JWAKeyEncryptionAlg.dir, kid='Bob', key=key_b)
+                jweset.add_recipient(alg=JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, kid='Dave', key=(key_d, key_c))
+                jweset.add_recipient(alg=JWAKeyEncryptionAlg.PBES2_HS256_plus_A128KW, kid='Eve', key=key_e)
+                jweset.add_recipient(alg=JWAKeyEncryptionAlg.A256GCMKW, kid='Fred', key=key_f)
+
+                all_equal = True
+                all_equal &= jweset.decrypt(key_a, 'Alice') == payload
+                all_equal &= jweset.decrypt(key_b, 'Bob') == payload
+                all_equal &= jweset.decrypt(key_c, 'Dave') == payload
+                all_equal &= jweset.decrypt(key_e, 'Eve') == payload
+                all_equal &= jweset.decrypt(key_f, 'Fred') == payload
+
+                token = jweset.serialize()
+                new_set = JWESet.parse(token)
+
+                all_equal &= new_set.decrypt(key_a, 'Alice') == payload
+                all_equal &= new_set.decrypt(key_b, 'Bob') == payload
+                all_equal &= new_set.decrypt(key_c, 'Dave') == payload
+                all_equal &= new_set.decrypt(key_e, 'Eve') == payload
+                all_equal &= new_set.decrypt(key_f, 'Fred') == payload
+
+                self.assertTrue(all_equal)
+
+
+
+    # https://tools.ietf.org/html/rfc7516#appendix-A.4.7
+    def test_json_equivalence(self):
+        full_parse = JWESet.parse(b"""
+     {
+      "protected":
+       "eyJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+      "unprotected":
+       {"jku":"https://server.example.com/keys.jwks"},
+      "recipients":[
+       {"header":
+         {"alg":"RSA1_5","kid":"2011-04-29"},
+        "encrypted_key":
+         "UGhIOguC7IuEvf_NPVaXsGMoLOmwvc1GyqlIKOK1nN94nHPoltGRhWhw7Zx0-
+          kFm1NJn8LE9XShH59_i8J0PH5ZZyNfGy2xGdULU7sHNF6Gp2vPLgNZ__deLKx
+          GHZ7PcHALUzoOegEI-8E66jX2E4zyJKx-YxzZIItRzC5hlRirb6Y5Cl_p-ko3
+          YvkkysZIFNPccxRU7qve1WYPxqbb2Yw8kZqa2rMWI5ng8OtvzlV7elprCbuPh
+          cCdZ6XDP0_F8rkXds2vE4X-ncOIM8hAYHHi29NX0mcKiRaD0-D-ljQTP-cFPg
+          wCp6X-nZZd9OHBv-B3oWh2TbqmScqXMR4gp_A"},
+       {"header":
+         {"alg":"A128KW","kid":"7"},
+        "encrypted_key":
+         "6KB707dM9YTIgHtLvtgWQ8mKwboJW3of9locizkDTHzBC2IlrT1oOQ"}],
+      "iv":
+       "AxY8DCtDaGlsbGljb3RoZQ",
+      "ciphertext":
+       "KDlTtXchhZTGufMYmOYGS4HffxPSUrfmqCHXaI9wOGY",
+      "tag":
+       "Mz-VPPyU4RlcuYv1IwIvzw"
+     }""".replace(b"\n", b"").replace(b' ', b''))
+
+        flattened_parse = JWESet.parse(b"""     {
+      "protected":
+       "eyJlbmMiOiJBMTI4Q0JDLUhTMjU2In0",
+      "unprotected":
+       {"jku":"https://server.example.com/keys.jwks"},
+      "header":
+       {"alg":"A128KW","kid":"7"},
+      "encrypted_key":
+       "6KB707dM9YTIgHtLvtgWQ8mKwboJW3of9locizkDTHzBC2IlrT1oOQ",
+      "iv":
+       "AxY8DCtDaGlsbGljb3RoZQ",
+      "ciphertext":
+       "KDlTtXchhZTGufMYmOYGS4HffxPSUrfmqCHXaI9wOGY",
+      "tag":
+       "Mz-VPPyU4RlcuYv1IwIvzw"
+     }""".replace(b"\n", b"").replace(b' ', b''))
+
+        relevant_full = (full_parse.protected_header, full_parse.unprotected_header, full_parse.iv, full_parse.ciphertext, full_parse.tag, full_parse.recipients[1].encrypted_key, full_parse.recipients[1].alg)
+        relevant_flat = (flattened_parse.protected_header, flattened_parse.unprotected_header, flattened_parse.iv, flattened_parse.ciphertext, flattened_parse.tag, flattened_parse.recipients[0].encrypted_key, flattened_parse.recipients[0].alg)
+        self.assertEqual(relevant_full, relevant_flat)
+
+
+    # Generated using jwcrypto
+    
+    # from jwcrypto import jwk, jwe
+    # from jwcrypto.common import json_encode
+    # import os
+
+    # key_a = jwk.JWK.generate(kty='EC', crv='P-256')
+    # key_b = jwk.JWK.generate(kty='EC', crv='P-256')
+    # payload = os.urandom(70)
+    # jwetoken = jwe.JWE(payload, json_encode({"alg": "ECDH-ES+A256KW", "enc": "A256CBC-HS512"}))
+    # jwetoken.add_recipient(key_a)
+    # jwetoken.add_recipient(key_b)
+    # encoded = jwetoken.serialize()
+
+    # print(key_a.export())
+    # print(key_b.export())
+    # print(encoded)
+    # print(payload)
+
+    def test_multiple_recipient_decrypt(self):
+        key_a              = b'{"crv":"P-256","d":"Yqi0BX_Y_YPX7jlDG-aDhowmX8UAz9KUSd5poMawows","kty":"EC","x":"9_rvQO4FGGrkoTU8swxqquy8i3c6IKUoyp4SnVA7CO0","y":"DrX6U_IiA4Z2pEquaAwdEjFXQNPGn3kCjOcDym_NbQ8"}'
+        key_b              = b'{"crv":"P-256","d":"ppafhcC-hZ_A-R-3o6pTiJClqQUSCLTToqqn-QIpiNo","kty":"EC","x":"KogO6j-ZAb1O_9vWrJiEar2fHUXwqRTXbcaJYz8sxMI","y":"yyAFgMiPCMNaEL3j-x0yKjZZaXDM82zcU5dqn2jaJes"}'
+        token              = b'{"ciphertext":"sGSM08SMiq6ehpTZ2rNQ-H4D2duNHzlopO4vEB_zLszn8tuDnUngI98hrR939Omdn_wIHN5i3sKror7lSOmplES2jTweN5flj0DlOu2YyHM","iv":"vbfxTPEaNTiaDJ5LPQscmA","protected":"eyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZDQkMtSFM1MTIifQ","recipients":[{"encrypted_key":"f3sa2eoLCxiXXBhL2HVhM-AZ6JwSpC9fYgWzqsdeRiz4ryHwAhduxBG2OixYwmbruKdCVDzx9lEWWmcXWXZsBYiy-36_nAxI","header":{"epk":{"crv":"P-256","kty":"EC","x":"cgYPhC1wsuXYBk1-F6Ilk6I2XJZYlcvoMIBY7qrVS9M","y":"6S8xOHn9dLrbh_QEqPnUX0-mDKmZW5D5QgZLf00-HrY"}}},{"encrypted_key":"ypHLnE-vg9gMJAGA-wADzPtt07-LG-DgWHjtV4GLkeiJ1fLv5T-j0q0HUGoS-folRAZC1muDxs-t4VA-PDzWT7BWdKH-kdeO","header":{"epk":{"crv":"P-256","kty":"EC","x":"BfFUR0-hViaGNzvshK2Il6gMYAdX_5achWaDXWH1Wjg","y":"zJnsQZy-ct5zNxulEVnOHxfzC63R9N9UnI7Ptyp-9jU"}}}],"tag":"61TTW30tmIOpaOn3sG0HKhrvJu2lBCeEmPJGuKG-PSU"}'
+        expected_plaintext = b'k\xb3\x03\xb3\xd0\xa2\xc6Y\xdaZ\xbae\xe7\xd8%\x9b\xc0/\xe1\xe1\xbb\xc6\xba\xb2\xf47ZJ}\x14\x91YP\x17_\xa7\x85%[\xbd\x8e~\t\xc2\xd5\x16G\xe6\xf8jl4\xd3\xb5\xef\x93\x02g\x8d\xb8\x9e\x89f\xb1n16\xc8y\xd6'
+        
+        jweset = JWESet.parse(token)
+        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
+        pt_b   = jweset.decrypt(PKIAutoParser.import_key(key_b))
+
+        self.assertEqual(pt_a, expected_plaintext)
+        self.assertEqual(pt_b, expected_plaintext)
+
+
+    def test_flattened_recipient_decrypt(self):
+        key_a              = b'{"crv":"P-256","d":"FZHDOPo48KsOphUQdvmHLVEY2mffLfPaOB59EgLDMXs","kty":"EC","x":"vwciGLXnl5r3yNFV7dVPifrcroFjH0uY8ACf7CuT5H8","y":"jDOdNnJAnVxQOb7JCUMjqaumkwqsajBOBAUHM574sG0"}'
+        token              = b'{"ciphertext":"61z9TaHW65aMaQ7uAzwvmAHqMx-gEXy8vfBzB4lGWtGq8wgLOWMljd97YywuOkmJBAGX6jfOV7dz1gQmhh4XNr6KVUJ6-l8mLtNXMPQdIiA","encrypted_key":"-ls01sJ7z-Nkz-jKdVqo_u2wSWrmg7Gnksi_8kmbO-yBW9Tl9dVgri_XWLev3491BNSuom_0b0vuwfmPuvOcqKDfd_1H8b-g","header":{"epk":{"crv":"P-256","kty":"EC","x":"qZ1sKT_eMSWLpcVJSb9tEyDUHz5fH97MNGk_V3ddT8g","y":"vqlJFmSIoJeusn6SX6FRGf1gm-tQ1d449iiVY97ySbk"}},"iv":"_9W8p0AetukUguXyPnqwAg","protected":"eyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZDQkMtSFM1MTIifQ","tag":"gHgjs24TrXCdmTbqtyZooo665fMFNFtcn4p1SHjwmNs"}'
+        expected_plaintext = b'\xac\xdd\xe2\x93A\x05\x82lC\xa2\x82\x84n=i\xb3\x8c>\xa4\xa6\x0b\xab\xe5\xf9\x15Zb\x99\xc2(\x97\x95\x92\xd2\r\x85\xc7\xb6l\xf4I\x960\x1f6\x15\xba \xe1Y9T\x9b\xf29-\xdd\xa7]\x9d\xb3\xafY\x0e\xbc\x83\x1a\x94\xdd3'
+        
+        jweset = JWESet.parse(token)
+        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
+
+        self.assertEqual(pt_a, expected_plaintext)
+
 
 
     # Generated using jwcrypto

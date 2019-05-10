@@ -71,7 +71,7 @@ class JWS(object):
         header = {'alg': alg.value}
         header.update(additional_headers)
 
-        json_header = json.dumps(header).encode('utf-8')
+        json_header = json.dumps(header, separators=(',', ':')).encode('utf-8')
         jws = JWS(json_header, body, b'')
         jws.recompute_signature(key)
         return jws
@@ -144,24 +144,35 @@ class JWSSet(object):
             json_set.update(json_set['signatures'][0])
             del json_set['signatures']
 
-        return json.dumps(json_set).encode('utf-8')
+        return json.dumps(json_set, separators=(',', ':')).encode('utf-8')
 
 
-    def add_signature(self, alg: JWASignatureAlg, kid: str, key: object, unprotected_header: dict=None, **additional_headers):
+
+    def add_signature(self, alg: JWASignatureAlg, key: object, unprotected_header: dict=None, **additional_headers):
         """
         Adds a signature to the set.
 
         Parameters:
             alg         (JWASignatureAlg): JWA signature algorithm to use for signing and verification.
-            kid                     (str): 'kid' in unprotected header that identifies the key.
             key                  (object): Signing key. Object type depending on the JWASignatureAlg.
             unprotected_header     (dict): Unprotected header to include with the JWS.
             **additional_headers (kwargs): Additional key-value pairs to place in JWS header.
         """
         unprotected_header = unprotected_header or {}
-        unprotected_header.update({'kid': kid})
-
         self.signatures.append((JWS.create(alg, self.payload, key, **additional_headers), unprotected_header))
+
+
+
+    @staticmethod
+    def process_signature(jws_dict: dict, payload: bytes) -> (JWS, dict):
+        """
+        Internal method to decode signatures.
+        """
+        jws = JWS(url_b64_decode(jws_dict['protected'].encode('utf-8')), payload, url_b64_decode(jws_dict['signature'].encode('utf-8')))
+
+        unprotected_header = jws_dict['header'] if 'header' in jws_dict else {}
+        return (jws, unprotected_header)
+
 
 
     @staticmethod
@@ -180,26 +191,37 @@ class JWSSet(object):
 
         # Is this a flattened token?
         if 'signature' in token_dict:
-            jws    = JWS(url_b64_decode(token_dict['protected'].encode('utf-8')), payload, url_b64_decode(token_dict['signature'].encode('utf-8')))
-            jwsset = JWSSet(payload, [(jws, token_dict['header'])])
+            jwsset = JWSSet(payload, [JWSSet.process_signature(token_dict, payload)])
         else:
             jwsset = JWSSet(payload)
             for jws_dict in token_dict['signatures']:
-                jws = JWS(url_b64_decode(jws_dict['protected'].encode('utf-8')), payload, url_b64_decode(jws_dict['signature'].encode('utf-8')))
-                jwsset.signatures.append((jws, jws_dict['header']))
+                jwsset.signatures.append(JWSSet.process_signature(jws_dict, payload))
 
         return jwsset
 
 
-    def verify(self, kid: str, key: object) -> bool:
+    def verify(self, key: object, kid: str=None) -> bool:
         """
-        Verifies a signature with `kid` in the JWSSet.
+        Verifies a signature. If `kid` is not specified, all signatures are tried.
 
         Parameters:
-            kid    (str): 'kid' in unprotected header that identifies the signature.
             key (object): Verification key with object type depending on the JWASignatureAlg.
+            kid    (str): (Optional) 'kid' in unprotected header that identifies the signature.
 
         Returns:
             bool: Whether or not it passed verification.
         """
-        return [sig for sig in self.signatures if 'kid' in sig[1] and sig[1]['kid'] == kid][0][0].verify(key)
+        verified = False
+        if kid:
+            verified = [sig for sig in self.signatures if 'kid' in sig[1] and sig[1]['kid'] == kid][0][0].verify(key)
+        else:
+            for sig, _ in self.signatures:
+                try:
+                    verified = sig.verify(key)
+
+                    if verified:
+                        break
+                except Exception as _:
+                    pass
+
+        return verified

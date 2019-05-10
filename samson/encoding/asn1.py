@@ -31,24 +31,46 @@ RDN_OID_LOOKUP = {
 }
 
 # https://tools.ietf.org/html/rfc8017#appendix-A.2.4
+# SIGNING_ALG_OIDS = {
+#     'md5WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.4'),
+#     'sha1WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.5'),
+#     'sha224WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.14'),
+#     'sha256WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.11'),
+#     'sha384WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.12'),
+#     'sha512WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.13'),
+#     'sha512-224WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.15'),
+#     'sha512-256WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.16'),
+#     'ecdsa-with-SHA1': ObjectIdentifier('1.2.840.10045.4.1'),
+#     'ecdsa-with-SHA224': ObjectIdentifier('1.2.840.10045.4.3.1'),
+#     'ecdsa-with-SHA256': ObjectIdentifier('1.2.840.10045.4.3.2'),
+#     'ecdsa-with-SHA384': ObjectIdentifier('1.2.840.10045.4.3.3'),
+#     'ecdsa-with-SHA512': ObjectIdentifier('1.2.840.10045.4.3.4'),
+#     'id-dsa-with-sha1': ObjectIdentifier('1.2.840.10040.4.3'),
+#     'id-dsa-with-sha224': ObjectIdentifier('2.16.840.1.101.3.4.3.1'),
+#     'id-dsa-with-sha256': ObjectIdentifier('2.16.840.1.101.3.4.3.2')
+# }
+
 SIGNING_ALG_OIDS = {
-    'md5WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.4'),
-    'sha1WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.5'),
-    'sha224WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.14'),
-    'sha256WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.11'),
-    'sha384WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.12'),
-    'sha512WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.13'),
-    'sha512-224WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.15'),
-    'sha512-256WithRSAEncryption': ObjectIdentifier('1.2.840.113549.1.1.16'),
-    'ecdsa-with-SHA1': ObjectIdentifier('1.2.840.10045.4.1'),
-    'ecdsa-with-SHA224': ObjectIdentifier('1.2.840.10045.4.3.1'),
-    'ecdsa-with-SHA256': ObjectIdentifier('1.2.840.10045.4.3.2'),
-    'ecdsa-with-SHA384': ObjectIdentifier('1.2.840.10045.4.3.3'),
-    'ecdsa-with-SHA512': ObjectIdentifier('1.2.840.10045.4.3.4'),
-    'id-dsa-with-sha1': ObjectIdentifier('1.2.840.10040.4.3'),
-    'id-dsa-with-sha224': ObjectIdentifier('2.16.840.1.101.3.4.3.1'),
-    'id-dsa-with-sha256': ObjectIdentifier('2.16.840.1.101.3.4.3.2')
+    'md5WithRSAEncryption': '1.2.840.113549.1.1.4',
+    'sha1WithRSAEncryption': '1.2.840.113549.1.1.5',
+    'sha224WithRSAEncryption': '1.2.840.113549.1.1.14',
+    'sha256WithRSAEncryption': '1.2.840.113549.1.1.11',
+    'sha384WithRSAEncryption': '1.2.840.113549.1.1.12',
+    'sha512WithRSAEncryption': '1.2.840.113549.1.1.13',
+    'sha512-224WithRSAEncryption': '1.2.840.113549.1.1.15',
+    'sha512-256WithRSAEncryption': '1.2.840.113549.1.1.16',
+    'ecdsa-with-SHA1': '1.2.840.10045.4.1',
+    'ecdsa-with-SHA224': '1.2.840.10045.4.3.1',
+    'ecdsa-with-SHA256': '1.2.840.10045.4.3.2',
+    'ecdsa-with-SHA384': '1.2.840.10045.4.3.3',
+    'ecdsa-with-SHA512': '1.2.840.10045.4.3.4',
+    'id-dsa-with-sha1': '1.2.840.10040.4.3',
+    'id-dsa-with-sha224': '2.16.840.1.101.3.4.3.1',
+    'id-dsa-with-sha256': '2.16.840.1.101.3.4.3.2'
 }
+
+
+INVERSE_SIGNING_ALG_OIDS = {v:k for k,v in SIGNING_ALG_OIDS.items()}
 
 
 def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:

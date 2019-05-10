@@ -1,4 +1,4 @@
-from samson.protocols.jwt.jws import JWS
+from samson.protocols.jwt.jws import JWS, JWSSet
 from samson.protocols.jwt.jwa import JWASignatureAlg
 from samson.public_key.rsa import RSA
 from samson.public_key.ecdsa import ECDSA
@@ -6,6 +6,8 @@ from samson.public_key.eddsa import EdDSA
 from samson.utilities.bytes import Bytes
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA256, SHA384, SHA512
+from samson.encoding.general import PKIAutoParser
+from samson.encoding.jwk.jwk_oct_key import JWKOctKey
 from fastecdsa.curve import P256, P384, P521
 import json
 import unittest
@@ -128,6 +130,8 @@ BODY = json.dumps({
 }).encode('utf-8')
 
 
+# Tests generated from https://jws.io/
+
 HS256_TESTS = [
     (b'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', b'your-256-bit-secret'),
     (b'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRGVlciIsImlhdCI6MTUxNjIzOTAyMn0.blSEY3tWnWPQW41-zng0dXM0jLjVZ5bqzftwqyw1-KY', b'a bunch of text'),
@@ -195,7 +199,32 @@ PS384_TESTS = [
 ]
 
 
-# Tests generated from https://jws.io/
+# Tests generated from jwcrypto
+
+# from jwcrypto import jwk, jwe, jws
+# from jwcrypto.common import json_encode
+# import os
+
+# key = jwk.JWK.generate(kty='RSA', size=2048)
+
+# payload = os.urandom(70)
+# jwstoken = jws.JWS(payload)
+# jwstoken.add_signature(key, None, json_encode({"alg": "PS512"}))
+# encoded = jwstoken.serialize(True)
+
+# print(key.export())
+# print(encoded)
+# print(payload)
+
+RSA_JWK = RSA.import_key(b'{"d":"0WxnT9XCBIHEVDdFg7deP60CbNbepTGawsRItyEei6SrYCpPxwXgk3yryPhq_nDTtOGjR2W8oKaMRcJbb94EYYdWzhyiToJUZF-cdiwfFEZR_1beudFPS0w3l5-Wnzp5NDqSQ87B9lCpOSycMr2cRDQjI6RftLMxEnGLuDrm9MOxdrW741cpLCNuq0O3nkcgx32-bOmOAO4I1rMuJHccWxR8ytTedoIKZLv-ik4QGnB9eTMkGpqS78--bu3QZRssUyngEZ1kb4YKXqZ-qstx-87kLCu5RldIkZLEOTZR2OUIhG6wLmJqpMbgubKEsu7kPrx-XeETUO2buniPMxTrsQ","dp":"2JDZLdRuKAZKqGk4SMA5ocEyoyNfR_eYi7LMGtg-p5Azwpc_r1trlu95vo5OqgOYqsHSkwq3UbAb2c0jX_7ELCFCe1JsNaHVDUqFp-N17Au3hzcncV_6WN4_0QfhZo7_IQn2ZkdlwR4KDlrXMqGKoET0YkBkRdHvvYTcLWloWmk","dq":"mP49edxp3N_p1d-_8wK7oqu_eTYnNaj0jzG89UymFMqU8C95ri9_VC5CxLEjbZPr_joM_wQkALaH9pli08nTNz_VMwbXqMjg_2VVQ4uJwtOBflB-_iWNZb_PVt1W5KtmxN7KaeqonHDoCSU57pWGfoQPM1pKrIZ33VxHtTeyh_U","e":"AQAB","kty":"RSA","n":"8mASEPU3mkfgKhPx0XLcL7NDopsbUc4inz7sPvTBWXoUgEpJJMsXVDud_wiRGEV8TGPEGEpXIHghlPx3Ml0oLvX_OE3eTEl8P6ctylKQkXxtcoL1i-WMmsEUL0izRZ71TWr6ayOJfLyNSu6D4yEVVTbwPnUTuFlkvFAL1Z_t18scGXXxIB5VXdtEWkRmdYqBaZ-Zvv5RdGtuAeAD6UD9ftWngiPROpFWKLpSkO07r6Hx3LiO4-Dp9Q2CUpzvExGrOnlZFoo8YLQSYupHY-ftvoDlYplYtWis9436D9k4aLiEsp-UXq1opyCSUXsoDQw57vW59KnGNJ0Vl-xGXxBzyw","p":"-_MVaWowZmWGbma3P5xAhXkUEKjq3rwBH7G57HOZKxbjGL1igweB0le4HeJd7y_XkMOm3GHcYf4yxQpz83w_1bUJy7v-0ZaSqYNzhB_kS4kUfrXQyTlA8qyJODerwf94r5nNh-ruqlnENN1WeRyc3OkmLts5eVv7N4Do5urj4gk","q":"9kWVVcOvoBXFz8ufL5CfZBwh4m6-JArhE-V3cummPrSrv7D8s_0EPGXOCx2964xQpdVwhRtFKH8eICBabOh9ddBqwlE6ycpQTx1eNXN20NzAuASCoEQUvsdA5NqMblOy_TsJn-4B-zSoH18Nd5o4cHD21CiU1iSsNUvGNlkCDDM","qi":"EsaowWzI_yZ7ufGejoVgKMSzvG1ZQewF3iAY31yly1s9YHDgdybsCUurLdH4R1UNv4JXsQ_a8AT8FTkdH8mxslqNbE6-qQ99yL9_1_rtrdnsMZKmFjfVTmnaR_h_hZ_v2yU54js0FgC1AGRwlnegpTYFjsYp6HjUKyPk6Tu8pWg"}')
+
+PS512_TESTS = [
+    (b'eyJhbGciOiJQUzUxMiJ9.aoUpbpm4jMzrF35JPNtoEwQ-fIOkfEYc-9gJsfGjTc_drqJ9llNqj78tox-T3ym5HI-Cnf7TTjc783S_87ev15FiIjFHBA.Y_pICxKy4iO86pN4ArAxuMhqLUgA-QXMaoG3rt44_Fbu-vrAOGIuNlHH01HV92glblPVKrDBHb5y_03SuPUWAFn-BTRgRImrSJbkSJCrKGzFiRi9z3sxNusdD-MAyxMcp2X93YJBriyQUTvY8pp-hBxdtAugEKkec0auG58ad55ZGRRTP9WDdD82N8i5UszRLr6acFMwjXkQ7NkBEwvrplhTjomtnt_6nw5eCDWDG6URxjs2NnaIjTzIikC_exr6lDWFyGUTtzLbpVwdfIff1EluuoeeZPyh7e_ykI69CERHOmauaGCett8GrSpM8G2OxlaT-CJEzr9ASgcb_PKzqA', RSA_JWK),
+    (b'eyJhbGciOiJQUzUxMiJ9.H_59YCb0FrYZl8XV9Mmo1GwJLBg4ozBRyMuxbSNaTVwxypgk4uDo7Hi78BiVWAcj3YCo39dxhhjLpOMPMsCxqPRoJhwBxg.yYxsx3ERbu6IJMy49wx6DculcSSJBDp3IbaTaLo_vAyfOeJ2_1HCroNvh-I15i0VY6qYvBQQa771Tll_eSvDPoovaxE25ShJr4ZmuYAqju0gwkkvepSlD8x7gy6Q8qKXGIqJ64sg5gWMnMADPMlMEE5Ti3EpYG1Xw9X1JdHfj0TmL9h0_7OQaXTfHQjIApy0tNVjiIKemkUsJKAPpxCy1tSu-Ya3_woM4hpfxqf5jTvbwvf8l-SiGZu6nG9e93u_5wINmYDsJEhGtTXbaoG60QqyyUN1oVYb4HEmCgqXvN3n6drwe6iizaeZ2syukLilJQg79ewjRf1n3xHHl89x2Q', RSA_JWK),
+    (b'eyJhbGciOiJQUzUxMiJ9.d3WkFBIJmbL6e941_wPY0A7GbRBVBvlqqC1AQCKimav6e1cjKZWYygdTnu0d8mfGFS-DGgq_1nqChVEaY35f_ggfLD7yOQ.ePtWFZzHekyvODqoZ4DOPfWaBlsGvB_x64Ft5Bl5NuYSxR3COmePWTIPBhV7biW9iUTkpsPgl8NjtCX39Tvu0rq3lOQ62BPOCm5m59gmm4BWL6s_7MR3sQ33hDG4wfrFvo8U821w07iW09s1U1Lr__d78ffSC91igpgZmxKI9WUF5DrTJBFEyXkFopszmF17NTzBkzxFAnbq9Yi-PVetrHQHcoAdA67mqvpSoYcrH3GqY1OoZMyuQ7XjRN5bOtIYWeOt8ROS8jFgJQ9gpZc9KjeI12KnNkuHVBntE75W5C6Vb_iLn9dcJT7ExdR_3f9qsP2YHNyWHGvMzP1S7kk_nA', RSA_JWK)
+]
+
+
 class JWSTestCase(unittest.TestCase):
     def _run_tests(self, test_suite):
         for token, key in test_suite:
@@ -247,6 +276,10 @@ class JWSTestCase(unittest.TestCase):
         self._run_tests(PS384_TESTS)
 
 
+    def test_ps512(self):
+        self._run_tests(PS512_TESTS)
+
+
     # https://tools.ietf.org/html/rfc8037#appendix-A
     def test_eddsa(self):
         key   = json.dumps({"kty":"OKP","crv":"Ed25519","d":"nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A","x":"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"}).encode('utf-8')
@@ -255,7 +288,7 @@ class JWSTestCase(unittest.TestCase):
         self.assertTrue(jws.verify(EdDSA.import_key(key)))
 
 
-    # def test_gauntlet(self):
+    def test_gauntlet(self):
         for jwa in [JWASignatureAlg.HS256, JWASignatureAlg.HS384, JWASignatureAlg.HS512]:
             for _ in range(50):
                 key = Bytes.random(16)
@@ -302,3 +335,85 @@ class JWSTestCase(unittest.TestCase):
                 print(jws)
 
             self.assertTrue(correct)
+
+
+    def test_json_equivalence(self):
+        full_parse = JWSSet.parse(b"""     {
+      "payload":
+       "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGF
+        tcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
+      "signatures":[
+       {"protected":"eyJhbGciOiJSUzI1NiJ9",
+        "header":
+         {"kid":"2010-12-29"},
+        "signature":
+         "cC4hiUPoj9Eetdgtv3hF80EGrhuB__dzERat0XF9g2VtQgr9PJbu3XOiZj5RZ
+          mh7AAuHIm4Bh-0Qc_lF5YKt_O8W2Fp5jujGbds9uJdbF9CUAr7t1dnZcAcQjb
+          KBYNX4BAynRFdiuB--f_nZLgrnbyTyWzO75vRK5h6xBArLIARNPvkSjtQBMHl
+          b1L07Qe7K0GarZRmB_eSN9383LcOLn6_dO--xi12jzDwusC-eOkHWEsqtFZES
+          c6BfI7noOPqvhJ1phCnvWh6IeYI2w9QOYEUipUTI8np6LbgGY9Fs98rqVt5AX
+          LIhWkWywlVmtVrBp0igcN_IoypGlUPQGe77Rw"},
+       {"protected":"eyJhbGciOiJFUzI1NiJ9",
+        "header":
+         {"kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"},
+        "signature":
+         "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8IS
+          lSApmWQxfKTUJqPP3-Kg6NU1Q"}]
+     }""".replace(b"\n", b"").replace(b' ', b''))
+
+        flattened_parse = JWSSet.parse(b"""
+     {
+      "payload":
+       "eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGF
+        tcGxlLmNvbS9pc19yb290Ijp0cnVlfQ",
+      "protected":"eyJhbGciOiJFUzI1NiJ9",
+      "header":
+       {"kid":"e9bc097a-ce51-4036-9562-d2ade882db0d"},
+      "signature":
+       "DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8IS
+        lSApmWQxfKTUJqPP3-Kg6NU1Q"
+     }""".replace(b"\n", b"").replace(b' ', b''))
+
+        relevant_full = (full_parse.payload, full_parse.signatures[1][0].header, full_parse.signatures[1][1], full_parse.signatures[1][0].signature)
+        relevant_flattened = (flattened_parse.payload, flattened_parse.signatures[0][0].header, flattened_parse.signatures[0][1], flattened_parse.signatures[0][0].signature)
+
+        self.assertEqual(relevant_full, relevant_flattened)
+    
+
+    # Generated using jwcrypto
+
+    # from jwcrypto import jwk, jws
+    # from jwcrypto.common import json_encode
+    # import os
+
+    # key_a = jwk.JWK.generate(kty='EC', crv='P-256')
+    # key_b = jwk.JWK.generate(kty='oct', size=256)
+    # key_c = jwk.JWK.generate(kty='RSA', size=2048)
+    # payload = os.urandom(70)
+    # jwstoken = jws.JWS(payload)
+    # jwstoken.add_signature(key_a, None, json_encode({"alg": "ES256"}))
+    # jwstoken.add_signature(key_b, None, json_encode({"alg": "HS512"}))
+    # jwstoken.add_signature(key_c, None, json_encode({"alg": "PS512"}))
+    # encoded = jwstoken.serialize()
+
+    # print(key_a.export())
+    # print(key_b.export())
+    # print(key_c.export())
+    # print(encoded)
+    # print(payload)
+
+    def test_multiple_recipient_verify(self):
+        key_a = b'{"crv":"P-256","d":"GRv1Mpp30nHVfHtnB3XwvFyQnUasU7TtSeIxhnit_mQ","kty":"EC","x":"odJQgm0v4FmQ2klGf0cbUrdTdsDLrHWqjw3MjRw3CU0","y":"RDJxZ7COPk8pnnwOuKN-i5bYGMhQrUzgdydgkG3BarA"}'
+        key_b = b'{"k":"EOMbE3QXor7d1Fb3slJVYXVzZyfhiufBefBQ_phUlhw","kty":"oct"}'
+        key_c = b'{"d":"BaJsxmMk3athcX3h5VQqAAVQWWAupHHlysm4o7aTpf-0-oTL4ClWsDEn5PbsKpBxliTCfoOCHKdizAIyr-b5ZeFUPrFTwNxdutlCb8HKpiyIvJz09JQ38nvZtOwMykOZCF6rIPkZI-L0UGCMamvMQsyg1cYAbC3T2MpJaZZUfHqTT4AwpgIo7yXuDGrSFz-B4F0yJNR2-IbTtgDS-N4HdX8hvJijjX8WfnFxMRsEXYnzjgeYyu6gTy-wrhcy_0BiJOGSdJL-EcOndhHCW0JGz0oYCArTmP9Oppd31ftBKj7SxvmHxkh4KqTT7bFLeI9YNPh0Tx-RYxc4RvJoODHwIQ","dp":"NSU8GMWE43i5MO6IAA2mBm4X342SsWYF114LP_GewbgcdSwNLqqWkqNDBMqYbUb7H4H5mAQ-YdGKYVu9ceOyS4b-bQh1PLxkkCANdM9juTRfLNdeVaeAjGvJzNvTp7gg6DphFbeQ4tV4QfACYGKbNbpKxP10Wk20-eO1djMSfg0","dq":"LzmIr15O8ON4G_j6Kds6cfsipA7QQsZ5DOH5GERXoT5vSkSJbXjwconeXNxo32NHFKzmwgjJTmngK-0s1llV9F3XQXvGObyRnCxnyVbH4rKb8Z8DuB8yKQC7O0U6kdUF6KT0jLpITBV4SFf-UdF0QcixP6uXEe-MtGl3Xx8C5xE","e":"AQAB","kty":"RSA","n":"3LiaXfDj0Ohz0MRhz6fCNXOV6SDm2RAabJGWBk6NyII3HwdAkT9ToRrKnW2UzvlxegI9ZvtaJxiNS-V7Mfw4cQn3INVgRwTVfmRFUeZa40Kz0b3UeMIbppswoAUomRPwFMPJeHXXcqAWi2D7Z6BQlEIMTY4vKEg6jC93fPoLJCEKuwPRn7OAXIw9caWWOQsjTXrmKuYqLsPqAO49Am4IMm8uAX-RtCIl6fd9ZcI0CvBUbbTmJK3EkSpAxnQAwS-0FRYI-XK22SJz3YyeI0KVCsEARnBZajA4x8YhFK3ivcJ6Zs1cSDp67fj6g09RfYH6EteTb8gY5b7ARWme2MbyUw","p":"9rSy05qO-kNSPpb0emP8coeH2Fn61OSbBmq9x0vO4lmwPRSti3AMIo7qyRYuM0TgPXRAcbCxqsYo40eaabL5kR9nwb9qY52Gl3T8WlEsJW2Q1Mf0V0npzdB1qGlTOMCCkC4CQA6gRAE3cImZFb2y57FihWO4C1ouDNm6VPGwBKM","q":"5QlM1oLM2l1XMSTtA6USMN6TCJwI5W84nRI0mFe__zSenlYxVQy_jyIi8qiaW5TlOu_KoaplMAJl6zll5QanxNAU5vSlh5o3ckGClMPCkkM6X3_iIHNg8aNJ-qqTQiqLgKuCniqRus85avxumIAucCIBotiDqCVotOzhdAsthpE","qi":"izbMRPRkiZTNBFw-KufAz1_xnmoueuuG_-DnLg7kX8xj-yGW6fHXDQPxv0L4AHqGT_Vy7KotaUbxHaTmgszxjhGqrkzv-TeA5jfD6oVaKP9Lp4_YWUGMEcbmnQYTqBA2M_mAAqP8z77KNixtHCjcUdtV5kWKKco6sOHhWlmdNFM"}'
+        token = b'{"payload":"HBE86DIy4RkTxwTxPrs3jR-_l3e9CNxBbMwgoJiGgVIEUKLWr50wIDZA0OnN24OcZmy_QNLbEs0dthHj_ddW5kefUTw5Eg","signatures":[{"protected":"eyJhbGciOiJFUzI1NiJ9","signature":"X9cMVGG1N-eze0Wd2vlx1GQXYEoxwytGjflswOOeh_oWuoNH_BOJpDPQ4yaMs_x_tiLEEF-gomnXV_per_6D2g"},{"protected":"eyJhbGciOiJIUzUxMiJ9","signature":"otWgkMW6aoH8hsHctvE6befp16TqAmiKZG_o6e8ZZ3mi2YjcSUfa0ZMxDMVW6r4MEhlifbq3ZBTQiMFzTobWpQ"},{"protected":"eyJhbGciOiJQUzUxMiJ9","signature":"jJT25xiDTd_kqlR06l8qZ20hkPnxSd5nszjWIF1PpkRLy2J3flYsxBM7KEogfQusO00-EBwqqtzUJ--_HW6w3L75Q_Hmn92UYL4dEqzOOR0iS_BeDuhc6GvOqJePaDxySlf9W2FL0M96_ldIMzGMeczsqB5OA3ziGRDLzCzlfHKNaUBH1zqWTkNza_t_ba9xeD-ewTFFX9cbM-2tSqPMVbIbip0gvMwO8b9-npCgbgb1x0s_IEvjmPfYYBKAxRUakQ9n-yBBFd--YqjO8FcoOZSc8cKPmxCdTVGf8PdV_PJbpkpofuHJOM2_VO--Z2S4uqCgj4URbnwBSPwSj7Ttww"}]}'
+        
+        jwsset = JWSSet.parse(token)
+
+        ecdsa_key_a          = PKIAutoParser.import_key(key_a)
+        ecdsa_key_a.hash_obj = SHA256()
+
+        self.assertTrue(jwsset.verify(ecdsa_key_a))
+        self.assertTrue(jwsset.verify(JWKOctKey.decode(key_b)))
+        self.assertTrue(jwsset.verify(PKIAutoParser.import_key(key_c)))
+        

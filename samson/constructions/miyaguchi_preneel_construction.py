@@ -1,9 +1,9 @@
 from samson.utilities.bytes import Bytes
 from types import FunctionType
 
-class MatyasMeyerOseasConstruction(object):
+class MiyaguchiPreneelConstruction(object):
     """
-    Considered to be the dual of the Davies-Meyer construction. The Matyas-Meyer-Oseas construction is a
+    Considered to be an extension of the Matyas–Meyer–Oseas construction. The Miyaguchi-Preneel construction is a
     one-way compression function built from a block cipher.
     """
 
@@ -18,7 +18,7 @@ class MatyasMeyerOseasConstruction(object):
 
 
     def __repr__(self):
-        return f"<MatyasMeyerOseasConstruction initial_state={self.initial_state}, encryptor={self.encryptor}>"
+        return f"<MiyaguchiPreneelConstruction initial_state={self.initial_state}, encryptor={self.encryptor}>"
 
     def __str__(self):
         return self.__repr__()
@@ -41,7 +41,7 @@ class MatyasMeyerOseasConstruction(object):
         last_state = self.initial_state
 
         for block in message_blocks:
-            last_state = block ^ self.encryptor(last_state, block)
+            last_state ^= block ^ self.encryptor(last_state, block)
             yield last_state
 
 

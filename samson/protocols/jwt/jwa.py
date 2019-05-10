@@ -89,6 +89,7 @@ class JWA_EdDSA(object):
         return key.verify(data, sig)
 
 
+
 class JWA_none(object):
     def sign(self, key: object, data: bytes) -> Bytes:
         return b''
@@ -96,6 +97,7 @@ class JWA_none(object):
 
     def verify(self, key: object, data: bytes, sig: Bytes) -> bool:
         return False
+
 
 
 class JWA_ACBC_HS(object):

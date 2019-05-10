@@ -39,7 +39,7 @@ class DaviesMeyerConstruction(object):
         last_state = self.initial_state
 
         for block in message.chunk(self.block_size):
-            last_state = self.encryptor(block, last_state) ^ last_state
+            last_state ^= self.encryptor(block, last_state)
             yield last_state
 
 

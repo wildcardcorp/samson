@@ -35,13 +35,6 @@ X   OCB
     X   OCB3
 
 
-OK  X.509
-    OK  Parsing
-    OK  Generating certs
-    X   Certificate verification
-    X   ECDH
-
-
 X   Document new parsers
     X   Add class/function documentation
 
@@ -49,15 +42,7 @@ X   Document new parsers
 X   Document these classes
     OK  JWS
     X   JWA
-    X   PKCS1v15RSASigner
-
-
-X   Implement JWE/JWS
-    X   "JSON" serialization (non-compact)
-        OK  JWS
-        X   JWE
-        
-    OK  All algorithms
+    OK  PKCS1v15RSASigner
 
 
 X   Swappable backends?

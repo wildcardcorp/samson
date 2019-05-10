@@ -153,7 +153,6 @@ class BLAKE2b(BLAKE2):
     def __repr__(self):
         return f"<BLAKE2b: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
 
-
     def __str__(self):
         return self.__repr__()
 
@@ -178,7 +177,6 @@ class BLAKE2s(BLAKE2):
 
     def __repr__(self):
         return f"<BLAKE2s: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
-
 
     def __str__(self):
         return self.__repr__()

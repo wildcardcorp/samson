@@ -1,3 +1,4 @@
+from samson.public_key.rsa import RSA
 from samson.padding.pkcs1v15_padding import PKCS1v15Padding
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.asn1 import HASH_OID_LOOKUP, INVERSE_HASH_OID_LOOKUP
@@ -6,13 +7,32 @@ from pyasn1.type.univ import Sequence, OctetString, Null
 from pyasn1.codec.der import encoder
 
 class PKCS1v15RSASigner(object):
-    def __init__(self, rsa, hash_obj: object):
-        self.rsa = rsa
-        self.padder = PKCS1v15Padding(rsa.bits, block_type=1)
+    """
+    PKCS1v15 RSA Signing and Padding Scheme
+    https://tools.ietf.org/html/rfc3447#section-8.2.1
+    """
+
+    def __init__(self, rsa: RSA, hash_obj: object):
+        """
+        Parameters:
+            rsa            (RSA): RSA object.
+            hash_object (object): Object satisfying the hash interface.
+        """
+        self.rsa      = rsa
+        self.padder   = PKCS1v15Padding(rsa.bits, block_type=1)
         self.hash_obj = hash_obj
 
 
     def sign(self, plaintext: bytes) -> Bytes:
+        """
+        Signs the `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Plaintext to sign.
+        
+        Returns:
+            Bytes: Signature.
+        """
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, HASH_OID_LOOKUP[type(self.hash_obj)])
         alg_id.setComponentByPosition(1, Null())
@@ -26,8 +46,19 @@ class PKCS1v15RSASigner(object):
 
 
     def verify(self, plaintext: bytes, signature: bytes, strict_type_match: bool=True) -> bool:
+        """
+        Verifies the `plaintext` against the `signature`.
+
+        Parameters:
+            plaintext        (bytes): Plaintext to verify.
+            signature        (bytes): Signature to verify plaintext against.
+            strict_type_match (bool): Whether or not to force use of `hash_obj` vs using the OID provided in the signature.
+        
+        Returns:
+            bool: Whether or not the signature passed verification.
+        """
         try:
-            padded = Bytes(self.rsa.encrypt(signature))
+            padded      = Bytes(self.rsa.encrypt(signature))
             der_encoded = self.padder.unpad(padded)
 
             items    = bytes_to_der_sequence(der_encoded)

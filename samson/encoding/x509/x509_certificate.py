@@ -1,4 +1,4 @@
-from samson.encoding.pem import PEMEncodable
+from samson.encoding.pem import PEMEncodable, pem_decode
 from samson.encoding.asn1 import parse_rdn
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
@@ -8,7 +8,7 @@ from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
-from samson.encoding.asn1 import SIGNING_ALG_OIDS
+from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
 from datetime import datetime
 
 
@@ -74,10 +74,11 @@ class X509Certificate(PEMEncodable):
         subject.setComponentByPosition(0, parse_rdn(kwargs.get('subject') or 'CN=ca'))
 
         # Signature algorithm
-        signing_alg = kwargs.get('signing_alg') or cls.SIGNING_DEFAULT
+        signing_key = kwargs.get('signing_key') or pki_key
+        signing_alg = (kwargs.get('signing_alg') or signing_key.X509_SIGNING_DEFAULT).value
 
         signature_alg = rfc2459.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg]
+        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
 
         if cls.PARAM_ENCODER:
             signature_alg['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
@@ -127,11 +128,8 @@ class X509Certificate(PEMEncodable):
         if kwargs.get('signature_value') is not None:
             sig_value = Bytes.wrap(kwargs.get('signature_value')).int()
         else:
-            signing_key = kwargs.get('signing_key') or pki_key
             encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
-
-            alg = cls.SIGNING_ALGS[signing_alg]
-            sig_value = alg(signing_key, encoded_tbs)
+            sig_value   = signing_alg.sign(signing_key, encoded_tbs)
 
 
         # Build the Cert object
@@ -142,6 +140,23 @@ class X509Certificate(PEMEncodable):
 
         encoded = encoder.encode(cert, asn1Spec=rfc2459.Certificate())
         return X509Certificate.transport_encode(encoded, **kwargs)
+
+
+    @staticmethod
+    def verify(buffer: bytes, verification_key: object) -> bool:
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer)
+
+        # Decode the full cert and get the encoded TBSCertificate
+        cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
+
+        sig_value     = cert['signatureValue']
+        signature_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])].replace('-', '_')
+        tbs_cert      = cert['tbsCertificate']
+        encoded_tbs   = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
+
+        alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
+        return alg.verify(verification_key, encoded_tbs, sig_value)
 
 
 
