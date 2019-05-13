@@ -279,7 +279,7 @@ def poly_to_int(poly: Poly) -> int:
     Returns:
         int: Integer representation.
     """
-    return int(''.join([str(bit) for bit in poly.all_coeffs()]), 2)
+    return int(''.join([str(bit % 2) for bit in poly.all_coeffs()]), 2)
 
 
 from enum import Enum

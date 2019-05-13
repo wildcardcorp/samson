@@ -4,12 +4,12 @@ from types import FunctionType
 from copy import deepcopy
 
 
-def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int=64) -> bytes:
+def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int=64, encoded_size_length: int=None) -> bytes:
     length = fakeLen or len(msg)
 
     # Append the bit '1' to the message
     padding = b'\x80'
-    byte_size = bit_size // 8
+    byte_size = encoded_size_length or (bit_size // 8)
 
     # Append 0 <= k < 512 bits '0', so that the resulting message length (in bytes)
     # as congruent to 56 (mod 64)
@@ -17,6 +17,7 @@ def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int
 
     # Append length of message (before pre-processing), in bits, as 64-bit big-endian integer
     message_bit_length = length * 8
+
     padding += message_bit_length.to_bytes(byte_size, byteorder=byteorder)
     return msg + padding
 
@@ -27,14 +28,15 @@ class MerkleDamgardConstruction(object):
     one-way compression functions. Used in MD4, MD5, SHA1, SHA2, RIPEMD, and more.
     """
 
-    def __init__(self, initial_state: bytes, compression_func: FunctionType, digest_size: int, block_size: int=64, endianness: str='big'):
+    def __init__(self, initial_state: bytes, compression_func: FunctionType, digest_size: int, block_size: int=64, endianness: str='big', encoded_size_length: int=None):
         """
         Parameters:
-            initial_state   (bytes): Bytes-like initial state that is the correct size for the underlying compression function.
-            compression_func (func): One-way compression function. Takes in the state and returns the next.
-            digest_size       (int): Resulting digest size. Should be the same size as the `initial_state`.
-            block_size        (int): Size of the internal state.
-            endianness        (str): Endianess of the internal state.
+            initial_state     (bytes): Bytes-like initial state that is the correct size for the underlying compression function.
+            compression_func   (func): One-way compression function. Takes in the state and returns the next.
+            digest_size         (int): Resulting digest size. Should be the same size as the `initial_state`.
+            block_size          (int): Size of the internal state.
+            endianness          (str): Endianess of the internal state.
+            encoded_size_length (int): Size in bytes of encoded message length.
         """
         if not type(initial_state) is Bytes:
             initial_state = Bytes([_ for _ in initial_state])
@@ -44,9 +46,10 @@ class MerkleDamgardConstruction(object):
         if compression_func:
             self.compression_func = compression_func
 
-        self.digest_size = digest_size
-        self.block_size = block_size
-        self.endianness = endianness
+        self.digest_size          = digest_size
+        self.block_size           = block_size
+        self.endianness           = endianness
+        self.encoded_size_length  = encoded_size_length
 
 
 
@@ -67,7 +70,7 @@ class MerkleDamgardConstruction(object):
         Returns:
             Bytes: Padded message.
         """
-        return md_pad(message, None, self.endianness, bit_size=self.block_size)
+        return md_pad(message, None, self.endianness, bit_size=self.block_size, encoded_size_length=self.encoded_size_length)
 
 
     def yield_state(self, message: bytes) -> Bytes:

@@ -13,7 +13,7 @@ class ECDHE(object):
             d   (int): Secret key.
             G (Point): Generator point on an elliptical curve.
         """
-        self.d = d or Bytes.random(16).int()
+        self.d   = d or Bytes.random(16).int()
         self.G   = G
         self.pub = pub
 

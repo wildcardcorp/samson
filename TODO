@@ -52,8 +52,8 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
 X   Create functions/objects for invalid curve attacks https://auth0.com/blog/critical-vulnerability-in-json-web-encryption/
 
 
-X  Miyaguchi–Preneel construction
-X  WHIRLPOOL hash
+OK Miyaguchi–Preneel construction
+OK WHIRLPOOL hash
 X  Rabbit stream cipher
 X  HC-256 stream cipher
 
