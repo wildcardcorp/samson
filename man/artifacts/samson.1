@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "SAMSON" "1" "Mar 14, 2019" "" "samson"
+.TH "SAMSON" "1" "May 14, 2019" "" "samson"
 .SH NAME
 samson \- cryptography CLI tool
 .
@@ -34,6 +34,8 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .sp
 \fBsamson [\-h] [\-\-eval] {hash,pki} ...\fP
 .sp
+\fBsamson load [\-h] file\fP
+.sp
 \fBsamson hash [\-h] [\-\-args [ARGS]] type [text]\fP
 .sp
 \fBsamson pki [\-h] [\-\-args [ARGS]] [\-\-pub] [\-\-encoding [ENCODING]] [\-\-encoding\-args [ENCODING_ARGS]] action type [filename]\fP
@@ -47,9 +49,15 @@ This help is for the command\-line interface which provides a subset of samson\(
 .sp
 \fB\-\-eval\fP \- evaluates arguments as Python code
 .sp
+\fBload\fP \- traverses to the \(aqload\(aq subcommand tree
+.sp
 \fBhash\fP \- traverses to the \(aqhash\(aq subcommand tree
 .sp
 \fBpki\fP \- traverses to the \(aqpki\(aq subcommand tree
+.SH LOAD SUBCOMMANDS
+.sp
+\fB\-h\fP \- shows the help menu
+\fBfile\fP \- file to execute using samson environment
 .SH HASH SUBCOMMANDS
 .sp
 \fB\-h\fP \- shows the dynamic help menu
@@ -77,6 +85,8 @@ This help is for the command\-line interface which provides a subset of samson\(
 .sp
 \fBfilename\fP \- file to read PKI data from
 .SH EXAMPLES
+.sp
+\fBsamson load ~/Documents/myfile\fP \- execute \fI~/Documents/myfile\fP in the samson environment
 .sp
 \fBsamson hash md5 sometext\fP \- generate a hex\-encoded MD5 hash of \fIsometext\fP
 .sp

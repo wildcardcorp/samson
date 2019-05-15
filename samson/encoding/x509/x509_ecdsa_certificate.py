@@ -18,4 +18,3 @@ class X509ECDSACertificate(X509Certificate):
     PUB_KEY_ENCODER = X509ECDSASubjectPublicKey
     PUB_KEY_DECODER = X509ECDSAPublicKey
     PARAM_ENCODER   = X509ECDSAParams
-    

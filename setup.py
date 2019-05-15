@@ -39,7 +39,10 @@ setup(name='samson-crypto',
       author_email='daniel.cronce@wildcardcorp.com',
       keywords='cryptography security cryptanalysis',
       url="https://github.com/wildcardcorp/samson",
-      data_files = [('man/man1', ['man/artifacts/samson.1'])],
+      data_files = [
+          ('man/man1', ['man/artifacts/samson.1']),
+          ('/etc/bash_completion.d', ['scripts/samson-autocomplete.sh'])
+        ],
       packages=[
           "samson",
           "samson/ace",

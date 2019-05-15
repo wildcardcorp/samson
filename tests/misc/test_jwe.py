@@ -285,7 +285,7 @@ class JWETestCase(unittest.TestCase):
 
 
     # Generated using jwcrypto
-    
+
     # from jwcrypto import jwk, jwe
     # from jwcrypto.common import json_encode
     # import os
@@ -308,7 +308,7 @@ class JWETestCase(unittest.TestCase):
         key_b              = b'{"crv":"P-256","d":"ppafhcC-hZ_A-R-3o6pTiJClqQUSCLTToqqn-QIpiNo","kty":"EC","x":"KogO6j-ZAb1O_9vWrJiEar2fHUXwqRTXbcaJYz8sxMI","y":"yyAFgMiPCMNaEL3j-x0yKjZZaXDM82zcU5dqn2jaJes"}'
         token              = b'{"ciphertext":"sGSM08SMiq6ehpTZ2rNQ-H4D2duNHzlopO4vEB_zLszn8tuDnUngI98hrR939Omdn_wIHN5i3sKror7lSOmplES2jTweN5flj0DlOu2YyHM","iv":"vbfxTPEaNTiaDJ5LPQscmA","protected":"eyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZDQkMtSFM1MTIifQ","recipients":[{"encrypted_key":"f3sa2eoLCxiXXBhL2HVhM-AZ6JwSpC9fYgWzqsdeRiz4ryHwAhduxBG2OixYwmbruKdCVDzx9lEWWmcXWXZsBYiy-36_nAxI","header":{"epk":{"crv":"P-256","kty":"EC","x":"cgYPhC1wsuXYBk1-F6Ilk6I2XJZYlcvoMIBY7qrVS9M","y":"6S8xOHn9dLrbh_QEqPnUX0-mDKmZW5D5QgZLf00-HrY"}}},{"encrypted_key":"ypHLnE-vg9gMJAGA-wADzPtt07-LG-DgWHjtV4GLkeiJ1fLv5T-j0q0HUGoS-folRAZC1muDxs-t4VA-PDzWT7BWdKH-kdeO","header":{"epk":{"crv":"P-256","kty":"EC","x":"BfFUR0-hViaGNzvshK2Il6gMYAdX_5achWaDXWH1Wjg","y":"zJnsQZy-ct5zNxulEVnOHxfzC63R9N9UnI7Ptyp-9jU"}}}],"tag":"61TTW30tmIOpaOn3sG0HKhrvJu2lBCeEmPJGuKG-PSU"}'
         expected_plaintext = b'k\xb3\x03\xb3\xd0\xa2\xc6Y\xdaZ\xbae\xe7\xd8%\x9b\xc0/\xe1\xe1\xbb\xc6\xba\xb2\xf47ZJ}\x14\x91YP\x17_\xa7\x85%[\xbd\x8e~\t\xc2\xd5\x16G\xe6\xf8jl4\xd3\xb5\xef\x93\x02g\x8d\xb8\x9e\x89f\xb1n16\xc8y\xd6'
-        
+
         jweset = JWESet.parse(token)
         pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
         pt_b   = jweset.decrypt(PKIAutoParser.import_key(key_b))
@@ -321,7 +321,7 @@ class JWETestCase(unittest.TestCase):
         key_a              = b'{"crv":"P-256","d":"FZHDOPo48KsOphUQdvmHLVEY2mffLfPaOB59EgLDMXs","kty":"EC","x":"vwciGLXnl5r3yNFV7dVPifrcroFjH0uY8ACf7CuT5H8","y":"jDOdNnJAnVxQOb7JCUMjqaumkwqsajBOBAUHM574sG0"}'
         token              = b'{"ciphertext":"61z9TaHW65aMaQ7uAzwvmAHqMx-gEXy8vfBzB4lGWtGq8wgLOWMljd97YywuOkmJBAGX6jfOV7dz1gQmhh4XNr6KVUJ6-l8mLtNXMPQdIiA","encrypted_key":"-ls01sJ7z-Nkz-jKdVqo_u2wSWrmg7Gnksi_8kmbO-yBW9Tl9dVgri_XWLev3491BNSuom_0b0vuwfmPuvOcqKDfd_1H8b-g","header":{"epk":{"crv":"P-256","kty":"EC","x":"qZ1sKT_eMSWLpcVJSb9tEyDUHz5fH97MNGk_V3ddT8g","y":"vqlJFmSIoJeusn6SX6FRGf1gm-tQ1d449iiVY97ySbk"}},"iv":"_9W8p0AetukUguXyPnqwAg","protected":"eyJhbGciOiJFQ0RILUVTK0EyNTZLVyIsImVuYyI6IkEyNTZDQkMtSFM1MTIifQ","tag":"gHgjs24TrXCdmTbqtyZooo665fMFNFtcn4p1SHjwmNs"}'
         expected_plaintext = b'\xac\xdd\xe2\x93A\x05\x82lC\xa2\x82\x84n=i\xb3\x8c>\xa4\xa6\x0b\xab\xe5\xf9\x15Zb\x99\xc2(\x97\x95\x92\xd2\r\x85\xc7\xb6l\xf4I\x960\x1f6\x15\xba \xe1Y9T\x9b\xf29-\xdd\xa7]\x9d\xb3\xafY\x0e\xbc\x83\x1a\x94\xdd3'
-        
+
         jweset = JWESet.parse(token)
         pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
 

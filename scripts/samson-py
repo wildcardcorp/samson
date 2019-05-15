@@ -1,13 +1,16 @@
 #!/usr/bin/python3
-from samson.utilities.cli import start_repl, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
+from samson.utilities.cli import start_repl, start_exec, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
 from samson.utilities.bytes import Bytes
 import argparse
 import sys
 
 
-parser = argparse.ArgumentParser()
+parser     = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
 parser.add_argument('--eval', action='store_true')
+
+load_parser = subparsers.add_parser('load')
+load_parser.add_argument('loadfile')
 
 hash_parser = subparsers.add_parser('hash')
 hash_parser.description = f"Available hash types: {', '.join([k for k,v in HASHES.items()])}"
@@ -89,6 +92,9 @@ def export_pki(pki_obj, arguments):
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         start_repl()
+    elif len(sys.argv) == 3:
+        with open(arguments.loadfile) as f:
+            exec(start_exec + "\n" + f.read())
     else:
         if arguments.eval:
             PARSE_METHOD = eval
@@ -151,3 +157,6 @@ if __name__ == '__main__':
                     export_pki(pki_obj, arguments)
                 else:
                     print(pki_obj)
+            
+            else:
+                raise Exception('Invalid action. Please choose from "generate" and "parse".')

@@ -757,9 +757,16 @@ class RSATestCase(unittest.TestCase):
 
     def test_factorize_from_shared_p(self):
         for _ in range(5):
-            bits = max(1, Bytes.random(2).int() >> 4)
-            rsa_a = RSA(bits, e=65537)
-            rsa_b = RSA(bits, e=65537, p=rsa_a.p)
+            a_d = 0
+            b_d = 0
+
+            while a_d == b_d:
+                bits = max(1, Bytes.random(2).int() >> 4)
+                rsa_a = RSA(bits, e=65537)
+                rsa_b = RSA(bits, e=65537, p=rsa_a.p)
+
+                a_d = rsa_a.d
+                b_d = rsa_b.d
 
             self.assertNotEqual(rsa_a.d, rsa_b.d)
 

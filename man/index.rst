@@ -5,6 +5,8 @@ SYNOPSIS
 ----------------
 ``samson [-h] [--eval] {hash,pki} ...``
 
+``samson load [-h] file``
+
 ``samson hash [-h] [--args [ARGS]] type [text]``
 
 ``samson pki [-h] [--args [ARGS]] [--pub] [--encoding [ENCODING]] [--encoding-args [ENCODING_ARGS]] action type [filename]``
@@ -22,10 +24,17 @@ TOP-LEVEL
 
 **--eval** - evaluates arguments as Python code
 
+**load** - traverses to the 'load' subcommand tree
+
 **hash** - traverses to the 'hash' subcommand tree
 
 **pki** - traverses to the 'pki' subcommand tree
 
+
+LOAD SUBCOMMANDS
+----------------
+**-h** - shows the help menu
+**file** - file to execute using samson environment
 
 
 HASH SUBCOMMANDS
@@ -62,6 +71,8 @@ PKI SUBCOMMANDS
 
 EXAMPLES
 ----------------
+``samson load ~/Documents/myfile`` - execute *~/Documents/myfile* in the samson environment
+
 ``samson hash md5 sometext`` - generate a hex-encoded MD5 hash of *sometext*
 
 ``samson hash keccak texttohash --args=r=1044,c=512,digest_bit_size=256`` - generate a hex-encoded Keccak hash of *texttohash*

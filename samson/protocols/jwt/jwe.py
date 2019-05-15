@@ -120,7 +120,7 @@ class JWE(object):
         header = json.loads(self.header.decode())
         if hasattr(self, 'unprotected_header'):
             header.update(self.unprotected_header)
-        
+
         return header
 
 
@@ -228,7 +228,7 @@ class JWESet(object):
 
         if self.unprotected_header:
             json_set['unprotected'] = url_b64_encode(json.dumps(self.unprotected_header, separators=(',', ':')).encode('utf-8')).decode()
-    
+
         if self.aad:
             json_set['aad'] = url_b64_encode(self.aad).decode()
 
@@ -254,7 +254,7 @@ class JWESet(object):
 
         if (alg in [JWAKeyEncryptionAlg.dir, JWAKeyEncryptionAlg.ECDH_ES] or any([recip.alg in [JWAKeyEncryptionAlg.dir, JWAKeyEncryptionAlg.ECDH_ES] for recip in self.recipients])) and len(self.recipients) > 0 and not self.i_know_what_im_doing:
             raise Exception(f"Cannot add a recipient using {alg} when there are other recipients. This is because {alg} is either Direct Key Agreement or Direct Encryption. Use the 'i_know_what_im_doing' flag to do it anyway.")
-    
+
 
         jwe = JWE.create(alg, self.enc, self.payload, key, cek=self.cek, iv=self.iv, aad=self.aad, **additional_headers)
 
@@ -294,7 +294,7 @@ class JWESet(object):
 
         if 'unprotected' in token_dict:
             unprotected_header = token_dict['unprotected']
-        
+
         if 'aad' in token_dict:
             aad = url_b64_decode(token_dict['aad'].encode('utf-8'))
 
@@ -335,8 +335,8 @@ class JWESet(object):
                     break
                 except Exception as _:
                     pass
-            
+
             if not plaintext:
                 raise Exception('No recipient able to decrypt.')
-    
+
         return plaintext

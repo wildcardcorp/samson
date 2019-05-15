@@ -627,20 +627,20 @@ class WCipher(object):
 
         K_0    = [chunk.int() for chunk in self.key.chunk(8)]
         K_prev = K_0
-        
+
         for r in range(1, 11):
             round_key = [ROUND_CONSTANTS[r], *[0]*7]
             K_prev    = self.round_func(round_key, K_prev)
             self.round_keys.append(K_prev)
 
-    
+
 
     def encrypt(self, plaintext: bytes) -> bytes:
         ciphertext = [chunk.int() for chunk in (self.key ^ plaintext).zfill(64).chunk(8)]
 
         for r in range(10):
             ciphertext = self.round_func(self.round_keys[r], ciphertext)
-        
+
         return b''.join([Bytes(item).zfill(8) for item in ciphertext])
 
 

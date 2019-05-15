@@ -38,6 +38,7 @@ X   OCB
 X   Document new parsers
     X   Add class/function documentation
 
+X   DocTests
 
 X   Document these classes
     OK  JWS
@@ -50,6 +51,8 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
 X   Create functions/objects for invalid curve attacks https://auth0.com/blog/critical-vulnerability-in-json-web-encryption/
+
+X   Hierarchical and optionally persistent runtime configuration
 
 
 OK Miyaguchi–Preneel construction

@@ -289,12 +289,12 @@ class JWA_ECDH_ES(JWAKeyEncryptionImplementation):
         # 1) (priv, pub): Allows user to specify their own private key.
         if type(kek) is tuple:
             priv_key, peer_pub = kek
-        
+
         # 2) priv: Pull 'epk from header. Used in decryption.
         elif 'epk' in header:
             priv_key = kek
             peer_pub = PKIAutoParser.import_key(json.dumps(header['epk']).encode('utf-8'))
-        
+
         # 3) pub: Ephemeral private key.
         else:
             priv_key = ECDHE(G=kek.curve.G)
@@ -304,7 +304,7 @@ class JWA_ECDH_ES(JWAKeyEncryptionImplementation):
         # Need to clean up priv and pub keys
         if type(priv_key) is ECDSA:
             priv_key = ECDHE(d=priv_key.d, G=priv_key.G)
-    
+
 
         if hasattr(peer_pub, 'Q'):
             peer_pub = peer_pub.Q

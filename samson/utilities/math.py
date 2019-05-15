@@ -3,6 +3,7 @@ from samson.utilities.general import rand_bytes
 from sympy.matrices import Matrix, GramSchmidt
 from sympy import isprime, Poly
 from sympy.abc import x
+from types import FunctionType
 import math
 
 def gcd(a: int, b: int) -> int:
@@ -86,7 +87,7 @@ def mod_inv(a: int, n: int) -> int:
     return x
 
 
-def modexp (g: int, u: int, p: int) -> int:
+def modexp(g: int, u: int, p: int) -> int:
     """
     Computes `s = (g ^ u) mod p` (see Bruce Schneier's book, _Applied Cryptography_ p. 244).
 
@@ -406,3 +407,55 @@ def is_power_of_two(n: int) -> bool:
         bool: Whether or not `n` is a power of two.
     """
     return n != 0 and (n & (n - 1) == 0)
+
+
+
+def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30, f: FunctionType=None) -> int:
+    """
+    Probablistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
+
+    Parameters:
+        p          (int): Prime modulus.
+        g          (int): Generator.
+        y          (int): Number to find the discrete logarithm of.
+        a          (int): Interval start.
+        b          (int): Interval end.
+        iterations (int): Number of times to run outer loop. If `f` is None, it's used in the psuedorandom map.
+        f         (func): Psuedorandom map function.
+    
+    Returns:
+        int: The discrete logarithm. Possibly None if it couldn't be found.
+    """
+    k = iterations
+
+    if not f:
+        f = lambda y: pow(2, y % k, p)
+
+    while k > 1:
+        N = (f(0) + f(b)) // 2  * 4
+
+        # Tame kangaroo
+        xT = 0
+        yT = pow(g, b, p)
+
+        for _ in range(N):
+            f_yT  = f(yT)
+            xT   += f_yT
+            yT    = (yT * pow(g, f_yT, p)) % p
+
+
+        # Wild kangaroo
+        xW = 0
+        yW = y
+
+        while xW < b - a + xT:
+            f_yW = f(yW)
+            xW  += f_yW
+            yW   = (yW * pow(g, f_yW, p)) % p
+
+            if yW == yT:
+                return b + xT - xW
+
+
+        # Didn't find it. Try another `k`
+        k -= 1

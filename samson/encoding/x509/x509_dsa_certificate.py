@@ -46,4 +46,3 @@ class X509DSACertificate(X509Certificate):
     PUB_KEY_ENCODER = X509DSASubjectPublicKey
     PUB_KEY_DECODER = X509DSAPublicKey
     PARAM_ENCODER   = X509DSAParams
-    

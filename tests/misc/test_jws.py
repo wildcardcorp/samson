@@ -378,7 +378,7 @@ class JWSTestCase(unittest.TestCase):
         relevant_flattened = (flattened_parse.payload, flattened_parse.signatures[0][0].header, flattened_parse.signatures[0][1], flattened_parse.signatures[0][0].signature)
 
         self.assertEqual(relevant_full, relevant_flattened)
-    
+
 
     # Generated using jwcrypto
 
@@ -407,7 +407,7 @@ class JWSTestCase(unittest.TestCase):
         key_b = b'{"k":"EOMbE3QXor7d1Fb3slJVYXVzZyfhiufBefBQ_phUlhw","kty":"oct"}'
         key_c = b'{"d":"BaJsxmMk3athcX3h5VQqAAVQWWAupHHlysm4o7aTpf-0-oTL4ClWsDEn5PbsKpBxliTCfoOCHKdizAIyr-b5ZeFUPrFTwNxdutlCb8HKpiyIvJz09JQ38nvZtOwMykOZCF6rIPkZI-L0UGCMamvMQsyg1cYAbC3T2MpJaZZUfHqTT4AwpgIo7yXuDGrSFz-B4F0yJNR2-IbTtgDS-N4HdX8hvJijjX8WfnFxMRsEXYnzjgeYyu6gTy-wrhcy_0BiJOGSdJL-EcOndhHCW0JGz0oYCArTmP9Oppd31ftBKj7SxvmHxkh4KqTT7bFLeI9YNPh0Tx-RYxc4RvJoODHwIQ","dp":"NSU8GMWE43i5MO6IAA2mBm4X342SsWYF114LP_GewbgcdSwNLqqWkqNDBMqYbUb7H4H5mAQ-YdGKYVu9ceOyS4b-bQh1PLxkkCANdM9juTRfLNdeVaeAjGvJzNvTp7gg6DphFbeQ4tV4QfACYGKbNbpKxP10Wk20-eO1djMSfg0","dq":"LzmIr15O8ON4G_j6Kds6cfsipA7QQsZ5DOH5GERXoT5vSkSJbXjwconeXNxo32NHFKzmwgjJTmngK-0s1llV9F3XQXvGObyRnCxnyVbH4rKb8Z8DuB8yKQC7O0U6kdUF6KT0jLpITBV4SFf-UdF0QcixP6uXEe-MtGl3Xx8C5xE","e":"AQAB","kty":"RSA","n":"3LiaXfDj0Ohz0MRhz6fCNXOV6SDm2RAabJGWBk6NyII3HwdAkT9ToRrKnW2UzvlxegI9ZvtaJxiNS-V7Mfw4cQn3INVgRwTVfmRFUeZa40Kz0b3UeMIbppswoAUomRPwFMPJeHXXcqAWi2D7Z6BQlEIMTY4vKEg6jC93fPoLJCEKuwPRn7OAXIw9caWWOQsjTXrmKuYqLsPqAO49Am4IMm8uAX-RtCIl6fd9ZcI0CvBUbbTmJK3EkSpAxnQAwS-0FRYI-XK22SJz3YyeI0KVCsEARnBZajA4x8YhFK3ivcJ6Zs1cSDp67fj6g09RfYH6EteTb8gY5b7ARWme2MbyUw","p":"9rSy05qO-kNSPpb0emP8coeH2Fn61OSbBmq9x0vO4lmwPRSti3AMIo7qyRYuM0TgPXRAcbCxqsYo40eaabL5kR9nwb9qY52Gl3T8WlEsJW2Q1Mf0V0npzdB1qGlTOMCCkC4CQA6gRAE3cImZFb2y57FihWO4C1ouDNm6VPGwBKM","q":"5QlM1oLM2l1XMSTtA6USMN6TCJwI5W84nRI0mFe__zSenlYxVQy_jyIi8qiaW5TlOu_KoaplMAJl6zll5QanxNAU5vSlh5o3ckGClMPCkkM6X3_iIHNg8aNJ-qqTQiqLgKuCniqRus85avxumIAucCIBotiDqCVotOzhdAsthpE","qi":"izbMRPRkiZTNBFw-KufAz1_xnmoueuuG_-DnLg7kX8xj-yGW6fHXDQPxv0L4AHqGT_Vy7KotaUbxHaTmgszxjhGqrkzv-TeA5jfD6oVaKP9Lp4_YWUGMEcbmnQYTqBA2M_mAAqP8z77KNixtHCjcUdtV5kWKKco6sOHhWlmdNFM"}'
         token = b'{"payload":"HBE86DIy4RkTxwTxPrs3jR-_l3e9CNxBbMwgoJiGgVIEUKLWr50wIDZA0OnN24OcZmy_QNLbEs0dthHj_ddW5kefUTw5Eg","signatures":[{"protected":"eyJhbGciOiJFUzI1NiJ9","signature":"X9cMVGG1N-eze0Wd2vlx1GQXYEoxwytGjflswOOeh_oWuoNH_BOJpDPQ4yaMs_x_tiLEEF-gomnXV_per_6D2g"},{"protected":"eyJhbGciOiJIUzUxMiJ9","signature":"otWgkMW6aoH8hsHctvE6befp16TqAmiKZG_o6e8ZZ3mi2YjcSUfa0ZMxDMVW6r4MEhlifbq3ZBTQiMFzTobWpQ"},{"protected":"eyJhbGciOiJQUzUxMiJ9","signature":"jJT25xiDTd_kqlR06l8qZ20hkPnxSd5nszjWIF1PpkRLy2J3flYsxBM7KEogfQusO00-EBwqqtzUJ--_HW6w3L75Q_Hmn92UYL4dEqzOOR0iS_BeDuhc6GvOqJePaDxySlf9W2FL0M96_ldIMzGMeczsqB5OA3ziGRDLzCzlfHKNaUBH1zqWTkNza_t_ba9xeD-ewTFFX9cbM-2tSqPMVbIbip0gvMwO8b9-npCgbgb1x0s_IEvjmPfYYBKAxRUakQ9n-yBBFd--YqjO8FcoOZSc8cKPmxCdTVGf8PdV_PJbpkpofuHJOM2_VO--Z2S4uqCgj4URbnwBSPwSj7Ttww"}]}'
-        
+
         jwsset = JWSSet.parse(token)
 
         ecdsa_key_a          = PKIAutoParser.import_key(key_a)
@@ -416,4 +416,3 @@ class JWSTestCase(unittest.TestCase):
         self.assertTrue(jwsset.verify(ecdsa_key_a))
         self.assertTrue(jwsset.verify(JWKOctKey.decode(key_b)))
         self.assertTrue(jwsset.verify(PKIAutoParser.import_key(key_c)))
-        

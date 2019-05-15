@@ -1,12 +1,20 @@
 #!/bin/bash
 
+# Determine which interpreter to use.
+# We prefer PyPy over Python for interactive.
+samson_loc=`which samson-py`
+
+pypy3 -c "import samson" > /dev/null
+if [[ $? -eq 0 ]]; then
+    preferred="pypy3 $samson_loc"
+else
+    preferred='samson-py'
+fi
+
 if [[ $# -eq 0 ]]; then
-    pypy3 -c "import samson" > /dev/null
-    if [[ $? -eq 0 ]]; then
-        pypy3 `which samson-py`
-    else
-        samson-py
-    fi
+    $preferred
+elif [[ $1 -eq 'load' ]]; then
+    $preferred "$@"
 else
     samson-py "$@"
 fi

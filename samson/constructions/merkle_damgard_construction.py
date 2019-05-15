@@ -46,10 +46,10 @@ class MerkleDamgardConstruction(object):
         if compression_func:
             self.compression_func = compression_func
 
-        self.digest_size          = digest_size
-        self.block_size           = block_size
-        self.endianness           = endianness
-        self.encoded_size_length  = encoded_size_length
+        self.digest_size         = digest_size
+        self.block_size          = block_size
+        self.endianness          = endianness
+        self.encoded_size_length = encoded_size_length
 
 
 

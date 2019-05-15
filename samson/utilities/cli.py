@@ -58,7 +58,7 @@ IPython {IPython.__version__}
 
 
 
-from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3
+from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3, Whirlpool
 from samson.public_key.all import RSA, DSA, ECDSA, EdDSA
 from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.encoding.general import PKIEncoding, PKIAutoParser
@@ -70,18 +70,19 @@ HASHES = {
     'keccak': Keccak,
     'md4': MD4,
     'md5': MD5,
-    'ripem160': RIPEMD160,
+    'ripemd160': RIPEMD160,
     'sha1': SHA1,
     'sha224': SHA224,
     'sha256': SHA256,
-    'sha364': SHA384,
+    'sha384': SHA384,
     'sha512': SHA512,
     'sha3_224': SHA3.K224,
     'sha3_256': SHA3.K256,
     'sha3_384': SHA3.K384,
     'sha3_512': SHA3.K512,
     'shake128': SHA3.SHAKE128,
-    'shake256': SHA3.SHAKE256
+    'shake256': SHA3.SHAKE256,
+    'whirlpool': Whirlpool
 }
 
 PKI = {
