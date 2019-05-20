@@ -1,7 +1,8 @@
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
+#from sympy.polys.domains.quotientring import QuotientRing
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import isprime, Poly
+from sympy import isprime, Poly, sieve, GF, FractionField
 from sympy.abc import x
 from types import FunctionType
 import math
@@ -39,7 +40,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
     """
     prevx, x = 1, 0; prevy, y = 0, 1
     while b:
-        q = a//b
+        q = a // b
         x, prevx = prevx - q*x, x
         y, prevy = prevy - q*y, y
         a, b = b, a % b
@@ -75,7 +76,6 @@ def mod_inv(a: int, n: int) -> int:
     Returns:
         int: Modular inverse of `a` over `n`.
     """
-
     _, x, _ = xgcd(a, n)
 
     if (a * x) % n != 1:
@@ -140,11 +140,11 @@ def crt(residues: list, moduli: list) -> (int, int):
         (int, int): Formatted as (computed `x`, modulus).
     """
     assert len(residues) == len(moduli)
-    x = residues[0]
+    x  = residues[0]
     Nx = moduli[0]
 
     for i in range(1, len(residues)):
-        x = (mod_inv(Nx, moduli[i]) * (residues[i] - x)) * Nx + x
+        x  = (mod_inv(Nx, moduli[i]) * (residues[i] - x)) * Nx + x
         Nx = Nx * moduli[i]
 
     return x % Nx, Nx
@@ -459,3 +459,159 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
 
         # Didn't find it. Try another `k`
         k -= 1
+
+
+
+def hasse_frobenius_trace_interval(p: int):
+    l = 2 * math.ceil(math.sqrt(p))
+    return (-l + p + 1, p + 1 + l)
+
+
+def primes_product(n: int, blacklist: list=None):
+    total     = 1
+    primes    = []
+    blacklist = blacklist if blacklist else []
+
+    for prime in sieve.primerange(2, n+1):
+        if total >= n:
+            
+            # We might be able to remove some of the small primes
+            while True:
+                # prime = primes[0]
+                # if total // prime >= n:
+                #     total //= prime
+                #     primes  = primes[1:]
+                # else:
+                    break
+
+            return primes
+        
+        if prime not in blacklist:
+            primes.append(prime)
+            total *= prime
+
+
+
+def frobenius_endomorphism(point: object, q: int):
+    return point.__class__(x=point.x**q, y=point.y**q, curve=point.curve)
+
+
+def frobenius_trace(curve: object):
+    from samson.utilities.gf_poly import GFPoly
+
+    search_range   = hasse_frobenius_trace_interval(curve.p)
+    torsion_primes = primes_product(search_range[1] - search_range[0], [curve.gf.characteristic()])
+
+    trace_congruences = []
+
+    # Handle 2 separately to prevent multivariate poly arithmetic
+    if 2 in torsion_primes:
+        defining_poly = Poly(x**3 + curve.a*x + curve.b)
+        rational_char = Poly(x**curve.p - x)
+
+        print('defining_poly', defining_poly)
+        print('rational_char', rational_char)
+        print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
+
+        if gcd(rational_char, defining_poly).degree() == 0:
+            trace_congruences.append(GF(2)(1))
+        else:
+            trace_congruences.append(GF(2)(0))
+
+        torsion_primes.remove(2)
+
+    psi_1 = curve.division_poly(1)
+
+    for prime in torsion_primes:
+        torsion_quotient_ring = GF(prime)
+        psi = curve.division_poly(prime)
+        print(psi)
+
+        gf = GFPoly(prime, reducing_poly=psi)
+
+        point = curve.G.__class__(x=gf(psi_1), y=gf(psi_1), curve=curve)
+        p1 = frobenius_endomorphism(point, curve.p)
+        p2 = frobenius_endomorphism(p1, curve.p)
+        determinant = (curve.p % prime) * point
+
+        point_sum = determinant + p2
+
+        if point_sum == curve.POINT_AT_INFINITY:
+            return torsion_quotient_ring(0)
+        
+        trace_point = p1
+        for candidate in range(1, (prime + 1) // 2):
+            if point_sum.x == trace_point.x:
+                if point_sum.y == trace_point.y:
+                    return torsion_quotient_ring(candidate)
+                else:
+                    return torsion_quotient_ring(-candidate)
+            else:
+                trace_point += p1
+
+    
+
+    #trace_congruence = crt(trace_congruences, [])
+    return trace_congruences
+
+
+def bsgs(g: object, h: object, p: int, add_op: FunctionType=lambda e,g: e+g, sub_op: FunctionType= lambda e,g: e-g, mul_op: FunctionType=lambda e,g: e*g, e: object=1, start: int=0, end: int=None) -> int:
+    """
+    Performs Baby-step Giant-step with an arbitrary finite cyclic group.
+
+    Parameters:
+        g    (object): Generator/base.
+        h    (object): The result of `g^x mod p` to find the discrete logarithm of.
+        p       (int): The modulus.
+        add_op (func): The group's "add" operation.
+        sub_op (func): The group's "sub" operation.
+        mul_op (func): The group's "mul" operation.
+        e    (object): Starting point of the aggregator.
+        start   (int): Start of the search range.
+        end     (int): End of the search range.
+    
+    Returns:
+        int: The discrete logarithm of `h` given `g` over `p`.
+
+    Examples:
+        >>> from samson.utilities.math import hasse_frobenius_trace_interval, bsgs, mod_inv
+        >>> from samson.utilities.ecc import WeierstrassCurve
+
+        >>> curve = WeierstrassCurve(a=50, b=7, p=53, order=57, base_tuple=(34, 25))
+        >>> start, end = hasse_frobenius_trace_interval(curve.p)
+        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, curve.p, e=curve.POINT_AT_INFINITY, start=start, end=end)
+        57
+
+        >>> base     = 7
+        >>> exponent = 24
+        >>> p        = 53
+        >>> h        = pow(base, exponent, p)
+        >>> add_op   = lambda e, g: (e*g) % p
+        >>> sub_op   = lambda e, g: (e * mod_inv(g, p)) % p
+        >>> mul_op   = lambda e, g: pow(e,g,p)
+        >>> bsgs(base, h, p, add_op, sub_op, mul_op)
+        24
+
+    """
+    if not end:
+        end = p
+
+    search_range = end - start
+    table        = {}
+    m            = kth_root(search_range, 2)
+
+    for i in range(m):
+        table[e] = i
+        e = add_op(e, g)
+    
+    factor = mul_op(g, m)
+    o = mul_op(g, start)
+    e = h
+    for i in range(m):
+        e = sub_op(h, o)
+        if e in table:
+            return i*m + table[e] + start
+
+        o = add_op(o, factor)
+    
+    return None

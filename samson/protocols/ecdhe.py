@@ -62,4 +62,4 @@ class ECDHE(object):
         Returns:
             Bytes: Shared key.
         """
-        return Bytes((self.d * challenge).x).zfill((self.G.curve.p.bit_length() + 7) // 8)
+        return Bytes(int((self.d * challenge).x) % self.G.curve.p).zfill((self.G.curve.p.bit_length() + 7) // 8)

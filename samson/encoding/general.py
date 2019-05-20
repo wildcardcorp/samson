@@ -255,31 +255,38 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
 
 
 
-def int_to_poly(integer: int) -> Poly:
+def int_to_poly(integer: int, modulus: int=2) -> Poly:
     """
     Encodes an integer as a polynomial.
 
     Parameters:
         integer (int): Integer to encode.
+        modulus (int): Modulus to reduce the integer over.
     
     Returns:
         Poly: Polynomial representation.
     """
-    return Poly(sum([int(bit) * x ** i for i, bit in enumerate(bin(integer)[2:][::-1])][::-1]) + x, domain=GF(2)) - Poly(x, domain=GF(2))
+    base_coeffs = []
+    while integer > 0:
+        base_coeffs.append(integer % modulus)
+        integer //= modulus
+
+    return Poly(base_coeffs[::-1], x, modulus=modulus)
 
 
 
-def poly_to_int(poly: Poly) -> int:
+def poly_to_int(poly: Poly, modulus: int=2) -> int:
     """
     Encodes an polynomial as a integer.
 
     Parameters:
-        poly (Poly): Polynomial to encode.
+        poly   (Poly): Polynomial to encode.
+        modulus (int): Modulus to reconstruct the integer with.
     
     Returns:
         int: Integer representation.
     """
-    return int(''.join([str(bit % 2) for bit in poly.all_coeffs()]), 2)
+    return int(''.join([str(bit % modulus) for bit in poly.all_coeffs()]), modulus)
 
 
 from enum import Enum

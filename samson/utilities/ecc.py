@@ -1,5 +1,6 @@
-from sympy import GF
-from samson.utilities.math import mod_inv
+from sympy import GF, Poly
+from sympy.abc import x, y
+from samson.utilities.math import mod_inv, random_int, tonelli
 from samson.utilities.bytes import Bytes
 from fastecdsa.curve import P192, P224, P256, P384, P521
 import math
@@ -10,6 +11,179 @@ secp224r1 = P224
 secp256r1 = P256
 secp384r1 = P384
 secp521r1 = P521
+
+class WeierstrassCurve(object):
+    def __init__(self, a: int, b: int, p: int, base_tuple: tuple=None, order: int=None):
+        self.a          = a
+        self.b          = b
+        self.p          = p
+        self.gf         = GF(p)
+
+        if base_tuple:
+            base_tuple = WeierstrassPoint(*base_tuple, self)
+
+        self.G_cache     = base_tuple
+        self.POF_cache   = None
+        self.dpoly_cache = {}
+        self.order_cache = order
+
+
+
+    def __repr__(self):
+        return f"<WeierstrassCurve: a={self.a}, b={self.b}, order={self.order_cache}, p={self.p}, G={(self.G_cache.x, self.G_cache.y) if self.G_cache else self.G_cache}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    @property
+    def order(self):
+        from samson.utilities.math import bsgs, hasse_frobenius_trace_interval
+        if not self.order_cache:
+            start, end = hasse_frobenius_trace_interval(self.p)
+            order      = bsgs(self.G, self.POINT_AT_INFINITY, self.p, lambda e,g: e+g, lambda e,g: e-g, lambda e,g: e*g, e=self.POINT_AT_INFINITY, start=start, end=end)
+            self.order_cache = order
+            
+        return self.order_cache
+
+
+    @property
+    def G(self):
+        if not self.G_cache:
+            self.G_cache = self.random_point()
+
+        return self.G_cache
+    
+
+    @property
+    def POINT_AT_INFINITY(self):
+        if not self.POF_cache:
+            self.POF_cache = WeierstrassPoint(0, 0, self)
+
+        return self.POF_cache
+    
+
+    def recover_point_from_x(self, x: int) -> object:
+        y = tonelli(pow(x, 3, self.p) + self.a*x + self.b, self.p)
+        return WeierstrassPoint(x, y, self)
+    
+
+    def random_point(self) -> object:
+        while True:
+            try:
+                return self.recover_point_from_x(max(1, random_int(self.p)))
+            except AssertionError:
+                pass
+    
+
+    def division_poly(self, n: int) -> Poly:
+        if n in self.dpoly_cache:
+            return self.dpoly_cache[n]
+
+        a, b   = self.a, self.b
+        d_poly = None
+
+        if n in [0, 1]:
+            d_poly = Poly(n, gens=x)
+        elif n == 2:
+            d_poly = Poly(2*y)
+        elif n == 3:
+            # d_poly = Poly(3*x**4 + 6 * a*x**2 + 12 * b*x - a**2, gens=[x, y])
+            d_poly = Poly(3*x**4 + 6 * a*x**2 + 12 * b*x - a**2, gens=[x])
+        elif n == 4:
+            d_poly = Poly(4*y * (x**6 + 5*a * x**4 + 20*b*x**3 - 5*a**2 * x**2 - 4*a*b*x - 8*b**2 - a**3))
+        elif n % 2 == 1:
+            m = n // 2
+            d_poly = self.division_poly(m + 2) * self.division_poly(m)**3 - self.division_poly(m - 1) * self.division_poly(m + 1)**3
+        elif n % 2 == 0:
+            m = n // 2
+            d_poly = (self.division_poly(m) // 2 * y) * (self.division_poly(m + 2) * self.division_poly(m - 1)**2 - self.division_poly(m - 2) * self.division_poly(m + 1)**2)
+        
+
+        self.dpoly_cache[n] = d_poly
+
+        return d_poly
+
+
+
+
+class WeierstrassPoint(object):
+    def __init__(self, x, y, curve):
+        self.x     = curve.gf(x)
+        self.y     = curve.gf(y)
+        self.curve = curve
+
+
+    def __repr__(self):
+        return f"<WeierstrassPoint: x={self.x}, y={self.y}, curve={self.curve}>"
+
+    def __str__(self):
+        return self.__repr__()
+    
+
+    def __hash__(self):
+        return self.x.val * self.y.val + self.curve.p
+    
+
+    def __eq__(self, P2: object) -> bool:
+        return self.curve == P2.curve and self.x == P2.x and self.y == P2.y
+    
+
+    def __neg__(self) -> object:
+        return WeierstrassPoint(self.x, -self.y, self.curve)
+    
+
+    def __add__(self, P2: object) -> object:
+        if self == self.curve.POINT_AT_INFINITY:
+            return P2
+
+        if P2 == self.curve.POINT_AT_INFINITY:
+            return self
+
+        if self == -P2:
+            return self.curve.POINT_AT_INFINITY
+
+        if self == P2:
+            m = (3*self.x**2 + self.curve.a) / (2 * self.y)
+        else:
+            m = (P2.y - self.y) / (P2.x - self.x)
+
+        x = m**2 - self.x - P2.x
+        y = m * (self.x - x) - self.y
+
+        return WeierstrassPoint(x, y, self.curve)
+
+
+
+    def __radd__(self, P2: object) -> object:
+        return self.__add__(P2)
+    
+
+    def __sub__(self, P2: object) -> object:
+        return self + (-P2)
+
+
+    def __rsub__(self, P2: object) -> object:
+        return -self + P2
+
+
+    def __mul__(self, scalar: int) -> object:
+        result = self.curve.POINT_AT_INFINITY
+        x      = self
+        while scalar > 0:
+            if scalar & 1:
+                result += x
+            
+            x       += x
+            scalar >>= 1
+
+        return result
+    
+
+
+    def __rmul__(self, scalar: int) -> object:
+        return self.__mul__(scalar)
+
 
 
 # https://tools.ietf.org/html/rfc7748
@@ -67,7 +241,7 @@ class MontgomeryCurve(object):
     def __eq__(self, other) -> bool:
         return self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return Bytes(self.oid.encode()).int()
 
 
@@ -249,7 +423,7 @@ class TwistedEdwardsCurve(object):
     def __eq__(self, other) -> bool:
         return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return Bytes(self.oid.encode()).int()
 
 
@@ -290,7 +464,7 @@ class TwistedEdwardsCurve(object):
 
 
 
-    def recover_point_from_y(self, y: int):
+    def recover_point_from_y(self, y: int) -> object:
         """
         Recovers the full TwistedEdwardsPoint from the y-coordinate.
 
@@ -357,7 +531,7 @@ class TwistedEdwardsPoint(object):
         return self.x == other.x and self.y == other.y and self.curve == other.curve
 
 
-    def __add__(self, other):
+    def __add__(self, other: object) -> object:
         if type(other) != TwistedEdwardsPoint:
             raise TypeError("TwistedEdwardsPoint addition only defined between points.")
 
@@ -371,7 +545,7 @@ class TwistedEdwardsPoint(object):
         return TwistedEdwardsPoint(x3, y3, self.curve)
 
 
-    def __mul__(self, scalar: int):
+    def __mul__(self, scalar: int) -> object:
         if type(scalar) != int:
             raise NotImplementedError("TwistedEdwardsPoint multiplication is currently only implemented for scalars.")
 
@@ -387,7 +561,7 @@ class TwistedEdwardsPoint(object):
         return Q
 
 
-    def __rmul__(self, scalar: int):
+    def __rmul__(self, scalar: int) -> object:
         return self.__mul__(scalar)
 
 
