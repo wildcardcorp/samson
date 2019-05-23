@@ -506,11 +506,12 @@ def frobenius_trace(curve: object):
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
-        defining_poly = Poly(x**3 + curve.a*x + curve.b)
-        rational_char = Poly(x**curve.p - x)
+        defining_poly = Poly(x**3 + curve.a*x + curve.b, modulus=curve.p)
+        rational_char = Poly(x**curve.p - x, modulus=curve.p)
 
         print('defining_poly', defining_poly)
         print('rational_char', rational_char)
+        print('gcd(rational_char, defining_poly)', gcd(rational_char, defining_poly))
         print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
 
         if gcd(rational_char, defining_poly).degree() == 0:
@@ -522,17 +523,18 @@ def frobenius_trace(curve: object):
 
     psi_1 = curve.division_poly(1)
 
-    for prime in torsion_primes:
-        torsion_quotient_ring = GF(prime)
-        psi = curve.division_poly(prime)
+    for l in torsion_primes:
+        q_bar = curve.p % l
+        torsion_quotient_ring = GF(l)
+        psi = curve.division_poly(l)
         print(psi)
 
-        gf = GFPoly(prime, reducing_poly=psi)
+        gf = GFPoly(l, reducing_poly=psi)
 
         point = curve.G.__class__(x=gf(psi_1), y=gf(psi_1), curve=curve)
         p1 = frobenius_endomorphism(point, curve.p)
         p2 = frobenius_endomorphism(p1, curve.p)
-        determinant = (curve.p % prime) * point
+        determinant = q_bar * point
 
         point_sum = determinant + p2
 
@@ -540,7 +542,7 @@ def frobenius_trace(curve: object):
             return torsion_quotient_ring(0)
         
         trace_point = p1
-        for candidate in range(1, (prime + 1) // 2):
+        for candidate in range(1, (l + 1) // 2):
             if point_sum.x == trace_point.x:
                 if point_sum.y == trace_point.y:
                     return torsion_quotient_ring(candidate)
@@ -574,8 +576,8 @@ def bsgs(g: object, h: object, p: int, add_op: FunctionType=lambda e,g: e+g, sub
         int: The discrete logarithm of `h` given `g` over `p`.
 
     Examples:
-        >>> from samson.utilities.math import hasse_frobenius_trace_interval, bsgs, mod_inv
-        >>> from samson.utilities.ecc import WeierstrassCurve
+        >>> from samson.math.general import hasse_frobenius_trace_interval, bsgs, mod_inv
+        >>> from samson.math.ecc import WeierstrassCurve
 
         >>> curve = WeierstrassCurve(a=50, b=7, p=53, order=57, base_tuple=(34, 25))
         >>> start, end = hasse_frobenius_trace_interval(curve.p)

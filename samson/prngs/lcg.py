@@ -1,4 +1,4 @@
-from samson.utilities.math import gcd, mod_inv, lll, is_power_of_two
+from samson.math.general import gcd, mod_inv, lll, is_power_of_two
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
 from sympy import isprime

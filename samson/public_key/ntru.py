@@ -2,7 +2,7 @@ from sympy.abc import x
 from sympy import ZZ, Poly, GF, invert
 from sympy.polys.polyerrors import NotInvertible
 from samson.utilities.general import shuffle
-from samson.utilities.math import is_power_of_two
+from samson.math.general import is_power_of_two
 from samson.utilities.bytes import Bytes
 from sympy.ntheory import isprime
 from samson.core.encryption_alg import EncryptionAlg

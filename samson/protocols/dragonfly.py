@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.math import mod_inv
+from samson.math.general import mod_inv
 from samson.hashes.sha2 import SHA256
 from samson.protocols.diffie_hellman import DiffieHellman
 from types import FunctionType

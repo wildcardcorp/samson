@@ -1,4 +1,4 @@
-from samson.utilities.math import random_int, crt, pollards_kangaroo, mod_inv
+from samson.math.general import random_int, crt, pollards_kangaroo, mod_inv
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle
 from functools import reduce

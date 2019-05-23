@@ -4,7 +4,7 @@ from samson.public_key.rsa import RSA
 from samson.public_key.ecdsa import ECDSA
 from samson.public_key.eddsa import EdDSA
 from samson.utilities.bytes import Bytes
-from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448
+from samson.math.ecc import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA256, SHA384, SHA512
 from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey

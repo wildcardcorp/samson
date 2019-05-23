@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv, random_int
+from samson.math.general import mod_inv, random_int
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256

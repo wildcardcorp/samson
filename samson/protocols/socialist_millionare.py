@@ -1,5 +1,5 @@
 from samson.protocols.diffie_hellman import DiffieHellman
-from samson.utilities.math import mod_inv
+from samson.math.general import mod_inv
 from samson.utilities.bytes import Bytes
 
 class SocialistMillionare(object):

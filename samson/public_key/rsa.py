@@ -1,4 +1,4 @@
-from samson.utilities.math import gcd, lcm, mod_inv, find_prime
+from samson.math.general import gcd, lcm, mod_inv, find_prime
 from samson.core.encryption_alg import EncryptionAlg
 
 from samson.encoding.openssh.openssh_rsa_private_key import OpenSSHRSAPrivateKey

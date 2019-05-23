@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv
+from samson.math.general import mod_inv
 
 class AffineCipher(object):
     """

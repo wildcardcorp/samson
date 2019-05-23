@@ -1,6 +1,6 @@
 from samson.prngs.lfg import LFG
 from samson.utilities.bytes import Bytes
-from samson.utilities.math import next_prime
+from samson.math.general import next_prime
 import unittest
 
 

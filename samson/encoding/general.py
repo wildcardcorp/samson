@@ -267,7 +267,9 @@ def int_to_poly(integer: int, modulus: int=2) -> Poly:
         Poly: Polynomial representation.
     """
     base_coeffs = []
-    while integer > 0:
+
+    # Use != to handle negative numbers
+    while integer != 0 and integer != -1:
         base_coeffs.append(integer % modulus)
         integer //= modulus
 

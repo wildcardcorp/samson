@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
-from samson.utilities.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
+from samson.math.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
 from samson.hashes.sha2 import SHA512
 
 from samson.encoding.openssh.openssh_eddsa_private_key import OpenSSHEdDSAPrivateKey

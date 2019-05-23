@@ -1,6 +1,6 @@
 from sympy import GF, Poly
 from sympy.abc import x, y
-from samson.utilities.math import mod_inv, random_int, tonelli
+from samson.math.general import mod_inv, random_int, tonelli
 from samson.utilities.bytes import Bytes
 from fastecdsa.curve import P192, P224, P256, P384, P521
 import math
@@ -14,10 +14,10 @@ secp521r1 = P521
 
 class WeierstrassCurve(object):
     def __init__(self, a: int, b: int, p: int, base_tuple: tuple=None, order: int=None):
-        self.a          = a
-        self.b          = b
-        self.p          = p
-        self.gf         = GF(p)
+        self.a  = a
+        self.b  = b
+        self.p  = p
+        self.gf = GF(p)
 
         if base_tuple:
             base_tuple = WeierstrassPoint(*base_tuple, self)
@@ -38,7 +38,7 @@ class WeierstrassCurve(object):
 
     @property
     def order(self):
-        from samson.utilities.math import bsgs, hasse_frobenius_trace_interval
+        from samson.math.general import bsgs, hasse_frobenius_trace_interval
         if not self.order_cache:
             start, end = hasse_frobenius_trace_interval(self.p)
             order      = bsgs(self.G, self.POINT_AT_INFINITY, self.p, lambda e,g: e+g, lambda e,g: e-g, lambda e,g: e*g, e=self.POINT_AT_INFINITY, start=start, end=end)

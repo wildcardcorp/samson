@@ -17,6 +17,9 @@ DELIMITER_REGEX = re.compile(b'[?.,! ]')
 MOST_COMMON_BIGRAMS = {k.lower():v for k,v in MOST_COMMON_BIGRAMS.items()}
 
 def _num_common_first_letters(words):
+    if not len(words):
+        return 0
+
     return sum([FIRST_LETTER_FREQUENCIES[bytes([word[0]])] for word in words if len(word) > 0 and bytes([word[0]]) in FIRST_LETTER_FREQUENCIES]) / len(words)
 
 

@@ -1,4 +1,4 @@
-from samson.utilities.math import mod_inv, find_prime, random_int
+from samson.math.general import mod_inv, find_prime, random_int
 from samson.utilities.bytes import Bytes
 
 from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey

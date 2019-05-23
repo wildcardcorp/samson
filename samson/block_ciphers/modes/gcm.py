@@ -38,7 +38,6 @@ class GCM(object):
     def __repr__(self):
         return f"<GCM: encryptor={self.encryptor}, H={self.H}, ctr={self.ctr}>"
 
-
     def __str__(self):
         return self.__repr__()
 

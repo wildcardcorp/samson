@@ -1,5 +1,5 @@
 
-from samson.utilities.math import mod_inv, lll, generate_superincreasing_seq, find_coprime
+from samson.math.general import mod_inv, lll, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix, eye

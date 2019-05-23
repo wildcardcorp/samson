@@ -8,6 +8,7 @@ from samson.constructions.all import *
 from samson.hashes.all import *
 from samson.kdfs.all import *
 from samson.macs.all import *
+from samson.math.all import *
 from samson.oracles.all import *
 from samson.padding.all import *
 from samson.prngs.all import *

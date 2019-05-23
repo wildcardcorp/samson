@@ -1,5 +1,5 @@
-from samson.utilities.ecc import WeierstrassCurve, WeierstrassPoint
-from samson.utilities.math import random_int, crt
+from samson.math.ecc import WeierstrassCurve, WeierstrassPoint
+from samson.math.general import random_int, crt
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle

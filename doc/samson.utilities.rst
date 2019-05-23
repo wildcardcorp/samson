@@ -44,10 +44,10 @@ samson.utilities.cli module
     :undoc-members:
     :show-inheritance:
 
-samson.utilities.ecc module
+samson.math.ecc module
 ---------------------------
 
-.. automodule:: samson.utilities.ecc
+.. automodule:: samson.math.ecc
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,10 +68,10 @@ samson.utilities.manipulation module
     :undoc-members:
     :show-inheritance:
 
-samson.utilities.math module
+samson.math.general module
 ----------------------------
 
-.. automodule:: samson.utilities.math
+.. automodule:: samson.math.general
     :members:
     :undoc-members:
     :show-inheritance:

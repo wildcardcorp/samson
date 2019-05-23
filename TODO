@@ -28,11 +28,7 @@ X   More encoders/decoders/cryptosystems
     X   PGP
 
 
-X   OCB
-    OK  OCB2
-        OK  Auth tag forgery
-
-    X   OCB3
+X   OCB3
 
 
 X   Document new parsers
@@ -55,10 +51,10 @@ X   Create functions/objects for invalid curve attacks https://auth0.com/blog/cr
 X   Hierarchical and optionally persistent runtime configuration
 
 
-OK Miyaguchi–Preneel construction
-OK WHIRLPOOL hash
 X  Rabbit stream cipher
 X  HC-256 stream cipher
+
+X  DHParams ASN1
 
 
 X   Composable exploits and ACE

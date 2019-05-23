@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from samson.attacks.invalid_curve_attack import InvalidCurveAttack
-from samson.utilities.ecc import WeierstrassCurve
+from samson.math.ecc import WeierstrassCurve
 from samson.utilities.bytes import Bytes
 from samson.protocols.ecdhe import ECDHE
 from samson.oracles.default_oracle import DefaultOracle

@@ -1,4 +1,4 @@
-from samson.utilities.math import modexp
+from samson.math.general import modexp
 from samson.protocols.srp_client import SRPClient
 from samson.hashes.sha2 import SHA256
 from samson.utilities.bytes import Bytes

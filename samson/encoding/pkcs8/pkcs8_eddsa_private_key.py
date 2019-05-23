@@ -1,7 +1,7 @@
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.utilities.bytes import Bytes
-from samson.utilities.ecc import EDCURVE_OID_LOOKUP
+from samson.math.ecc import EDCURVE_OID_LOOKUP
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import encoder, decoder
 import math

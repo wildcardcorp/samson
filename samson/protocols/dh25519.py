@@ -1,4 +1,4 @@
-from samson.utilities.ecc import Curve25519, MontgomeryCurve
+from samson.math.ecc import Curve25519, MontgomeryCurve
 from samson.utilities.bytes import Bytes
 
 class DH25519(object):

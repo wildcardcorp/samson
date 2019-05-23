@@ -9,7 +9,7 @@ from samson.public_key.ecdsa import ECDSA
 from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey
 from samson.utilities.bytes import Bytes
-from samson.utilities.ecc import Curve25519, Curve448
+from samson.math.ecc import Curve25519, Curve448
 from fastecdsa.curve import P256, P384, P521
 import unittest
 

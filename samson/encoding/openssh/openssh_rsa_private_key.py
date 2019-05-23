@@ -1,5 +1,5 @@
 from samson.encoding.openssh.general import parse_openssh_key, generate_openssh_private_key
-from samson.utilities.math import mod_inv
+from samson.math.general import mod_inv
 from samson.encoding.openssh.core.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.core.rsa_public_key import RSAPublicKey
 

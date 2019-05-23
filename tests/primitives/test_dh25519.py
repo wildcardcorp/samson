@@ -1,5 +1,5 @@
 from samson.protocols.dh25519 import DH25519
-from samson.utilities.ecc import Curve25519, Curve448
+from samson.math.ecc import Curve25519, Curve448
 from samson.utilities.bytes import Bytes
 import unittest
 

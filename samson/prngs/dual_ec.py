@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.math import tonelli, mod_inv
+from samson.math.general import tonelli, mod_inv
 from samson.utilities.runtime import RUNTIME
 from fastecdsa.point import Point
 from fastecdsa.curve import Curve

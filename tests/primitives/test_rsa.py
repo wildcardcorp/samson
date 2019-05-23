@@ -2,7 +2,7 @@ from samson.public_key.rsa import RSA
 from samson.utilities.bytes import Bytes
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.encoding.general import PKIEncoding
-from samson.utilities.math import mod_inv
+from samson.math.general import mod_inv
 from sympy import isprime
 import unittest
 

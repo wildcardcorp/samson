@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.utilities.ecc import EdwardsCurve25519, EdwardsCurve448, Curve25519, Curve448
+from samson.math.ecc import EdwardsCurve25519, EdwardsCurve448, Curve25519, Curve448
 from samson.encoding.general import url_b64_decode, url_b64_encode
 import json
 
