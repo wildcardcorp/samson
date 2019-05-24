@@ -1,17 +1,29 @@
 from samson.math.algebra.rings.ring import Ring
+from samson.math.general import fast_mul, square_and_mul
+from sympy import Expr, Symbol
 
 class Polynomial(object):
-    def __init__(self, coeffs: list, ring: Ring=None):
-        self.ring = ring or coeffs[0].ring
+    def __init__(self, coeffs: list, ring: Ring=None, symbol: Symbol=None):
+        default_symbol = Symbol('x')
 
-        coeffs_rev = coeffs[::-1]
+        # Parse expressions
+        if issubclass(type(coeffs), Expr):
+            sym_poly       = coeffs.as_poly()
+            coeffs         = [int(coeff) for coeff in sym_poly.all_coeffs()[::-1]]
+            default_symbol = sym_poly.gens[0]
+
+        self.ring   = ring or coeffs[0].ring
+        self.symbol = symbol or default_symbol
+
+        # Trim zeros
+        coeffs_rev  = [self.ring.coerce(coeff) for coeff in coeffs][::-1]
         idx = 0
         while idx < len(coeffs) - 1 and coeffs_rev[idx] == self.ring.zero():
             idx += 1
 
         self.coeffs = coeffs_rev[idx:][::-1]
 
-    
+
 
     def shorthand(self) -> str:
         poly_repr = []
@@ -27,9 +39,9 @@ class Polynomial(object):
             if idx == 0:
                 full_coeff = f'{coeff_short_mul[:-1]}'
             elif idx == 1:
-                full_coeff = f'{coeff_short_mul}x'
+                full_coeff = f'{coeff_short_mul}{self.symbol}'
             else:
-                full_coeff = f'{coeff_short_mul}x**{idx}'
+                full_coeff = f'{coeff_short_mul}{self.symbol}**{idx}'
             
             poly_repr.append(full_coeff)
 
@@ -53,15 +65,15 @@ class Polynomial(object):
     
 
     def monic(self) -> object:
-        return Polynomial([coeff / self.coeffs[-1] for coeff in self.coeffs], self.ring)
+        return Polynomial([coeff / self.coeffs[-1] for coeff in self.coeffs], self.ring, self.symbol)
     
 
     def is_monic(self) -> bool:
-        return self.LC == self.ring.one()
+        return self.LC() == self.ring.one()
 
 
     def derivative(self) -> object:
-        return Polynomial([coeff * idx for idx, coeff in enumerate(self.coeffs)][1:], self.ring)
+        return Polynomial([coeff * idx for idx, coeff in enumerate(self.coeffs)][1:], self.ring, self.symbol)
     
 
     def degree(self) -> int:
@@ -78,7 +90,7 @@ class Polynomial(object):
     
 
     def divmod(self, divisor: object) -> (object, object):
-        poly_zero = Polynomial([self.ring.zero()])
+        poly_zero = Polynomial([self.ring.zero()], self.symbol)
         assert divisor != poly_zero
 
         q = poly_zero
@@ -94,12 +106,15 @@ class Polynomial(object):
 
 
     def __add__(self, other: object) -> object:
-        return Polynomial([a + b for a,b in self.pad_and_zip(other)], self.ring)
+        return Polynomial([a + b for a,b in self.pad_and_zip(other)], self.ring, self.symbol)
 
     def __sub__(self, other: object) -> object:
-        return Polynomial([a - b for a,b in self.pad_and_zip(other)], self.ring)
+        return Polynomial([a - b for a,b in self.pad_and_zip(other)], self.ring, self.symbol)
 
     def __mul__(self, other: object) -> object:
+        if type(other) is int:
+            return fast_mul(self, other, Polynomial([self.ring.zero()], self.ring, self.symbol))
+    
         new_coeff_len = max((len(self.coeffs) * len(other.coeffs) - 1), len(self.coeffs) + len(other.coeffs))
         new_coeffs    = [self.ring.zero()] * new_coeff_len
 
@@ -107,14 +122,25 @@ class Polynomial(object):
             for j, coeff_g in enumerate(other.coeffs):
                 new_coeffs[i+j] += coeff_h*coeff_g
 
-        return Polynomial(new_coeffs, self.ring)
+        return Polynomial(new_coeffs, self.ring, self.symbol)
+    
+    def __rmul__(self, other: int) -> object:
+        return self * other
 
     def __neg__(self) -> object:
-        return Polynomial([-coeff for coeff in self.coeffs], self.ring)
-    
+        return Polynomial([-coeff for coeff in self.coeffs], self.ring, self.symbol)
     
     def __truediv__(self, other: object) -> object:
         return self.divmod(other)[0]
 
     def __mod__(self, other: object) -> object:
         return self.divmod(other)[1]
+    
+    __pow__ = square_and_mul
+
+    def __int__(self) -> int:
+        from samson.math.general import poly_to_int
+        return poly_to_int(self)
+
+    def __eq__(self, other: object) -> bool:
+        return type(self) == type(other) and self.coeffs == other.coeffs

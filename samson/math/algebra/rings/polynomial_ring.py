@@ -24,6 +24,9 @@ class PolynomialElement(RingElement):
         return PolynomialElement(self.val - other.val, self.ring)
 
     def __mul__(self, other: object) -> object:
+        if type(other) is int:
+            return super().__mul__(other)
+
         return PolynomialElement(self.val * other.val, self.ring)
 
     def __truediv__(self, other: object) -> object:
@@ -32,12 +35,20 @@ class PolynomialElement(RingElement):
     def __mod__(self, other: object) -> object:
         return PolynomialElement(self.val % other.val, self.ring)
 
+    def __neg__(self) -> object:
+        return PolynomialElement(-self.val, self.ring)
+
 
 class PolynomialRing(Ring):
     ELEMENT = PolynomialElement
 
     def __init__(self, field):
         self.field = field
+
+
+    @property
+    def characteristic(self):
+        return self.field.characteristic
 
 
     def zero(self) -> Polynomial:

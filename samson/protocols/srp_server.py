@@ -1,4 +1,3 @@
-from samson.math.general import modexp
 from samson.protocols.srp_client import SRPClient
 from samson.hashes.sha2 import SHA256
 from samson.utilities.bytes import Bytes
@@ -45,7 +44,7 @@ class SRPServer(object):
             password (bytes): Password.
         """
         x = self.hash_obj.hash(self.salt + self.hash_obj.hash(identity + b':' + password)).int()
-        v = modexp(self.g, x, self.N)
+        v = pow(self.g, x, self.N)
         self.accounts[identity] = v
 
 
@@ -62,7 +61,7 @@ class SRPServer(object):
             (bytes, int): Formatted as (server salt, server's challenge `B`)
         """
         v = self.accounts[identity]
-        B = (self.k * v + modexp(self.g, self.b, self.N)) % self.N
+        B = (self.k * v + pow(self.g, self.b, self.N)) % self.N
         self.requests[identity] = {'A': A, 'B': B}
 
         return self.salt, B
@@ -86,8 +85,8 @@ class SRPServer(object):
 
         uH = self.hash_obj.hash(self.PAD(A) + self.PAD(request['B'])).int()
 
-        p1 = (A * modexp(v, uH, self.N))
-        sS = modexp(p1, self.b, self.N)
+        p1 = (A * pow(v, uH, self.N))
+        sS = pow(p1, self.b, self.N)
 
         sK = self.hash_obj.hash(Bytes(sS))
         return self.hash_obj.hash(sK + self.salt) == client_hash

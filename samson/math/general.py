@@ -1,11 +1,47 @@
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
-#from sympy.polys.domains.quotientring import QuotientRing
 from sympy.matrices import Matrix, GramSchmidt
 from sympy import isprime, Poly, sieve, GF, FractionField
 from sympy.abc import x
 from types import FunctionType
 import math
+
+def int_to_poly(integer: int, modulus: int=2) -> Poly:
+    """
+    Encodes an integer as a polynomial.
+
+    Parameters:
+        integer (int): Integer to encode.
+        modulus (int): Modulus to reduce the integer over.
+    
+    Returns:
+        Poly: Polynomial representation.
+    """
+    from samson.math.all import ZZ, Polynomial
+    base_coeffs = []
+
+    # Use != to handle negative numbers
+    while integer != 0 and integer != -1:
+        base_coeffs.append(integer % modulus)
+        integer //= modulus
+
+    return Polynomial(base_coeffs, ZZ/ZZ(modulus))
+
+
+def poly_to_int(poly: object) -> int:
+    """
+    Encodes an polynomial as a integer.
+
+    Parameters:
+        poly   (Poly): Polynomial to encode.
+        modulus (int): Modulus to reconstruct the integer with.
+    
+    Returns:
+        int: Integer representation.
+    """
+    modulus = int(poly.ring.quotient.val)
+    return int(''.join([str(int(bit)) for bit in poly.coeffs[::-1]]), modulus)
+
 
 def gcd(a: int, b: int) -> int:
     """
@@ -87,24 +123,43 @@ def mod_inv(a: int, n: int) -> int:
     return x
 
 
-def modexp(g: int, u: int, p: int) -> int:
+def square_and_mul(g: int, u: int) -> int:
     """
-    Computes `s = (g ^ u) mod p` (see Bruce Schneier's book, _Applied Cryptography_ p. 244).
+    Computes `s = g ^ u` over arbitrary rings.
 
     Parameters:
         g (int): Base.
         u (int): Exponent.
-        p (int): Modulus.
     
     Returns:
-        int: Modular exponentiation.
+        int: `s = g ^ u` within its ring.
     """
     s = 1
     while u != 0:
         if u & 1:
-            s = (s * g)%p
+            s = (s * g)
         u >>= 1
-        g = (g * g)%p
+        g = (g * g)
+    return s
+
+
+def fast_mul(a: int, b: int, s: int=None) -> int:
+    """
+    Computes `s = a * b` over arbitrary rings.
+
+    Parameters:
+        a (int): Element `a`.
+        b (int): Element `b`.
+    
+    Returns:
+        int: `s = a * b` within its ring.
+    """
+    s = s or a.ring.zero()
+    while b != 0:
+        if b & 1:
+            s = (s + a)
+        b >>= 1
+        a = (a + a)
     return s
 
 
@@ -497,8 +552,6 @@ def frobenius_endomorphism(point: object, q: int):
 
 
 def frobenius_trace(curve: object):
-    from samson.utilities.gf_poly import GFPoly
-
     search_range   = hasse_frobenius_trace_interval(curve.p)
     torsion_primes = primes_product(search_range[1] - search_range[0], [curve.gf.characteristic()])
 

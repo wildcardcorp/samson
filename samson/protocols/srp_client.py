@@ -1,4 +1,3 @@
-from samson.math.general import modexp
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha2 import SHA256
 
@@ -28,7 +27,7 @@ class SRPClient(object):
         """
         self.a = a or Bytes.random(4).int() % N
         self.g = g
-        self.A = modexp(g, self.a, N)
+        self.A = pow(g, self.a, N)
         self.identity = identity
         self.password = password
         self.N = N
@@ -70,9 +69,9 @@ class SRPClient(object):
         uH = self.hash_obj.hash(self.PAD(self.A) + self.PAD(B)).int()
         xH = self.hash_obj.hash(salt + self.hash_obj.hash(self.identity + b':' + self.password)).int()
 
-        p1 = (B - self.k * modexp(self.g, xH, self.N))
+        p1 = (B - self.k * pow(self.g, xH, self.N))
         p2 = (self.a + uH * xH)
-        cS = modexp(p1, p2, self.N)
+        cS = pow(p1, p2, self.N)
 
         cK = self.hash_obj.hash(Bytes(cS))
         return self.hash_obj.hash(cK + salt)

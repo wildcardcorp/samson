@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.encoding.general import poly_to_int, int_to_poly
+from samson.math.general import poly_to_int, int_to_poly
 from samson.utilities.manipulation import right_rotate, left_rotate
 from samson.core.encryption_alg import EncryptionAlg
 

@@ -1,6 +1,6 @@
 from sympy import Poly
 from samson.math.general import berlekamp_massey
-from samson.encoding.general import poly_to_int
+from samson.math.general import poly_to_int
 
 class GLFSR(object):
     """

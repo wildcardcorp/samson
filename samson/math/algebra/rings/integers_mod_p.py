@@ -18,28 +18,23 @@ class IntegersModPElement(RingElement):
         return self.ring.shorthand() + f'({self.val})'
 
 
-    def coerce(self, other: int) -> object:
-        if type(other) is int:
-            other = IntegersModPElement(self.ring, other)
-        return other
-
     def __add__(self, other: object) -> object:
-        other = self.coerce(other)
+        other = self.ring.coerce(other)
         return IntegersModPElement((self.val + other.val) % self.ring.p, self.ring)
 
     def __sub__(self, other: object) -> object:
-        other = self.coerce(other)
+        other = self.ring.coerce(other)
         return IntegersModPElement((self.val - other.val) % self.ring.p, self.ring)
 
     def __mul__(self, other: object) -> object:
-        other = self.coerce(other)
+        other = self.ring.coerce(other)
         return IntegersModPElement((self.val * other.val) % self.ring.p, self.ring)
 
     def __mod__(self, other: object) -> object:
         return IntegersModPElement((self.val % other) % self.ring.p, self.ring)
     
     def __truediv__(self, other: object) -> object:
-        other = self.coerce(other)
+        other = self.ring.coerce(other)
         return IntegersModPElement((self.val * mod_inv(other.val, self.ring.p)) % self.ring.p, self.ring)
 
     def __neg__(self) -> object:
@@ -73,6 +68,13 @@ class IntegersModP(Ring):
 
     def shorthand(self) -> str:
         return f'Z/Z{self.p}'
+
+
+    def coerce(self, other: int) -> object:
+        if type(other) is int:
+            other = IntegersModPElement(self, other)
+        return other
+
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.p == other.p

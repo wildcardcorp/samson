@@ -1,5 +1,4 @@
 from samson.utilities.manipulation import get_blocks
-from sympy import Poly, GF
 from sympy.abc import x
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence, Integer, SequenceOf
@@ -252,43 +251,6 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
             oid_bytes += bytes([int(block, 2) for block in new_bin_blocks])
 
     return oid_bytes
-
-
-
-def int_to_poly(integer: int, modulus: int=2) -> Poly:
-    """
-    Encodes an integer as a polynomial.
-
-    Parameters:
-        integer (int): Integer to encode.
-        modulus (int): Modulus to reduce the integer over.
-    
-    Returns:
-        Poly: Polynomial representation.
-    """
-    base_coeffs = []
-
-    # Use != to handle negative numbers
-    while integer != 0 and integer != -1:
-        base_coeffs.append(integer % modulus)
-        integer //= modulus
-
-    return Poly(base_coeffs[::-1], x, modulus=modulus)
-
-
-
-def poly_to_int(poly: Poly, modulus: int=2) -> int:
-    """
-    Encodes an polynomial as a integer.
-
-    Parameters:
-        poly   (Poly): Polynomial to encode.
-        modulus (int): Modulus to reconstruct the integer with.
-    
-    Returns:
-        int: Integer representation.
-    """
-    return int(''.join([str(bit % modulus) for bit in poly.all_coeffs()]), modulus)
 
 
 from enum import Enum
