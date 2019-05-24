@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
-from samson.math.ecc import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
+from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, TwistedEdwardsPoint, TwistedEdwardsCurve, bit
 from samson.hashes.sha2 import SHA512
 
 from samson.encoding.openssh.openssh_eddsa_private_key import OpenSSHEdDSAPrivateKey
@@ -76,7 +76,7 @@ class EdDSA(DSA):
         Returns:
             Bytes: `Bytes` encoding.
         """
-        x, y = P.x, P.y
+        x, y = int(P.x), int(P.y)
         return Bytes(((x & 1) << self.curve.b-1) + ((y << 1) >> 1), 'little').zfill(self.curve.b // 8)
 
 
@@ -94,7 +94,7 @@ class EdDSA(DSA):
         y_bytes = Bytes([_ for _ in in_bytes], 'little')
         y_bytes[-1] &= 0x7F
         y = y_bytes.int()
-        x = self.curve.recover_point_from_y(y).x
+        x = int(self.curve.recover_point_from_y(y).x)
 
         if (x & 1) != bit(in_bytes, self.curve.b-1):
             x = self.curve.q - x
@@ -119,11 +119,11 @@ class EdDSA(DSA):
         Returns:
             Bytes: Signature formatted as r + s.
         """
-        r = self.H.hash(self.curve.magic + self.h[self.curve.b//8:] + message)[::-1].int()
-        R = self.B * (r % self.curve.l)
+        r  = self.H.hash(self.curve.magic + self.h[self.curve.b//8:] + message)[::-1].int()
+        R  = self.B * (r % self.curve.l)
         eR = self.encode_point(R)
-        k = self.H.hash(self.curve.magic + eR + self.encode_point(self.A) + message)[::-1].int()
-        S = (r + (k % self.curve.l) * self.a) % self.curve.l
+        k  = self.H.hash(self.curve.magic + eR + self.encode_point(self.A) + message)[::-1].int()
+        S  = (r + (k % self.curve.l) * self.a) % self.curve.l
         return eR + Bytes(S, 'little').zfill(self.curve.b//8)
 
 

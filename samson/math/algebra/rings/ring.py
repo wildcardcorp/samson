@@ -5,6 +5,13 @@ class Ring(ABC):
     ELEMENT = None
 
     @abstractmethod
+    def shorthand(self) -> str:
+        pass
+
+    def __str__(self):
+        return self.shorthand()
+
+    @abstractmethod
     def zero(self):
         pass
 
@@ -12,25 +19,39 @@ class Ring(ABC):
     def one(self):
         pass
 
+
     def coerce(self, other: object) -> object:
         return other
 
+
+    def mul_group(self, generator: object) -> object:
+        pass
+
+
+    __mul__ = mul_group
+
     def __call__(self, args):
         return self.ELEMENT(args, self)
-    
+
     def __truediv__(self, element):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         return QuotientRing(element, self)
-    
+
     def __getitem__(self, x: int):
         from samson.math.algebra.rings.polynomial_ring import PolynomialRing
         return PolynomialRing(self)
 
 
-
 class RingElement(ABC):
     def __init__(self, ring: Ring):
         self.ring = ring
+
+
+    def shorthand(self) -> str:
+        return f'{self.ring.shorthand()}({str(self.val)})'
+
+    __str__ = shorthand
+
 
     @abstractmethod
     def __add__(self, other: object) -> object:
@@ -48,7 +69,6 @@ class RingElement(ABC):
 
     def __bool__(self) -> bool:
         return self != self.ring.zero()
-    
 
     def __eq__(self, other: object) -> bool:
         other = self.ring.coerce(other)
@@ -67,7 +87,7 @@ class RingElement(ABC):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
-    
+
 
     def __int__(self) -> int:
         return int(self.val)

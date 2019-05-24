@@ -1,10 +1,8 @@
-from samson.math.general import int_to_poly, poly_to_int
-from samson.math.general import mod_inv
+from samson.math.general import int_to_poly
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.algebra.polynomial import Polynomial
 from sympy import isprime
-from sympy.abc import x
 from sympy.polys.galoistools import gf_irreducible_p
 import itertools
 
@@ -17,9 +15,6 @@ class FiniteFieldElement(FieldElement):
     def __repr__(self):
         return f"<FiniteFieldElement: val={self.val}, field={self.field}>"
 
-    def __str__(self):
-        return self.__repr__()
-    
 
     def shorthand(self) -> str:
         return self.field.shorthand() + f'({self.val.shorthand()})'
@@ -46,7 +41,7 @@ class FiniteFieldElement(FieldElement):
 
     def __rsub__(self, other: object) -> object:
         return self.field.coerce(other) - self
-    
+
     def __mod__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val % other.val, self.field)
@@ -98,9 +93,6 @@ class FiniteField(Field):
     def __repr__(self):
         return f"<FiniteField: p={self.p}, n={self.n}, reducing_poly={self.reducing_poly}>"
 
-    def __str__(self):
-        return self.__repr__()
-
 
     def zero(self) -> FiniteFieldElement:
         return self.coerce(0)
@@ -112,14 +104,14 @@ class FiniteField(Field):
 
     def shorthand(self) -> str:
         return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
-    
+
 
     def coerce(self, other: int) -> object:
         if type(other) is int:
             other = int_to_poly(other, self.p) % self.reducing_poly
         elif type(other) is Polynomial:
             other = other % self.reducing_poly
-        
+
         if not type(other) is FiniteFieldElement:
             other = FiniteFieldElement(self.internal_field(other), self)
 
@@ -128,7 +120,7 @@ class FiniteField(Field):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.p == other.p and self.n == other.n
-    
+
 
     def __call__(self, element):
         return self.coerce(element)

@@ -27,7 +27,7 @@ class OpenSSHEdDSAPublicKey(PEMEncodable):
     @staticmethod
     def decode(buffer: bytes, **kwargs):
         from samson.public_key.eddsa import EdDSA
-        from samson.math.ecc import EdwardsCurve25519
+        from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, EdDSAPublicKey, EdDSAPrivateKey, None)
 
         a, h = pub.a, 0

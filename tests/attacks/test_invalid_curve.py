@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from samson.attacks.invalid_curve_attack import InvalidCurveAttack
-from samson.math.ecc import WeierstrassCurve
-from samson.utilities.bytes import Bytes
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+from samson.math.algebra.rings.integer_ring import ZZ
 from samson.protocols.ecdhe import ECDHE
 from samson.oracles.default_oracle import DefaultOracle
 from samson.hashes.sha2 import SHA256
@@ -11,7 +11,8 @@ import unittest
 
 class InvalidCurveAttackTestCase(unittest.TestCase):
     def test_attack(self):
-        curve   = WeierstrassCurve(a=-95051, b=11279326, p=233970423115425145524320034830162017933, order=29246302889428143187362802287225875743, base_tuple=(182, 85518893674295321206118380980485522083))
+        ring    = ZZ/ZZ(233970423115425145524320034830162017933)
+        curve   = WeierstrassCurve(a=ring(-95051), b=ring(11279326), order=29246302889428143187362802287225875743, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
         m       = b"crazy flamboyant for the rap enjoyment"
         sha256  = SHA256()
         bob_key = ECDHE(G=curve.G)
@@ -24,14 +25,16 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
 
             for i in range(r):
                 eve_ecdhe.d = i
-                eve_hmac = HMAC(key=eve_ecdhe.derive_key(h), hash_obj=sha256)
+                eve_hmac    = HMAC(key=eve_ecdhe.derive_key(h), hash_obj=sha256)
                 if eve_hmac.generate(m) == mac:
                     return i
 
+            raise Exception(f'Residue not found for {r}!')
 
-        inv_a = WeierstrassCurve(a=-95051, b=210, p=233970423115425145524320034830162017933, order=233970423115425145550826547352470124412, base_tuple=(182, 85518893674295321206118380980485522083))
-        inv_b = WeierstrassCurve(a=-95051, b=504, p=233970423115425145524320034830162017933, order=233970423115425145544350131142039591210, base_tuple=(182, 85518893674295321206118380980485522083))
-        inv_c = WeierstrassCurve(a=-95051, b=727, p=233970423115425145524320034830162017933, order=233970423115425145545378039958152057148, base_tuple=(182, 85518893674295321206118380980485522083))
+
+        inv_a = WeierstrassCurve(a=ring(-95051), b=ring(210), order=233970423115425145550826547352470124412, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        inv_b = WeierstrassCurve(a=ring(-95051), b=ring(504), order=233970423115425145544350131142039591210, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        inv_c = WeierstrassCurve(a=ring(-95051), b=ring(727), order=233970423115425145545378039958152057148, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
 
         oracle        = DefaultOracle(oracle_func)
         ica           = InvalidCurveAttack(oracle, curve)

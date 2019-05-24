@@ -5,13 +5,10 @@ class PolynomialElement(RingElement):
     def __init__(self, val: Polynomial, ring: Ring):
         self.val  = val
         self.ring = ring
-    
+
     def __repr__(self):
         return f"<PolynomialElement val={self.val}, ring={self.ring}>"
 
-    def __str__(self):
-        return self.__repr__()
-    
 
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}({self.val.shorthand()})'
@@ -32,11 +29,14 @@ class PolynomialElement(RingElement):
     def __truediv__(self, other: object) -> object:
         return PolynomialElement(self.val / other.val, self.ring)
 
+    __floordiv__ = __truediv__
+
     def __mod__(self, other: object) -> object:
         return PolynomialElement(self.val % other.val, self.ring)
 
     def __neg__(self) -> object:
         return PolynomialElement(-self.val, self.ring)
+
 
 
 class PolynomialRing(Ring):
@@ -56,14 +56,14 @@ class PolynomialRing(Ring):
 
     def one(self) -> Polynomial:
         return PolynomialElement(Polynomial([self.field(1)], self.field), self)
-    
+
 
     def __repr__(self):
         return f"<PolynomialRing field={self.field}>"
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def shorthand(self) -> str:
         return f'{self.field.shorthand()}[x]'

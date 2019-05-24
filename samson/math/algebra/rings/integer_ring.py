@@ -1,26 +1,21 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.algebra.symbols import oo
 
 class IntegerElement(RingElement):
     def __init__(self, val: int, ring: Ring):
         self.ring = ring
         self.val  = val
-    
+
 
     def __repr__(self):
         return f"<IntegerElement: val={self.val}, ring={self.ring}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-    def shorthand(self) -> str:
-        return f'{self.ring.shorthand()}({str(self.val)})'
 
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val + other.val, self.ring)
+
+    def __radd__(self, other: object) -> object:
+        return self.ring.coerce(other) + self
 
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -39,7 +34,7 @@ class IntegerElement(RingElement):
 
     def __rmod__(self, other: object) -> object:
         return self.ring.coerce(other) % self
-            
+
     def __floordiv__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val // other.val, self.ring)
@@ -51,24 +46,24 @@ class IntegerElement(RingElement):
 
 class IntegerRing(Ring):
     ELEMENT = IntegerElement
-    
+
     @property
     def characteristic(self):
-        return oo
+        return 0
 
     def zero(self) -> IntegerElement:
         return IntegerElement(0, self)
 
     def one(self) -> IntegerElement:
         return IntegerElement(1, self)
-    
+
 
     def __repr__(self):
         return f"<IntegerRing>"
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def shorthand(self) -> str:
         return 'ZZ'
@@ -82,3 +77,6 @@ class IntegerRing(Ring):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other)
+
+
+ZZ = IntegerRing()

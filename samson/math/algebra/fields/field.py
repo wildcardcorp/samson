@@ -8,7 +8,7 @@ class Field(Ring):
 class FieldElement(RingElement):
     def __init__(self, field: Field):
         self.field = field
-    
+
     @property
     def ring(self) -> Field:
         return self.field

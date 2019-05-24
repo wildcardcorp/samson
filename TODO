@@ -40,9 +40,11 @@ X   CAS
     X   Document all classes
     OK  Expression to poly
     OK  Polys can take different Symbols
+    OK  Fix FiniteField invert (PolyElement invert)
     X   Calculate ring characteristics
     X   Replace all sympy with native CAS
-    X   Convert EllipticCurves into rings
+    OK  Convert EllipticCurves into rings
+    X   Easily build DH ring (mod-pow)... generic mult subgroup ring?
 
 X   Schoof's algorithm
 

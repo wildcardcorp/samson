@@ -1,4 +1,4 @@
-from samson.math.ecc import Curve25519, MontgomeryCurve
+from samson.math.algebra.curves.montgomery_curve import Curve25519, MontgomeryCurve
 from samson.utilities.bytes import Bytes
 
 class DH25519(object):
@@ -6,7 +6,7 @@ class DH25519(object):
     Elliptical curve Diffie-Hellman using Montgomery curves.
     """
 
-    def __init__(self, d: int=None, pub: int=None, base: int=None, curve: MontgomeryCurve=Curve25519()):
+    def __init__(self, d: int=None, pub: int=None, base: int=None, curve: MontgomeryCurve=Curve25519):
         """
         Parameters:
             d                 (int): Secret key that will be clamped to the curve.

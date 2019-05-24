@@ -9,7 +9,7 @@ from samson.public_key.ecdsa import ECDSA
 from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey
 from samson.utilities.bytes import Bytes
-from samson.math.ecc import Curve25519, Curve448
+from samson.math.algebra.curves.montgomery_curve import Curve25519, Curve448
 from fastecdsa.curve import P256, P384, P521
 import unittest
 
@@ -116,7 +116,7 @@ class JWETestCase(unittest.TestCase):
     # From https://tools.ietf.org/html/rfc8037#appendix-A.6
     def test_ecdh_es_x25519_derive(self):
         d          = Bytes(0x77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a)[::-1]
-        curve      = Curve25519()
+        curve      = Curve25519
         bob_jwk    = b'{"kty":"OKP","crv":"X25519","kid":"Bob","x":"3p7bfXt9wbTTW2HC7OQ1Nz-DQ8hbeGdNrfx-FG-IK08"}'
         expected_Z = Bytes(0x4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742, 'little')
         self._run_ecdh_es_edwards_exchange(d, curve, bob_jwk, expected_Z)
@@ -125,7 +125,7 @@ class JWETestCase(unittest.TestCase):
     # From https://tools.ietf.org/html/rfc8037#appendix-A.7
     def test_ecdh_es_x448_derive(self):
         d          = Bytes(0x9a8f4925d1519f5775cf46b04b5800d4ee9ee8bae8bc5565d498c28dd9c9baf574a9419744897391006382a6f127ab1d9ac2d8c0a598726b)[::-1]
-        curve      = Curve448()
+        curve      = Curve448
         bob_jwk    = b'{"kty":"OKP","crv":"X448","kid":"Dave","x":"PreoKbDNIPW8_AtZm2_sz22kYnEHvbDU80W0MCfYuXL8PjT7QjKhPKcG3LV67D2uB73BxnvzNgk"}'
         expected_Z = Bytes(0x07fff4181ac6cc95ec1c16a94a0f74d12da232ce40a77552281d282bb60c0b56fd2464c335543936521c24403085d59a449a5037514a879d, 'little')
         self._run_ecdh_es_edwards_exchange(d, curve, bob_jwk, expected_Z)
@@ -152,14 +152,14 @@ class JWETestCase(unittest.TestCase):
         (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ec_key(P256)),
         (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ec_key(P384)),
         (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ec_key(P521)),
-        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve25519())),
-        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve448())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve25519())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve448())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve25519())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve448())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve25519())),
-        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve448()))
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve25519)),
+        (JWAKeyEncryptionAlg.ECDH_ES, lambda: gen_ed_key(Curve448)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve25519)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A128KW, lambda: gen_ed_key(Curve448)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve25519)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A192KW, lambda: gen_ed_key(Curve448)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve25519)),
+        (JWAKeyEncryptionAlg.ECDH_ES_plus_A256KW, lambda: gen_ed_key(Curve448))
     ]
 
     CEK_ALGS = [JWAContentEncryptionAlg.A128CBC_HS256, JWAContentEncryptionAlg.A192CBC_HS384, JWAContentEncryptionAlg.A256CBC_HS512, JWAContentEncryptionAlg.A128GCM, JWAContentEncryptionAlg.A192GCM, JWAContentEncryptionAlg.A256GCM]

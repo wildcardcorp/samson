@@ -1,5 +1,4 @@
 from samson.utilities.manipulation import get_blocks
-from sympy.abc import x
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence, Integer, SequenceOf
 import base64

@@ -1,7 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import PKIEncoding
 from samson.public_key.eddsa import EdDSA
-from samson.math.ecc import EdwardsCurve25519, EdwardsCurve448
+from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA512
 from samson.hashes.sha3 import SHA3
 import unittest
@@ -94,7 +94,7 @@ class EdDSATestCase(unittest.TestCase):
 
 
     def test_import_ssh(self):
-        priv = EdDSA.import_key(TEST_SSH_PRIV)
+        priv  = EdDSA.import_key(TEST_SSH_PRIV)
         pubv1 = EdDSA.import_key(TEST_SSH_PUB)
         pubv2 = EdDSA.import_key(TEST_SSH2_PUB)
 

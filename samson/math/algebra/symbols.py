@@ -9,7 +9,7 @@ class Infinity(object):
 
     def __lt__(self, other):
         return False
-    
+
     def __gt__(self, other):
         return self != other
 
@@ -26,7 +26,7 @@ class NegativeInfinity(object):
 
     def __lt__(self, other):
         return False
-    
+
     def __gt__(self, other):
         return self != other
 

@@ -1,9 +1,9 @@
-from samson.math.ecc import WeierstrassCurve, WeierstrassPoint
-from samson.math.general import random_int, crt
-from samson.utilities.bytes import Bytes
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
+from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.general import crt
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle
-from sympy import factorint, GF
+from sympy import factorint
 from typing import List
 import itertools
 
@@ -19,7 +19,7 @@ class InvalidCurveAttack(object):
 
     There are two phases to this attack:
         1) Finding residues modulo the small factors of the group order
-        2) Bruteforcing the residue configuration. GF(67)(15) may actually be GF(67)(52).
+        2) Bruteforcing the residue configuration. (ZZ/ZZ(67))(15) may actually be (ZZ/ZZ(67))(52).
 
     Conditions:
     * Elliptic Curve Diffie-Hellman is being used
@@ -29,7 +29,7 @@ class InvalidCurveAttack(object):
     def __init__(self, oracle: DefaultOracle, curve: WeierstrassCurve):
         """
         Parameters:
-            oracle   (DefaultOracle): Oracle that accepts (public_key: int, factor: int) and returns (residue: int).
+            oracle   (DefaultOracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
             curve (WeierstrassCurve): Curve that the victim is using.
         """
         self.oracle = oracle
@@ -83,7 +83,7 @@ class InvalidCurveAttack(object):
 
 
         # We have to take into account the fact we can end up on the "negative" side of the field
-        negations = [(residue, (-GF(modulus)(residue)).val) for residue, modulus in zip(residues, moduli)]
+        negations = [(residue, int(-((ZZ/ZZ(modulus))(residue)))) for residue, modulus in zip(residues, moduli)]
 
         # Just bruteforce the correct configuration based off of the public key
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):

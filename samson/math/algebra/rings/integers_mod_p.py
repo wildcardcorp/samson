@@ -10,13 +10,6 @@ class IntegersModPElement(RingElement):
     def __repr__(self):
         return f"<IntegersModPElement: val={self.val}, ring={self.ring}>"
 
-    def __str__(self):
-        return self.__repr__()
-    
-
-    def shorthand(self) -> str:
-        return self.ring.shorthand() + f'({self.val})'
-
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -32,7 +25,7 @@ class IntegersModPElement(RingElement):
 
     def __mod__(self, other: object) -> object:
         return IntegersModPElement((self.val % other) % self.ring.p, self.ring)
-    
+
     def __truediv__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegersModPElement((self.val * mod_inv(other.val, self.ring.p)) % self.ring.p, self.ring)
@@ -64,7 +57,7 @@ class IntegersModP(Ring):
 
     def one(self) -> IntegersModPElement:
         return IntegersModPElement(1, self)
-    
+
 
     def shorthand(self) -> str:
         return f'Z/Z{self.p}'

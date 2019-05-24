@@ -5,13 +5,10 @@ class QuotientElement(RingElement):
     def __init__(self, val: int, ring: Ring):
         self.ring = ring
         self.val  = val % self.ring.quotient
-    
+
 
     def __repr__(self):
         return f"<QuotientElement: val={self.val}, ring={self.ring}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def shorthand(self) -> str:
@@ -35,7 +32,7 @@ class QuotientElement(RingElement):
         return QuotientElement((self.val % other.val) % self.ring.quotient, self.ring)
 
     def __invert__(self) -> object:
-        return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
+        return QuotientElement(mod_inv(self.val, self.ring.quotient, zero=self.ring.ring.zero(), one=self.ring.ring.one()), self.ring)
 
     def __truediv__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -61,9 +58,6 @@ class QuotientRing(Ring):
     def __repr__(self):
         return f"<QuotientRing ring={self.ring}, quotient={self.quotient}>"
 
-    def __str__(self):
-        return self.__repr__()
-
 
     @property
     def characteristic(self):
@@ -75,15 +69,15 @@ class QuotientRing(Ring):
 
     def one(self) -> QuotientElement:
         return QuotientElement(self.ring.one(), self)
-    
+
 
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}/{self.quotient.shorthand()}'
 
 
     def coerce(self, other: int) -> object:
-        if type(other) is int:
-            other = QuotientElement(other, self)
+        if type(other) is not QuotientElement:
+            other = QuotientElement(self.ring.coerce(other), self)
         return other
 
 

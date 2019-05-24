@@ -30,7 +30,7 @@ class Polynomial(object):
         for idx, coeff in enumerate(self.coeffs):
             if coeff == coeff.ring.zero() and not len(self.coeffs) == 1:
                 continue
-            
+
             if coeff == coeff.ring.one() and idx != 0:
                 coeff_short_mul = ''
             else:
@@ -42,7 +42,7 @@ class Polynomial(object):
                 full_coeff = f'{coeff_short_mul}{self.symbol}'
             else:
                 full_coeff = f'{coeff_short_mul}{self.symbol}**{idx}'
-            
+
             poly_repr.append(full_coeff)
 
         return ' + '.join(poly_repr[::-1])
@@ -54,19 +54,19 @@ class Polynomial(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def LC(self) -> object:
         return self.coeffs[-1]
-    
+
 
     def evalulate(self, x: int) -> object:
         return sum([coeff*(x**idx) for idx, coeff in enumerate(self.coeffs)])
-    
+
 
     def monic(self) -> object:
         return Polynomial([coeff / self.coeffs[-1] for coeff in self.coeffs], self.ring, self.symbol)
-    
+
 
     def is_monic(self) -> bool:
         return self.LC() == self.ring.one()
@@ -74,11 +74,11 @@ class Polynomial(object):
 
     def derivative(self) -> object:
         return Polynomial([coeff * idx for idx, coeff in enumerate(self.coeffs)][1:], self.ring, self.symbol)
-    
+
 
     def degree(self) -> int:
         return len(self.coeffs) - 1
-    
+
 
     def pad(self, length: int) -> list:
         return self.coeffs + [self.ring.zero()] * (length - len(self.coeffs))
@@ -87,10 +87,10 @@ class Polynomial(object):
     def pad_and_zip(self, other: object) -> list:
         pad_len = max(len(self.coeffs), len(other.coeffs))
         return zip(self.pad(pad_len), other.pad(pad_len))
-    
+
 
     def divmod(self, divisor: object) -> (object, object):
-        poly_zero = Polynomial([self.ring.zero()], self.symbol)
+        poly_zero = Polynomial([self.ring.zero()], symbol=self.symbol)
         assert divisor != poly_zero
 
         q = poly_zero
@@ -105,16 +105,19 @@ class Polynomial(object):
         return (q, remainder)
 
 
+
     def __add__(self, other: object) -> object:
         return Polynomial([a + b for a,b in self.pad_and_zip(other)], self.ring, self.symbol)
+
 
     def __sub__(self, other: object) -> object:
         return Polynomial([a - b for a,b in self.pad_and_zip(other)], self.ring, self.symbol)
 
+
     def __mul__(self, other: object) -> object:
         if type(other) is int:
             return fast_mul(self, other, Polynomial([self.ring.zero()], self.ring, self.symbol))
-    
+
         new_coeff_len = max((len(self.coeffs) * len(other.coeffs) - 1), len(self.coeffs) + len(other.coeffs))
         new_coeffs    = [self.ring.zero()] * new_coeff_len
 
@@ -123,24 +126,34 @@ class Polynomial(object):
                 new_coeffs[i+j] += coeff_h*coeff_g
 
         return Polynomial(new_coeffs, self.ring, self.symbol)
-    
+
+
     def __rmul__(self, other: int) -> object:
         return self * other
 
+
     def __neg__(self) -> object:
         return Polynomial([-coeff for coeff in self.coeffs], self.ring, self.symbol)
-    
+
+
     def __truediv__(self, other: object) -> object:
         return self.divmod(other)[0]
 
+
+    __floordiv__ = __truediv__
+
+
     def __mod__(self, other: object) -> object:
         return self.divmod(other)[1]
-    
+
+
     __pow__ = square_and_mul
+
 
     def __int__(self) -> int:
         from samson.math.general import poly_to_int
         return poly_to_int(self)
+
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.coeffs == other.coeffs

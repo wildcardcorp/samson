@@ -1,7 +1,7 @@
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import isprime, Poly, sieve, GF, FractionField
+from sympy import isprime, Poly, sieve, GF
 from sympy.abc import x
 from types import FunctionType
 import math
@@ -33,8 +33,8 @@ def poly_to_int(poly: object) -> int:
     Encodes an polynomial as a integer.
 
     Parameters:
-        poly   (Poly): Polynomial to encode.
-        modulus (int): Modulus to reconstruct the integer with.
+        poly (Polynomial): Polynomial to encode.
+        modulus     (int): Modulus to reconstruct the integer with.
     
     Returns:
         int: Integer representation.
@@ -62,7 +62,7 @@ def gcd(a: int, b: int) -> int:
 
 
 # https://anh.cs.luc.edu/331/notes/xgcd.pdf
-def xgcd(a: int, b: int) -> (int, int, int):
+def xgcd(a: int, b: int, zero: int=0, one: int=1) -> (int, int, int):
     """
     Extended Euclidean algorithm form of GCD.
     `ax + by = gcd(a, b)`
@@ -74,7 +74,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
     Returns:
         (int, int, int): Formatted as (GCD, x, y).
     """
-    prevx, x = 1, 0; prevy, y = 0, 1
+    prevx, x = one, zero; prevy, y = zero, one
     while b:
         q = a // b
         x, prevx = prevx - q*x, x
@@ -99,7 +99,7 @@ def lcm(a: int, b: int) -> int:
 
 
 
-def mod_inv(a: int, n: int) -> int:
+def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     """
     Calculates the modular inverse according to
     https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
@@ -112,12 +112,12 @@ def mod_inv(a: int, n: int) -> int:
     Returns:
         int: Modular inverse of `a` over `n`.
     """
-    _, x, _ = xgcd(a, n)
+    _, x, _ = xgcd(a, n, zero=zero, one=one)
 
-    if (a * x) % n != 1:
+    if (a * x) % n != one:
         raise Exception("'a' is not invertible")
 
-    if x < 0:
+    if type(x) is int and x < zero:
         x = x + n
 
     return x
@@ -417,8 +417,10 @@ def berlekamp_massey(output_list: list) -> Poly:
         output_list (list): Output of LFSR.
     
     Returns:
-        Poly: Polyomial that represents the shortest LFSR.
+        Polynomial: Polyomial that represents the shortest LFSR.
     """
+    from samson.math.algebra.rings.integer_ring import ZZ
+    from samson.math.algebra.polynomial import Polynomial
     n = len(output_list)
     b = [1] + [0] * (n - 1)
     c = [1] + [0] * (n - 1)
@@ -448,7 +450,7 @@ def berlekamp_massey(output_list: list) -> Poly:
 
         i += 1
 
-    return Poly(c[:L + 1], x)
+    return Polynomial(c[:L + 1][::-1], ring=ZZ/ZZ(2))
 
 
 def is_power_of_two(n: int) -> bool:
@@ -529,7 +531,7 @@ def primes_product(n: int, blacklist: list=None):
 
     for prime in sieve.primerange(2, n+1):
         if total >= n:
-            
+
             # We might be able to remove some of the small primes
             while True:
                 # prime = primes[0]
@@ -540,7 +542,7 @@ def primes_product(n: int, blacklist: list=None):
                     break
 
             return primes
-        
+
         if prime not in blacklist:
             primes.append(prime)
             total *= prime
@@ -552,6 +554,8 @@ def frobenius_endomorphism(point: object, q: int):
 
 
 def frobenius_trace(curve: object):
+    from samson.math.algebra.rings.integer_ring import ZZ
+
     search_range   = hasse_frobenius_trace_interval(curve.p)
     torsion_primes = primes_product(search_range[1] - search_range[0], [curve.gf.characteristic()])
 
@@ -578,13 +582,14 @@ def frobenius_trace(curve: object):
 
     for l in torsion_primes:
         q_bar = curve.p % l
-        torsion_quotient_ring = GF(l)
+        torsion_quotient_ring = ZZ/ZZ(l)
         psi = curve.division_poly(l)
         print(psi)
 
-        gf = GFPoly(l, reducing_poly=psi)
+        # TODO: Build torsion group
+        torsion_group = curve[x] / psi
 
-        point = curve.G.__class__(x=gf(psi_1), y=gf(psi_1), curve=curve)
+        point = torsion_group(psi_1)
         p1 = frobenius_endomorphism(point, curve.p)
         p2 = frobenius_endomorphism(p1, curve.p)
         determinant = q_bar * point
@@ -593,7 +598,7 @@ def frobenius_trace(curve: object):
 
         if point_sum == curve.POINT_AT_INFINITY:
             return torsion_quotient_ring(0)
-        
+
         trace_point = p1
         for candidate in range(1, (l + 1) // 2):
             if point_sum.x == trace_point.x:
@@ -604,37 +609,34 @@ def frobenius_trace(curve: object):
             else:
                 trace_point += p1
 
-    
+
 
     #trace_congruence = crt(trace_congruences, [])
     return trace_congruences
 
 
-def bsgs(g: object, h: object, p: int, add_op: FunctionType=lambda e,g: e+g, sub_op: FunctionType= lambda e,g: e-g, mul_op: FunctionType=lambda e,g: e*g, e: object=1, start: int=0, end: int=None) -> int:
+def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
     """
     Performs Baby-step Giant-step with an arbitrary finite cyclic group.
 
     Parameters:
-        g    (object): Generator/base.
-        h    (object): The result of `g^x mod p` to find the discrete logarithm of.
-        p       (int): The modulus.
-        add_op (func): The group's "add" operation.
-        sub_op (func): The group's "sub" operation.
-        mul_op (func): The group's "mul" operation.
-        e    (object): Starting point of the aggregator.
-        start   (int): Start of the search range.
-        end     (int): End of the search range.
+        g  (object): Generator/base.
+        h  (object): The result to find the discrete logarithm of.
+        e  (object): Starting point of the aggregator.
+        start (int): Start of the search range.
+        end   (int): End of the search range.
     
     Returns:
         int: The discrete logarithm of `h` given `g` over `p`.
 
     Examples:
         >>> from samson.math.general import hasse_frobenius_trace_interval, bsgs, mod_inv
-        >>> from samson.math.ecc import WeierstrassCurve
+        >>> from samson.math.algebra.all import *
 
-        >>> curve = WeierstrassCurve(a=50, b=7, p=53, order=57, base_tuple=(34, 25))
+        >>> ring = ZZ/ZZ(53)
+        >>> curve = WeierstrassCurve(a=ring(50), b=ring(7), order=57, base_tuple=(34, 25))
         >>> start, end = hasse_frobenius_trace_interval(curve.p)
-        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, curve.p, e=curve.POINT_AT_INFINITY, start=start, end=end)
+        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, e=curve.POINT_AT_INFINITY, start=start, end=end)
         57
 
         >>> base     = 7
@@ -648,25 +650,22 @@ def bsgs(g: object, h: object, p: int, add_op: FunctionType=lambda e,g: e+g, sub
         24
 
     """
-    if not end:
-        end = p
-
     search_range = end - start
     table        = {}
     m            = kth_root(search_range, 2)
 
     for i in range(m):
         table[e] = i
-        e = add_op(e, g)
-    
-    factor = mul_op(g, m)
-    o = mul_op(g, start)
+        e += g
+
+    factor = g * m
+    o = g * start
     e = h
     for i in range(m):
-        e = sub_op(h, o)
+        e = h - o
         if e in table:
             return i*m + table[e] + start
 
-        o = add_op(o, factor)
-    
+        o += factor
+
     return None

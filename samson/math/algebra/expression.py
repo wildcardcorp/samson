@@ -15,7 +15,7 @@ class Expression(object):
         self.a = a
         self.b = b
         self.operation = operation
-    
+
 
     def __repr__(self):
         exp_strs = []
@@ -31,7 +31,7 @@ class Expression(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def simplify(self) -> object:
         pass

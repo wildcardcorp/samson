@@ -1,4 +1,4 @@
-from sympy import Poly
+from samson.math.algebra.polynomial import Polynomial
 from samson.math.general import berlekamp_massey
 from samson.math.general import poly_to_int
 
@@ -7,15 +7,15 @@ class GLFSR(object):
     Galois linear-feedback shift register.
     """
 
-    def __init__(self, seed: int, polynomial: Poly):
+    def __init__(self, seed: int, polynomial: Polynomial):
         """
         Parameters:
-            seed        (int): Initial value.
-            polynomial (Poly): Either a `sympy` `Poly` or an integer that represents the polynomal.
+            seed              (int): Initial value.
+            polynomial (Polynomial): Either a `sympy` `Poly` or an integer that represents the polynomal.
         """
         self.state = seed
 
-        if type(polynomial) is Poly:
+        if type(polynomial) is Polynomial:
             polynomial = poly_to_int(polynomial)
 
         self.polynomial = polynomial
