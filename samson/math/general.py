@@ -40,7 +40,11 @@ def poly_to_int(poly: object) -> int:
         int: Integer representation.
     """
     modulus = int(poly.ring.quotient.val)
-    return int(''.join([str(int(bit)) for bit in poly.coeffs[::-1]]), modulus)
+    value   = 0
+    for idx, coeff in enumerate(poly.coeffs):
+        value += int(coeff) * modulus**idx
+    
+    return value
 
 
 def gcd(a: int, b: int) -> int:
@@ -55,7 +59,7 @@ def gcd(a: int, b: int) -> int:
         int: GCD of `a` and `b`.
     """
     while True:
-        if b == 0:
+        if not b:
             return a
         else:
             a, b = b, a % b
@@ -553,11 +557,53 @@ def frobenius_endomorphism(point: object, q: int):
     return point.__class__(x=point.x**q, y=point.y**q, curve=point.curve)
 
 
-def frobenius_trace(curve: object):
+def frobenius_trace_mod_l(curve: object, l: int):
+    from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+    from samson.math.algebra.fields.fraction_field import FractionField as Frac
     from samson.math.algebra.rings.integer_ring import ZZ
 
+    q_bar = curve.p % l
+    torsion_quotient_ring = ZZ/ZZ(l)
+    psi = curve.division_poly(l)
+    print(psi)
+
+    # Build torsion group
+    R = curve.curve_poly_ring
+    S = R/psi
+    T = Frac(S)
+    sym_curve = WeierstrassCurve(a=curve.a, b=curve.b, ring=T)
+
+    p_x = T(R((x, 0)))
+    p_y = T(R((0, x)))
+
+    point = sym_curve(p_x, p_y)
+
+
+    p1 = frobenius_endomorphism(point, curve.p)
+    p2 = frobenius_endomorphism(p1, curve.p)
+    determinant = q_bar * point
+
+    point_sum = determinant + p2
+
+    if point_sum == curve.POINT_AT_INFINITY:
+        return torsion_quotient_ring(0)
+
+    trace_point = p1
+    for candidate in range(1, (l + 1) // 2):
+        if point_sum.x == trace_point.x:
+            if point_sum.y == trace_point.y:
+                return torsion_quotient_ring(candidate)
+            else:
+                return torsion_quotient_ring(-candidate)
+        else:
+            trace_point += p1
+
+
+
+def frobenius_trace(curve: object):
+    from samson.math.algebra.rings.integer_ring import ZZ
     search_range   = hasse_frobenius_trace_interval(curve.p)
-    torsion_primes = primes_product(search_range[1] - search_range[0], [curve.gf.characteristic()])
+    torsion_primes = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
 
     trace_congruences = []
 
@@ -572,46 +618,16 @@ def frobenius_trace(curve: object):
         print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
 
         if gcd(rational_char, defining_poly).degree() == 0:
-            trace_congruences.append(GF(2)(1))
+            trace_congruences.append((ZZ/ZZ(2))(1))
         else:
-            trace_congruences.append(GF(2)(0))
+            trace_congruences.append((ZZ/ZZ(2))(0))
 
         torsion_primes.remove(2)
 
-    psi_1 = curve.division_poly(1)
 
     for l in torsion_primes:
-        q_bar = curve.p % l
-        torsion_quotient_ring = ZZ/ZZ(l)
-        psi = curve.division_poly(l)
-        print(psi)
+        trace_congruences.append(frobenius_trace_mod_l(curve, l))
 
-        # TODO: Build torsion group
-        torsion_group = curve[x] / psi
-
-        point = torsion_group(psi_1)
-        p1 = frobenius_endomorphism(point, curve.p)
-        p2 = frobenius_endomorphism(p1, curve.p)
-        determinant = q_bar * point
-
-        point_sum = determinant + p2
-
-        if point_sum == curve.POINT_AT_INFINITY:
-            return torsion_quotient_ring(0)
-
-        trace_point = p1
-        for candidate in range(1, (l + 1) // 2):
-            if point_sum.x == trace_point.x:
-                if point_sum.y == trace_point.y:
-                    return torsion_quotient_ring(candidate)
-                else:
-                    return torsion_quotient_ring(-candidate)
-            else:
-                trace_point += p1
-
-
-
-    #trace_congruence = crt(trace_congruences, [])
     return trace_congruences
 
 

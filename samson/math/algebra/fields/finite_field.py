@@ -97,6 +97,11 @@ class FiniteField(Field):
 
     def shorthand(self) -> str:
         return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
+    
+
+    @property
+    def characteristic(self) -> int:
+        return self.p
 
 
     def coerce(self, other: int) -> object:

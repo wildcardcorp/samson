@@ -60,8 +60,14 @@ class QuotientRing(Ring):
 
 
     @property
-    def characteristic(self):
-        return self.quotient.ring.characteristic
+    def characteristic(self) -> int:
+        from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.algebra.rings.polynomial_ring import PolynomialElement
+
+        if type(self.quotient) is IntegerElement:
+            return int(self.quotient)
+        elif type(self.quotient) is PolynomialElement:
+            return self.quotient.ring.field.characteristic
 
 
     def zero(self) -> QuotientElement:

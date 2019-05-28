@@ -11,6 +11,9 @@ class FractionFieldElement(FieldElement):
             numerator   //= divisor
             denominator //= divisor
 
+        if denominator == field.ring.zero():
+            raise ZeroDivisionError
+
         self.numerator   = numerator
         self.denominator = denominator
         self.field       = field
@@ -55,7 +58,7 @@ class FractionFieldElement(FieldElement):
 
 
     def __float__(self):
-        return self.numerator / self.denominator
+        return int(self.numerator) / int(self.denominator)
 
 
 
@@ -71,29 +74,30 @@ class FractionField(Field):
 
 
     def zero(self) -> FractionFieldElement:
-        return FractionFieldElement(0, 1, self)
+        return FractionFieldElement(self.ring.zero(), self.ring.one(), self)
 
 
     def one(self) -> FractionFieldElement:
-        return FractionFieldElement(1, 1, self)
+        return FractionFieldElement(self.ring.one(), self.ring.one(), self)
 
 
     def shorthand(self) -> str:
         return f'Frac({self.ring})'
 
 
-    def coerce(self, other: int) -> object:
-        if type(other) == FractionFieldElement:
+    def coerce(self, other: object) -> object:
+        if type(other) is FractionFieldElement:
             return other
 
-        elif type(other) is int:
-            result = (other, 1)
-
         elif type(other) is tuple:
-            result = other
-
-            if len(result) < 2:
-                result = (result[0], 1)
+            if len(other) < 2:
+                denom = self.ring.one()
+            else:
+                denom = self.ring.coerce(other[1])
             
+            result = (self.ring.coerce(other[0]), denom)
+        else:
+            result = (self.ring.coerce(other), self.ring.one())
+
    
         return FractionFieldElement(*result, self)

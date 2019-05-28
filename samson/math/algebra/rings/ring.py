@@ -55,7 +55,8 @@ class RingElement(ABC):
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}({str(self.val)})'
 
-    __str__ = shorthand
+    def __str__(self):
+        return self.shorthand()
 
 
     @abstractmethod

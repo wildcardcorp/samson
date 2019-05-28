@@ -55,14 +55,14 @@ class Polynomial(object):
         return self.__repr__()
     
     def __call__(self, x: int) -> object:
-        return self.evalulate(x)
+        return self.evaluate(x)
 
 
     def LC(self) -> object:
         return self.coeffs[-1]
 
 
-    def evalulate(self, x: int) -> object:
+    def evaluate(self, x: int) -> object:
         return sum([coeff*(x**idx) for idx, coeff in enumerate(self.coeffs)])
 
 
@@ -100,7 +100,7 @@ class Polynomial(object):
 
         while remainder != poly_zero and remainder.degree() >= divisor.degree():
             pad_len = len(remainder.coeffs) - len(divisor.coeffs)
-            t  = Polynomial([self.ring.zero()] * pad_len + [remainder.LC() // divisor.LC()])
+            t  = Polynomial([self.ring.zero()] * pad_len + [remainder.LC() / divisor.LC()])
             q += t
             remainder = remainder - t * divisor
 

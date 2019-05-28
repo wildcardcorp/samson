@@ -83,4 +83,7 @@ class PolynomialRing(Ring):
         elif type(other) is Polynomial:
             return PolynomialElement(other, self)
         
+        elif type(other) is PolynomialElement:
+            return other
+        
         raise Exception('Coercion failed')

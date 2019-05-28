@@ -14,7 +14,7 @@ class CurvePolynomialElement(RingElement):
 
 
     def shorthand(self) -> str:
-        return f'{self.ring.shorthand()}({self.x_poly.shorthand()})'
+        return f'{self.ring.shorthand()}({self.x_poly.shorthand()}, {self.y_poly.shorthand()})'
 
 
     def __add__(self, other: object) -> object:
@@ -34,8 +34,21 @@ class CurvePolynomialElement(RingElement):
 
         y = xy + yx
 
+        print('self.x', self.x_poly)
+        print('self.y', self.y_poly)
+        print('other.x', other.x_poly)
+        print('other.y', other.y_poly)
+        print('self', self)
+        print('other', other)
+        print('x', nx)
+        print('xy', xy)
+        print('yx', yx)
+        print('y', y)
+
         if self.y_poly and other.y_poly:
-            nx += (self.y_poly * other.y_poly) / self.ring.poly_ring(x**2).val * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
+            print('y2_red', self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val)
+            #nx += (self.y_poly * other.y_poly) / self.ring.poly_ring(x**2).val * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
+            nx += self.y_poly * other.y_poly * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
 
         return CurvePolynomialElement(nx, y, self.ring)
 
@@ -45,7 +58,7 @@ class CurvePolynomialElement(RingElement):
             raise ZeroDivisionError
         
         if not self:
-            return self.ring.zero()
+            return self.ring.zero(), self.ring.zero()
         
         if other.y_poly and (self.x_poly or other.x_poly):
             raise Exception("Multivariate polynomial division not supported")
@@ -118,19 +131,26 @@ class CurvePolynomialRing(Ring):
     def coerce(self, other: object) -> CurvePolynomialElement:
         if type(other) is CurvePolynomialElement:
             return other
-
-        elif type(other) is list or issubclass(type(other), Expr):
-            return CurvePolynomialElement(Polynomial(other, self.poly_ring.field), None, self)
-
-        elif type(other) is Polynomial:
-            return CurvePolynomialElement(other, None, self)
         
-        elif type(other) is tuple:
-            return CurvePolynomialElement(*other, self)
-        
-        elif type(other) is int:
-            return CurvePolynomialElement(Polynomial([other], self.poly_ring.field), None, self)
-        
+        if type(other) is tuple:
+            x_poly = other[0]
+            y_poly = other[1] or self.poly_ring.zero().val
+        else:
+            x_poly = other
+            y_poly = self.poly_ring.zero().val
 
-        raise Exception('Coercion failed')
+        coerced = []
+        for poly in [x_poly, y_poly]:
+            if type(poly) is list or issubclass(type(poly), Expr):
+                coerced.append(Polynomial(poly, self.poly_ring.field))
 
+            elif type(poly) is Polynomial:
+                coerced.append(poly)
+            
+            elif type(poly) is int:
+                coerced.append(Polynomial([poly], self.poly_ring.field))
+
+            else:
+                raise Exception('Coercion failed')
+        
+        return CurvePolynomialElement(*coerced, ring=self)
