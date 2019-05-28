@@ -51,9 +51,11 @@ class Polynomial(object):
     def __repr__(self):
         return f"<Polynomial: {self.shorthand()}, ring={self.ring}>"
 
-
     def __str__(self):
         return self.__repr__()
+    
+    def __call__(self, x: int) -> object:
+        return self.evalulate(x)
 
 
     def LC(self) -> object:
@@ -89,7 +91,7 @@ class Polynomial(object):
         return zip(self.pad(pad_len), other.pad(pad_len))
 
 
-    def divmod(self, divisor: object) -> (object, object):
+    def __divmod__(self, divisor: object) -> (object, object):
         poly_zero = Polynomial([self.ring.zero()], symbol=self.symbol)
         assert divisor != poly_zero
 
@@ -137,14 +139,14 @@ class Polynomial(object):
 
 
     def __truediv__(self, other: object) -> object:
-        return self.divmod(other)[0]
+        return self.__divmod__(other)[0]
 
 
     __floordiv__ = __truediv__
 
 
     def __mod__(self, other: object) -> object:
-        return self.divmod(other)[1]
+        return self.__divmod__(other)[1]
 
 
     __pow__ = square_and_mul
@@ -157,3 +159,7 @@ class Polynomial(object):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.coeffs == other.coeffs
+
+
+    def __bool__(self) -> bool:
+        return self.coeffs != [self.ring.zero()]

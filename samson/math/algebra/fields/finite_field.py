@@ -24,10 +24,6 @@ class FiniteFieldElement(FieldElement):
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val + other.val, self.field)
 
-
-    def __radd__(self, other: object) -> object:
-        return self.__add__(other)
-
     def __mul__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val * other.val, self.field)
@@ -38,9 +34,6 @@ class FiniteFieldElement(FieldElement):
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val - other.val, self.field)
-
-    def __rsub__(self, other: object) -> object:
-        return self.field.coerce(other) - self
 
     def __mod__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -120,7 +113,3 @@ class FiniteField(Field):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.p == other.p and self.n == other.n
-
-
-    def __call__(self, element):
-        return self.coerce(element)

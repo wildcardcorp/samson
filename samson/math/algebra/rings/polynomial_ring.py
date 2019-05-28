@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.polynomial import Polynomial
+from sympy import Expr
 
 class PolynomialElement(RingElement):
     def __init__(self, val: Polynomial, ring: Ring):
@@ -17,8 +18,10 @@ class PolynomialElement(RingElement):
     def __add__(self, other: object) -> object:
         return PolynomialElement(self.val + other.val, self.ring)
 
+
     def __sub__(self, other: object) -> object:
         return PolynomialElement(self.val - other.val, self.ring)
+
 
     def __mul__(self, other: object) -> object:
         if type(other) is int:
@@ -26,13 +29,17 @@ class PolynomialElement(RingElement):
 
         return PolynomialElement(self.val * other.val, self.ring)
 
+
     def __truediv__(self, other: object) -> object:
         return PolynomialElement(self.val / other.val, self.ring)
 
+
     __floordiv__ = __truediv__
+
 
     def __mod__(self, other: object) -> object:
         return PolynomialElement(self.val % other.val, self.ring)
+
 
     def __neg__(self) -> object:
         return PolynomialElement(-self.val, self.ring)
@@ -51,18 +58,15 @@ class PolynomialRing(Ring):
         return self.field.characteristic
 
 
-    def zero(self) -> Polynomial:
+    def zero(self) -> PolynomialElement:
         return PolynomialElement(Polynomial([self.field(0)], self.field), self)
 
-    def one(self) -> Polynomial:
+    def one(self) -> PolynomialElement:
         return PolynomialElement(Polynomial([self.field(1)], self.field), self)
 
 
     def __repr__(self):
         return f"<PolynomialRing field={self.field}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def shorthand(self) -> str:
@@ -70,3 +74,13 @@ class PolynomialRing(Ring):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.field == other.field
+
+
+    def coerce(self, other: object) -> PolynomialElement:
+        if type(other) is list or issubclass(type(other), Expr):
+            return PolynomialElement(Polynomial(other, self.field), self)
+
+        elif type(other) is Polynomial:
+            return PolynomialElement(other, self)
+        
+        raise Exception('Coercion failed')

@@ -1,4 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.math.algebra.polynomial import Polynomial
 from samson.math.general import random_int, tonelli
 from sympy import Poly
 from sympy.abc import x, y
@@ -14,8 +15,6 @@ class WeierstrassPoint(RingElement):
     def __repr__(self):
         return f"<WeierstrassPoint: x={self.x}, y={self.y}, curve={self.curve}>"
 
-    def __str__(self):
-        return self.__repr__()
 
     @property
     def ring(self):
@@ -66,6 +65,7 @@ class WeierstrassPoint(RingElement):
 
 
 
+
 class WeierstrassCurve(Ring):
     def __init__(self, a: RingElement, b: RingElement, ring: Ring=None, base_tuple: tuple=None, order: int=None):
         self.a  = a
@@ -80,13 +80,12 @@ class WeierstrassCurve(Ring):
         self.dpoly_cache = {}
         self.order_cache = order
 
+        self.curve_poly_ring = self[x, y]
+
 
 
     def __repr__(self):
         return f"<WeierstrassCurve: a={self.a}, b={self.b}, order={self.order_cache}, ring={self.ring}, G={(str(self.G_cache.x), str(self.G_cache.y)) if self.G_cache else self.G_cache}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def zero(self) -> WeierstrassPoint:
@@ -98,6 +97,14 @@ class WeierstrassCurve(Ring):
 
     def shorthand(self) -> str:
         return f'WeierstrassCurve{{a={self.a}, b={self.b}}}'
+    
+
+    def __getitem__(self, args):
+        from samson.math.algebra.rings.curve_polynomial_ring import CurvePolynomialRing
+        if type(args) is tuple:
+            return CurvePolynomialRing(self.ring[x], self.a, self.b)
+        else:
+            return super().__getitem__(args)
 
 
     @property
@@ -153,20 +160,24 @@ class WeierstrassCurve(Ring):
         d_poly = None
 
         if n in [0, 1]:
-            d_poly = Poly(n, gens=x)
+            #d_poly = Poly(n, gens=x)
+            d_poly = self.curve_poly_ring(n)
         elif n == 2:
-            d_poly = Poly(2*y)
+            #d_poly = Poly(2*y)
+            d_poly = self.curve_poly_ring(2*y)
         elif n == 3:
             # d_poly = Poly(3*x**4 + 6 * a*x**2 + 12 * b*x - a**2, gens=[x, y])
-            d_poly = Poly(3*x**4 + 6 * a*x**2 + 12 * b*x - a**2, gens=[x])
+            # d_poly = Poly(3*x**4 + 6 * a*x**2 + 12 * b*x - a**2, gens=[x])
+            d_poly = self.curve_poly_ring(3*x**4 + 6*a*x**2 + 12*b*x - a**2)
         elif n == 4:
-            d_poly = Poly(4*y * (x**6 + 5*a * x**4 + 20*b*x**3 - 5*a**2 * x**2 - 4*a*b*x - 8*b**2 - a**3))
+            # d_poly = Poly(4*y * (x**6 + 5*a * x**4 + 20*b*x**3 - 5*a**2 * x**2 - 4*a*b*x - 8*b**2 - a**3))
+            d_poly = self.curve_poly_ring((-4*a**3 - 32*b**2)*x**6 - 16*a*b*x**5 - 20*a**2*x**4 + 80*b*x**3 + 20*a*x**2 + 4)
         elif n % 2 == 1:
             m = n // 2
             d_poly = self.division_poly(m + 2) * self.division_poly(m)**3 - self.division_poly(m - 1) * self.division_poly(m + 1)**3
         elif n % 2 == 0:
-            m = n // 2
-            d_poly = (self.division_poly(m) // 2 * y) * (self.division_poly(m + 2) * self.division_poly(m - 1)**2 - self.division_poly(m - 2) * self.division_poly(m + 1)**2)
+            m = n // 2#y
+            d_poly = (self.division_poly(m) // 2 * self.curve_poly_ring(x)) * (self.division_poly(m + 2) * self.division_poly(m - 1)**2 - self.division_poly(m - 2) * self.division_poly(m + 1)**2)
 
 
         self.dpoly_cache[n] = d_poly

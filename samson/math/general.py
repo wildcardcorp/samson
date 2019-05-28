@@ -123,7 +123,7 @@ def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     return x
 
 
-def square_and_mul(g: int, u: int) -> int:
+def square_and_mul(g: int, u: int, s: int=None) -> int:
     """
     Computes `s = g ^ u` over arbitrary rings.
 
@@ -134,7 +134,7 @@ def square_and_mul(g: int, u: int) -> int:
     Returns:
         int: `s = g ^ u` within its ring.
     """
-    s = 1
+    s = s or g.ring.one()
     while u != 0:
         if u & 1:
             s = (s * g)

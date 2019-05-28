@@ -61,10 +61,6 @@ class IntegerRing(Ring):
     def __repr__(self):
         return f"<IntegerRing>"
 
-    def __str__(self):
-        return self.__repr__()
-
-
     def shorthand(self) -> str:
         return 'ZZ'
 

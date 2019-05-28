@@ -30,8 +30,13 @@ class Ring(ABC):
 
     __mul__ = mul_group
 
+    # def __call__(self, args):
+    #     return self.ELEMENT(args, self)
+
+
     def __call__(self, args):
-        return self.ELEMENT(args, self)
+        return self.coerce(args)
+
 
     def __truediv__(self, element):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
@@ -56,16 +61,25 @@ class RingElement(ABC):
     @abstractmethod
     def __add__(self, other: object) -> object:
         pass
+    
+    def __radd__(self, other: object) -> object:
+        return self.ring.coerce(other) + self
 
     @abstractmethod
     def __sub__(self, other: object) -> object:
         pass
 
+    def __rsub__(self, other: object) -> object:
+        return self.ring.coerce(other) - self
+
     __mul__ = fast_mul
     __pow__ = square_and_mul
 
     def __rmul__(self, other: int) -> object:
-        return self * other
+        if type(other) is int:
+            return self * other
+
+        return self.ring.coerce(other) * self 
 
     def __bool__(self) -> bool:
         return self != self.ring.zero()
