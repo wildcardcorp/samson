@@ -187,7 +187,7 @@ def kth_root(n: int, k: int) -> int:
     return lb
 
 
-def crt(residues: list, moduli: list) -> (int, int):
+def crt(residues: list, moduli: list=None) -> (int, int):
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
 
@@ -198,7 +198,12 @@ def crt(residues: list, moduli: list) -> (int, int):
     Returns:
         (int, int): Formatted as (computed `x`, modulus).
     """
-    assert len(residues) == len(moduli)
+    if moduli:
+        assert len(residues) == len(moduli)
+    else:
+        moduli   = [int(residue.ring.quotient) for residue in residues]
+        residues = [int(residue) for residue in residues]
+    
     x  = residues[0]
     Nx = moduli[0]
 
@@ -525,7 +530,7 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
 
 def hasse_frobenius_trace_interval(p: int):
     l = 2 * math.ceil(math.sqrt(p))
-    return (-l + p + 1, p + 1 + l)
+    return (-l , l + 1)
 
 
 def primes_product(n: int, blacklist: list=None):
@@ -536,21 +541,38 @@ def primes_product(n: int, blacklist: list=None):
     for prime in sieve.primerange(2, n+1):
         if total >= n:
 
-            # We might be able to remove some of the small primes
-            while True:
-                # prime = primes[0]
-                # if total // prime >= n:
-                #     total //= prime
-                #     primes  = primes[1:]
-                # else:
-                    break
+            # We might be able to remove some of the large primes
+            primes.reverse()
+            needed_primes = []
+            for prime in primes:
+                if total // prime >= n:
+                    total //= prime
+                else:
+                    needed_primes.append(prime)
 
-            return primes
+            return needed_primes
 
         if prime not in blacklist:
             primes.append(prime)
             total *= prime
 
+
+def find_representative(quotient_element: object, valid_range: list):
+    remainder = int(quotient_element)
+    modulus   = int(quotient_element.ring.quotient)
+
+    if len(valid_range) > modulus:
+        raise ValueError("Solution not unique")
+    
+    q, r = divmod(valid_range[0], modulus)
+    shifted_range = range(r, r + len(valid_range))
+
+    if remainder in shifted_range:
+        return q * modulus + remainder
+    elif remainder + modulus in shifted_range:
+        return (q+1) * modulus + remainder
+    else:
+        raise ValueError("No solution")
 
 
 def frobenius_endomorphism(point: object, q: int):
@@ -562,30 +584,38 @@ def frobenius_trace_mod_l(curve: object, l: int):
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
     from samson.math.algebra.rings.integer_ring import ZZ
 
-    q_bar = curve.p % l
     torsion_quotient_ring = ZZ/ZZ(l)
     psi = curve.division_poly(l)
-    print(psi)
+    # print(psi)
 
-    # Build torsion group
+    # Build symbolic torsion group
     R = curve.curve_poly_ring
     S = R/psi
-    T = Frac(S)
+    T = Frac(S, simplify=False)
     sym_curve = WeierstrassCurve(a=curve.a, b=curve.b, ring=T)
 
     p_x = T(R((x, 0)))
-    p_y = T(R((0, x)))
+    p_y = T(R((0, 1)))
+    # print('p_x', p_x)
+    # print('p_y', p_y)
+    # print()
+    # p_x = T(curve.division_poly(1))
+    # p_y = T(curve.division_poly(1))
 
     point = sym_curve(p_x, p_y)
 
-
+    # Generate symbolic points
     p1 = frobenius_endomorphism(point, curve.p)
     p2 = frobenius_endomorphism(p1, curve.p)
-    determinant = q_bar * point
+    determinant = (curve.p % l) * point
+
+    # print('p1', p1)
+    # print('p2', p2)
 
     point_sum = determinant + p2
 
-    if point_sum == curve.POINT_AT_INFINITY:
+    # Find trace residue
+    if point_sum == sym_curve.POINT_AT_INFINITY:
         return torsion_quotient_ring(0)
 
     trace_point = p1
@@ -597,11 +627,15 @@ def frobenius_trace_mod_l(curve: object, l: int):
                 return torsion_quotient_ring(-candidate)
         else:
             trace_point += p1
+    
+    raise ArithmeticError("No trace candidate satisfied the Frobenius equation")
 
 
 
 def frobenius_trace(curve: object):
     from samson.math.algebra.rings.integer_ring import ZZ
+    from samson.math.algebra.polynomial import Polynomial
+
     search_range   = hasse_frobenius_trace_interval(curve.p)
     torsion_primes = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
 
@@ -609,13 +643,13 @@ def frobenius_trace(curve: object):
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
-        defining_poly = Poly(x**3 + curve.a*x + curve.b, modulus=curve.p)
-        rational_char = Poly(x**curve.p - x, modulus=curve.p)
+        defining_poly = Polynomial(x**3 + curve.a*x + curve.b, ring=curve.ring)
+        rational_char = Polynomial(x**curve.p - x, ring=curve.ring)
 
-        print('defining_poly', defining_poly)
-        print('rational_char', rational_char)
-        print('gcd(rational_char, defining_poly)', gcd(rational_char, defining_poly))
-        print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
+        # print('defining_poly', defining_poly)
+        # print('rational_char', rational_char)
+        # print('gcd(rational_char, defining_poly)', gcd(rational_char, defining_poly))
+        # print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
 
         if gcd(rational_char, defining_poly).degree() == 0:
             trace_congruences.append((ZZ/ZZ(2))(1))
@@ -628,7 +662,12 @@ def frobenius_trace(curve: object):
     for l in torsion_primes:
         trace_congruences.append(frobenius_trace_mod_l(curve, l))
 
-    return trace_congruences
+    n, mod = crt(trace_congruences)
+    return find_representative((ZZ/ZZ(mod))(n), range(*search_range))
+
+
+def schoofs_algorithm(curve: object) -> int:
+    return curve.p + 1 - frobenius_trace(curve)
 
 
 def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:

@@ -5,11 +5,14 @@ from samson.math.general import gcd
 
 class FractionFieldElement(FieldElement):
 
-    def __init__(self, numerator: FieldElement, denominator: FieldElement, field: Field, simplify: bool=True):
-        if simplify:
-            divisor       = gcd(numerator, denominator)
-            numerator   //= divisor
-            denominator //= divisor
+    def __init__(self, numerator: FieldElement, denominator: FieldElement, field: Field):
+        if field.simplify:
+            try:
+                divisor       = gcd(numerator, denominator)
+                numerator   //= divisor
+                denominator //= divisor
+            except Exception:
+                pass
 
         if denominator == field.ring.zero():
             raise ZeroDivisionError
@@ -65,8 +68,9 @@ class FractionFieldElement(FieldElement):
 class FractionField(Field):
     ELEMENT = FractionFieldElement
 
-    def __init__(self, ring: Ring):
-        self.ring = ring
+    def __init__(self, ring: Ring, simplify: bool=True):
+        self.ring     = ring
+        self.simplify = simplify
     
 
     def __repr__(self):

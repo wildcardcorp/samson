@@ -149,7 +149,8 @@ class Polynomial(object):
         return self.__divmod__(other)[1]
 
 
-    __pow__ = square_and_mul
+    def __pow__(self, exponent: int) -> object:
+        return square_and_mul(self, exponent, Polynomial([self.ring.one()], self.ring, self.symbol))
 
 
     def __int__(self) -> int:

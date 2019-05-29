@@ -22,34 +22,38 @@ class CurvePolynomialElement(RingElement):
         return CurvePolynomialElement(self.x_poly + other.x_poly, self.y_poly + other.y_poly, self.ring)
 
     def __sub__(self, other: object) -> object:
-        return CurvePolynomialElement(self.x_poly + other.x_poly, self.y_poly + other.y_poly, self.ring)
+        return CurvePolynomialElement(self.x_poly - other.x_poly, self.y_poly - other.y_poly, self.ring)
 
     def __mul__(self, other: object) -> object:
         if type(other) is int:
             return super().__mul__(other)
         
+        other = self.ring.coerce(other)
+
         nx = self.x_poly * other.x_poly
         xy = self.x_poly * other.y_poly
         yx = self.y_poly * other.x_poly
 
         y = xy + yx
 
-        print('self.x', self.x_poly)
-        print('self.y', self.y_poly)
-        print('other.x', other.x_poly)
-        print('other.y', other.y_poly)
-        print('self', self)
-        print('other', other)
-        print('x', nx)
-        print('xy', xy)
-        print('yx', yx)
-        print('y', y)
+        # print('self.x', self.x_poly)
+        # print('self.y', self.y_poly)
+        # print('other.x', other.x_poly)
+        # print('other.y', other.y_poly)
+        # print('self', self)
+        # print('other', other)
+        # print('x', nx)
+        # print('xy', xy)
+        # print('yx', yx)
+        # print('y', y)
 
         if self.y_poly and other.y_poly:
-            print('y2_red', self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val)
+            #print('y2_red', self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val)
             #nx += (self.y_poly * other.y_poly) / self.ring.poly_ring(x**2).val * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
             nx += self.y_poly * other.y_poly * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
 
+        # print('FINAL X', nx)
+        # print()
         return CurvePolynomialElement(nx, y, self.ring)
 
 
