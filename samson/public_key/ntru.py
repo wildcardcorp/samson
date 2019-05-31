@@ -49,7 +49,7 @@ def rand_poly(length: int, len_non_zeroes: int, neg_ones_mod: int=0) -> Poly:
     Returns:
         Poly: Random polynomial.
     """
-    poly_arr =  [0]  * ((length - len_non_zeroes * 2) + neg_ones_mod)
+    poly_arr  = [0]  * ((length - len_non_zeroes * 2) + neg_ones_mod)
     poly_arr += [1]  * len_non_zeroes
     poly_arr += [-1] * (len_non_zeroes - neg_ones_mod)
 

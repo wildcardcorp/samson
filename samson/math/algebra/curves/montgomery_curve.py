@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.general import random_int
 from samson.utilities.bytes import Bytes
 
 # https://tools.ietf.org/html/rfc7748
@@ -56,10 +57,37 @@ class MontgomeryCurve(Ring):
 
 
     def zero(self) -> object:
+        """
+        Returns:
+            MontgomeryPoint: '0' element of the algebra.
+        """
         return MontgomeryPoint(0, self)
 
+
     def one(self) -> object:
+        """
+        Returns:
+            MontgomeryPoint: '1' element of the algebra.
+        """
         return self.G
+
+
+    def random(self, size: int=None) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int): The ring-specific 'size' of the element.
+    
+        Returns:
+            MontgomeryPoint: Random element of the algebra.
+        """
+        while True:
+            try:
+                return self.clamp_to_curve(max(1, random_int(size or self.p)))
+            except AssertionError:
+                pass
+
 
     @property
     def p(self):

@@ -23,6 +23,9 @@ class Polynomial(object):
 
         self.coeffs = coeffs_rev[idx:][::-1]
 
+        if len(self.coeffs) == 0:
+            self.coeffs = [self.ring.zero()]
+
 
 
     def shorthand(self) -> str:
@@ -53,9 +56,13 @@ class Polynomial(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
     def __call__(self, x: int) -> object:
         return self.evaluate(x)
+
+
+    def __hash__(self) -> int:
+        return hash((self.ring, self.coeffs, self.__class__))
 
 
     def LC(self) -> object:
@@ -91,20 +98,25 @@ class Polynomial(object):
         return zip(self.pad(pad_len), other.pad(pad_len))
 
 
-    def __divmod__(self, divisor: object) -> (object, object):
+    def __divmod__(self, other: object) -> (object, object):
         poly_zero = Polynomial([self.ring.zero()], symbol=self.symbol)
-        assert divisor != poly_zero
+        assert other != poly_zero
 
-        q = poly_zero
-        remainder = self
+        dividend  = self.coeffs[:]
+        divisor   = other.coeffs[:]
 
-        while remainder != poly_zero and remainder.degree() >= divisor.degree():
-            pad_len = len(remainder.coeffs) - len(divisor.coeffs)
-            t  = Polynomial([self.ring.zero()] * pad_len + [remainder.LC() / divisor.LC()])
-            q += t
-            remainder = remainder - t * divisor
+        n = other.degree()
+        quotient = [self.ring.zero()] * (self.degree() - n + 1)
 
-        return (q, remainder)
+        for k in reversed(range(len(quotient))):
+            quotient[k] = dividend[n+k] / divisor[n]
+
+            for j in range(k, n+k):
+                dividend[j] -= quotient[k] * divisor[j-k]
+
+        remainder = dividend[:n]
+
+        return (Polynomial(quotient, ring=self.ring, symbol=self.symbol), Polynomial(remainder, ring=self.ring, symbol=self.symbol))
 
 
 

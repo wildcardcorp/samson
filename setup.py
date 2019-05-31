@@ -16,7 +16,6 @@ requires = [
     "pyasn1-modules",
     "ipython",
     "tqdm",
-    "z3",
     "z3-solver"
 ]
 

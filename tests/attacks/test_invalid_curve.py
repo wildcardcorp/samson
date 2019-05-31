@@ -12,7 +12,7 @@ import unittest
 class InvalidCurveAttackTestCase(unittest.TestCase):
     def test_attack(self):
         ring    = ZZ/ZZ(233970423115425145524320034830162017933)
-        curve   = WeierstrassCurve(a=ring(-95051), b=ring(11279326), order=29246302889428143187362802287225875743, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        curve   = WeierstrassCurve(a=ring(-95051), b=ring(11279326), cardinality=29246302889428143187362802287225875743, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
         m       = b"crazy flamboyant for the rap enjoyment"
         sha256  = SHA256()
         bob_key = ECDHE(G=curve.G)
@@ -32,9 +32,9 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
             raise Exception(f'Residue not found for {r}!')
 
 
-        inv_a = WeierstrassCurve(a=ring(-95051), b=ring(210), order=233970423115425145550826547352470124412, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
-        inv_b = WeierstrassCurve(a=ring(-95051), b=ring(504), order=233970423115425145544350131142039591210, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
-        inv_c = WeierstrassCurve(a=ring(-95051), b=ring(727), order=233970423115425145545378039958152057148, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        inv_a = WeierstrassCurve(a=ring(-95051), b=ring(210), cardinality=233970423115425145550826547352470124412, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        inv_b = WeierstrassCurve(a=ring(-95051), b=ring(504), cardinality=233970423115425145544350131142039591210, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
+        inv_c = WeierstrassCurve(a=ring(-95051), b=ring(727), cardinality=233970423115425145545378039958152057148, base_tuple=(182, 85518893674295321206118380980485522083), ring=ring)
 
         oracle        = DefaultOracle(oracle_func)
         ica           = InvalidCurveAttack(oracle, curve)

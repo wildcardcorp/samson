@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.general import random_int
 from samson.utilities.bytes import Bytes
 
 def bit(h,i):
@@ -48,11 +49,37 @@ class TwistedEdwardsCurve(Ring):
         return f"<TwistedEdwardsCurve: b={self.b}, q={self.q}, l={self.l}>"
 
 
-    def zero(self):
+    def zero(self) -> object:
+        """
+        Returns:
+            TwistedEdwardsCurve: '0' element of the algebra.
+        """
         return TwistedEdwardsPoint(0, 1, self)
 
-    def one(self):
+
+    def one(self) -> object:
+        """
+        Returns:
+            TwistedEdwardsCurve: '1' element of the algebra.
+        """
         return self.B
+
+
+    def random(self, size: int=None) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int): The ring-specific 'size' of the element.
+    
+        Returns:
+            TwistedEdwardsCurve: Random element of the algebra.
+        """
+        while True:
+            try:
+                return self.clamp_to_curve(max(1, random_int(size or self.q)))
+            except AssertionError:
+                pass
 
 
     @property

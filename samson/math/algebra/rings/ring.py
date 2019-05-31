@@ -2,7 +2,6 @@ from samson.math.general import fast_mul, square_and_mul
 from abc import ABC, abstractmethod
 
 class Ring(ABC):
-    ELEMENT = None
 
     @abstractmethod
     def shorthand(self) -> str:
@@ -19,19 +18,29 @@ class Ring(ABC):
     def one(self):
         pass
 
+    @abstractmethod
+    def random(self, size: int=None):
+        pass
 
     def coerce(self, other: object) -> object:
+        """
+        Attempts to coerce other into an element of the algebra.
+
+        Parameters:
+            other (object): Object to coerce.
+        
+        Returns:
+            RingElement: Coerced element.
+        """
         return other
 
 
-    def mul_group(self, generator: object) -> object:
-        pass
+    def mul_group(self) -> object:
+        from samson.math.algebra.rings.multiplicative_group import MultiplicativeGroup
+        return MultiplicativeGroup(self)
 
 
     __mul__ = mul_group
-
-    # def __call__(self, args):
-    #     return self.ELEMENT(args, self)
 
 
     def __call__(self, args):
@@ -58,11 +67,13 @@ class RingElement(ABC):
     def __str__(self):
         return self.shorthand()
 
+    def __hash__(self) -> int:
+        return hash((self.ring, self.val))
 
     @abstractmethod
     def __add__(self, other: object) -> object:
         pass
-    
+
     def __radd__(self, other: object) -> object:
         return self.ring.coerce(other) + self
 
@@ -80,7 +91,7 @@ class RingElement(ABC):
         if type(other) is int:
             return self * other
 
-        return self.ring.coerce(other) * self 
+        return self.ring.coerce(other) * self
 
     def __bool__(self) -> bool:
         return self != self.ring.zero()

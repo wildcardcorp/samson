@@ -2,11 +2,23 @@ from abc import abstractmethod #ABC,
 from samson.math.algebra.rings.ring import RingElement, Ring
 
 class Field(Ring):
+    """
+    Algebraic structure that satisfies all of the properties of a ring and every element has a
+    multiplicative inverse.
+    """
     pass
 
 
 class FieldElement(RingElement):
+    """
+    Element of a field.
+    """
+
     def __init__(self, field: Field):
+        """
+        Parameters:
+            field (Field): Field this element belongs to.
+        """
         self.field = field
 
     @property

@@ -7,7 +7,16 @@ from sympy.polys.galoistools import gf_irreducible_p
 import itertools
 
 class FiniteFieldElement(FieldElement):
+    """
+    Element of a `FiniteField`.
+    """
+
     def __init__(self, val: Polynomial, field: Field):
+        """
+        Parameters:
+            val    (Polynomial): Value of the element.
+            field (FiniteField): Parent field.
+        """
         self.field = field
         self.val   = self.field.internal_field.coerce(val)
 
@@ -55,11 +64,28 @@ class FiniteFieldElement(FieldElement):
 
 
 class FiniteField(Field):
-    ELEMENT = FiniteFieldElement
+    """
+    Finite field of GF(p**n) constructed using a `PolynomialRing`.
+
+    Examples:
+        >>> from samson.math import *
+        >>> F = GF(2, 8)
+        >>> assert F(5) / F(5) == F(1)
+        >>> F[x]/(F[x].one()*2)
+        <QuotientRing ring=F_(2**8)[x], quotient=F_(2**8)[x](F_(2**8)(ZZ/ZZ(2)[x](ZZ(0))))>
+
+    """
 
     def __init__(self, p: int, n: int=1, reducing_poly: Polynomial=None):
+        """
+        Parameters:
+            p                    (int): Prime.
+            n                    (int): Exponent.
+            reducing_poly (Polynomial): Polynomial to reduce the `PolynomialRing`.
+        """
         from samson.math.algebra.all import ZZ
         from sympy import ZZ as sym_ZZ
+
         assert isprime(p)
         self.p = p
         self.n = n
@@ -87,24 +113,59 @@ class FiniteField(Field):
         return f"<FiniteField: p={self.p}, n={self.n}, reducing_poly={self.reducing_poly}>"
 
 
+    def __hash__(self) -> int:
+        return hash((self.internal_field, self.reducing_poly, self.__class__))
+
+
     def zero(self) -> FiniteFieldElement:
+        """
+        Returns:
+            FiniteFieldElement: '0' element of the algebra.
+        """
         return self.coerce(0)
 
 
     def one(self) -> FiniteFieldElement:
+        """
+        Returns:
+            FiniteFieldElement: '1' element of the algebra.
+        """
         return self.coerce(1)
+
+
+    def random(self, size: int=None) -> FiniteFieldElement:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int): The ring-specific 'size' of the element.
+    
+        Returns:
+            FiniteFieldElement: Random element of the algebra.
+        """
+        from samson.math.general import random_int
+        return self.coerce(random_int(2**size))
 
 
     def shorthand(self) -> str:
         return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
-    
+
 
     @property
     def characteristic(self) -> int:
         return self.p
 
 
-    def coerce(self, other: int) -> object:
+    def coerce(self, other: object) -> FiniteFieldElement:
+        """
+        Attempts to coerce other into an element of the algebra.
+
+        Parameters:
+            other (object): Object to coerce.
+        
+        Returns:
+            FiniteFieldElement: Coerced element.
+        """
         if type(other) is int:
             other = int_to_poly(other, self.p) % self.reducing_poly
         elif type(other) is Polynomial:

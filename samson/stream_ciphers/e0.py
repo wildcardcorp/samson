@@ -4,7 +4,7 @@ from samson.core.encryption_alg import EncryptionAlg
 from samson.math.algebra.polynomial import Polynomial
 from samson.math.algebra.rings.integer_ring import ZZ
 from sympy.abc import x
-#from sympy import Poly
+
 
 FSM_MATRIX = [
     [ 0,  0,  0,  4,  0,  4,  4,  4,  0,  4,  4,  4,  4,  4,  4,  8],

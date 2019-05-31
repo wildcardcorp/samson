@@ -35,18 +35,28 @@ X   Document new parsers
     X   Add class/function documentation
 
 X   DocTests
+    X   Swap to Pytest
+    X   Write doctests
 
 X   CAS
-    X   Document all classes
+    OK  Document all classes
     OK  Expression to poly
     OK  Polys can take different Symbols
     OK  Fix FiniteField invert (PolyElement invert)
     X   Calculate ring characteristics
     X   Replace all sympy with native CAS
     OK  Convert EllipticCurves into rings
-    X   Easily build DH ring (mod-pow)... generic mult subgroup ring?
+    OK  Easily build DH ring (mod-pow)... generic mult subgroup ring?
 
-X   Schoof's algorithm
+
+X  Schoof's algorithm
+    OK  Implement
+    X   Document
+
+
+X   Improve Polynomial implementation
+    X   NTT-DFT (or something for arbitrary algebras) for multiplication
+    X   Sparse vector as underlying list
 
 
 X   Document these classes
@@ -54,6 +64,13 @@ X   Document these classes
     X   JWA
     OK  PKCS1v15RSASigner
 
+
+X   Test math
+    X   Unittest math.general
+    X   Unittest algebras
+
+X   Better exceptions
+X   Unify Diffie-Hellmans
 
 X   Swappable backends?
 X   Separate key parameters from use? Explains some gaps in functions vs data

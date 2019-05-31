@@ -18,7 +18,7 @@ secp384r1 = P384
 secp521r1 = P521
 
 
-class EllipticCurveCardAlg:
+class EllipticCurveCardAlg(Enum):
     AUTO    = 0
     BSGS    = 1
     SCHOOFS = 2

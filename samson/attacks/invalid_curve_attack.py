@@ -57,12 +57,12 @@ class InvalidCurveAttack(object):
         # TODO: Generate these curves if the user doesn't specify them
         for inv_curve in invalid_curves:
             # Factor as much as we can
-            factors = [r for r,_ in factorint(inv_curve.order, limit=max_factor_size).items() if r > 2 and r < max_factor_size]
+            factors = [r for r,_ in factorint(inv_curve.cardinality(), limit=max_factor_size).items() if r > 2 and r < max_factor_size]
             log.debug(f'Found factors: {factors}')
 
             # Request residues from crafted public keys
             for factor in RUNTIME.report_progress(factors, desc='Sending malicious public keys', unit='factor'):
-                if total > self.curve.order:
+                if total > self.curve.cardinality():
                     break
 
                 if factor in moduli:
@@ -74,8 +74,8 @@ class InvalidCurveAttack(object):
                 bad_pub = inv_curve.POINT_AT_INFINITY
 
                 while bad_pub == inv_curve.POINT_AT_INFINITY:
-                    point   = inv_curve.random_point()
-                    bad_pub = point * (inv_curve.order // factor)
+                    point   = inv_curve.random()
+                    bad_pub = point * (inv_curve.cardinality() // factor)
 
                 residue = self.oracle.request(bad_pub, factor)
                 residues.append(residue)

@@ -2,7 +2,16 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import mod_inv
 
 class QuotientElement(RingElement):
-    def __init__(self, val: int, ring: Ring):
+    """
+    Element of a `QuotientRing`.
+    """
+
+    def __init__(self, val: RingElement, ring: Ring):
+        """
+        Parameters:
+            val (RingElement): Value of the element.
+            ring       (Ring): Parent ring.
+        """
         self.ring = ring
         self.val  = val % self.ring.quotient
 
@@ -47,9 +56,23 @@ class QuotientElement(RingElement):
 
 
 class QuotientRing(Ring):
-    ELEMENT = QuotientElement
+    """
+    Ring built from an underlying ring and quotient.
 
-    def __init__(self, quotient, ring):
+    Examples:
+        >>> from samson.math.all import *
+        >>> quot_ring = ZZ/ZZ(53)
+        >>> quot_ring(5) * ~quot_ring(4)
+         <QuotientElement: val=ZZ(41), ring=ZZ/ZZ(53)>
+
+    """
+
+    def __init__(self, quotient: RingElement, ring: Ring):
+        """
+        Parameters:
+            quotient (RingElement): Element from the underlying ring.
+            ring            (Ring): Underlying ring.
+        """
         assert(quotient.ring == ring)
         self.ring     = ring
         self.quotient = quotient
@@ -71,17 +94,48 @@ class QuotientRing(Ring):
 
 
     def zero(self) -> QuotientElement:
+        """
+        Returns:
+            QuotientElement: '0' element of the algebra.
+        """
         return QuotientElement(self.ring.zero(), self)
 
+
     def one(self) -> QuotientElement:
+        """
+        Returns:
+            QuotientElement: '1' element of the algebra.
+        """
         return QuotientElement(self.ring.one(), self)
+
+
+    def random(self, size: int=None) -> QuotientElement:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int): The ring-specific 'size' of the element.
+    
+        Returns:
+            QuotientElement: Random element of the algebra.
+        """
+        return QuotientElement(self.ring.random(size or self.characteristic), self)
 
 
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}/{self.quotient.shorthand()}'
 
 
-    def coerce(self, other: int) -> object:
+    def coerce(self, other: int) -> QuotientElement:
+        """
+        Attempts to coerce other into an element of the algebra.
+
+        Parameters:
+            other (object): Object to coerce.
+        
+        Returns:
+            QuotientElement: Coerced element.
+        """
         if type(other) is not QuotientElement:
             other = QuotientElement(self.ring.coerce(other), self)
         return other
@@ -91,4 +145,7 @@ class QuotientRing(Ring):
         return type(self) == type(other) and self.ring == other.ring and self.quotient == other.quotient
 
     def __call__(self, args):
-        return self.ELEMENT(self.ring(args), self)
+        return QuotientElement(self.ring(args), self)
+
+    def __hash__(self) -> int:
+        return hash((self.ring, self.__class__))

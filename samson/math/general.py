@@ -1,7 +1,7 @@
 from copy import deepcopy
 from samson.utilities.general import rand_bytes
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import isprime, Poly, sieve, GF
+from sympy import isprime, Poly, sieve
 from sympy.abc import x
 from types import FunctionType
 import math
@@ -43,7 +43,7 @@ def poly_to_int(poly: object) -> int:
     value   = 0
     for idx, coeff in enumerate(poly.coeffs):
         value += int(coeff) * modulus**idx
-    
+
     return value
 
 
@@ -203,7 +203,7 @@ def crt(residues: list, moduli: list=None) -> (int, int):
     else:
         moduli   = [int(residue.ring.quotient) for residue in residues]
         residues = [int(residue) for residue in residues]
-    
+
     x  = residues[0]
     Nx = moduli[0]
 
@@ -538,7 +538,7 @@ def primes_product(n: int, blacklist: list=None):
     primes    = []
     blacklist = blacklist if blacklist else []
 
-    for prime in sieve.primerange(2, n+1):
+    for prime in sieve.primerange(2, n.bit_length()*2+1):
         if total >= n:
 
             # We might be able to remove some of the large primes
@@ -563,7 +563,7 @@ def find_representative(quotient_element: object, valid_range: list):
 
     if len(valid_range) > modulus:
         raise ValueError("Solution not unique")
-    
+
     q, r = divmod(valid_range[0], modulus)
     shifted_range = range(r, r + len(valid_range))
 
@@ -586,7 +586,6 @@ def frobenius_trace_mod_l(curve: object, l: int):
 
     torsion_quotient_ring = ZZ/ZZ(l)
     psi = curve.division_poly(l)
-    # print(psi)
 
     # Build symbolic torsion group
     R = curve.curve_poly_ring
@@ -596,11 +595,6 @@ def frobenius_trace_mod_l(curve: object, l: int):
 
     p_x = T(R((x, 0)))
     p_y = T(R((0, 1)))
-    # print('p_x', p_x)
-    # print('p_y', p_y)
-    # print()
-    # p_x = T(curve.division_poly(1))
-    # p_y = T(curve.division_poly(1))
 
     point = sym_curve(p_x, p_y)
 
@@ -608,9 +602,6 @@ def frobenius_trace_mod_l(curve: object, l: int):
     p1 = frobenius_endomorphism(point, curve.p)
     p2 = frobenius_endomorphism(p1, curve.p)
     determinant = (curve.p % l) * point
-
-    # print('p1', p1)
-    # print('p2', p2)
 
     point_sum = determinant + p2
 
@@ -627,7 +618,7 @@ def frobenius_trace_mod_l(curve: object, l: int):
                 return torsion_quotient_ring(-candidate)
         else:
             trace_point += p1
-    
+
     raise ArithmeticError("No trace candidate satisfied the Frobenius equation")
 
 
@@ -637,19 +628,15 @@ def frobenius_trace(curve: object):
     from samson.math.algebra.polynomial import Polynomial
 
     search_range   = hasse_frobenius_trace_interval(curve.p)
-    torsion_primes = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
 
+    # TODO: We're temporarily banning 2 as a prime since we use dense vectors for the Polynomial (look at x**curve.p - x).
+    torsion_primes    = primes_product(search_range[1] - search_range[0], [2, curve.ring.characteristic])
     trace_congruences = []
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
         defining_poly = Polynomial(x**3 + curve.a*x + curve.b, ring=curve.ring)
         rational_char = Polynomial(x**curve.p - x, ring=curve.ring)
-
-        # print('defining_poly', defining_poly)
-        # print('rational_char', rational_char)
-        # print('gcd(rational_char, defining_poly)', gcd(rational_char, defining_poly))
-        # print('gcd(rational_char, defining_poly).degree()', gcd(rational_char, defining_poly).degree())
 
         if gcd(rational_char, defining_poly).degree() == 0:
             trace_congruences.append((ZZ/ZZ(2))(1))
@@ -689,20 +676,18 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
         >>> from samson.math.algebra.all import *
 
         >>> ring = ZZ/ZZ(53)
-        >>> curve = WeierstrassCurve(a=ring(50), b=ring(7), order=57, base_tuple=(34, 25))
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
         >>> start, end = hasse_frobenius_trace_interval(curve.p)
-        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, e=curve.POINT_AT_INFINITY, start=start, end=end)
+        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, e=curve.POINT_AT_INFINITY, start=start + curve.p, end=end + curve.p)
         57
 
-        >>> base     = 7
+        >>> ring = ZZ/ZZ(53)
+        >>> mul = ring.mul_group()
+        >>> base = mul(7)
         >>> exponent = 24
-        >>> p        = 53
-        >>> h        = pow(base, exponent, p)
-        >>> add_op   = lambda e, g: (e*g) % p
-        >>> sub_op   = lambda e, g: (e * mod_inv(g, p)) % p
-        >>> mul_op   = lambda e, g: pow(e,g,p)
-        >>> bsgs(base, h, p, add_op, sub_op, mul_op)
-        24
+        >>> h = base * exponent
+        >>> bsgs(base, h, int(ring.quotient))
+        50
 
     """
     search_range = end - start
