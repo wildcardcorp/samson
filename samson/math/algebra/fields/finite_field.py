@@ -1,7 +1,7 @@
 from samson.math.general import int_to_poly
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from sympy import isprime
 from sympy.polys.galoistools import gf_irreducible_p
 import itertools

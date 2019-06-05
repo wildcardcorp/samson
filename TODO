@@ -34,9 +34,11 @@ X   OCB3
 X   Document new parsers
     X   Add class/function documentation
 
+
 X   DocTests
     X   Swap to Pytest
     X   Write doctests
+
 
 X   CAS
     OK  Document all classes
@@ -57,6 +59,7 @@ X  Schoof's algorithm
 X   Improve Polynomial implementation
     X   NTT-DFT (or something for arbitrary algebras) for multiplication
     X   Sparse vector as underlying list
+    X   Fast modulo
 
 
 X   Document these classes
@@ -68,6 +71,7 @@ X   Document these classes
 X   Test math
     X   Unittest math.general
     X   Unittest algebras
+
 
 X   Better exceptions
 X   Unify Diffie-Hellmans

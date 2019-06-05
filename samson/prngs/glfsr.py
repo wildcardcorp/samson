@@ -1,4 +1,4 @@
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from samson.math.general import berlekamp_massey
 from samson.math.general import poly_to_int
 

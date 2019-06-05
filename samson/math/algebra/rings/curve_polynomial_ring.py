@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from sympy import Expr
 from sympy.abc import x
 

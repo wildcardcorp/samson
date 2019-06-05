@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import random_int, tonelli
 from sympy.abc import x, y

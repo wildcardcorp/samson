@@ -1,7 +1,7 @@
 from samson.prngs.flfsr import FLFSR
 from samson.utilities.bytes import Bytes
 from samson.core.encryption_alg import EncryptionAlg
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from samson.math.algebra.rings.integer_ring import ZZ
 from sympy.abc import x
 

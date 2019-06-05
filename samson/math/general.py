@@ -22,8 +22,8 @@ def int_to_poly(integer: int, modulus: int=2) -> Poly:
 
     # Use != to handle negative numbers
     while integer != 0 and integer != -1:
-        base_coeffs.append(integer % modulus)
-        integer //= modulus
+        integer, r = divmod(integer, modulus)
+        base_coeffs.append(r)
 
     return Polynomial(base_coeffs, ZZ/ZZ(modulus))
 
@@ -41,7 +41,7 @@ def poly_to_int(poly: object) -> int:
     """
     modulus = int(poly.ring.quotient.val)
     value   = 0
-    for idx, coeff in enumerate(poly.coeffs):
+    for idx, coeff in poly.coeffs:
         value += int(coeff) * modulus**idx
 
     return value
@@ -158,7 +158,11 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
     Returns:
         int: `s = a * b` within its ring.
     """
-    s = s or a.ring.zero()
+    s = s if s is not None else a.ring.zero()
+    if b < 0:
+        b = -b
+        a = -a
+
     while b != 0:
         if b & 1:
             s = (s + a)
@@ -429,7 +433,7 @@ def berlekamp_massey(output_list: list) -> Poly:
         Polynomial: Polyomial that represents the shortest LFSR.
     """
     from samson.math.algebra.rings.integer_ring import ZZ
-    from samson.math.algebra.polynomial import Polynomial
+    from samson.math.polynomial import Polynomial
     n = len(output_list)
     b = [1] + [0] * (n - 1)
     c = [1] + [0] * (n - 1)
@@ -625,9 +629,9 @@ def frobenius_trace_mod_l(curve: object, l: int):
 
 def frobenius_trace(curve: object):
     from samson.math.algebra.rings.integer_ring import ZZ
-    from samson.math.algebra.polynomial import Polynomial
+    from samson.math.polynomial import Polynomial
 
-    search_range   = hasse_frobenius_trace_interval(curve.p)
+    search_range = hasse_frobenius_trace_interval(curve.p)
 
     # TODO: We're temporarily banning 2 as a prime since we use dense vectors for the Polynomial (look at x**curve.p - x).
     torsion_primes    = primes_product(search_range[1] - search_range[0], [2, curve.ring.characteristic])

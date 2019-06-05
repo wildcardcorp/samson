@@ -1,4 +1,4 @@
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.prngs.flfsr import FLFSR
 from samson.prngs.glfsr import GLFSR

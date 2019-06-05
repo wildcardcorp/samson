@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.algebra.polynomial import Polynomial
+from samson.math.polynomial import Polynomial
 from sympy import Expr
 
 class PolynomialElement(RingElement):
