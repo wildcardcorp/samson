@@ -79,8 +79,8 @@ class FractionField(Field):
     Fraction field over a ring.
 
     Examples:
-        >>> from samson.math import *
-        >>> QQ = Frac(ZZ)
+        >>> from samson.math.algebra.rings.integer_ring import IntegerRing
+        >>> QQ = FractionField(IntegerRing())
         >>> assert QQ(5) * QQ((1, 5)) == QQ.one()
 
     """

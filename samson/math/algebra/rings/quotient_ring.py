@@ -63,7 +63,7 @@ class QuotientRing(Ring):
         >>> from samson.math.all import *
         >>> quot_ring = ZZ/ZZ(53)
         >>> quot_ring(5) * ~quot_ring(4)
-         <QuotientElement: val=ZZ(41), ring=ZZ/ZZ(53)>
+        <QuotientElement: val=ZZ(41), ring=ZZ/ZZ(53)>
 
     """
 

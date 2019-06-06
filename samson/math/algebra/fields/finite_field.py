@@ -69,7 +69,8 @@ class FiniteField(Field):
 
     Examples:
         >>> from samson.math import *
-        >>> F = GF(2, 8)
+        >>> from sympy.abc import x
+        >>> F = FiniteField(2, 8)
         >>> assert F(5) / F(5) == F(1)
         >>> F[x]/(F[x].one()*2)
         <QuotientRing ring=F_(2**8)[x], quotient=F_(2**8)[x](F_(2**8)(ZZ/ZZ(2)[x](ZZ(0))))>

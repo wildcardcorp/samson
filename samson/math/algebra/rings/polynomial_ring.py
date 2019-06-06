@@ -110,7 +110,7 @@ class PolynomialRing(Ring):
         if not size:
             size = 1
 
-        return PolynomialElement(Polynomial([self.ring.random() for _ in range(size)], self.ring), self)
+        return PolynomialElement(Polynomial([self.ring.random(3) for _ in range(size)], self.ring), self)
 
 
     def __repr__(self):

@@ -532,12 +532,38 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
 
 
 
-def hasse_frobenius_trace_interval(p: int):
+def hasse_frobenius_trace_interval(p: int) -> (int, int):
+    """
+    Finds the interval relative to `p` in which the Frobenius trace must reside according to Hasse's theorem.
+
+    Parameters:
+        p (int): Prime of the underlying field of the elliptic curve.
+    
+    Returns:
+        (int, int): Start and end ranges of the interval relative to `p`.
+    """
     l = 2 * math.ceil(math.sqrt(p))
     return (-l , l + 1)
 
 
-def primes_product(n: int, blacklist: list=None):
+
+def primes_product(n: int, blacklist: list=None) -> list:
+    """
+    Returns a list of small primes whose product is greater than or equal to `n`.
+
+    Parameters:
+        n          (int): Product to find.
+        blacklist (list): Primes to skip.
+    
+    Returns:
+        list: List of primes.
+    
+    Examples:
+        >>> from samson.math.general import primes_product
+        >>> primes_product(100, [2])
+        [7, 5, 3]
+
+    """
     total     = 1
     primes    = []
     blacklist = blacklist if blacklist else []
@@ -561,7 +587,24 @@ def primes_product(n: int, blacklist: list=None):
             total *= prime
 
 
-def find_representative(quotient_element: object, valid_range: list):
+
+def find_representative(quotient_element: object, valid_range: list) -> int:
+    """
+    Finds the representative element of `quotient_element` within `valid_range`.
+
+    Parameters:
+        quotient_element (QuotientElement): Element to search for.
+        valid_range                 (list): Range to search in.
+    
+    Returns:
+        int: Representative element.
+    
+    Examples:
+        >>> from samson.math.all import *
+        >>> find_representative((ZZ/ZZ(11))(3), range(11, 22))
+        14
+
+    """
     remainder = int(quotient_element)
     modulus   = int(quotient_element.ring.quotient)
 
@@ -579,11 +622,33 @@ def find_representative(quotient_element: object, valid_range: list):
         raise ValueError("No solution")
 
 
-def frobenius_endomorphism(point: object, q: int):
+
+def frobenius_endomorphism(point: object, q: int) -> object:
+    """
+    Computes the Frobenius endomorphism of the `point`.
+
+    Parameters:
+        point (object): Original point.
+        q        (int): Power to raise to.
+    
+    Returns:
+        object: Resultant point.
+    """
     return point.__class__(x=point.x**q, y=point.y**q, curve=point.curve)
 
 
-def frobenius_trace_mod_l(curve: object, l: int):
+
+def frobenius_trace_mod_l(curve: object, l: int) -> object:
+    """
+    Finds the Frobenius trace modulo `l` for faster computation.
+
+    Parameters:
+        curve (object): Elliptic curve.
+        l        (int): Prime modulus.
+    
+    Returns:
+        QuotientElement: Modular residue of the Frobenius trace.
+    """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
     from samson.math.algebra.rings.integer_ring import ZZ
@@ -627,7 +692,26 @@ def frobenius_trace_mod_l(curve: object, l: int):
 
 
 
-def frobenius_trace(curve: object):
+def frobenius_trace(curve: object) -> int:
+    """
+    Calculates the Frobenius trace of the `curve`.
+
+    Parameters:
+        curve (object): Elliptic curve.
+    
+    Returns:
+        int: Frobenius trace.
+    
+    Examples:
+        >>> from samson.math.general import frobenius_trace
+        >>> from samson.math.algebra.all import *
+
+        >>> ring = ZZ/ZZ(53)
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
+        >>> frobenius_trace(curve)
+        -3
+
+    """
     from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.polynomial import Polynomial
 
@@ -658,6 +742,25 @@ def frobenius_trace(curve: object):
 
 
 def schoofs_algorithm(curve: object) -> int:
+    """
+    Performs Schoof's algorithm to count the number of points on an elliptic curve.
+
+    Parameters:
+        curve (object): Elliptic curve to find cardinality of.
+    
+    Returns:
+        int: Curve cardinality
+    
+    Examples:
+        >>> from samson.math.general import schoofs_algorithm
+        >>> from samson.math.algebra.all import *
+
+        >>> ring = ZZ/ZZ(53)
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
+        >>> schoofs_algorithm(curve)
+        57
+
+    """
     return curve.p + 1 - frobenius_trace(curve)
 
 
@@ -668,9 +771,9 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
     Parameters:
         g  (object): Generator/base.
         h  (object): The result to find the discrete logarithm of.
+        end   (int): End of the search range.
         e  (object): Starting point of the aggregator.
         start (int): Start of the search range.
-        end   (int): End of the search range.
     
     Returns:
         int: The discrete logarithm of `h` given `g` over `p`.

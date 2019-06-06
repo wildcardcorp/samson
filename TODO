@@ -51,14 +51,14 @@ X   CAS
     OK  Easily build DH ring (mod-pow)... generic mult subgroup ring?
 
 
-X  Schoof's algorithm
+OK  Schoof's algorithm
     OK  Implement
-    X   Document
+    OK  Document
 
 
 X   Improve Polynomial implementation
-    X   NTT-DFT (or something for arbitrary algebras) for multiplication
-    X   Sparse vector as underlying list
+    X   NTT-DFT (or something for arbitrary algebras) for multiplication/division
+    OK  Sparse vector as underlying list
     X   Fast modulo
 
 

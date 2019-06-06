@@ -8,14 +8,16 @@ class GreyWolfOptimizer:
   """
   Metaheuristic swarm-optmization algorithm. Operates over real numbers.
 
->>> bRange = np.matrix([[0, 1],
-... [-1, 1],
-... [-1, 1],
-... [-1, 1],
-... [-1, 1]])
+  Examples:
+    >>> bRange = np.matrix([[0, 1],
+    ... [-1, 1],
+    ... [-1, 1],
+    ... [-1, 1],
+    ... [-1, 1]])
 
->>> gwo = GreyWolfOptimizer(200, 150, bRange, 0.01, oFunc)
->>> gwo.run()
+    >>> gwo = GreyWolfOptimizer(200, 150, bRange, 0.01, oFunc)
+    >>> _ = gwo.run()
+  
   """
 
   def __init__(self, nWolves: int, nIters: int, boundsMat: np.ndarray, minConv: float, objFunc: FunctionType):
