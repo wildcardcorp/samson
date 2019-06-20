@@ -8,8 +8,6 @@ with open(os.path.join(here, 'README.md')) as f:
 
 
 requires = [
-    "scipy",
-    "numpy==1.15.2",
     "fastecdsa",
     "sympy",
     "pyasn1",
@@ -64,6 +62,11 @@ setup(name='samson-crypto',
           "samson/kdfs",
           "samson/hashes",
           "samson/macs",
+          "samson/math",
+          "samson/math/algebra",
+          "samson/math/algebra/curves",
+          "samson/math/algebra/fields",
+          "samson/math/algebra/rings",
           "samson/oracles",
           "samson/padding",
           "samson/prngs",

@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring
-from samson.math.general import fast_mul, square_and_mul
+from samson.math.general import fast_mul, square_and_mul, gcd
 from samson.math.sparse_vector import SparseVector
 from sympy import Expr, Symbol, Integer
 from copy import deepcopy
@@ -123,7 +123,56 @@ class Polynomial(object):
 
 
     def derivative(self) -> object:
-        return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs][1:], self.ring, self.symbol)
+        return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0], self.ring, self.symbol)
+
+
+    def square_free_decomposition(self) -> list:
+        # if hasattr(self.ring, 'characteristic') and self.ring.characteristic == 0:
+        # # https://en.wikipedia.org/wiki/Square-free_polynomial
+        # # Yun's Algorithm
+
+        # f_prime = self.derivative()
+        # a = gcd(self, f_prime).monic()
+        # b = self / a
+        # c = f_prime / a
+        # d = c - b.derivative()
+
+        # results = []
+
+        # while b != self.one():
+        #     a = gcd(b, d).monic()
+        #     b_i = b / a
+        #     c_i = d / a
+        #     d = c - b.derivative()
+
+        #     if a != self.one():
+        #         results.append(a)
+
+        #     b = b_i
+        #     c = c_i
+        
+        # return results
+        # else:
+        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
+        p = self.ring.characteristic
+        
+        R = 1
+        c = gcd(self, self.derivative()).monic()
+        w = self / c
+
+        i = 1
+        while w != self.one():
+            y = gcd(w, c).monic()
+            fac = w / y
+            R *= fac**i
+            w, c, i = y, c / y, i + 1
+        
+        if c != self.one():
+            # TODO: Take the p-th root
+            c = c**(1/p)
+            R *= c.square_free_decomposition()**p
+        
+        return R
 
 
     def degree(self) -> int:
@@ -137,9 +186,12 @@ class Polynomial(object):
         return Polynomial([self.ring.zero()], self.ring, self.symbol)
 
 
+    def one(self) -> object:
+        return Polynomial([self.ring.one()], self.ring, self.symbol)
+
+
     def __divmod__(self, other: object) -> (object, object):
-        poly_zero = Polynomial([self.ring.zero()], symbol=self.symbol)
-        assert other != poly_zero
+        assert other != self.zero()
 
         n = other.degree()
         if n > self.degree():
@@ -219,7 +271,7 @@ class Polynomial(object):
 
 
     def __pow__(self, exponent: int) -> object:
-        return square_and_mul(self, exponent, Polynomial([self.ring.one()], self.ring, self.symbol))
+        return square_and_mul(self, exponent, self.one())
 
 
     def __int__(self) -> int:

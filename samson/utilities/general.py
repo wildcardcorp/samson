@@ -84,7 +84,7 @@ def binary_search(in_list: list, value: object, key: FunctionType=lambda item: i
     start_range = 0
     end_range   = len(in_list)
 
-    if value > key(in_list[-1]):
+    if not end_range or value > key(in_list[-1]):
         if fuzzy:
             return end_range
         else:

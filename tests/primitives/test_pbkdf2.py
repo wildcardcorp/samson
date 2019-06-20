@@ -21,7 +21,7 @@ class PBKDF2TestCase(unittest.TestCase):
             for _ in range(5):
                 password = Bytes.random(i * 8).zfill((i + 1) * 8)
                 salt = Bytes.random(i * 2)
-                desired_len = Bytes.random(1).int()
+                desired_len = max(1, Bytes.random(1).int())
                 num_iters = Bytes.random(1).int() % 256 + 1
 
                 pbkdf2 = PBKDF2(hash_fn=hash_fn, desired_len=desired_len, num_iters=num_iters)

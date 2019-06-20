@@ -86,15 +86,15 @@ class RSA(EncryptionAlg, EncodablePKI):
 
         self.bits = bits
 
-        self.phi = phi
-        self.d = mod_inv(self.e, phi)
+        self.phi   = phi
+        self.d     = mod_inv(self.e, phi)
         self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
 
         self.dP = self.d % (self.p-1)
         self.dQ = self.d % (self.q-1)
         self.Qi = mod_inv(self.q, self.p)
 
-        self.pub = (self.e, self.n)
+        self.pub  = (self.e, self.n)
         self.priv = (self.d, self.n)
 
 

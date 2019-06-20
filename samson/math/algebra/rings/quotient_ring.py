@@ -93,6 +93,13 @@ class QuotientRing(Ring):
             return self.quotient.ring.field.characteristic
 
 
+    @property
+    def p(self) -> int:
+        from samson.math.algebra.rings.integer_ring import IntegerElement
+        if type(self.quotient) is IntegerElement:
+            return int(self.quotient)
+
+
     def zero(self) -> QuotientElement:
         """
         Returns:

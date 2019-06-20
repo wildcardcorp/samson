@@ -183,11 +183,14 @@ def kth_root(n: int, k: int) -> int:
     Returns:
         int: `k`-th integer root of `n
     """
-    lb,ub = 0,n #lower bound, upper bound
+    lb, ub = 0, n #lower bound, upper bound
     while lb < ub:
-        guess = (lb+ub)//2
-        if pow(guess,k) < n: lb = guess+1
-        else: ub = guess
+        guess = (lb + ub) // 2
+        if pow(guess, k) < n:
+            lb = guess + 1
+        else:
+            ub = guess
+
     return lb
 
 
@@ -224,13 +227,28 @@ def legendre(a: int, p: int) -> int:
     Calculates the Legendre symbol of `a` mod `p`. Nonzero quadratic residues mod `p` return 1 and nonzero, non-quadratic residues return -1. Zero returns 0.
 
     Parameters:
-        a (int): Integer.
+        a (int): Possible quadatric residue.
         p (int): Modulus.
     
     Returns:
         int: Legendre symbol.
     """
     return pow(a, (p - 1) // 2, p)
+
+
+def generalized_eulers_criterion(a: int, k: int, p: int) -> int:
+    """
+    Determines if `a` is a `k`-th root over `p`.
+
+    Parameters:
+        a (int): Possible `k`-th residue.
+        k (int): Root.
+        p (int): Modulus.
+    
+    Returns:
+        int: Legendre symbol (basically).
+    """
+    return pow(a, (p-1) // gcd(k, p-1), p)
 
 
 # https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
@@ -255,34 +273,206 @@ def tonelli(n: int, p: int) -> int:
     while q % 2 == 0:
         q //= 2
         s += 1
+
     if s == 1:
         return pow(n, (p + 1) // 4, p)
+
     for z in range(2, p):
         if p - 1 == legendre(z, p):
             break
+
     c = pow(z, q, p)
     r = pow(n, (q + 1) // 2, p)
     t = pow(n, q, p)
-    m = s
+
+    m  = s
     t2 = 0
     while (t - 1) % p != 0:
         t2 = (t * t) % p
+
         for i in range(1, m):
             if (t2 - 1) % p == 0:
                 break
+
             t2 = (t2 * t2) % p
+
         b = pow(c, 1 << (m - i - 1), p)
         r = (r * b) % p
         c = (b * b) % p
         t = (t * c) % p
         m = i
+
     return r
+
+
+
+# def tonelli_k(a: int, p: int, k: int) -> int:
+#     """
+#     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
+
+#     Parameters:
+#         n (int): Integer.
+#         p (int): Modulus.
+    
+#     Returns:
+#         int: Square root of `n` mod `p`.
+#     """
+#     assert generalized_eulers_criterion(a, k, p) == 1, "not a power (mod p)"
+#     s = p - 1
+#     e = 0
+#     while s % k == 0:
+#         s //= k
+#         e += 1
+
+#     for n in range(2, p):
+#         if generalized_eulers_criterion(a, k, p) == p-1:
+#             break
+
+#     x = pow(a, (s + (k-1)) // k, p)
+#     b = pow(a, s, p)
+#     g = pow(n, s, p)
+#     r = e
+
+#     print('s', s)
+#     print('e', e)
+
+#     while True:
+#         for m in range(r):
+#             if pow(b, k**m, p) == 1:
+#                 print('m', m)
+#                 break
+        
+#         if m == 0:
+#             break
+        
+#         x = (x * pow(g, k*(r-m-1), p)) % p
+#         b = (b * pow(g, k*(r-m), p)) % p
+#         g = pow(g, k*(r-m), p)
+#         r = m
+
+#     return x
+
+
+# def tonelli_k(a: int, p: int, k: int) -> int:
+#     """
+#     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
+
+#     Parameters:
+#         n (int): Integer.
+#         p (int): Modulus.
+    
+#     Returns:
+#         int: Square root of `n` mod `p`.
+#     """
+#     assert generalized_eulers_criterion(a, k, p) == 1, "not a power (mod p)"
+
+#     k, n = 1, ((((p-1) // 2) - 1) // 2)
+#     l = 1
+
+#     print('k', k)
+#     print('n', n)
+
+#     for g in range(2, p):
+#         if generalized_eulers_criterion(a, k, p) == p-1:
+#             break
+
+
+#     while True:
+#         for j in range(p): 
+#             if pow(a, 2**j*(2*n+1), p) == 1: 
+#                 break 
+
+#         print('j', j)
+#         if j == 0:
+#             return pow(a, n+1, p) * mod_inv(l, p)
+#         else:
+#             a = (a * pow(g, pow(2, k-j  ), p)) % p
+#             l = (l * pow(g, pow(2, k-j-1), p)) % p
+
+
+def tonelli_k(a: int, p: int, q: int) -> int:
+    """
+    Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
+
+    From "On Taking Roots in Finite Fields" (https://www.cs.cmu.edu/~glmiller/Publications/AMM77.pdf)
+
+    Parameters:
+        n (int): Integer.
+        p (int): Modulus.
+    
+    Returns:
+        int: Square root of `n` mod `p`.
+    """
+    assert generalized_eulers_criterion(a, q, p) == 1, "not a power (mod p)"
+
+    for g in range(2, p):
+        if generalized_eulers_criterion(g, q, p) == p-1:
+            break
+
+    p_1 = p - 1
+    k   = 0
+
+    assert p_1 % q == 0
+
+    n = q
+    div = gcd(q, p-1)
+    while div != 1 and div != n:
+        n   = n // div
+        div = gcd(n, p-1)
+
+    # if p_1 % q == 0:
+    #     k = 1
+    #     p_1 //= q
+
+    # N, N_prime = divmod(p_1, q)
+    if p_1 % n == 0:
+        k = 1
+        p_1 //= n
+
+    N, N_prime = divmod(p_1, n)
+    l = 1
+
+    print('k', k)
+    print('N', N)
+    print('N_prime', N_prime)
+    print('n', n)
+    print('n*N+N_prime', n*N+N_prime)
+    assert gcd(n, n*N+N_prime) == 1
+
+    # TODO: Lemma I'
+    # tonelli_k(27, 67, 3)**3%67 works
+    # tonelli_k(16, 67, 4)**4%67 doesn't
+    # if j > 0, we fail!
+
+    # Also, k HAS to be at least 1
+    #n = q
+
+
+    while True:
+        # j < k
+        for j in range(k):
+            if pow(a, q**j*(q*N+N_prime), p) == 1: 
+                break 
+
+        #print('j', j)
+        if j == 0:
+            return pow(a, mod_inv(n, n*N+N_prime), p) * mod_inv(l, p)
+        else:
+            for lamb in range(1, n):
+                if gcd(lamb, n) == 1:
+                    if (pow(a, pow(2, j-1)*pow(2, N+N_prime), p) * pow(g, lamb*pow(2, k-1)*(2*N+N_prime), p)) % p == 1:
+                        break
+
+            # a = (a * pow(g, pow(2, k-j  ), p)) % p
+            # l = (l * pow(g, pow(2, k-j-1), p)) % p
+            a = (a * pow(g, pow(2, (k-j  )*lamb), p)) % p
+            l = (l * pow(g, pow(2, (k-j-1)*lamb), p)) % p
 
 
 
 # https://github.com/orisano/olll/blob/master/olll.py
 # https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
-def lll(in_basis: list, delta=0.75) -> Matrix:
+def lll(in_basis: list, delta: float=0.75) -> Matrix:
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
 
@@ -294,7 +484,7 @@ def lll(in_basis: list, delta=0.75) -> Matrix:
         Matrix: Reduced basis.
     """
     basis = deepcopy(in_basis)
-    n = len(basis)
+    n     = len(basis)
     ortho = GramSchmidt(basis)
 
     def mu(i, j):

@@ -3,7 +3,6 @@ from math import log, sqrt
 import operator
 import json
 import difflib
-import scipy.special
 import os
 
 RC4_BIAS_MAP = [163, 0, 131, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 240, 17, 18, 0, 20, 21, 22, 0, 24, 25, 26, 0, 28, 29, 0, 31, 224, 33, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 0, 0, 0]
@@ -195,6 +194,30 @@ def birthday_attack_analysis(bits: int, probability: float) -> float:
 
 
 
+def ncr(n: int, r: int) -> int:
+    """
+    `n` choose `r`.
+
+    Parameters:
+        n (int): Number to choose from.
+        r (int): Number of those to choose.
+    
+    Returns:
+        int: Number of elements in nCr.
+    """
+    r = min(r, n-r)
+    numer = 1
+
+    for i in range(n, n-r, -1):
+        numer *= i
+    
+    denom = 1
+    for i in range(1, r+1):
+        denom *= i
+    
+    return numer // denom
+
+
 def num_expected_collisions(bits: int, num_inputs: int) -> float:
     """
     Calculates the number of expected collisions with `num_inputs` over `bits` keyspace.
@@ -206,8 +229,7 @@ def num_expected_collisions(bits: int, num_inputs: int) -> float:
     Returns:
         float: Number of expected collisions.
     """
-    return 2**(-bits)*scipy.special.comb(num_inputs, 2)
-
+    return 2**(-bits)*ncr(num_inputs, 2)
 
 
 def generate_rc4_bias_map(ciphertexts):

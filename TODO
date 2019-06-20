@@ -51,11 +51,6 @@ X   CAS
     OK  Easily build DH ring (mod-pow)... generic mult subgroup ring?
 
 
-OK  Schoof's algorithm
-    OK  Implement
-    OK  Document
-
-
 X   Improve Polynomial implementation
     X   NTT-DFT (or something for arbitrary algebras) for multiplication/division
     OK  Sparse vector as underlying list
@@ -71,10 +66,13 @@ X   Document these classes
 X   Test math
     X   Unittest math.general
     X   Unittest algebras
+    OK  Doctest math.general
+    OK  Doctest algebras
 
 
 X   Better exceptions
 X   Unify Diffie-Hellmans
+X   LRU caching?
 
 X   Swappable backends?
 X   Separate key parameters from use? Explains some gaps in functions vs data
