@@ -169,6 +169,7 @@ class FiniteField(Field):
         """
         if type(other) is int:
             other = int_to_poly(other, self.p) % self.reducing_poly
+
         elif type(other) is Polynomial:
             other = other % self.reducing_poly
 

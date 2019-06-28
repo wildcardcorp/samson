@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import mod_inv
+from samson.math.general import mod_inv, fast_mul
 
 class QuotientElement(RingElement):
     """
@@ -33,6 +33,9 @@ class QuotientElement(RingElement):
         return QuotientElement((self.val - other.val) % self.ring.quotient, self.ring)
 
     def __mul__(self, other: object) -> object:
+        if type(other) is int:
+            return fast_mul(self, other)
+
         other = self.ring.coerce(other)
         return QuotientElement((self.val * other.val) % self.ring.quotient, self.ring)
 

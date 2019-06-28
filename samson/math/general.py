@@ -306,90 +306,6 @@ def tonelli(n: int, p: int) -> int:
 
 
 
-# def tonelli_k(a: int, p: int, k: int) -> int:
-#     """
-#     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
-
-#     Parameters:
-#         n (int): Integer.
-#         p (int): Modulus.
-    
-#     Returns:
-#         int: Square root of `n` mod `p`.
-#     """
-#     assert generalized_eulers_criterion(a, k, p) == 1, "not a power (mod p)"
-#     s = p - 1
-#     e = 0
-#     while s % k == 0:
-#         s //= k
-#         e += 1
-
-#     for n in range(2, p):
-#         if generalized_eulers_criterion(a, k, p) == p-1:
-#             break
-
-#     x = pow(a, (s + (k-1)) // k, p)
-#     b = pow(a, s, p)
-#     g = pow(n, s, p)
-#     r = e
-
-#     print('s', s)
-#     print('e', e)
-
-#     while True:
-#         for m in range(r):
-#             if pow(b, k**m, p) == 1:
-#                 print('m', m)
-#                 break
-        
-#         if m == 0:
-#             break
-        
-#         x = (x * pow(g, k*(r-m-1), p)) % p
-#         b = (b * pow(g, k*(r-m), p)) % p
-#         g = pow(g, k*(r-m), p)
-#         r = m
-
-#     return x
-
-
-# def tonelli_k(a: int, p: int, k: int) -> int:
-#     """
-#     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
-
-#     Parameters:
-#         n (int): Integer.
-#         p (int): Modulus.
-    
-#     Returns:
-#         int: Square root of `n` mod `p`.
-#     """
-#     assert generalized_eulers_criterion(a, k, p) == 1, "not a power (mod p)"
-
-#     k, n = 1, ((((p-1) // 2) - 1) // 2)
-#     l = 1
-
-#     print('k', k)
-#     print('n', n)
-
-#     for g in range(2, p):
-#         if generalized_eulers_criterion(a, k, p) == p-1:
-#             break
-
-
-#     while True:
-#         for j in range(p): 
-#             if pow(a, 2**j*(2*n+1), p) == 1: 
-#                 break 
-
-#         print('j', j)
-#         if j == 0:
-#             return pow(a, n+1, p) * mod_inv(l, p)
-#         else:
-#             a = (a * pow(g, pow(2, k-j  ), p)) % p
-#             l = (l * pow(g, pow(2, k-j-1), p)) % p
-
-
 def tonelli_k(a: int, p: int, q: int) -> int:
     """
     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
@@ -403,15 +319,19 @@ def tonelli_k(a: int, p: int, q: int) -> int:
     Returns:
         int: Square root of `n` mod `p`.
     """
+    # Step 1 & 2
     assert generalized_eulers_criterion(a, q, p) == 1, "not a power (mod p)"
 
+    # Step 3
     for g in range(2, p):
         if generalized_eulers_criterion(g, q, p) == p-1:
             break
 
+    # Step 4
     p_1 = p - 1
     k   = 0
 
+    # The algorithm only works if q | p-1
     assert p_1 % q == 0
 
     n = q
@@ -420,42 +340,25 @@ def tonelli_k(a: int, p: int, q: int) -> int:
         n   = n // div
         div = gcd(n, p-1)
 
-    # if p_1 % q == 0:
-    #     k = 1
-    #     p_1 //= q
 
-    # N, N_prime = divmod(p_1, q)
     if p_1 % n == 0:
         k = 1
         p_1 //= n
 
     N, N_prime = divmod(p_1, n)
+
+    # Step 5
     l = 1
 
-    print('k', k)
-    print('N', N)
-    print('N_prime', N_prime)
-    print('n', n)
-    print('n*N+N_prime', n*N+N_prime)
-    assert gcd(n, n*N+N_prime) == 1
-
-    # TODO: Lemma I'
-    # tonelli_k(27, 67, 3)**3%67 works
-    # tonelli_k(16, 67, 4)**4%67 doesn't
-    # if j > 0, we fail!
-
-    # Also, k HAS to be at least 1
-    #n = q
-
-
     while True:
-        # j < k
+        # Step 6
         for j in range(k):
             if pow(a, q**j*(q*N+N_prime), p) == 1: 
                 break 
 
-        #print('j', j)
+        # Step 7
         if j == 0:
+            # Step 8
             return pow(a, mod_inv(n, n*N+N_prime), p) * mod_inv(l, p)
         else:
             for lamb in range(1, n):
@@ -463,8 +366,6 @@ def tonelli_k(a: int, p: int, q: int) -> int:
                     if (pow(a, pow(2, j-1)*pow(2, N+N_prime), p) * pow(g, lamb*pow(2, k-1)*(2*N+N_prime), p)) % p == 1:
                         break
 
-            # a = (a * pow(g, pow(2, k-j  ), p)) % p
-            # l = (l * pow(g, pow(2, k-j-1), p)) % p
             a = (a * pow(g, pow(2, (k-j  )*lamb), p)) % p
             l = (l * pow(g, pow(2, (k-j-1)*lamb), p)) % p
 
@@ -479,7 +380,7 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
     Parameters:
         in_basis (list): List of Matrix objects representing the original basis.
         delta   (float): Minimum optimality of the reduced basis.
-    
+
     Returns:
         Matrix: Reduced basis.
     """

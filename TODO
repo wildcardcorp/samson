@@ -26,6 +26,8 @@ X   Document timing attack setup
 ===============
 X   More encoders/decoders/cryptosystems
     X   PGP
+    X   SSH
+    X   TLS
 
 
 X   OCB3
@@ -82,11 +84,12 @@ X   Create functions/objects for invalid curve attacks https://auth0.com/blog/cr
 
 X   Hierarchical and optionally persistent runtime configuration
 
+X   LCG.crack_truncated crashes during LLL with lots of samples (50+)
 
-X  Rabbit stream cipher
-X  HC-256 stream cipher
+X   Rabbit stream cipher
+X   HC-256 stream cipher
 
-X  DHParams ASN1
+X   DHParams ASN1
 
 
 X   Composable exploits and ACE
@@ -120,7 +123,7 @@ X   Ensure samson installs correctly
     X   CLI
     X   Man page
     X   Supported OSs
-        X   Fedora 29
+        X   Fedora 30
         X   Kali
 
 

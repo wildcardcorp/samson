@@ -1,4 +1,5 @@
 # samson
+![](https://img.shields.io/badge/Made%20in-anger-red.svg)
 
 ### **DO NOT USE SAMSON'S CRYPTOGRAPHIC PRIMITIVES TO SECURE THINGS**
 

@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring
-from samson.math.general import fast_mul, square_and_mul, gcd
+from samson.math.general import fast_mul, square_and_mul, gcd, random_int
 from samson.math.sparse_vector import SparseVector
-from sympy import Expr, Symbol, Integer
+from sympy import Expr, Symbol, Integer, factorint
 from copy import deepcopy
 
 
@@ -127,52 +127,148 @@ class Polynomial(object):
 
 
     def square_free_decomposition(self) -> list:
-        # if hasattr(self.ring, 'characteristic') and self.ring.characteristic == 0:
-        # # https://en.wikipedia.org/wiki/Square-free_polynomial
-        # # Yun's Algorithm
+        """
+        Examples:
+            >>> poly = Polynomial(3*x**3+x**7-x**18, ZZ)
+            >>> poly.square_free_decomposition()
+            [<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), ring=ZZ>, <Polynomial: x**3, ring=ZZ>]
 
-        # f_prime = self.derivative()
-        # a = gcd(self, f_prime).monic()
-        # b = self / a
-        # c = f_prime / a
-        # d = c - b.derivative()
-
-        # results = []
-
-        # while b != self.one():
-        #     a = gcd(b, d).monic()
-        #     b_i = b / a
-        #     c_i = d / a
-        #     d = c - b.derivative()
-
-        #     if a != self.one():
-        #         results.append(a)
-
-        #     b = b_i
-        #     c = c_i
-        
-        # return results
-        # else:
+        """
         # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
-        p = self.ring.characteristic
-        
-        R = 1
+        #R = 1
         c = gcd(self, self.derivative()).monic()
         w = self / c
+
+        factors = []
 
         i = 1
         while w != self.one():
             y = gcd(w, c).monic()
             fac = w / y
-            R *= fac**i
+            #R *= fac**i
+            factors.append(fac)
             w, c, i = y, c / y, i + 1
-        
+
         if c != self.one():
             # TODO: Take the p-th root
-            c = c**(1/p)
-            R *= c.square_free_decomposition()**p
+            c = c**(1/self.ring.characteristic)
+            new_facs = c.square_free_decomposition()
+            #R *= new_R**p
+            factors.extend(new_facs)
         
-        return R
+        return [(fac**(idx+1)).monic() for idx, fac in enumerate(factors) if fac != self.one()]
+
+
+    def sff(self) -> list:
+        return self.square_free_decomposition()
+
+
+    def distinct_degree_factorization(self) -> list:
+        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
+        f = self
+        f_star = f
+        S = []
+        i = 1
+        q = self.ring.characteristic
+
+        x = self.symbol
+
+        while f_star.degree() > 2*i:
+            if not f_star.is_monic():
+                f_star = f_star.monic()
+
+            g = gcd(f_star, Polynomial(x**q**i - x, f.ring)).monic()
+            if g != self.one():
+                S.append((g, i))
+                f_star /= g
+            
+            i += 1
+        
+        if f_star != self.one():
+            S.append((f_star, f_star.degree()))
+        
+        if not S:
+            return [(f, 1)]
+        else:
+            return S
+
+
+    def ddf(self) -> list:
+        return self.distinct_degree_factorization()
+    
+
+
+    def equal_degree_factorization(self, d) -> list:
+        f = self.monic()
+        q = 2**128#self.ring.characteristic
+
+        n = f.degree()
+        r = n // d
+        S = [f]
+
+        f_quot = f.ring / f
+
+        if n < d or self.is_irreducible():
+            return S
+
+        while len(S) < r:
+            # TODO: This random doesn't work for any field
+            # h = Polynomial([random_int(q) for _ in range(n)], f.ring)
+            h = Polynomial([f.ring.random(128) for _ in range(n)], f.ring)
+            g = gcd(h, f).monic()
+
+            print('First "g"', g)
+
+            if g == self.one():
+                # g = (h**((q**d - 1) // 3) - self.one()) % f
+                h = f_quot(h)
+
+                # TODO: There's a coercion failure from square_and_mul
+                g = (h**((q**d - 1) // 3)).val - self.one()
+                print(g)
+
+            print()
+            for u in S:
+                if u.degree() <= d:
+                    continue
+
+                gcd_g_u = gcd(g, u).monic()
+                if gcd_g_u != self.one() and gcd_g_u != u:
+                    S.remove(u)
+                    S.extend([gcd_g_u, u / gcd_g_u])
+
+        return S
+
+
+    def edf(self, d) -> list:
+        return self.equal_degree_factorization(d)
+    
+
+    def is_irreducible(self) -> bool:
+        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
+        x = Symbol('x')
+        q = self.ring.characteristic
+        f = self.monic()
+
+        n = self.degree()
+        deg_factors = [k for k,v in factorint(n).items()]
+        n_j = [n // fac for fac in deg_factors]
+
+        for fac in n_j:
+            h = Polynomial(x**q**fac - x, self.ring) % f
+            g = gcd(f, h).monic()
+
+            if g != self.one():
+                return False
+        
+        g = Polynomial(x**q**n - x, self.ring) % f
+        return g == self.zero()
+
+
+
+    def factor(self) -> list:
+        distinct_degrees = [factor for poly in self.sff() for factor in poly.ddf()]
+        return [factor for poly, _ in distinct_degrees for factor in poly.edf(1)]
 
 
     def degree(self) -> int:
