@@ -1,4 +1,5 @@
 # samson
+[![https://pypi.org/project/samson-crypto/](https://img.shields.io/pypi/v/samson-crypto.svg)](https://pypi.org/project/samson-crypto/)
 ![](https://img.shields.io/badge/Made%20in-anger-red.svg)
 
 ### **DO NOT USE SAMSON'S CRYPTOGRAPHIC PRIMITIVES TO SECURE THINGS**
@@ -6,12 +7,12 @@
 samson is a cryptanalysis and attack library. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks. samson was born from frustration with existing libraries artificially limiting user control over cryptographic primitives.
 
 Many of the biggest cryptographic attacks have been implemented including:
-* CBC Padding Oracle
-* PKCS#1v1.5 Padding Oracle
+* CBC/PKCS#1v1.5/OAEP Padding Oracle
 * CRIME/BREACH
-* DSA/ECDSA key reuse
+* DSA/ECDSA nonce reuse
 * Stream cipher nonce reuse
-* Merkle-Damgard Length Extension
+* Subgroup attacks
+* Hash construction attacks (length extension, fixed points, etc)
 * PRNG cracking
 
 samson's key focuses are:
@@ -23,7 +24,7 @@ samson's key focuses are:
 
 ## Examples
 ### **REPL**
-```bash
+```python
 [root@localhost ~]# samson
 
 

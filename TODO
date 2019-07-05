@@ -59,19 +59,14 @@ X   Improve Polynomial implementation
     X   Fast modulo
 
 
-X   Document these classes
-    OK  JWS
-    X   JWA
-    OK  PKCS1v15RSASigner
-
-
 X   Test math
     X   Unittest math.general
     X   Unittest algebras
-    OK  Doctest math.general
+    X   Doctest math.general
     OK  Doctest algebras
 
 
+X   Remove fastecdsa dependency
 X   Better exceptions
 X   Unify Diffie-Hellmans
 X   LRU caching?
@@ -80,7 +75,6 @@ X   Swappable backends?
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
-X   Create functions/objects for invalid curve attacks https://auth0.com/blog/critical-vulnerability-in-json-web-encryption/
 
 X   Hierarchical and optionally persistent runtime configuration
 

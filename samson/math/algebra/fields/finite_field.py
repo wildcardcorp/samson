@@ -1,4 +1,4 @@
-from samson.math.general import int_to_poly
+from samson.math.general import int_to_poly, fast_mul
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.polynomial import Polynomial
@@ -73,7 +73,7 @@ class FiniteField(Field):
         >>> F = FiniteField(2, 8)
         >>> assert F(5) / F(5) == F(1)
         >>> F[x]/(F[x].one()*2)
-        <QuotientRing ring=F_(2**8)[x], quotient=F_(2**8)[x](F_(2**8)(ZZ/ZZ(2)[x](ZZ(0))))>
+        <QuotientRing ring=F_(2**8)[x], quotient=<Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>>
 
     """
 
@@ -155,6 +155,11 @@ class FiniteField(Field):
     @property
     def characteristic(self) -> int:
         return self.p
+
+
+    @property
+    def order(self) -> int:
+        return self.p**self.n
 
 
     def coerce(self, other: object) -> FiniteFieldElement:

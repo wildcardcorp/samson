@@ -16,6 +16,15 @@ def int_to_poly(integer: int, modulus: int=2) -> Poly:
     
     Returns:
         Poly: Polynomial representation.
+    
+    Examples:
+        >>> from samson.math.general import int_to_poly
+        >>> int_to_poly(100)
+        <Polynomial: x**6 + x**5 + x**2, coeff_ring=ZZ/ZZ(2)>
+
+        >>> int_to_poly(128, 3)
+        <Polynomial: x**4 + x**3 + ZZ(2)*x**2 + ZZ(2), coeff_ring=ZZ/ZZ(3)>
+
     """
     from samson.math.all import ZZ, Polynomial
     base_coeffs = []
@@ -38,8 +47,17 @@ def poly_to_int(poly: object) -> int:
     
     Returns:
         int: Integer representation.
+    
+    Examples:
+        >>> from samson.math.general import int_to_poly, poly_to_int
+        >>> poly_to_int(int_to_poly(100))
+        100
+
+        >>> poly_to_int(int_to_poly(100, 3))
+        100
+
     """
-    modulus = int(poly.ring.quotient.val)
+    modulus = int(poly.coeff_ring.quotient.val)
     value   = 0
     for idx, coeff in poly.coeffs:
         value += int(coeff) * modulus**idx
@@ -57,6 +75,18 @@ def gcd(a: int, b: int) -> int:
     
     Returns:
         int: GCD of `a` and `b`.
+    
+    Examples:
+        >>> from samson.math.general import gcd
+        >>> gcd(256, 640)
+        128
+
+        >>> from samson.math.algebra.all import FF
+        >>> from sympy.abc import x
+        >>> P = FF(2, 8)[x]
+        >>> gcd(P(x**2), P(x**5))
+        <Polynomial: x**2, coeff_ring=F_(2**8)>
+
     """
     while True:
         if not b:
@@ -77,6 +107,18 @@ def xgcd(a: int, b: int, zero: int=0, one: int=1) -> (int, int, int):
     
     Returns:
         (int, int, int): Formatted as (GCD, x, y).
+    
+    Examples:
+        >>> from samson.math.general import xgcd
+        >>> xgcd(10, 5)
+        (5, 0, 1)
+
+        >>> from samson.math.algebra.all import FF
+        >>> from sympy.abc import x
+        >>> P = FF(2, 8)[x]
+        >>> xgcd(P(x**2), P(x**5), P.zero(), P.one())
+        (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
+
     """
     prevx, x = one, zero; prevy, y = zero, one
     while b:
@@ -98,6 +140,18 @@ def lcm(a: int, b: int) -> int:
     
     Returns:
         int: Least common multiple.
+    
+    Examples:
+        >>> from samson.math.general import lcm
+        >>> lcm(2, 5)
+        10
+
+        >>> from samson.math.algebra.all import FF
+        >>> from sympy.abc import x
+        >>> P = FF(2, 8)[x]
+        >>> lcm(P(x**2 + 5), P(x-6))
+        <Polynomial: x**3 + F_(2**8)(x)*x**2 + F_(2**8)(x**2 + ZZ(1))*x + F_(2**8)(x**3 + x), coeff_ring=F_(2**8)>
+
     """
     return a // gcd(a, b) * b
 
@@ -115,6 +169,12 @@ def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     
     Returns:
         int: Modular inverse of `a` over `n`.
+    
+    Examples:
+        >>> from samson.math.general import mod_inv
+        >>> mod_inv(5, 11)
+        9
+
     """
     _, x, _ = xgcd(a, n, zero=zero, one=one)
 
@@ -134,9 +194,22 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
     Parameters:
         g (int): Base.
         u (int): Exponent.
+        s (int): The 'one' value of the ring.
     
     Returns:
-        int: `s = g ^ u` within its ring.
+        int: `g ^ u` within its ring.
+    
+    Examples:
+        >>> from samson.math.general import mod_inv
+        >>> square_and_mul(5, 10, 1)
+        9765625
+
+        >>> from samson.math.algebra.all import FF
+        >>> from sympy.abc import x
+        >>> P = FF(2, 8)[x]
+        >>> square_and_mul(P(x+5), 32)
+        <Polynomial: x**32 + F_(2**8)(x**6 + x**3 + x**2), coeff_ring=F_(2**8)>
+
     """
     s = s or g.ring.one()
     while u != 0:
@@ -153,10 +226,23 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
 
     Parameters:
         a (int): Element `a`.
-        b (int): Element `b`.
+        b (int): Multiplier.
+        s (int): The 'zero' value of the ring.
     
     Returns:
-        int: `s = a * b` within its ring.
+        int: `a * b` within its ring.
+    
+    Examples:
+        >>> from samson.math.general import fast_mul
+        >>> fast_mul(5, 12, 0)
+        60
+
+        >>> from samson.math.algebra.all import FF
+        >>> from sympy.abc import x
+        >>> P = FF(2, 8)[x]
+        >>> fast_mul(P(x+5), 5)
+        <Polynomial: x + F_(2**8)(x**2 + ZZ(1)), coeff_ring=F_(2**8)>
+
     """
     s = s if s is not None else a.ring.zero()
     if b < 0:
@@ -182,6 +268,15 @@ def kth_root(n: int, k: int) -> int:
     
     Returns:
         int: `k`-th integer root of `n
+    
+    Examples:
+        >>> from samson.math.general import kth_root
+        >>> kth_root(1000, 3)
+        10
+
+        >>> kth_root(129, 7)
+        3
+
     """
     lb, ub = 0, n #lower bound, upper bound
     while lb < ub:
@@ -204,6 +299,19 @@ def crt(residues: list, moduli: list=None) -> (int, int):
     
     Returns:
         (int, int): Formatted as (computed `x`, modulus).
+    
+    Examples:
+        >>> from samson.math.general import crt
+        >>> moduli = [5,7,11]
+        >>> residues = [366 % modulus for modulus in moduli]
+        >>> crt(residues, moduli)
+        (366, 385)
+
+        >>> from samson.math.algebra.all import ZZ
+        >>> residues = [ring(366) for ring in [ZZ/ZZ(5), ZZ/ZZ(7), ZZ/ZZ(11)]]
+        >>> crt(residues)
+        (366, 385)
+
     """
     if moduli:
         assert len(residues) == len(moduli)
@@ -232,6 +340,15 @@ def legendre(a: int, p: int) -> int:
     
     Returns:
         int: Legendre symbol.
+    
+    Examples:
+        >>> from samson.math.general import legendre
+        >>> legendre(4, 7)
+        1
+
+        >>> legendre(5, 7)
+        6
+
     """
     return pow(a, (p - 1) // 2, p)
 
@@ -247,6 +364,17 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> int:
     
     Returns:
         int: Legendre symbol (basically).
+
+    Examples:
+        >>> from samson.math.general import generalized_eulers_criterion
+        >>> generalized_eulers_criterion(4, 2, 7)
+        1
+
+        >>> generalized_eulers_criterion(5, 2, 7)
+        6
+
+        >>> generalized_eulers_criterion(4, 3, 11)
+        1
     """
     return pow(a, (p-1) // gcd(k, p-1), p)
 
@@ -266,6 +394,15 @@ def tonelli(n: int, p: int) -> int:
     
     Returns:
         int: Square root of `n` mod `p`.
+    
+    Examples:
+        >>> from samson.math.general import tonelli
+        >>> tonelli(4, 7)
+        2
+
+        >>> tonelli(2, 7)
+        4
+
     """
     assert legendre(n, p) == 1, "not a square (mod p)"
     q = p - 1
@@ -306,18 +443,34 @@ def tonelli(n: int, p: int) -> int:
 
 
 
-def tonelli_k(a: int, p: int, q: int) -> int:
+def tonelli_q(a: int, p: int, q: int) -> int:
     """
-    Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
+    Performs the Tonelli-Shanks algorithm for calculating the `q`th-root of `n` mod `p`.
 
     From "On Taking Roots in Finite Fields" (https://www.cs.cmu.edu/~glmiller/Publications/AMM77.pdf)
 
     Parameters:
         n (int): Integer.
         p (int): Modulus.
+        q (int): Root to take.
     
     Returns:
-        int: Square root of `n` mod `p`.
+        int: `q`th-root of `n` mod `p`.
+
+    Examples:
+        >>> from samson.math.general import tonelli_q
+        >>> tonelli_q(4, 7, 2)
+        2
+
+        >>> tonelli_q(2, 7, 2)
+        4
+
+        >>> tonelli_q(8, 67, 3)
+        58
+
+        >>> 58**3 % 67
+        8
+
     """
     # Step 1 & 2
     assert generalized_eulers_criterion(a, q, p) == 1, "not a power (mod p)"
@@ -422,6 +575,12 @@ def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) ->
     
     Returns:
         list: List of the superincreasing sequence.
+    
+    Examples:
+        >>> from samson.math.general import generate_superincreasing_seq
+        >>> generate_superincreasing_seq(10, 2)
+        [...]
+
     """
     seq = []
 
@@ -445,6 +604,12 @@ def find_coprime(p: int, search_range: list) -> int:
     
     Returns:
         int: Integer coprime to `p`.
+    
+    Examples:
+        >>> from samson.math.general import find_coprime
+        >>> find_coprime(10, range(500, 1000))
+        501
+
     """
     for i in search_range:
         if gcd(p, i) == 1:
@@ -461,6 +626,12 @@ def random_int(n: int) -> int:
     
     Returns:
         int: Random integer.
+    
+    Example:
+        >>> from samson.math.general import random_int
+        >>> random_int(1000) < 1000
+        True
+
     """
     byte_length = math.ceil(n.bit_length() / 8)
     max_bit = 2**n.bit_length()
@@ -482,7 +653,13 @@ def find_prime(bits: int, ensure_halfway: bool=True) -> int:
         ensure_halfway (bool): Ensures the prime is at least halfway into the bitspace to prevent multiplications being one bit short (e.g. 256-bit int * 256-bit int = 511-bit int).
     
     Returns:
-        int: Prime.
+        int: Random prime number.
+    
+    Examples:
+        >>> from samson.math.general import find_prime
+        >>> find_prime(512) < 2**512
+        True
+
     """
     rand_num = random_int(2**bits)
     rand_num |= 2**(bits - 1)
@@ -503,6 +680,15 @@ def next_prime(start_int: int) -> int:
     
     Returns:
         int: Prime.
+    
+    Examples:
+        >>> from samson.math.general import next_prime
+        >>> next_prime(8)
+        11
+
+        >>> next_prime(11+1)
+        13
+
     """
     start_int |= 1
     while not isprime(start_int):
@@ -522,6 +708,16 @@ def berlekamp_massey(output_list: list) -> Poly:
     
     Returns:
         Polynomial: Polyomial that represents the shortest LFSR.
+    
+    Examples:
+        >>> from samson.prngs.flfsr import FLFSR
+        >>> from samson.math.general import berlekamp_massey
+        >>> from samson.math.all import Polynomial, ZZ
+        >>> lfsr = FLFSR(3, Polynomial(x**25 + x**20 + x**12 + x**8  + 1, coeff_ring=ZZ/ZZ(2)))
+        >>> outputs = [lfsr.generate() for _ in range(50)]
+        >>> berlekamp_massey(outputs)
+        <Polynomial: x**25 + x**17 + x**13 + x**5 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+
     """
     from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.polynomial import Polynomial
@@ -554,7 +750,7 @@ def berlekamp_massey(output_list: list) -> Poly:
 
         i += 1
 
-    return Polynomial(c[:L + 1][::-1], ring=ZZ/ZZ(2))
+    return Polynomial(c[:L + 1][::-1], coeff_ring=ZZ/ZZ(2))
 
 
 def is_power_of_two(n: int) -> bool:
@@ -566,6 +762,15 @@ def is_power_of_two(n: int) -> bool:
     
     Returns:
         bool: Whether or not `n` is a power of two.
+    
+    Examples:
+        >>> from samson.math.general import is_power_of_two
+        >>> is_power_of_two(7)
+        False
+
+        >>> is_power_of_two(8)
+        True
+
     """
     return n != 0 and (n & (n - 1) == 0)
 
@@ -581,11 +786,22 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
         y          (int): Number to find the discrete logarithm of.
         a          (int): Interval start.
         b          (int): Interval end.
-        iterations (int): Number of times to run outer loop. If `f` is None, it's used in the psuedorandom map.
+        iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the psuedorandom map.
         f         (func): Psuedorandom map function.
     
     Returns:
         int: The discrete logarithm. Possibly None if it couldn't be found.
+    
+    Examples:
+        >>> from samson.math.general import pollards_kangaroo
+        >>> g, x, p = 5, 13, 67
+        >>> y = pow(g, x, p)
+        >>> pollards_kangaroo(p, g, y, 0, 20)
+        585
+
+        >>> pow(5, 585, 67) == y
+        True
+
     """
     k = iterations
 
@@ -632,6 +848,12 @@ def hasse_frobenius_trace_interval(p: int) -> (int, int):
     
     Returns:
         (int, int): Start and end ranges of the interval relative to `p`.
+    
+    Examples:
+        >>> from samson.math.general import hasse_frobenius_trace_interval
+        >>> hasse_frobenius_trace_interval(53)
+        (-16, 17)
+
     """
     l = 2 * math.ceil(math.sqrt(p))
     return (-l , l + 1)
@@ -707,8 +929,10 @@ def find_representative(quotient_element: object, valid_range: list) -> int:
 
     if remainder in shifted_range:
         return q * modulus + remainder
+
     elif remainder + modulus in shifted_range:
         return (q+1) * modulus + remainder
+        
     else:
         raise ValueError("No solution")
 
@@ -814,8 +1038,8 @@ def frobenius_trace(curve: object) -> int:
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
-        defining_poly = Polynomial(x**3 + curve.a*x + curve.b, ring=curve.ring)
-        rational_char = Polynomial(x**curve.p - x, ring=curve.ring)
+        defining_poly = Polynomial(x**3 + curve.a*x + curve.b, coeff_ring=curve.ring)
+        rational_char = Polynomial(x**curve.p - x, coeff_ring=curve.ring)
 
         if gcd(rational_char, defining_poly).degree() == 0:
             trace_congruences.append((ZZ/ZZ(2))(1))

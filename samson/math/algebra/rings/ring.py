@@ -49,6 +49,9 @@ class Ring(ABC):
 
     def __truediv__(self, element):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
+        if element.ring != self:
+            raise RuntimeError(f"'element' must be an element of the ring")
+
         return QuotientRing(element, self)
 
     def __getitem__(self, x: int):

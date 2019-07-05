@@ -2,59 +2,6 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from sympy import Expr
 
-class PolynomialElement(RingElement):
-    """
-    Element of a `PolynomialRing`.
-    """
-
-    def __init__(self, val: Polynomial, ring: Ring):
-        """
-        Parameters:
-            val (Polynomial): Value of the element.
-            ring      (Ring): Parent ring.
-        """
-        self.val  = val
-        self.ring = ring
-
-
-    def __repr__(self):
-        return f"<PolynomialElement val={self.val}, ring={self.ring}>"
-
-
-    def shorthand(self) -> str:
-        return f'{self.ring.shorthand()}({self.val.shorthand()})'
-
-
-    def __add__(self, other: object) -> object:
-        return PolynomialElement(self.val + other.val, self.ring)
-
-
-    def __sub__(self, other: object) -> object:
-        return PolynomialElement(self.val - other.val, self.ring)
-
-
-    def __mul__(self, other: object) -> object:
-        if type(other) is int:
-            return super().__mul__(other)
-
-        return PolynomialElement(self.val * other.val, self.ring)
-
-
-    def __truediv__(self, other: object) -> object:
-        return PolynomialElement(self.val / other.val, self.ring)
-
-
-    __floordiv__ = __truediv__
-
-
-    def __mod__(self, other: object) -> object:
-        return PolynomialElement(self.val % other.val, self.ring)
-
-
-    def __neg__(self) -> object:
-        return PolynomialElement(-self.val, self.ring)
-
-
 
 class PolynomialRing(Ring):
     """
@@ -64,7 +11,7 @@ class PolynomialRing(Ring):
         >>> from samson.math.all import *
         >>> poly_ring = (ZZ/ZZ(53))[x]
         >>> poly_ring(x**3 + 4*x - 3)
-        <PolynomialElement val=<Polynomial: x**3 + ZZ(4)*x + ZZ(50), ring=ZZ/ZZ(53)>, ring=ZZ/ZZ(53)[x]>
+        <Polynomial: x**3 + ZZ(4)*x + ZZ(50), coeff_ring=ZZ/ZZ(53)>
 
     """
 
@@ -81,23 +28,23 @@ class PolynomialRing(Ring):
         return self.ring.characteristic
 
 
-    def zero(self) -> PolynomialElement:
+    def zero(self) -> Polynomial:
         """
         Returns:
-            PolynomialElement: '0' element of the algebra.
+            Polynomial: '0' element of the algebra.
         """
-        return PolynomialElement(Polynomial([self.ring(0)], self.ring), self)
+        return Polynomial([self.ring(0)], coeff_ring=self.ring, ring=self)
 
 
-    def one(self) -> PolynomialElement:
+    def one(self) -> Polynomial:
         """
         Returns:
-            PolynomialElement: '1' element of the algebra.
+            Polynomial: '1' element of the algebra.
         """
-        return PolynomialElement(Polynomial([self.ring(1)], self.ring), self)
+        return Polynomial([self.ring(1)], coeff_ring=self.ring, ring=self)
 
 
-    def random(self, size: int=None) -> PolynomialElement:
+    def random(self, size: int=None) -> Polynomial:
         """
         Generate a random element.
 
@@ -105,13 +52,13 @@ class PolynomialRing(Ring):
             size (int): The ring-specific 'size' of the element.
     
         Returns:
-            PolynomialElement: Random element of the algebra.
+            Polynomial: Random element of the algebra.
         """
         if not size:
             size = 1
 
         # TODO: How do we specify this size?
-        return PolynomialElement(Polynomial([self.ring.random(3) for _ in range(size)], self.ring), self)
+        return Polynomial([self.ring.random(3) for _ in range(size)], coeff_ring=self.ring, ring=self)
 
 
     def __repr__(self):
@@ -130,7 +77,7 @@ class PolynomialRing(Ring):
         return hash((self.ring, self.__class__))
 
 
-    def coerce(self, other: object) -> PolynomialElement:
+    def coerce(self, other: object) -> Polynomial:
         """
         Attempts to coerce other into an element of the algebra.
 
@@ -138,15 +85,12 @@ class PolynomialRing(Ring):
             other (object): Object to coerce.
         
         Returns:
-            PolynomialElement: Coerced element.
+            Polynomial: Coerced element.
         """
         if type(other) is list or issubclass(type(other), Expr):
-            return PolynomialElement(Polynomial(other, self.ring), self)
+            return Polynomial(other, coeff_ring=self.ring, ring=self)
 
         elif type(other) is Polynomial:
-            return PolynomialElement(other, self)
-
-        elif type(other) is PolynomialElement:
             return other
 
         raise Exception('Coercion failed')

@@ -88,12 +88,13 @@ class QuotientRing(Ring):
     @property
     def characteristic(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
-        from samson.math.algebra.rings.polynomial_ring import PolynomialElement
-
+        from samson.math.polynomial import Polynomial
+    
         if type(self.quotient) is IntegerElement:
             return int(self.quotient)
-        elif type(self.quotient) is PolynomialElement:
-            return self.quotient.ring.field.characteristic
+
+        elif type(self.quotient) is Polynomial:
+            return self.quotient.ring.ring.characteristic
 
 
     @property
@@ -101,6 +102,16 @@ class QuotientRing(Ring):
         from samson.math.algebra.rings.integer_ring import IntegerElement
         if type(self.quotient) is IntegerElement:
             return int(self.quotient)
+
+
+    @property
+    def order(self) -> int:
+        from samson.math.algebra.rings.integer_ring import IntegerElement
+        from sympy import isprime
+        if type(self.quotient) is IntegerElement and isprime(int(self.quotient)):
+            return int(self.quotient)
+        else:
+            raise NotImplementedError
 
 
     def zero(self) -> QuotientElement:

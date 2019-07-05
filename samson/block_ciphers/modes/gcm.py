@@ -10,8 +10,8 @@ GCM_REDUCTION_TABLE = [
 ]
 
 
-def reverse_bits(int16: int) -> int:
-    return int(bin(int16)[2:].zfill(4)[::-1], 2)
+def reverse_bits(int32: int) -> int:
+    return int(bin(int32)[2:].zfill(4)[::-1], 2)
 
 
 class GCM(object):
@@ -84,9 +84,9 @@ class GCM(object):
         Decrypts `ciphertext`.
 
         Parameters:
-            nonce     (bytes): Bytes-like nonce.
-            plaintext (bytes): Bytes-like object to be decrypted.
-            data      (bytes): Bytes-like additional data to be authenticated.
+            nonce             (bytes): Bytes-like nonce.
+            authed_ciphertext (bytes): Bytes-like object to be decrypted.
+            data              (bytes): Bytes-like additional data to be authenticated.
         
         Returns:
             Bytes: Resulting plaintext.

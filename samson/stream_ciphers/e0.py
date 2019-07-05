@@ -62,10 +62,10 @@ class E0(EncryptionAlg):
             master_clk (list): Master clock values.
         """
         self.lfsrs = [
-            FLFSR(0, Polynomial(x**25 + x**20 + x**12 + x**8  + 1, ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**31 + x**24 + x**16 + x**12 + 1, ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**33 + x**28 + x**24 + x**4  + 1, ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**39 + x**36 + x**28 + x**4  + 1, ring=ZZ/ZZ(2)))
+            FLFSR(0, Polynomial(x**25 + x**20 + x**12 + x**8  + 1, coeff_ring=ZZ/ZZ(2))),
+            FLFSR(0, Polynomial(x**31 + x**24 + x**16 + x**12 + 1, coeff_ring=ZZ/ZZ(2))),
+            FLFSR(0, Polynomial(x**33 + x**28 + x**24 + x**4  + 1, coeff_ring=ZZ/ZZ(2))),
+            FLFSR(0, Polynomial(x**39 + x**36 + x**28 + x**4  + 1, coeff_ring=ZZ/ZZ(2)))
         ]
 
         self.kc = kc

@@ -1,22 +1,22 @@
-from samson.math.algebra.rings.ring import Ring
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import fast_mul, square_and_mul, gcd, random_int
 from samson.math.sparse_vector import SparseVector
 from sympy import Expr, Symbol, Integer, factorint
 from copy import deepcopy
 
 
-class Polynomial(object):
-    def __init__(self, coeffs: list, ring: Ring=None, symbol: Symbol=None):
+class Polynomial(RingElement):
+    def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: Symbol=None, ring: Ring=None):
         default_symbol = Symbol('x')
-        self.ring = ring or coeffs[0].ring
+        self.coeff_ring = coeff_ring or coeffs[0].ring
 
         # Parse expressions
         if issubclass(type(coeffs), Expr):
             default_symbol = list(coeffs.free_symbols)[0]
-            coeff_vec      = SparseVector([], self.ring.zero())
+            coeff_vec      = SparseVector([], self.coeff_ring.zero())
 
             for sub_expr, coeff in coeffs.as_coefficients_dict().items():
-                coeff = self.ring.coerce(int(coeff))
+                coeff = self.coeff_ring.coerce(int(coeff))
                 if issubclass(type(sub_expr), Integer):
                     coeff_vec[0] = coeff
                 else:
@@ -29,19 +29,23 @@ class Polynomial(object):
             if len(coeffs) > 0 and type(coeffs[0]) is tuple:
                 vec = coeffs
             else:
-                vec = [self.ring.coerce(coeff) for coeff in coeffs]
+                vec = [self.coeff_ring.coerce(coeff) for coeff in coeffs]
 
-            self.coeffs = SparseVector(vec, self.ring.zero())
+            self.coeffs = SparseVector(vec, self.coeff_ring.zero())
 
 
         elif type(coeffs) is SparseVector:
             self.coeffs = coeffs
-
         
+        else:
+            raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
+
+
         self.symbol = symbol or default_symbol
+        self.ring = ring or self.coeff_ring[self.symbol]
 
         if len(self.coeffs.values) == 0:
-            self.coeffs = SparseVector([self.ring.zero()], self.ring.zero())
+            self.coeffs = SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())
 
 
 
@@ -68,11 +72,11 @@ class Polynomial(object):
 
             return ' + '.join(poly_repr[::-1])
         else:
-            return self.ring.zero()
+            return self.coeff_ring.zero().shorthand()
 
 
     def __repr__(self):
-        return f"<Polynomial: {self.shorthand()}, ring={self.ring}>"
+        return f"<Polynomial: {self.shorthand()}, coeff_ring={self.coeff_ring}>"
 
     def __str__(self):
         return self.__repr__()
@@ -83,14 +87,14 @@ class Polynomial(object):
 
 
     def __hash__(self) -> int:
-        return hash((self.ring, self.coeffs, self.__class__))
+        return hash((self.coeff_ring, self.coeffs, self.__class__))
 
 
     def LC(self) -> object:
         try:
             return self.coeffs[-1]
         except IndexError:
-            return self.ring.zero()
+            return self.coeff_ring.zero()
 
 
     def evaluate(self, x: object) -> object:
@@ -115,23 +119,25 @@ class Polynomial(object):
 
 
     def monic(self) -> object:
-        return Polynomial([(idx, coeff / self.coeffs[-1]) for idx, coeff in self.coeffs], self.ring, self.symbol)
+        return Polynomial([(idx, coeff / self.coeffs[-1]) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
 
 
     def is_monic(self) -> bool:
-        return self.LC() == self.ring.one()
+        return self.LC() == self.coeff_ring.one()
 
 
     def derivative(self) -> object:
-        return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0], self.ring, self.symbol)
+        return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0], self.coeff_ring, self.symbol)
 
 
     def square_free_decomposition(self) -> list:
         """
         Examples:
+            >>> from samson.math.all import Polynomial, ZZ
+            >>> from sympy.abc import x
             >>> poly = Polynomial(3*x**3+x**7-x**18, ZZ)
             >>> poly.square_free_decomposition()
-            [<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), ring=ZZ>, <Polynomial: x**3, ring=ZZ>]
+            [<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>, <Polynomial: x**3, coeff_ring=ZZ>]
 
         """
         # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
@@ -142,21 +148,21 @@ class Polynomial(object):
         factors = []
 
         i = 1
-        while w != self.one():
+        while w != self.ring.one():
             y = gcd(w, c).monic()
             fac = w / y
             #R *= fac**i
             factors.append(fac)
             w, c, i = y, c / y, i + 1
 
-        if c != self.one():
+        if c != self.ring.one():
             # TODO: Take the p-th root
-            c = c**(1/self.ring.characteristic)
+            c = c**(1/self.coeff_ring.characteristic)
             new_facs = c.square_free_decomposition()
             #R *= new_R**p
             factors.extend(new_facs)
-        
-        return [(fac**(idx+1)).monic() for idx, fac in enumerate(factors) if fac != self.one()]
+
+        return [(fac**(idx+1)).monic() for idx, fac in enumerate(factors) if fac != self.ring.one()]
 
 
     def sff(self) -> list:
@@ -169,7 +175,7 @@ class Polynomial(object):
         f_star = f
         S = []
         i = 1
-        q = self.ring.characteristic
+        q = self.coeff_ring.characteristic
 
         x = self.symbol
 
@@ -177,14 +183,14 @@ class Polynomial(object):
             if not f_star.is_monic():
                 f_star = f_star.monic()
 
-            g = gcd(f_star, Polynomial(x**q**i - x, f.ring)).monic()
-            if g != self.one():
+            g = gcd(f_star, Polynomial(x**q**i - x, f.coeff_ring)).monic()
+            if g != self.ring.one():
                 S.append((g, i))
                 f_star /= g
             
             i += 1
         
-        if f_star != self.one():
+        if f_star != self.ring.one():
             S.append((f_star, f_star.degree()))
         
         if not S:
@@ -197,57 +203,64 @@ class Polynomial(object):
         return self.distinct_degree_factorization()
     
 
-
-    def equal_degree_factorization(self, d) -> list:
+    # TODO: This method only works for FF due to `self.coeff_ring.order` and `f.coeff_ring.random(f.coeff_ring.reducing_poly.degree())`
+    def equal_degree_factorization(self, d: int, subgroup_divisor: int=2) -> list:
         f = self.monic()
-        q = 2**128#self.ring.characteristic
+        q = self.coeff_ring.order
 
         n = f.degree()
         r = n // d
         S = [f]
 
-        f_quot = f.ring / f
+        f_quot   = f.ring / f
+        exponent = (q**d - 1) // subgroup_divisor
 
-        if n < d or self.is_irreducible():
+        irreducibility_cache = {}
+
+        if n < d:# or self.is_irreducible(): # Rabin's irreducibility test currently too slow
             return S
 
-        while len(S) < r:
-            # TODO: This random doesn't work for any field
-            # h = Polynomial([random_int(q) for _ in range(n)], f.ring)
-            h = Polynomial([f.ring.random(128) for _ in range(n)], f.ring)
-            g = gcd(h, f).monic()
+        try:
+            while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
+                h = Polynomial([f.coeff_ring.random(f.coeff_ring.reducing_poly.degree()) for _ in range(n)], f.coeff_ring)
+                g = gcd(h, f).monic()
 
-            print('First "g"', g)
+                if g == self.ring.one():
+                    h = f_quot(h)
+                    g = (h**exponent).val - self.ring.one()
 
-            if g == self.one():
-                # g = (h**((q**d - 1) // 3) - self.one()) % f
-                h = f_quot(h)
+                for u in S:
+                    if u.degree() <= d:
+                        continue
 
-                # TODO: There's a coercion failure from square_and_mul
-                g = (h**((q**d - 1) // 3)).val - self.one()
-                print(g)
+                    gcd_g_u = gcd(g, u).monic()
+                    if gcd_g_u != self.ring.one() and gcd_g_u != u:
+                        S.remove(u)
+                        if u in irreducibility_cache:
+                            del irreducibility_cache[u]
 
-            print()
-            for u in S:
-                if u.degree() <= d:
-                    continue
+                        u_gcd_g_u = u / gcd_g_u
+                        S.extend([gcd_g_u, u_gcd_g_u])
 
-                gcd_g_u = gcd(g, u).monic()
-                if gcd_g_u != self.one() and gcd_g_u != u:
-                    S.remove(u)
-                    S.extend([gcd_g_u, u / gcd_g_u])
+                        # Cache irreducibility results.
+                        # irreducibility_cache[gcd_g_u]   = gcd_g_u.is_irreducible()
+                        # irreducibility_cache[u_gcd_g_u] = u_gcd_g_u.is_irreducible()
+        except KeyboardInterrupt:
+            return S
 
         return S
 
 
-    def edf(self, d) -> list:
-        return self.equal_degree_factorization(d)
+    def edf(self, d: int, subgroup_divisor: int=2) -> list:
+        return self.equal_degree_factorization(d, subgroup_divisor)
     
 
+    # TODO: This needs to execute WAY faster. FFT, fast modulo, whatever.
     def is_irreducible(self) -> bool:
         # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
         x = Symbol('x')
-        q = self.ring.characteristic
+        #q = self.coeff_ring.characteristic
+        q = self.coeff_ring.order
         f = self.monic()
 
         n = self.degree()
@@ -255,20 +268,20 @@ class Polynomial(object):
         n_j = [n // fac for fac in deg_factors]
 
         for fac in n_j:
-            h = Polynomial(x**q**fac - x, self.ring) % f
+            h = Polynomial(x**q**fac - x, self.coeff_ring) % f
             g = gcd(f, h).monic()
 
-            if g != self.one():
+            if g != self.ring.one():
                 return False
         
-        g = Polynomial(x**q**n - x, self.ring) % f
-        return g == self.zero()
+        g = Polynomial(x**q**n - x, self.coeff_ring) % f
+        return g == self.ring.zero()
 
 
 
-    def factor(self) -> list:
+    def factor(self, d: int=1, subgroup_divisor: int=2) -> list:
         distinct_degrees = [factor for poly in self.sff() for factor in poly.ddf()]
-        return [factor for poly, _ in distinct_degrees for factor in poly.edf(1)]
+        return [factor for poly, _ in distinct_degrees for factor in poly.edf(d, subgroup_divisor)]
 
 
     def degree(self) -> int:
@@ -278,26 +291,18 @@ class Polynomial(object):
             return 0
 
 
-    def zero(self) -> object:
-        return Polynomial([self.ring.zero()], self.ring, self.symbol)
-
-
-    def one(self) -> object:
-        return Polynomial([self.ring.one()], self.ring, self.symbol)
-
-
     def __divmod__(self, other: object) -> (object, object):
-        assert other != self.zero()
+        assert other != self.ring.zero()
 
         n = other.degree()
         if n > self.degree():
-            return self.zero(), self
+            return self.ring.zero(), self
 
         dividend = deepcopy(self.coeffs)
         divisor  = other.coeffs
 
         n = other.degree()
-        quotient = SparseVector([], self.ring.zero())
+        quotient = SparseVector([], self.coeff_ring.zero())
 
         for k in reversed(range(self.degree() - n + 1)):
             quotient[k] = dividend[k+n] / divisor[n]
@@ -307,11 +312,11 @@ class Polynomial(object):
 
         remainder = dividend[:n]
 
-        return (Polynomial(quotient, ring=self.ring, symbol=self.symbol), Polynomial(remainder, ring=self.ring, symbol=self.symbol))
+        return (Polynomial(quotient, coeff_ring=self.coeff_ring, symbol=self.symbol), Polynomial(remainder, coeff_ring=self.coeff_ring, symbol=self.symbol))
 
 
     def __add__(self, other: object) -> object:
-        vec = SparseVector([], self.ring.zero())
+        vec = SparseVector([], self.coeff_ring.zero())
         for idx, coeff in self.coeffs:
             vec[idx] = coeff + other.coeffs[idx]
 
@@ -319,11 +324,11 @@ class Polynomial(object):
             if not idx in self.coeffs:
                 vec[idx] = coeff
 
-        return Polynomial(vec, self.ring, self.symbol)
+        return Polynomial(vec, self.coeff_ring, self.symbol)
 
 
     def __sub__(self, other: object) -> object:
-        vec = SparseVector([], self.ring.zero())
+        vec = SparseVector([], self.coeff_ring.zero())
         for idx, coeff in self.coeffs:
             vec[idx] = coeff - other.coeffs[idx]
         
@@ -331,20 +336,20 @@ class Polynomial(object):
             if not idx in self.coeffs:
                 vec[idx] = -coeff
 
-        return Polynomial(vec, self.ring, self.symbol)
+        return Polynomial(vec, self.coeff_ring, self.symbol)
 
 
     def __mul__(self, other: object) -> object:
         if type(other) is int:
-            return fast_mul(self, other, self.zero())
+            return fast_mul(self, other, self.ring.zero())
 
-        new_coeffs = SparseVector([], self.ring.zero())
+        new_coeffs = SparseVector([], self.coeff_ring.zero())
 
         for i, coeff_h in self.coeffs:
             for j, coeff_g in other.coeffs:
                 new_coeffs[i+j] += coeff_h*coeff_g
 
-        return Polynomial(new_coeffs, self.ring, self.symbol)
+        return Polynomial(new_coeffs, self.coeff_ring, self.symbol)
 
 
     def __rmul__(self, other: int) -> object:
@@ -352,7 +357,7 @@ class Polynomial(object):
 
 
     def __neg__(self) -> object:
-        return Polynomial([(idx, -coeff) for idx, coeff in self.coeffs], self.ring, self.symbol)
+        return Polynomial([(idx, -coeff) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
 
 
     def __truediv__(self, other: object) -> object:
@@ -367,7 +372,7 @@ class Polynomial(object):
 
 
     def __pow__(self, exponent: int) -> object:
-        return square_and_mul(self, exponent, self.one())
+        return square_and_mul(self, exponent, self.ring.one())
 
 
     def __int__(self) -> int:
@@ -380,4 +385,4 @@ class Polynomial(object):
 
 
     def __bool__(self) -> bool:
-        return self.coeffs != SparseVector([self.ring.zero()], self.ring.zero())
+        return self.coeffs != SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())

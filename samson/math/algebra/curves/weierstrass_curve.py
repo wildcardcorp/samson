@@ -269,7 +269,7 @@ class WeierstrassCurve(Ring):
 
         else:
             y   = self.curve_poly_ring((0, 1))
-            two = self.curve_poly_ring.poly_ring([2]).val
+            two = self.curve_poly_ring.poly_ring([2])
             psi = self.division_poly
             for j in range(5, n+1):
                 k, m = divmod(j, 2)

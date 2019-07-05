@@ -71,6 +71,7 @@ setup(name='samson-crypto',
           "samson/padding",
           "samson/prngs",
           "samson/protocols",
+          "samson/protocols/jwt",
           "samson/public_key",
           "samson/stream_ciphers",
           "samson/utilities"

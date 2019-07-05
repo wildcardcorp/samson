@@ -17,7 +17,7 @@ class CurvePolynomialElement(RingElement):
             ring         (Ring): Parent ring.
         """
         self.x_poly = x_poly
-        self.y_poly = y_poly or ring.poly_ring.zero().val
+        self.y_poly = y_poly or ring.poly_ring.zero()
         self.ring   = ring
 
     def __repr__(self):
@@ -48,7 +48,7 @@ class CurvePolynomialElement(RingElement):
         y = xy + yx
 
         if self.y_poly and other.y_poly:
-            nx += self.y_poly * other.y_poly * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b).val
+            nx += self.y_poly * other.y_poly * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b)
 
         return CurvePolynomialElement(nx, y, self.ring)
 
@@ -180,10 +180,10 @@ class CurvePolynomialRing(Ring):
 
         if type(other) is tuple:
             x_poly = other[0]
-            y_poly = other[1] or self.poly_ring.zero().val
+            y_poly = other[1] or self.poly_ring.zero()
         else:
             x_poly = other
-            y_poly = self.poly_ring.zero().val
+            y_poly = self.poly_ring.zero()
 
         coerced = []
         for poly in [x_poly, y_poly]:

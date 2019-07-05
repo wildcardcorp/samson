@@ -1,6 +1,7 @@
 .vscode
 *__pycache__/
 *.pyc
+.pytest_cache/
 samson_crypto.egg-info/
 dist/
 build/
