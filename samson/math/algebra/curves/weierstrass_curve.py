@@ -157,7 +157,7 @@ class WeierstrassCurve(Ring):
 
     @property
     def p(self) -> int:
-        return int(self.ring.quotient.val)
+        return int(self.ring.quotient)
 
 
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:

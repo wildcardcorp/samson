@@ -24,7 +24,7 @@ samson's key focuses are:
 
 ## Examples
 ### **REPL**
-```python
+```bash
 [root@localhost ~]# samson
 
 
@@ -213,7 +213,7 @@ pip3 install samson-crypto
 ```
 
 ## Performance
-Samson's primitives aren't the fastest nor were they meant to be. If you're concerned about performance, you have a couple of options:
+samson's primitives aren't the fastest nor were they meant to be. If you're concerned about performance, you have a couple of options:
 
 * Use primitives from a faster library (e.g. pycrypto)
 * Use PyPy instead of CPython

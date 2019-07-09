@@ -4,11 +4,11 @@ from sortedcontainers import SortedDict
 class SparseVector(object):
     def __init__(self, items: list, zero: int=0):
         if type(items) is dict:
-            self.values = SortedDict(items)
+            self.values = SortedDict({k:v for k,v in items if v != zero})
 
         elif type(items) is list:
             if len(items) == 0 or type(items[0]) is tuple:
-                self.values = SortedDict(items)
+                self.values = SortedDict([(k, v) for k,v in items if v != zero])
             else:
                 self.values = SortedDict({idx: value for idx, value in enumerate(items) if value != zero})
 

@@ -94,3 +94,18 @@ class PolynomialRing(Ring):
             return other
 
         raise Exception('Coercion failed')
+
+
+    def element_at(self, x: int) -> Polynomial:
+        base_coeffs = []
+        modulus     = self.ring.characteristic
+
+        if modulus != 0:
+            # Use != to handle negative numbers
+            while x != 0 and x != -1:
+                x, r = divmod(x, modulus)
+                base_coeffs.append(self.ring[r])
+
+            return self(base_coeffs)
+        else:
+            return self([x])

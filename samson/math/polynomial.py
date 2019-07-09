@@ -205,6 +205,8 @@ class Polynomial(RingElement):
 
     # TODO: This method only works for FF due to `self.coeff_ring.order` and `f.coeff_ring.random(f.coeff_ring.reducing_poly.degree())`
     def equal_degree_factorization(self, d: int, subgroup_divisor: int=2) -> list:
+        from samson.math.general import frobenius_map, frobenius_monomial_base
+
         f = self.monic()
         q = self.coeff_ring.order
 
@@ -213,11 +215,13 @@ class Polynomial(RingElement):
         S = [f]
 
         f_quot   = f.ring / f
-        exponent = (q**d - 1) // subgroup_divisor
+        exponent = (q - 1) // subgroup_divisor
+        one      = self.ring.one()
+        bases    = frobenius_monomial_base(f)
 
         irreducibility_cache = {}
 
-        if n < d:# or self.is_irreducible(): # Rabin's irreducibility test currently too slow
+        if n < d or self.is_irreducible():
             return S
 
         try:
@@ -225,16 +229,21 @@ class Polynomial(RingElement):
                 h = Polynomial([f.coeff_ring.random(f.coeff_ring.reducing_poly.degree()) for _ in range(n)], f.coeff_ring)
                 g = gcd(h, f).monic()
 
-                if g == self.ring.one():
+                if g == one:
                     h = f_quot(h)
-                    g = (h**exponent).val - self.ring.one()
-
+                    j = h
+                    for _ in range(d-1):
+                        j = frobenius_map(j, f, bases=bases)
+                        h *= j
+                    
+                    g = (h**exponent).val - one
+                        
                 for u in S:
-                    if u.degree() <= d:
+                    if u.degree() <= d or (u in irreducibility_cache and irreducibility_cache[u]):
                         continue
 
                     gcd_g_u = gcd(g, u).monic()
-                    if gcd_g_u != self.ring.one() and gcd_g_u != u:
+                    if gcd_g_u != one and gcd_g_u != u:
                         S.remove(u)
                         if u in irreducibility_cache:
                             del irreducibility_cache[u]
@@ -242,41 +251,51 @@ class Polynomial(RingElement):
                         u_gcd_g_u = u / gcd_g_u
                         S.extend([gcd_g_u, u_gcd_g_u])
 
-                        # Cache irreducibility results.
-                        # irreducibility_cache[gcd_g_u]   = gcd_g_u.is_irreducible()
-                        # irreducibility_cache[u_gcd_g_u] = u_gcd_g_u.is_irreducible()
+                        # Cache irreducibility results
+                        irreducibility_cache[gcd_g_u]   = gcd_g_u.is_irreducible()
+                        irreducibility_cache[u_gcd_g_u] = u_gcd_g_u.is_irreducible()
         except KeyboardInterrupt:
-            return S
+            pass
 
         return S
 
 
     def edf(self, d: int, subgroup_divisor: int=2) -> list:
         return self.equal_degree_factorization(d, subgroup_divisor)
-    
 
-    # TODO: This needs to execute WAY faster. FFT, fast modulo, whatever.
+
     def is_irreducible(self) -> bool:
         # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
-        x = Symbol('x')
-        #q = self.coeff_ring.characteristic
-        q = self.coeff_ring.order
-        f = self.monic()
-
+        # https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+        from samson.math.general import frobenius_map, frobenius_monomial_base
         n = self.degree()
-        deg_factors = [k for k,v in factorint(n).items()]
-        n_j = [n // fac for fac in deg_factors]
 
-        for fac in n_j:
-            h = Polynomial(x**q**fac - x, self.coeff_ring) % f
-            g = gcd(f, h).monic()
+        if n <= 1:
+            return True
 
-            if g != self.ring.one():
-                return False
-        
-        g = Polynomial(x**q**n - x, self.coeff_ring) % f
-        return g == self.ring.zero()
+        x = Symbol('x')
+        f = self.monic()
+        P = self.ring
 
+        subgroups = {n // fac for fac in factorint(n)}
+
+        bases  = frobenius_monomial_base(f)
+        h      = bases[1]
+        x_poly = P(x)
+        one    = P.one()
+
+        for idx in range(1, n):
+            if idx in subgroups:
+                if gcd(f, h - x_poly).monic() != one:
+                    return False
+
+            h = frobenius_map(h, f, bases=bases)
+
+        return h == x_poly
+
+
+    def is_prime(self) -> bool:
+        return self.is_irreducible()
 
 
     def factor(self, d: int=1, subgroup_divisor: int=2) -> list:
@@ -382,7 +401,26 @@ class Polynomial(RingElement):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.coeffs == other.coeffs
+    
+    
+    def __lt__(self, other):
+        s_deg = self.degree()
+        o_deg = other.degree()
+        return s_deg < o_deg or s_deg == o_deg and self.LC() < other.LC()
+
+
+    def __gt__(self, other):
+        s_deg = self.degree()
+        o_deg = other.degree()
+        return s_deg > o_deg or s_deg == o_deg and self.LC() > other.LC()
 
 
     def __bool__(self) -> bool:
         return self.coeffs != SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())
+
+
+    def __lshift__(self, num: int):
+        return Polynomial(SparseVector([(idx+num, coeff) for idx, coeff in self.coeffs], self.coeff_ring.zero()), coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)
+
+    def __rshift__(self, num: int):
+        return Polynomial(SparseVector([(idx-num, coeff) for idx, coeff in self.coeffs[num:]], self.coeff_ring.zero()), coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)

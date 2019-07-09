@@ -43,8 +43,12 @@ class Ring(ABC):
     __mul__ = mul_group
 
 
-    def __call__(self, args):
+    def __call__(self, args) -> object:
         return self.coerce(args)
+    
+
+    def element_at(self, x: int) -> object:
+        raise NotImplementedError()
 
 
     def __truediv__(self, element):
@@ -54,9 +58,16 @@ class Ring(ABC):
 
         return QuotientRing(element, self)
 
+
     def __getitem__(self, x: int):
         from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-        return PolynomialRing(self)
+        from sympy import Symbol
+
+        if type(x) is Symbol:
+            return PolynomialRing(self)
+        else:
+            return self.element_at(x)
+
 
 
 class RingElement(ABC):
@@ -109,6 +120,9 @@ class RingElement(ABC):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val < other.val
+    
+    def __le__(self, other):
+        return self < other or self == other
 
     def __gt__(self, other: object) -> bool:
         other = self.ring.coerce(other)
@@ -116,6 +130,9 @@ class RingElement(ABC):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
+    
+    def __ge__(self, other):
+        return self > other or self == other
 
 
     def __int__(self) -> int:

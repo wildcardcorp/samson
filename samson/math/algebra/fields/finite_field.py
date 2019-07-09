@@ -102,6 +102,10 @@ class FiniteField(Field):
                     if gf_irreducible_p(poly, p, sym_ZZ):
                         reducing_poly = Polynomial(poly[::-1], self.internal_ring)
                         break
+                    # poly = Polynomial((1, *c)[::-1], self.internal_ring)
+                    # if poly.is_irreducible():
+                    #     reducing_poly = poly
+                    #     break
 
 
         self.reducing_poly  = reducing_poly
@@ -172,16 +176,19 @@ class FiniteField(Field):
         Returns:
             FiniteFieldElement: Coerced element.
         """
+        from sympy import Expr
+
         if type(other) is int:
             other = int_to_poly(other, self.p) % self.reducing_poly
-
-        elif type(other) is Polynomial:
-            other = other % self.reducing_poly
-
+    
         if not type(other) is FiniteFieldElement:
             other = FiniteFieldElement(self.internal_field(other), self)
 
         return other
+
+
+    def element_at(self, x: int):
+        return self.internal_field.element_at(x)
 
 
     def __eq__(self, other: object) -> bool:

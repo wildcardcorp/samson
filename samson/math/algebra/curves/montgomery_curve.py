@@ -91,7 +91,7 @@ class MontgomeryCurve(Ring):
 
     @property
     def p(self):
-        return int(self.ring.quotient.val)
+        return int(self.ring.quotient)
 
 
     @property

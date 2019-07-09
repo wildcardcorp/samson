@@ -51,6 +51,9 @@ X   CAS
     X   Replace all sympy with native CAS
     OK  Convert EllipticCurves into rings
     OK  Easily build DH ring (mod-pow)... generic mult subgroup ring?
+    X   All algebras should have repeated addition (multiplication by integer)
+    X   Add the ability to retrieve elements by ordinality to countable sets
+    X   Unify 'order' and 'cardinality' properties/functions
 
 
 X   Improve Polynomial implementation

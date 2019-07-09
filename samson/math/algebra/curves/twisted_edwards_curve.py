@@ -84,7 +84,7 @@ class TwistedEdwardsCurve(Ring):
 
     @property
     def q(self):
-        return int(self.ring.quotient.val)
+        return int(self.ring.quotient)
 
 
     def shorthand(self) -> str:

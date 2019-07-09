@@ -1,4 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
+from sympy import factorint, isprime
 
 class IntegerElement(RingElement):
     """
@@ -18,6 +19,12 @@ class IntegerElement(RingElement):
     def __repr__(self):
         return f"<IntegerElement: val={self.val}, ring={self.ring}>"
 
+
+    def factor(self) -> list:
+        return [k for k,v in factorint(self.val).items()]
+
+    def is_prime(self) -> list:
+        return isprime(self.val)
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -97,6 +104,10 @@ class IntegerRing(Ring):
         """
         from samson.math.general import random_int
         return IntegerElement(random_int(size), self)
+
+
+    def element_at(self, x: int) -> IntegerElement:
+        return self(x)
 
 
     def __repr__(self):

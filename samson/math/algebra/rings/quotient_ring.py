@@ -107,9 +107,15 @@ class QuotientRing(Ring):
     @property
     def order(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.polynomial import Polynomial
         from sympy import isprime
-        if type(self.quotient) is IntegerElement and isprime(int(self.quotient)):
+
+        if type(self.quotient) is IntegerElement and self.quotient.is_prime():
             return int(self.quotient)
+
+        elif type(self.quotient) is Polynomial and self.quotient.is_prime():
+            return self.characteristic**self.quotient.degree()
+
         else:
             raise NotImplementedError
 
@@ -160,6 +166,10 @@ class QuotientRing(Ring):
         if type(other) is not QuotientElement:
             other = QuotientElement(self.ring.coerce(other), self)
         return other
+    
+
+    def element_at(self, x: int) -> QuotientElement:
+        return self(self.ring.element_at(x))
 
 
     def __eq__(self, other: object) -> bool:

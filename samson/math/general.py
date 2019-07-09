@@ -65,6 +65,82 @@ def poly_to_int(poly: object) -> int:
     return value
 
 
+def frobenius_monomial_base(poly: object) -> list:
+    """
+    Generates a list of monomials of x**(i*p) % g for range(poly.degrees()). Used with Frobenius map.
+
+    Adapted from https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+
+    Parameters:
+        poly (Polynomial): Polynomial to generate bases for.
+
+    Returns:
+        list: List of monomial bases mod g.
+    """
+    from samson.math.all import Polynomial
+
+    n = poly.degree()
+    if n == 0:
+        return []
+
+    P = poly.ring
+    q = poly.coeff_ring.order if hasattr(poly.coeff_ring, 'order') else poly.coeff_ring.characteristic
+    bases = [None]*n
+    bases[0] = P.one()
+
+    if q < n:
+        for i in range(1, n):
+            bases[i] = (bases[i-1] << q) % poly
+
+    elif n > 1:
+        R = P/poly
+        bases[1] = R(x)**q
+
+        for i in range(2, n):
+            bases[i] = bases[i-1] * bases[1]
+        
+        # Peel off the quotient ring
+        for i in range(1, n):
+            bases[i] = bases[i].val
+
+    return bases
+
+
+def frobenius_map(f: object, g: object, bases: list=None) -> object:
+    """
+    Computes f**p % g using the Frobenius map.
+
+    Parameters:
+        f (Polynomial): Base.
+        g (Polynomial): Modulus.
+        bases   (list): Frobenius monomial bases. Will generate if not provided.
+    
+    Returns:
+        Polynomial: f**p % g
+    """
+    if not bases:
+        bases = frobenius_monomial_base(g)
+    
+    dg = g.degree()
+    df = f.degree()
+    P  = f.ring
+
+    if df >= dg:
+        f %= g
+        df = f.degree()
+    
+    if not f:
+        return f
+
+    sf = P([f.coeffs[0]])
+
+    for i in range(1, df+1):
+        sf += bases[i] * int(f.coeffs[i])
+    
+    return sf
+
+
+
 def gcd(a: int, b: int) -> int:
     """
     Recursively computes the greatest common denominator.
@@ -1131,3 +1207,55 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
         o += factor
 
     return None
+
+
+def miller_rabin(n: int, k: int=64) -> bool:
+    """
+    Probablistic primality test. Each iteration has a 1/4 false positive rate.
+    Always returns a false positive on Carmichael numbers.
+
+    https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test#Miller%E2%80%93Rabin_test
+
+    Parameters:
+        n (int): Number to determine if probably prime.
+        k (int): Number of iterations to run.
+    
+    Returns:
+        bool: Whether `n` is probably prime.
+
+    Examples:
+        >>> from samson.math.general import miller_rabin
+        >>> miller_rabin(127)
+        True
+
+        >>> miller_rabin(6)
+        False
+
+        >>> miller_rabin(29341) and 29341 % 13 == 0 # Carmichael number
+        True
+
+    """
+    n_1 = n - 1
+    d   = n_1
+    r   = 0
+    while not d % 2 and d:
+        r += 1
+        d %= 2
+    
+    for _ in range(k):
+        a = max(2, random_int(n_1))
+        x = pow(a, d, n)
+        if x == 1 or x == n_1:
+            continue
+
+        found = False
+        for _ in range(r-1):
+            x = pow(x, 2, n)
+            if x == n_1:
+                found = True
+                break
+
+        if not found:
+            return False
+    
+    return True
