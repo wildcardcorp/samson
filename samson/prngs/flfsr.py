@@ -48,10 +48,10 @@ class FLFSR(GLFSR):
 
     def clock(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         self.state <<= 1
 
@@ -78,6 +78,6 @@ class FLFSR(GLFSR):
         Calls self.clock(). Here for interface uniformity.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         return self.clock()

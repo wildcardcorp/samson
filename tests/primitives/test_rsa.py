@@ -2,8 +2,7 @@ from samson.public_key.rsa import RSA
 from samson.utilities.bytes import Bytes
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.encoding.general import PKIEncoding
-from samson.math.general import mod_inv
-from sympy import isprime
+from samson.math.general import mod_inv, is_prime
 import unittest
 
 
@@ -659,8 +658,8 @@ class RSATestCase(unittest.TestCase):
             rsa = RSA.import_key(key, passphrase=passphrase)
             self.assertEqual(rsa.p * rsa.q, rsa.n)
             self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
-            self.assertTrue(isprime(rsa.p))
-            self.assertTrue(isprime(rsa.q))
+            self.assertTrue(is_prime(rsa.p))
+            self.assertTrue(is_prime(rsa.q))
 
 
 

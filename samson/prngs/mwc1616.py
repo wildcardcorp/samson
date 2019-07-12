@@ -45,21 +45,3 @@ class MWC1616(IterativePRNG):
         sym_s1 = (self.b * (sym_s1 & 0xFFFF) + SHFT_R(sym_s1, 16)) & MASK32
 
         return (sym_s0, sym_s1), (SHFT_L(sym_s0, 16) + (sym_s1 & 0xFFFF)) & MASK32
-
-
-
-
-    # def generate(self) -> int:
-    #     """
-    #     Generates the next psuedorandom output.
-
-    #     Returns:
-    #         int: Next psuedorandom output.
-    #     """
-    #     s0, s1 = self.state
-    #     s0 = (self.a * (s0 & 0xFFFF) + (s0 >> 16)) & MASK32
-    #     s1 = (self.b * (s1 & 0xFFFF) + (s1 >> 16)) & MASK32
-
-    #     self.state = (s0, s1)
-
-    #     return ((s0 << 16) + (s1 & 0xFFFF)) & MASK32

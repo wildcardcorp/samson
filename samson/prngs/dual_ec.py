@@ -32,10 +32,10 @@ class DualEC(object):
 
     def generate(self) -> Bytes:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         s = (self.t * self.P).x
         self.t = s

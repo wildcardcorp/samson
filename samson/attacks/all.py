@@ -2,7 +2,7 @@ from .cbc_iv_key_equivalence_attack import CBCIVKeyEquivalenceAttack
 from .cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from .crime_attack import CRIMEAttack
 from .ecb_prepend_attack import ECBPrependAttack
-from .forbidden_attack import ForbbidenAttack
+from .forbidden_attack import ForbiddenAttack
 from .mangers_attack import MangersAttack
 from .nostradamus_attack import NostradamusAttack
 from .ocb_auth_forgery_attack import OCBAuthForgeryAttack
@@ -13,4 +13,4 @@ from .xor_dictionary_attack import XORDictionaryAttack
 from .xor_transposition_attack import XORTranspositionAttack
 
 
-__all__ = ["CBCIVKeyEquivalenceAttack", "CBCPaddingOracleAttack", "CRIMEAttack", "ECBPrependAttack", "ForbbidenAttack", "MangersAttack", "NostradamusAttack", "OCBAuthForgeryAttack", "PKCS1v15PaddingOracleAttack", "RC4PrependAttack", "XORBitflippingAttack", "XORDictionaryAttack", "XORTranspositionAttack"]
+__all__ = ["CBCIVKeyEquivalenceAttack", "CBCPaddingOracleAttack", "CRIMEAttack", "ECBPrependAttack", "ForbiddenAttack", "MangersAttack", "NostradamusAttack", "OCBAuthForgeryAttack", "PKCS1v15PaddingOracleAttack", "RC4PrependAttack", "XORBitflippingAttack", "XORDictionaryAttack", "XORTranspositionAttack"]

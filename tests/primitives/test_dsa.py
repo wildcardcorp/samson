@@ -2,7 +2,7 @@ from samson.public_key.dsa import DSA
 from samson.utilities.bytes import Bytes
 from samson.encoding.pem import RFC1423_ALGOS
 from samson.encoding.general import PKIEncoding
-from sympy import isprime
+from samson.math.general import is_prime
 import hashlib
 import unittest
 
@@ -530,8 +530,8 @@ class DSATestCase(unittest.TestCase):
             dsa = DSA.import_key(key, passphrase=passphrase)
             self.assertEqual(dsa.y, pow(dsa.g, dsa.x, dsa.p))
             self.assertLess(dsa.x, dsa.q)
-            self.assertTrue(isprime(dsa.p))
-            self.assertTrue(isprime(dsa.q))
+            self.assertTrue(is_prime(dsa.p))
+            self.assertTrue(is_prime(dsa.q))
 
 
     def test_openssh_gauntlet(self):

@@ -45,7 +45,7 @@ class Ring(ABC):
 
     def __call__(self, args) -> object:
         return self.coerce(args)
-    
+
 
     def element_at(self, x: int) -> object:
         raise NotImplementedError()
@@ -120,7 +120,7 @@ class RingElement(ABC):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val < other.val
-    
+
     def __le__(self, other):
         return self < other or self == other
 
@@ -130,7 +130,7 @@ class RingElement(ABC):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
-    
+
     def __ge__(self, other):
         return self > other or self == other
 

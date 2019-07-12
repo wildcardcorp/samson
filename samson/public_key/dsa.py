@@ -1,4 +1,4 @@
-from samson.math.general import mod_inv, find_prime, random_int
+from samson.math.general import mod_inv, find_prime, random_int, is_prime
 from samson.utilities.bytes import Bytes
 
 from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
@@ -10,7 +10,6 @@ from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DSASigningAlgorithms
 from samson.core.encodable_pki import EncodablePKI
 from samson.encoding.general import PKIEncoding
-from sympy import isprime
 
 from samson.hashes.sha2 import SHA256
 
@@ -57,7 +56,7 @@ class DSA(EncodablePKI):
 
             # Construct the base as an even multiple of `q`
             base = 2**(L-1) // (2*q) * 2
-            while not isprime((base + i) * q + 1):
+            while not is_prime((base + i) * q + 1):
                 i += 2
 
             p = (base + i) * q + 1

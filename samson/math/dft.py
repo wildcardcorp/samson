@@ -1,6 +1,5 @@
-from samson.math.general import mod_inv
-from samson.math.algebra.all import *
-from sympy import factorint, isprime
+from samson.math.general import mod_inv, is_prime
+from sympy import factorint
 from itertools import chain, count
 from enum import Enum
 import math
@@ -25,7 +24,7 @@ def generate_ntt_params(v1, v2):
     for offset in count(max(1, min_mod + vec_len - 2)):
         modulus = offset * vec_len + 1
 
-        if isprime(modulus):
+        if is_prime(modulus):
             break
 
     totient = modulus - 1
@@ -51,7 +50,7 @@ def ntt(vec: list, root: int, modulus: int):
         for j, val in enumerate(vec):
             n_val += val * pow(root, i*j, modulus)
             n_val %= modulus
-        
+
         t.append(n_val)
     return t
 
@@ -117,7 +116,7 @@ def fft_recurse(vec, t_factors, mod, n, N):
 
         X_e[k] = (e + o) % mod
         X_o[k] = (e - o) % mod
-    
+
     return X_e + X_o
 
 
@@ -136,44 +135,59 @@ def fft_op(v1, v2, operation: FFTOp=FFTOp.CONVOLVE):
 def generate_arbitrary_ntt_params(v1, v2):
     vec_len   = len(v1)
     max_value = max(chain(v1, v2))
-    orig_ring = v1[0].ring 
+    orig_ring = v1[0].ring
 
     # TODO: Remove all int casting to make generic
     # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
-    min_mod   = max_value**2 * vec_len + orig_ring.one()
+    char_zero = orig_ring.characteristic == 0
+    if not char_zero:
+        orig_ring = orig_ring.ring
+        max_value = max_value.val
 
-    char_zero     = orig_ring.characteristic == 0
-    mod_too_small = type(orig_ring) == QuotientRing and orig_ring.quotient < min_mod
+    one = orig_ring.one()
 
-    if char_zero or mod_too_small:
-        # Find a modulus
-        # count(max(1, min_mod + vec_len - 2))
-        for offset in count(max(orig_ring.one(), min_mod + vec_len - 2)):
-            modulus = offset * vec_len + 1
 
-            # TODO: Need ring-agnostic primality test
-            if modulus.is_prime(): #isprime(modulus):
-                break
+    #print((max_value**2).ordinality())
+    min_mod = (max_value**2).ordinality() * vec_len + 1
+    #mod_too_small = type(orig_ring) == QuotientRing and orig_ring.quotient < min_mod
 
-        sub_ring = orig_ring if char_zero else orig_ring.ring
-        new_ring = sub_ring / sub_ring(modulus)
-    else:
-        new_ring = orig_ring
-        modulus  = int(orig_ring.quotient)
+    vec_len_elem = orig_ring[vec_len]
 
-    totient = modulus - 1
+    start = max(1, min_mod + vec_len - 2)
+    # TODO: Remove the 10 multiplier
+    for offset in count(start*10):
+        modulus = orig_ring[offset] * vec_len_elem + one #vec_len + one
+
+        # TODO: Need ring-agnostic primality test
+        if modulus.is_prime():
+            break
+
+    #sub_ring = orig_ring if char_zero else orig_ring.ring
+    print(max_value)
+    print(min_mod)
+    print(modulus)
+
+    new_ring = orig_ring / modulus
+
+    #totient = modulus - 1
+    totient = new_ring.order - 1
 
     # Find a generator
-    factors = [f for f,_ in factorint(totient).items()]
+    factors = [f for f in factorint(totient)]
 
-    for possible_gen in range(1, modulus):
-        possible_gen = new_ring(possible_gen)
+    print('order', new_ring.order)
+
+    # for possible_gen in range(1, modulus):
+    for possible_gen in range(2, new_ring.order):
+        possible_gen = new_ring[possible_gen]
         if possible_gen**totient == new_ring.one() and all([possible_gen**(totient // f) != new_ring.one() for f in factors]):
             gen = possible_gen
             break
 
     # Find a primitive root
     root = gen**(totient // vec_len)
+    print('gen', gen)
+    print('root', root)
 
     return root, new_ring
 
@@ -207,7 +221,7 @@ def prepare_arbitrary_fft(v1, v2):
         inv_twid_factors.append(inv_twid)
         inv_twid = inv_twid * inv_root
 
-    return ([ring(a) for a in v1], [ring(b) for b in v2]), root, ring, twiddle_factors, inv_twid_factors
+    return ([ring(a.val if hasattr(a, 'val') else a) for a in v1], [ring(b.val if hasattr(b, 'val') else b) for b in v2]), root, ring, twiddle_factors, inv_twid_factors
 
 
 
@@ -233,16 +247,26 @@ def arbitrary_fft_recurse(vec, t_factors, n, N):
 
         X_e[k] = e + o
         X_o[k] = e - o
-    
+
     return X_e + X_o
 
 
 def arbitrary_fft_op(v1, v2, operation: FFTOp=ArbitraryFFTOp.CONVOLVE):
+    orig_ring = v1[0].ring
+
+    # Perform FFT
     (v1, v2), _root, ring, twiddle_factors, inv_twid_factors = prepare_arbitrary_fft(v1, v2)
     v1_t = arbitrary_fft(v1, twiddle_factors)
     v2_t = arbitrary_fft(v2, twiddle_factors)
 
+    print(twiddle_factors)
+    print(inv_twid_factors)
+
+    # Perform operation and inverse transform
     v3_t   = [operation(a, b) for a,b in zip(v1_t, v2_t)]
     v3     = arbitrary_fft(v3_t, inv_twid_factors)
-    scaler = ~ring(len(v1))
-    return [(val * scaler).val for val in v3]
+    scaler = ~ring[len(v1)]
+    # scaler = ~ring(len(v1))
+
+    # Return to original ring
+    return [orig_ring((val * scaler).val) for val in v3]

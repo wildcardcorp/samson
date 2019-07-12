@@ -1,8 +1,7 @@
-from samson.math.general import int_to_poly, fast_mul
+from samson.math.general import int_to_poly, fast_mul, is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.polynomial import Polynomial
-from sympy import isprime
 from sympy.polys.galoistools import gf_irreducible_p
 import itertools
 
@@ -27,6 +26,10 @@ class FiniteFieldElement(FieldElement):
 
     def shorthand(self) -> str:
         return self.field.shorthand() + f'({self.val.shorthand()})'
+
+
+    def ordinality(self) -> int:
+        return int(self)
 
 
     def __add__(self, other: object) -> object:
@@ -87,7 +90,7 @@ class FiniteField(Field):
         from samson.math.algebra.all import ZZ
         from sympy import ZZ as sym_ZZ
 
-        assert isprime(p)
+        assert is_prime(p)
         self.p = p
         self.n = n
 
@@ -149,7 +152,7 @@ class FiniteField(Field):
             FiniteFieldElement: Random element of the algebra.
         """
         from samson.math.general import random_int
-        return self.coerce(random_int(2**size))
+        return self[random_int(size or self.order)]
 
 
     def shorthand(self) -> str:
@@ -176,11 +179,9 @@ class FiniteField(Field):
         Returns:
             FiniteFieldElement: Coerced element.
         """
-        from sympy import Expr
-
         if type(other) is int:
             other = int_to_poly(other, self.p) % self.reducing_poly
-    
+
         if not type(other) is FiniteFieldElement:
             other = FiniteFieldElement(self.internal_field(other), self)
 

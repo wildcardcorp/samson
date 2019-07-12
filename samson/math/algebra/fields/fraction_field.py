@@ -101,6 +101,11 @@ class FractionField(Field):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
+    
+
+    def characteristic(self):
+        return 0
+        #return self.ring.characteristic
 
 
     def zero(self) -> FractionFieldElement:

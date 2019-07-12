@@ -89,8 +89,8 @@ def binary_search(in_list: list, value: object, key: FunctionType=lambda item: i
             return end_range
         else:
             raise Exception("Item not in list")
-    
-    
+
+
     if value < key(in_list[0]):
         if fuzzy:
             return start_range
@@ -111,7 +111,7 @@ def binary_search(in_list: list, value: object, key: FunctionType=lambda item: i
         else:
             end_range = curr
             fuzz_mod  = 0
-    
+
     # Special case since at zero, end_range - 1 == start_range
     if key(in_list[0]) == value:
         return 0

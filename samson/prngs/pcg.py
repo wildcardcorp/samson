@@ -36,10 +36,10 @@ class PCG(object):
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         self.state, result = self.variant(self.state, self.multiplier, self.increment)
         return result

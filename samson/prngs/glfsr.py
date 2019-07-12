@@ -46,10 +46,10 @@ class GLFSR(object):
 
     def clock(self):
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         self.state <<= 1
         self.state &= self.wrap_around_mask
@@ -68,7 +68,7 @@ class GLFSR(object):
         Calls self.clock(). Here for interface uniformity
         
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         return self.clock()
 

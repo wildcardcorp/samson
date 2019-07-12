@@ -38,10 +38,10 @@ class LFG(object):
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         self.tap = (self.tap + self.shift_mod) % self.length
         self.feed = (self.feed + self.shift_mod) % self.length

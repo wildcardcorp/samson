@@ -193,7 +193,7 @@ class Xorshift128Plus(IterativePRNG):
         Runs the algorithm backwards.
 
         Returns:
-            int: Previous psuedorandom output.
+            int: Previous pseudorandom output.
         """
         s0, s1 = self.state
         prev_state1 = s0
@@ -225,10 +225,10 @@ class Xorshift1024Star(object):
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         # p, s = self.state
         p = self.state[0]

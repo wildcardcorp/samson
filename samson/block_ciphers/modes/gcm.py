@@ -48,7 +48,7 @@ class GCM(object):
             self.ctr.nonce   = nonce
             self.ctr.counter = 1
         else:
-            payload = nonce + (b'\x00' * (16 - (len(nonce)) % 16)) + (b'\x00' * 8) + Bytes(len(nonce) * 8).zfill(8)
+            payload = nonce.pad_congruent_right(16) + (b'\x00' * 8) + Bytes(len(nonce) * 8).zfill(8)
             J_0 = Bytes(self.update(0, payload)).zfill(16)
             self.ctr.nonce   = J_0[:15]
             self.ctr.counter = J_0[-1]

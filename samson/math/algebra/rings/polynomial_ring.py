@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.math.algebra.rings.ring import Ring
 from samson.math.polynomial import Polynomial
 from sympy import Expr
 
@@ -25,7 +25,8 @@ class PolynomialRing(Ring):
 
     @property
     def characteristic(self):
-        return self.ring.characteristic
+        return 0
+        #return self.ring.characteristic
 
 
     def zero(self) -> Polynomial:
@@ -57,8 +58,7 @@ class PolynomialRing(Ring):
         if not size:
             size = 1
 
-        # TODO: How do we specify this size?
-        return Polynomial([self.ring.random(3) for _ in range(size)], coeff_ring=self.ring, ring=self)
+        return Polynomial([self.ring.random(self.ring.order) for _ in range(size)], coeff_ring=self.ring, ring=self)
 
 
     def __repr__(self):

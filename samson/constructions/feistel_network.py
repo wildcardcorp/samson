@@ -5,8 +5,8 @@ class FeistelNetwork(object):
     """
     Construction for building block ciphers. Operates on half of a plaintext or ciphertext at a time and
     interleaves invocations of the Feistel function. If the Feistel function (`round_func`) is a cryptographically
-    secure pseudorandom function, then three rounds are sufficient to make the cipher a psuedorandom permutation.
-    Four rounds makes it a strong psuedorandom permutation.
+    secure pseudorandom function, then three rounds are sufficient to make the cipher a pseudorandom permutation.
+    Four rounds makes it a strong pseudorandom permutation.
     """
 
     def __init__(self, round_func: FunctionType, key_schedule: FunctionType):

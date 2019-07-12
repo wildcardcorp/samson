@@ -3,13 +3,13 @@ from types import FunctionType
 
 class EvenMansourScheme(object):
     """
-    Block cipher construction built from a prewhitening key, unkeyed psuedorandom permutation, and postwhitening key.
+    Block cipher construction built from a prewhitening key, unkeyed pseudorandom permutation, and postwhitening key.
     """
 
     def __init__(self, F: FunctionType, K1: bytes, K2: bytes=None):
         """
         Parameters:
-            F   (func): Unkeyed psuedorandom permutation.
+            F   (func): Unkeyed pseudorandom permutation.
             K1 (bytes): Bytes-like object to key the cipher.
             K2 (bytes): (Optional) Bytes-like object to key the cipher.
         """

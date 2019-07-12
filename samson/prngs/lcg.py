@@ -1,7 +1,6 @@
-from samson.math.general import gcd, mod_inv, lll, is_power_of_two
+from samson.math.general import gcd, mod_inv, lll, is_power_of_two, is_prime
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
-from sympy import isprime
 from sympy.ntheory import factorint
 from sympy.ntheory.residue_ntheory import is_primitive_root
 import functools
@@ -37,10 +36,10 @@ class LCG(object):
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         self.X = (self.a * self.X + self.c) % self.m
         return self.X
@@ -54,10 +53,12 @@ class LCG(object):
         Returns:
             bool: Whether or not it will acheive a full period.
         """
-        if isprime(self.m) and self.c == 0 and is_primitive_root(self.a, self.m):
+        if is_prime(self.m) and self.c == 0 and is_primitive_root(self.a, self.m):
             return True
+
         elif is_power_of_two(self.m) and self.c == 0:
             return False
+
         else:
             divisible_by_four = True
             if self.m % 4 == 0:

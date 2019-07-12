@@ -34,10 +34,6 @@ class CCM(object):
         return data_len, q, flags, b_0
 
 
-    def _pad_to_16(self, in_bytes: bytes) -> bytes:
-        return in_bytes + (b'\x00' * ((16 - (len(in_bytes) % 16)) % 16))
-
-
     # https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38c.pdf
     def _generate_mac(self, nonce: bytes, plaintext: bytes, data: bytes) -> bytes:
         data_len, _q, _flags, b_0 = self._calculate_formattting_params(nonce, plaintext, data)
@@ -55,8 +51,8 @@ class CCM(object):
 
             data_len_encoded += int.to_bytes(data_len, size, 'big')
 
-        padded_data = self._pad_to_16(data_len_encoded + data)
-        padded_plaintext = self._pad_to_16(plaintext)
+        padded_data = Bytes.wrap(data_len_encoded + data).pad_congruent_right(16)
+        padded_plaintext = Bytes.wrap(plaintext).pad_congruent_right(16)
 
         T = self.cmac.generate(b_0 + padded_data + padded_plaintext, pad=False)
         return T

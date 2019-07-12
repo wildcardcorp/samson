@@ -113,10 +113,10 @@ class MT19937:
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         if self.index >= n:
             self.twist()

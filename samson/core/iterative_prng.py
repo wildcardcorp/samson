@@ -10,10 +10,10 @@ class IterativePRNG(object):
 
     def generate(self) -> int:
         """
-        Generates the next psuedorandom output.
+        Generates the next pseudorandom output.
 
         Returns:
-            int: Next psuedorandom output.
+            int: Next pseudorandom output.
         """
         state, result = self.gen_func(*self.state)
         self.state = state

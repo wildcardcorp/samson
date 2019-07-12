@@ -24,6 +24,10 @@ class QuotientElement(RingElement):
         return self.val.shorthand()
 
 
+    def ordinality(self) -> int:
+        return self.val.ordinality()
+
+
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return QuotientElement((self.val + other.val) % self.ring.quotient, self.ring)
@@ -89,7 +93,7 @@ class QuotientRing(Ring):
     def characteristic(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
-    
+
         if type(self.quotient) is IntegerElement:
             return int(self.quotient)
 
@@ -108,7 +112,6 @@ class QuotientRing(Ring):
     def order(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
-        from sympy import isprime
 
         if type(self.quotient) is IntegerElement and self.quotient.is_prime():
             return int(self.quotient)
@@ -146,7 +149,7 @@ class QuotientRing(Ring):
         Returns:
             QuotientElement: Random element of the algebra.
         """
-        return QuotientElement(self.ring.random(size or self.characteristic), self)
+        return QuotientElement(self.ring.random(size or self.order), self)
 
 
     def shorthand(self) -> str:
@@ -166,7 +169,7 @@ class QuotientRing(Ring):
         if type(other) is not QuotientElement:
             other = QuotientElement(self.ring.coerce(other), self)
         return other
-    
+
 
     def element_at(self, x: int) -> QuotientElement:
         return self(self.ring.element_at(x))

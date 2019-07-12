@@ -1,12 +1,12 @@
-from copy import deepcopy
 from samson.utilities.general import rand_bytes
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import isprime, Poly, sieve
+from sympy import sieve
 from sympy.abc import x
 from types import FunctionType
+from copy import deepcopy
 import math
 
-def int_to_poly(integer: int, modulus: int=2) -> Poly:
+def int_to_poly(integer: int, modulus: int=2) -> object:
     """
     Encodes an integer as a polynomial.
 
@@ -15,7 +15,7 @@ def int_to_poly(integer: int, modulus: int=2) -> Poly:
         modulus (int): Modulus to reduce the integer over.
     
     Returns:
-        Poly: Polynomial representation.
+        object: Polynomial representation.
     
     Examples:
         >>> from samson.math.general import int_to_poly
@@ -77,8 +77,6 @@ def frobenius_monomial_base(poly: object) -> list:
     Returns:
         list: List of monomial bases mod g.
     """
-    from samson.math.all import Polynomial
-
     n = poly.degree()
     if n == 0:
         return []
@@ -98,7 +96,7 @@ def frobenius_monomial_base(poly: object) -> list:
 
         for i in range(2, n):
             bases[i] = bases[i-1] * bases[1]
-        
+
         # Peel off the quotient ring
         for i in range(1, n):
             bases[i] = bases[i].val
@@ -110,6 +108,8 @@ def frobenius_map(f: object, g: object, bases: list=None) -> object:
     """
     Computes f**p % g using the Frobenius map.
 
+    https://en.wikipedia.org/wiki/Finite_field#Frobenius_automorphism_and_Galois_theory
+
     Parameters:
         f (Polynomial): Base.
         g (Polynomial): Modulus.
@@ -120,7 +120,7 @@ def frobenius_map(f: object, g: object, bases: list=None) -> object:
     """
     if not bases:
         bases = frobenius_monomial_base(g)
-    
+
     dg = g.degree()
     df = f.degree()
     P  = f.ring
@@ -128,15 +128,15 @@ def frobenius_map(f: object, g: object, bases: list=None) -> object:
     if df >= dg:
         f %= g
         df = f.degree()
-    
+
     if not f:
         return f
 
     sf = P([f.coeffs[0]])
 
     for i in range(1, df+1):
-        sf += bases[i] * int(f.coeffs[i])
-    
+        sf += bases[i] * P([f.coeffs[i]])
+
     return sf
 
 
@@ -582,8 +582,8 @@ def tonelli_q(a: int, p: int, q: int) -> int:
     while True:
         # Step 6
         for j in range(k):
-            if pow(a, q**j*(q*N+N_prime), p) == 1: 
-                break 
+            if pow(a, q**j*(q*N+N_prime), p) == 1:
+                break
 
         # Step 7
         if j == 0:
@@ -767,7 +767,7 @@ def next_prime(start_int: int) -> int:
 
     """
     start_int |= 1
-    while not isprime(start_int):
+    while not is_prime(start_int):
         start_int += 2
 
     return start_int
@@ -775,7 +775,7 @@ def next_prime(start_int: int) -> int:
 
 
 # https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
-def berlekamp_massey(output_list: list) -> Poly:
+def berlekamp_massey(output_list: list) -> object:
     """
     Performs the Berlekamp-Massey algorithm to find the shortest LFSR for a binary output sequence.
 
@@ -862,8 +862,8 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
         y          (int): Number to find the discrete logarithm of.
         a          (int): Interval start.
         b          (int): Interval end.
-        iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the psuedorandom map.
-        f         (func): Psuedorandom map function.
+        iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
+        f         (func): pseudorandom map function.
     
     Returns:
         int: The discrete logarithm. Possibly None if it couldn't be found.
@@ -1008,7 +1008,7 @@ def find_representative(quotient_element: object, valid_range: list) -> int:
 
     elif remainder + modulus in shifted_range:
         return (q+1) * modulus + remainder
-        
+
     else:
         raise ValueError("No solution")
 
@@ -1036,7 +1036,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> object:
     Parameters:
         curve (object): Elliptic curve.
         l        (int): Prime modulus.
-    
+
     Returns:
         QuotientElement: Modular residue of the Frobenius trace.
     """
@@ -1106,18 +1106,18 @@ def frobenius_trace(curve: object) -> int:
     from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.polynomial import Polynomial
 
-    search_range = hasse_frobenius_trace_interval(curve.p)
-
-    # TODO: We're temporarily banning 2 as a prime since we use dense vectors for the Polynomial (look at x**curve.p - x).
-    torsion_primes    = primes_product(search_range[1] - search_range[0], [2, curve.ring.characteristic])
+    search_range      = hasse_frobenius_trace_interval(curve.p)
+    torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
     trace_congruences = []
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
         defining_poly = Polynomial(x**3 + curve.a*x + curve.b, coeff_ring=curve.ring)
-        rational_char = Polynomial(x**curve.p - x, coeff_ring=curve.ring)
+        bases         = frobenius_monomial_base(defining_poly)
+        rational_char = bases[1]
+        rational_char = frobenius_map(rational_char, defining_poly, bases=bases)
 
-        if gcd(rational_char, defining_poly).degree() == 0:
+        if gcd(rational_char - curve.ring[x](x), defining_poly).degree() == 0:
             trace_congruences.append((ZZ/ZZ(2))(1))
         else:
             trace_congruences.append((ZZ/ZZ(2))(0))
@@ -1209,7 +1209,7 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
     return None
 
 
-def miller_rabin(n: int, k: int=64) -> bool:
+def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     """
     Probablistic primality test. Each iteration has a 1/4 false positive rate.
     Always returns a false positive on Carmichael numbers.
@@ -1241,9 +1241,15 @@ def miller_rabin(n: int, k: int=64) -> bool:
     while not d % 2 and d:
         r += 1
         d %= 2
-    
-    for _ in range(k):
-        a = max(2, random_int(n_1))
+
+    if not bases:
+        def generator():
+            for _ in range(k):
+                yield max(2, random_int(n_1))
+
+        bases = generator()
+
+    for a in bases:
         x = pow(a, d, n)
         if x == 1 or x == n_1:
             continue
@@ -1257,5 +1263,202 @@ def miller_rabin(n: int, k: int=64) -> bool:
 
         if not found:
             return False
-    
+
     return True
+
+
+FB_LARGE_MOD = 3989930175
+def is_square(n: int) -> bool:
+    """
+    Determines if `n` is a square using "fenderbender" tests first.
+
+    https://mersenneforum.org/showpost.php?p=110896
+
+    Parameters:
+        n (int): Number to test.
+
+    Returns:
+        bool: Whether or not `n` is a square.
+    """
+    if n in [0, 1]:
+        return True
+
+    m = n % 128
+    if ((m*0x8bc40d7d) & (m*0xa1e2f5d1) & 0x14020a):
+        return False
+
+    n_mod = n % FB_LARGE_MOD
+
+    m = n_mod % 63
+    if ((m*0x3d491df7) & (m*0xc824a9f9) & 0x10f14008):
+        return False
+
+    m = n_mod % 25
+    if ((m*0x1929fc1b) & (m*0x4c9ea3b2) & 0x51001005):
+         return False
+
+    return kth_root(n, 2)**2 == n
+
+
+def jacobi_symbol(n: int, k: int) -> int:
+    """
+    Generalization of the Legendre symbol.
+
+    https://en.wikipedia.org/wiki/Jacobi_symbol
+
+    Parameters:
+        n (int): Possible quadatric residue.
+        k (int): Modulus (must be odd).
+    
+    Return:
+        int: Jacobi symbol.
+    """
+    assert k > 0 and k % 2 == 1
+    n %= k
+    t = 1
+
+    while n != 0:
+        while n % 2 == 0:
+            n //= 2
+            r = k % 8
+
+            if r in [3, 5]:
+                t = -t
+
+        n, k = k, n
+        if n % 4 == 3 and k % 4 == 3:
+            t = -t
+
+        n %= k
+
+    if k == 1:
+        return t
+    else:
+        return 0
+
+
+def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
+    """
+    Generates the Selfridge parameters to use in Lucas strong pseudoprime testing.
+
+    Parameters:
+        n (int): Possible prime.
+    
+    Returns:
+        (int, int, int): Selfridge parameters.
+    """
+    D = 5
+    while True:
+        g = gcd(abs(D), n)
+        if g > 1 and g != n:
+            return (0, 0, 0)
+
+        if jacobi_symbol(D, n) == -1:
+            break
+
+        if D > 0:
+            D = -D - 2
+        else:
+            D = -D + 2
+
+    return (D, 1, (1-D) // 4)
+
+
+def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> (int, int, int):
+    """
+    Adapted from https://docs.sympy.org/latest/_modules/sympy/ntheory/primetest.html#isprime
+    """
+    D = P**2 - 4*Q
+
+    assert n > 1
+    assert k >= 0
+    assert D != 0
+
+    if k == 0:
+        return (0, 2, Q)
+
+    U  = 1
+    V  = P
+    Qk = Q
+    b  = k.bit_length()
+
+    while b > 1:
+        U = U*V % n
+        V = (V*V - 2*Qk) % n
+        Qk *= Qk
+        b  -= 1
+
+        if (k >> (b - 1)) & 1:
+            U, V = U*P + V, V*P + U*D
+
+            if U & 1:
+                U += n
+
+            if V & 1:
+                V += n
+
+            U >>= 1
+            V >>= 1
+            Qk *= Q
+
+        Qk %= n
+
+    return (U % n, V % n, Qk)
+
+
+def is_strong_lucas_pseudoprime(n: int) -> bool:
+    if n == 2:
+        return True
+
+    if n < 2 or n % 2 == 0 or is_square(n):
+        return False
+
+    D, P, Q = generate_lucas_selfridge_parameters(n)
+    if D == 0:
+        return False
+
+    s    = 0
+    q, r = divmod(n+1, 2)
+    k    = q
+    while q and not r:
+        k    = q
+        s   += 1
+        q, r = divmod(q, 2)
+
+    U, V, Qk = generate_lucas_sequence(n, P, Q, k)
+    if U == 0 or V == 0:
+        return True
+
+    for _ in range(s):
+        V = (V**2 - 2*Qk) % n
+
+        if V == 0:
+            return True
+
+        Qk = pow(Qk, 2, n)
+
+    return False
+
+
+PRIMES_UNDER_1000 = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997}
+
+def is_prime(n: int) -> bool:
+    """
+    Determines if `n` is probably prime using the Baillie-PSW primality test.
+
+    https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
+
+    Parameters:
+        n (int): Positive integer.
+    
+    Returns:
+        bool: Whether or not `n` is probably prime.
+    """
+    if n in PRIMES_UNDER_1000:
+        return True
+
+    for prime in PRIMES_UNDER_1000:
+        if (n % prime) == 0:
+            return False
+
+    return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)

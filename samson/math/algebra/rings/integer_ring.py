@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from sympy import factorint, isprime
+from samson.math.general import is_prime
+from sympy import factorint
 
 class IntegerElement(RingElement):
     """
@@ -24,7 +25,11 @@ class IntegerElement(RingElement):
         return [k for k,v in factorint(self.val).items()]
 
     def is_prime(self) -> list:
-        return isprime(self.val)
+        return is_prime(self.val)
+
+
+    def ordinality(self) -> int:
+        return self.val
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)

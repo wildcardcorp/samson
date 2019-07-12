@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
+#from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
 from fastecdsa.curve import P192, P224, P256, P384, P521
 from fastecdsa.point import Point
 import json

@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import fast_mul, square_and_mul, gcd, random_int
+from samson.math.general import fast_mul, square_and_mul, gcd
 from samson.math.sparse_vector import SparseVector
 from sympy import Expr, Symbol, Integer, factorint
 from copy import deepcopy
@@ -21,7 +21,7 @@ class Polynomial(RingElement):
                     coeff_vec[0] = coeff
                 else:
                     coeff_vec[int(sub_expr.args[1] if sub_expr.args else 1)] = coeff
-            
+
             self.coeffs = coeff_vec
 
 
@@ -36,7 +36,7 @@ class Polynomial(RingElement):
 
         elif type(coeffs) is SparseVector:
             self.coeffs = coeffs
-        
+
         else:
             raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
 
@@ -50,7 +50,9 @@ class Polynomial(RingElement):
 
 
     def shorthand(self) -> str:
-        poly_repr = []
+        poly_repr   = []
+        poly_coeffs = type(self.LC()) is Polynomial
+
         if self.LC():
             for idx, coeff in self.coeffs.values.items():
                 if coeff == coeff.ring.zero() and not len(self.coeffs) == 1:
@@ -59,7 +61,11 @@ class Polynomial(RingElement):
                 if coeff == coeff.ring.one() and idx != 0:
                     coeff_short_mul = ''
                 else:
-                    coeff_short_mul = coeff.shorthand() + '*'
+                    shorthand = coeff.shorthand()
+                    if poly_coeffs:
+                        shorthand = f'({shorthand})'
+
+                    coeff_short_mul = shorthand + '*'
 
                 if idx == 0:
                     full_coeff = f'{coeff_short_mul[:-1]}'
@@ -187,12 +193,12 @@ class Polynomial(RingElement):
             if g != self.ring.one():
                 S.append((g, i))
                 f_star /= g
-            
+
             i += 1
-        
+
         if f_star != self.ring.one():
             S.append((f_star, f_star.degree()))
-        
+
         if not S:
             return [(f, 1)]
         else:
@@ -201,7 +207,7 @@ class Polynomial(RingElement):
 
     def ddf(self) -> list:
         return self.distinct_degree_factorization()
-    
+
 
     # TODO: This method only works for FF due to `self.coeff_ring.order` and `f.coeff_ring.random(f.coeff_ring.reducing_poly.degree())`
     def equal_degree_factorization(self, d: int, subgroup_divisor: int=2) -> list:
@@ -235,9 +241,9 @@ class Polynomial(RingElement):
                     for _ in range(d-1):
                         j = frobenius_map(j, f, bases=bases)
                         h *= j
-                    
+
                     g = (h**exponent).val - one
-                        
+
                 for u in S:
                     if u.degree() <= d or (u in irreducibility_cache and irreducibility_cache[u]):
                         continue
@@ -310,6 +316,10 @@ class Polynomial(RingElement):
             return 0
 
 
+    def ordinality(self) -> int:
+        return int(self)
+
+
     def __divmod__(self, other: object) -> (object, object):
         assert other != self.ring.zero()
 
@@ -350,7 +360,7 @@ class Polynomial(RingElement):
         vec = SparseVector([], self.coeff_ring.zero())
         for idx, coeff in self.coeffs:
             vec[idx] = coeff - other.coeffs[idx]
-        
+
         for idx, coeff in other.coeffs:
             if not idx in self.coeffs:
                 vec[idx] = -coeff
@@ -401,18 +411,16 @@ class Polynomial(RingElement):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.coeffs == other.coeffs
-    
-    
+
+
     def __lt__(self, other):
-        s_deg = self.degree()
-        o_deg = other.degree()
-        return s_deg < o_deg or s_deg == o_deg and self.LC() < other.LC()
+        return self.ordinality() < other.ordinality()
+
 
 
     def __gt__(self, other):
-        s_deg = self.degree()
-        o_deg = other.degree()
-        return s_deg > o_deg or s_deg == o_deg and self.LC() > other.LC()
+        return self.ordinality() > other.ordinality()
+
 
 
     def __bool__(self) -> bool:

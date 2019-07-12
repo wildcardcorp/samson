@@ -217,6 +217,33 @@ class Bytes(bytearray):
         return Bytes(int.to_bytes(self.to_int(), size, self.byteorder), self.byteorder)
 
 
+    def pad_congruent_left(self, congruence: int, pad_byte: bytes=b'\x00'):
+        """
+        Pads the bytes left until the length is congruent to `congruence`.
+
+        Parameters:
+            congruence (int): What the size should be congruent to.
+            pad_byte (bytes): Byte to pad with.
+        
+        Returns:
+            Bytes: Padded bytes.
+        """
+        return ((congruence - (len(self) % congruence)) % congruence) * pad_byte + self
+
+
+    def pad_congruent_right(self, congruence: int, pad_byte: bytes=b'\x00'):
+        """
+        Pads the bytes right until the length is congruent to `congruence`.
+
+        Parameters:
+            congruence (int): What the size should be congruent to.
+            pad_byte (bytes): Byte to pad with.
+        
+        Returns:
+            Bytes: Padded bytes.
+        """
+        return self + ((congruence - (len(self) % congruence)) % congruence) * pad_byte
+
 
     def stretch(self, size: int, offset: int=0):
         """

@@ -2,9 +2,8 @@ from sympy.abc import x
 from sympy import ZZ, Poly, GF, invert
 from sympy.polys.polyerrors import NotInvertible
 from samson.utilities.general import shuffle
-from samson.math.general import is_power_of_two
+from samson.math.general import is_power_of_two, is_prime
 from samson.utilities.bytes import Bytes
-from sympy.ntheory import isprime
 from samson.core.encryption_alg import EncryptionAlg
 import math
 
@@ -71,7 +70,7 @@ def invert_poly(f_poly: Poly, R_poly: Poly, p: int) -> Poly:
     Returns:
         Poly: Inverted polynomial.
     """
-    if isprime(p):
+    if is_prime(p):
         inv_poly = invert(f_poly, R_poly, domain=GF(p))
 
     elif is_power_of_two(p):

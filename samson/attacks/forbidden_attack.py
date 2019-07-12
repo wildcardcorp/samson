@@ -1,8 +1,9 @@
 from samson.utilities.bytes import Bytes
-from samson.math.algebra.all import FF
+from samson.math.algebra.all import FF, ZZ
 from samson.math.polynomial import Polynomial
+from sympy.abc import x
 
-F = FF(2, 128)
+F = FF(2, 128, reducing_poly=Polynomial(x**128 + x**7 + x**2 + x + ZZ(1), ZZ/ZZ(2)))
 
 def int_to_elem(a):
     return F([int(bit) for bit in bin(a)[2:].zfill(128)])
@@ -12,13 +13,14 @@ def elem_to_int(a):
 
 def gcm_to_poly(ad, ciphertext, tag):
     l = (len(ad) << (3 + 64)) | (len(ciphertext) << 3)
-    ct_ints = [chunk.int() for chunk in ciphertext.chunk(16)[::-1]]
-    ad_ints = [chunk.int() for chunk in ad.chunk(16)[::-1]]
+
+    ct_ints = [chunk.int() for chunk in ciphertext.pad_congruent_right(16).chunk(16)[::-1]]
+    ad_ints = [chunk.int() for chunk in ad.pad_congruent_right(16).chunk(16)[::-1]]
 
     return Polynomial([int_to_elem(coeff) for coeff in [tag.int(), l, *ct_ints, *ad_ints]])
 
 
-class ForbbidenAttack(object):
+class ForbiddenAttack(object):
     """
     Performs a authentication key-recovery attack on GCM.
 
