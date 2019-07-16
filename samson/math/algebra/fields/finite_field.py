@@ -188,8 +188,8 @@ class FiniteField(Field):
         return other
 
 
-    def element_at(self, x: int):
-        return self.internal_field.element_at(x)
+    def element_at(self, x: int) -> object:
+        return FiniteFieldElement(self.internal_field.element_at(x), self)
 
 
     def __eq__(self, other: object) -> bool:

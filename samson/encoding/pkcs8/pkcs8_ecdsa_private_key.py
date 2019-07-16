@@ -2,11 +2,10 @@ from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PublicPoint
 from samson.utilities.bytes import Bytes
+from samson.math.algebra.curves.named import WS_OID_LOOKUP
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
-from fastecdsa.point import Point
-from fastecdsa.curve import Curve
 from pyasn1.error import PyAsn1Error
 import math
 
@@ -58,9 +57,9 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
         x, y = ECDSA.decode_point(Bytes(int(params[2])))
 
         oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-        curve = Curve.get_curve_by_oid(oid_bytes)
+        curve = WS_OID_LOOKUP[oid_bytes]
 
         ecdsa = ECDSA(d=d, G=curve.G)
-        ecdsa.Q = Point(x, y, curve)
+        ecdsa.Q = curve(x, y)
 
         return ecdsa

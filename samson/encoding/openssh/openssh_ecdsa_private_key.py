@@ -2,8 +2,7 @@ from samson.encoding.openssh.general import parse_openssh_key, generate_openssh_
 from samson.encoding.openssh.core.ecdsa_private_key import ECDSAPrivateKey
 from samson.encoding.openssh.core.ecdsa_public_key import ECDSAPublicKey
 from samson.utilities.bytes import Bytes
-from fastecdsa.curve import P192, P224, P256, P384, P521
-from fastecdsa.point import Point
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
 import math
 
 SSH_PUBLIC_HEADER = b'ecdsa-'
@@ -18,10 +17,10 @@ SSH_CURVE_NAME_LOOKUP = {
 
 SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
 
-def seriailize_public_point(ecdsa_key: object):
+def serialize_public_point(ecdsa_key: object):
     curve = SSH_CURVE_NAME_LOOKUP[ecdsa_key.G.curve]
     zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
-    x_y_bytes = b'\x04' + (Bytes(ecdsa_key.Q.x).zfill(zero_fill) + Bytes(ecdsa_key.Q.y).zfill(zero_fill))
+    x_y_bytes = b'\x04' + (Bytes(int(ecdsa_key.Q.x)).zfill(zero_fill) + Bytes(int(ecdsa_key.Q.y)).zfill(zero_fill))
 
     return curve, x_y_bytes
 
@@ -42,7 +41,7 @@ class OpenSSHECDSAPrivateKey(object):
 
     @staticmethod
     def encode(ecdsa_key: object, **kwargs):
-        curve, x_y_bytes = seriailize_public_point(ecdsa_key)
+        curve, x_y_bytes = serialize_public_point(ecdsa_key)
 
         user = kwargs.get('user')
         if user and type(user) is str:
@@ -70,8 +69,7 @@ class OpenSSHECDSAPrivateKey(object):
         curve, x_y_bytes, d = priv.curve, priv.x_y_bytes, priv.d
         curve = SSH_INVERSE_CURVE_LOOKUP[curve.decode()]
 
-        Q = Point(*ECDSA.decode_point(x_y_bytes), curve)
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
-        ecdsa.Q = Q
+        ecdsa.Q = curve(*ECDSA.decode_point(x_y_bytes))
 
         return ecdsa

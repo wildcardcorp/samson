@@ -147,8 +147,9 @@ for name, params in _curve_params.items():
         cardinality=params['q'],
         base_tuple=(params['x'], params['y']))
 
-    curve.oid = params['oid']
-    all_curves[name] =curve
+    curve.oid  = params['oid']
+    curve.name = name
+    all_curves[name] = curve
 
 
 P192 = all_curves['P192']
@@ -174,3 +175,6 @@ secp224r1 = P224
 secp256r1 = P256
 secp384r1 = P384
 secp521r1 = P521
+
+
+WS_OID_LOOKUP = {curve.oid: curve for curve in [P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1]}

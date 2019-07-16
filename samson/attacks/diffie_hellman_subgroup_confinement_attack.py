@@ -14,7 +14,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
     The Diffie-Hellman Subgroup Confinement attack takes advantage of smooth multiplicative group orders of unsafe primes used in Diffie-Hellman.
     There are two phases to this attack:
         1) Finding residues modulo the small factors of the multiplicative group order
-        2) Probablistically solving the discrete logarithm of the remaining factors
+        2) Probabilistically solving the discrete logarithm of the remaining factors
 
     Conditions:
     * Diffie-Hellman is being used
@@ -82,6 +82,6 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         log.debug(f"y' = {y_prime}")
         log.info('Attempting to catch a kangaroo...')
 
-        # Probablistically solve DLP
+        # Probabilistically solve DLP
         m = pollards_kangaroo(self.p, g_prime, y_prime, a=0, b=(self.order - 1) // r)
         return n + m*r

@@ -1,10 +1,10 @@
 from samson.utilities.bytes import Bytes
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+from samson.math.algebra.rings.integer_ring import ZZ
 from pyasn1.codec.der import decoder
 from pyasn1.type.univ import Sequence
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
-from fastecdsa.curve import Curve
-from fastecdsa.point import Point
 
 class X509ECDSAExplicitCertificate(object):
 
@@ -37,10 +37,10 @@ class X509ECDSAExplicitCertificate(object):
         q = int(curve_params[4])
         gx, gy = ECDSA.decode_point(Bytes(curve_params[3]))
 
-        curve = Curve('Explicit curve', p=p, a=-3, b=b, q=q, gx=gx, gy=gy)
+        curve = WeierstrassCurve(a=-3, b=b, ring=ZZ/ZZ(p), cardinality=q, base_tuple=(gx, gy))
 
         x, y = ECDSA.decode_point(Bytes(int(pub_info['subjectPublicKey'])))
         ecdsa = ECDSA(curve.G, None, d=1)
-        ecdsa.Q = Point(x, y, curve)
+        ecdsa.Q = curve(x, y)
 
         return ecdsa

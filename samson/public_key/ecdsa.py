@@ -1,4 +1,5 @@
 from samson.math.general import mod_inv, random_int
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
@@ -14,7 +15,6 @@ from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
 from samson.encoding.general import PKIEncoding
 
-from fastecdsa.point import Point
 import math
 
 # https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
@@ -43,12 +43,12 @@ class ECDSA(DSA):
     X509_SIGNING_DEFAULT    = X509ECDSASigningAlgorithms.ecdsa_with_SHA256
 
 
-    def __init__(self, G: Point, hash_obj: object=SHA256(), d: int=None):
+    def __init__(self, G: WeierstrassCurve, hash_obj: object=SHA256(), d: int=None):
         """
         Parameters:
-            G         (Point): Generator point for a curve.
-            hash_obj (object): Instantiated object with compatible hash interface.
-            d           (int): (Optional) Private key.
+            G (WeierstrassCurve): Generator point for a curve.
+            hash_obj    (object): Instantiated object with compatible hash interface.
+            d              (int): (Optional) Private key.
         """
         self.G = G
         self.q = self.G.curve.q
@@ -86,7 +86,7 @@ class ECDSA(DSA):
             z = self.hash_obj.hash(message).int()
             z >>= max(self.hash_obj.digest_size * 8 - self.q.bit_length(), 0)
 
-            r = (k * self.G).x % self.q
+            r = int((k * self.G).x) % self.q
             s = (inv_k * (z + self.d * r)) % self.q
 
         return (r, s)
@@ -135,6 +135,6 @@ class ECDSA(DSA):
         Internal function used for exporting the key. Formats `Q` into a bitstring.
         """
         zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
-        pub_point_bs = bin((b'\x00\x04' + (Bytes(self.Q.x).zfill(zero_fill) + Bytes(self.Q.y).zfill(zero_fill))).int())[2:]
+        pub_point_bs = bin((b'\x00\x04' + (Bytes(int(self.Q.x)).zfill(zero_fill) + Bytes(int(self.Q.y)).zfill(zero_fill))).int())[2:]
         pub_point_bs = pub_point_bs.zfill(math.ceil(len(pub_point_bs) / 8) * 8)
         return pub_point_bs

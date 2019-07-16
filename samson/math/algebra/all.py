@@ -5,6 +5,7 @@ from .rings.polynomial_ring import PolynomialRing
 from .rings.quotient_ring import QuotientRing
 from .curves.twisted_edwards_curve import TwistedEdwardsCurve
 from .curves.weierstrass_curve import WeierstrassCurve
+from .curves.named import *
 from .curves.util import *
 from .symbols import oo
 

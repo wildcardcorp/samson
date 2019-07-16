@@ -3,7 +3,7 @@ from samson.public_key.ecdsa import ECDSA
 from samson.public_key.rsa import RSA
 from samson.encoding.general import PKIEncoding
 from samson.encoding.x509.x509_certificate import X509Certificate
-from fastecdsa.curve import P224, P256, P384, P521
+from samson.math.algebra.curves.named import P224, P256, P384, P521
 from subprocess import check_call, DEVNULL
 from tempfile import NamedTemporaryFile
 import os

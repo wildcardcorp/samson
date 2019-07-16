@@ -3,8 +3,7 @@ from pyasn1.type.univ import Integer, OctetString, ObjectIdentifier, BitString, 
 from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from samson.encoding.pem import PEMEncodable
 from samson.utilities.bytes import Bytes
-from fastecdsa.point import Point
-from fastecdsa.curve import Curve
+from samson.math.algebra.curves.named import WS_OID_LOOKUP
 import math
 
 def parse_ec_params(items, curve_idx, pub_point_idx):
@@ -12,7 +11,7 @@ def parse_ec_params(items, curve_idx, pub_point_idx):
 
     curve_oid = items[curve_idx].asTuple()
     oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-    curve = Curve.get_curve_by_oid(oid_bytes)
+    curve = WS_OID_LOOKUP[oid_bytes]
 
     x_y_bytes = Bytes(int(items[pub_point_idx]))
     x, y = ECDSA.decode_point(x_y_bytes)
@@ -71,8 +70,8 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
 
         d = Bytes(items[1]).int()
 
-        Q = Point(*parse_ec_params(items, 2, 3))
-        ecdsa = ECDSA(G=Q.curve.G, hash_obj=None, d=d)
-        ecdsa.Q = Q
+        x, y, curve = parse_ec_params(items, 2, 3)
+        ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
+        ecdsa.Q = curve(x, y)
 
         return ecdsa

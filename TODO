@@ -43,14 +43,6 @@ X   DocTests
 
 
 X   CAS
-    OK  Document all classes
-    OK  Expression to poly
-    OK  Polys can take different Symbols
-    OK  Fix FiniteField invert (PolyElement invert)
-    X   Replace all sympy with native CAS
-    OK  Convert EllipticCurves into rings
-    OK  Easily build DH ring (mod-pow)... generic mult subgroup ring?
-    
     X   All algebras should have repeated addition (multiplication by integer)
     X   Add the ability to retrieve elements by ordinality to countable sets
     X   Unify 'order' and 'cardinality' properties/functions
@@ -59,7 +51,7 @@ X   CAS
     X   Calculate ring characteristics
 
     OK  Polynomial factorization
-    X   Integer factorization
+    OK  Integer factorization
     X   Discrete logarithms
     OK  Integer primality testing
     X   Fermat pseudoprime generation

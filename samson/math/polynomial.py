@@ -232,7 +232,7 @@ class Polynomial(RingElement):
 
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
-                h = Polynomial([f.coeff_ring.random(f.coeff_ring.reducing_poly.degree()) for _ in range(n)], f.coeff_ring)
+                h = Polynomial([f.coeff_ring.random() for _ in range(n)], f.coeff_ring)
                 g = gcd(h, f).monic()
 
                 if g == one:

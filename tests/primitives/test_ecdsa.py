@@ -1,5 +1,4 @@
-from fastecdsa.curve import P192, P224, P256, P384, P521
-from fastecdsa.point import Point
+from samson.math.algebra.curves.named import P192, P224, P384, P256, P521
 from samson.utilities.bytes import Bytes
 from samson.public_key.ecdsa import ECDSA
 from samson.encoding.general import PKIEncoding
@@ -31,7 +30,8 @@ hfSkc0xXL82gIeT7HA1OT8zPeGYg/FpbROz9w9iC+4h5lcvgR7Q7r+qFHQ==
 EXPECTED_CURVE = P256
 EXPECTED_PRIV  = 0x5650699afb3319d3876fa0bc23fe243b9675d65a1fb2610a992367cc55486360
 EXPECTED_PUB   = Bytes(0xe5b2df00e2d78eba1afcd312050fb1a54cc154aff285f4a4734c572fcda021e4fb1c0d4e4fcccf786620fc5a5b44ecfdc3d882fb887995cbe047b43bafea851d)
-PUB_POINT = Point(EXPECTED_PUB[:len(EXPECTED_PUB) // 2].int(), EXPECTED_PUB[len(EXPECTED_PUB) // 2:].int(), EXPECTED_CURVE)
+# PUB_POINT = Point(EXPECTED_PUB[:len(EXPECTED_PUB) // 2].int(), EXPECTED_PUB[len(EXPECTED_PUB) // 2:].int(), EXPECTED_CURVE)
+PUB_POINT      = EXPECTED_CURVE(EXPECTED_PUB[:len(EXPECTED_PUB) // 2].int(), EXPECTED_PUB[len(EXPECTED_PUB) // 2:].int())
 
 
 # openssl ecparam -genkey -out testsk521.pem -name secp521r1
@@ -55,7 +55,8 @@ ArpSkBU5O2rmzyb+1AscrDLiLOi8PaD1fvdFbxmhiPsinBGoDUvvgEqmDajD80XI
 EXPECTED_CURVE_521 = P521
 EXPECTED_PRIV_521  = 0x00aa3f70b0d57fb3e8b44456d8dc7723d2490f587a45a6a7b180fca0007ffda60778cdf97beea407eb2b70736288fc8f50da6d16e71aa98d76b06a09f0062811c663
 EXPECTED_PUB_521   = Bytes(0x003565d6321e9b16ace9dcb4011e4626b9dec1521e1b992080f5a13aefd2cb704f84652d3f77fe9bf26c48f2443095738d1d4f9812685cd267dd8b1576fcb5d15ff401d4b4a402ba529015393b6ae6cf26fed40b1cac32e22ce8bc3da0f57ef7456f19a188fb229c11a80d4bef804aa60da8c3f345c8e359a2ff10806107e6ae31c4f53f)
-PUB_POINT_521 = Point(EXPECTED_PUB_521[:len(EXPECTED_PUB_521) // 2].int(), EXPECTED_PUB_521[len(EXPECTED_PUB_521) // 2:].int(), EXPECTED_CURVE_521)
+# PUB_POINT_521 = Point(EXPECTED_PUB_521[:len(EXPECTED_PUB_521) // 2].int(), EXPECTED_PUB_521[len(EXPECTED_PUB_521) // 2:].int(), EXPECTED_CURVE_521)
+PUB_POINT_521      = EXPECTED_CURVE_521(EXPECTED_PUB_521[:len(EXPECTED_PUB_521) // 2].int(), EXPECTED_PUB_521[len(EXPECTED_PUB_521) // 2:].int())
 
 
 
@@ -482,7 +483,8 @@ class ECDSATestCase(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5
     def _run_test(self, curve, x, message, H, k, expected_sig):
         ecdsa = ECDSA(curve.G, H, d=x)
-        sig = ecdsa.sign(message, k=k)
+        r,s = ecdsa.sign(message, k=k)
+        sig = (int(r), int(s))
 
         self.assertEqual(sig, expected_sig)
         self.assertTrue(ecdsa.verify(message, sig))

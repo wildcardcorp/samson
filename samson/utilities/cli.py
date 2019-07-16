@@ -5,7 +5,6 @@ k, m, n = symbols('k m n', integer=True)
 f, g, h = symbols('f g h', cls=Function)
 
 from samson.all import *
-from fastecdsa.curve import *
 
 init_printing()
 
@@ -57,12 +56,11 @@ IPython {IPython.__version__}
     IPython.start_ipython(config=conf)
 
 
-
 from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3, Whirlpool
 from samson.public_key.all import RSA, DSA, ECDSA, EdDSA
 from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, EdwardsCurve448
 from samson.encoding.general import PKIEncoding, PKIAutoParser
-from fastecdsa.curve import P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
 
 HASHES = {
     'blake2b': BLAKE2b,
@@ -94,33 +92,19 @@ PKI = {
 }
 
 
-EC_CURVES = {
-    'p192': P192,
-    'p224': P224,
-    'p256': P256,
-    'p384': P384,
-    'p521': P521,
-    'nistp192': P192,
-    'nistp224': P224,
-    'nistp256': P256,
-    'nistp384': P384,
-    'nistp521': P521,
+EC_CURVES = {curve.name.lower():curve for curve in [P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1]}
+EC_CURVES.update({
     'secp192r1': P192,
     'secp224r1': P224,
     'secp256r1': P256,
     'secp384r1': P384,
     'secp521r1': P521,
-    'secp192k1': secp192k1,
-    'secp224k1': secp224k1,
-    'secp256k1': secp256k1,
-    'brainpoolP160r1': brainpoolP160r1,
-    'brainpoolP192r1': brainpoolP192r1,
-    'brainpoolP224r1': brainpoolP224r1,
-    'brainpoolP256r1': brainpoolP256r1,
-    'brainpoolP320r1': brainpoolP320r1,
-    'brainpoolP384r1': brainpoolP384r1,
-    'brainpoolP512r1': brainpoolP512r1
-}
+    'nistp192': P192,
+    'nistp224': P224,
+    'nistp256': P256,
+    'nistp384': P384,
+    'nistp521': P521
+})
 
 ED_CURVES = {
     'ed25519': EdwardsCurve25519,

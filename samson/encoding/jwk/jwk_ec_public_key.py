@@ -1,8 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
-#from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
-from fastecdsa.curve import P192, P224, P256, P384, P521
-from fastecdsa.point import Point
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
 import json
 
 JWK_CURVE_NAME_LOOKUP = {
@@ -60,8 +58,8 @@ class JWKECPublicKey(object):
         jwk = {
             'kty': 'EC',
             'crv': JWK_CURVE_NAME_LOOKUP[ec_key.G.curve],
-            'x': url_b64_encode(Bytes(ec_key.Q.x)).decode(),
-            'y': url_b64_encode(Bytes(ec_key.Q.y)).decode(),
+            'x': url_b64_encode(Bytes(int(ec_key.Q.x))).decode(),
+            'y': url_b64_encode(Bytes(int(ec_key.Q.y))).decode(),
         }
 
         return jwk
@@ -110,7 +108,6 @@ class JWKECPublicKey(object):
             d = 0
 
 
-        Q = Point(x, y, curve)
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
-        ecdsa.Q = Q
+        ecdsa.Q = curve(x, y)
         return ecdsa

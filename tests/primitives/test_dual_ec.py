@@ -1,5 +1,5 @@
 from samson.prngs.dual_ec import DualEC
-from fastecdsa.curve import P256
+from samson.math.algebra.curves.named import P256
 from samson.utilities.bytes import Bytes
 import unittest
 

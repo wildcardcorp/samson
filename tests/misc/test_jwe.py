@@ -10,7 +10,7 @@ from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey
 from samson.utilities.bytes import Bytes
 from samson.math.algebra.curves.montgomery_curve import Curve25519, Curve448
-from fastecdsa.curve import P256, P384, P521
+from samson.math.algebra.curves.named import P256, P384, P521
 import unittest
 
 

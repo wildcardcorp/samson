@@ -8,7 +8,7 @@ from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, 
 from samson.hashes.sha2 import SHA256, SHA384, SHA512
 from samson.encoding.general import PKIAutoParser
 from samson.encoding.jwk.jwk_oct_key import JWKOctKey
-from fastecdsa.curve import P256, P384, P521
+from samson.math.algebra.curves.named import P256, P384, P521
 import json
 import unittest
 

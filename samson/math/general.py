@@ -232,6 +232,12 @@ def lcm(a: int, b: int) -> int:
     return a // gcd(a, b) * b
 
 
+class NotInvertibleException(Exception):
+    def __init__(self, msg: str, parameters: dict):
+        self.parameters = parameters
+        super().__init__(msg)
+
+
 
 def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     """
@@ -255,7 +261,7 @@ def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     _, x, _ = xgcd(a, n, zero=zero, one=one)
 
     if (a * x) % n != one:
-        raise Exception("'a' is not invertible")
+        raise NotInvertibleException("'a' is not invertible", parameters={'a': a, 'x': x, 'n': n})
 
     if type(x) is int and x < zero:
         x = x + n
@@ -854,7 +860,7 @@ def is_power_of_two(n: int) -> bool:
 
 def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30, f: FunctionType=None) -> int:
     """
-    Probablistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
+    Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
 
     Parameters:
         p          (int): Prime modulus.
@@ -1231,16 +1237,13 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
         >>> miller_rabin(6)
         False
 
-        >>> miller_rabin(29341) and 29341 % 13 == 0 # Carmichael number
-        True
-
     """
     n_1 = n - 1
     d   = n_1
     r   = 0
     while not d % 2 and d:
         r += 1
-        d %= 2
+        d //= 2
 
     if not bases:
         def generator():
@@ -1279,6 +1282,16 @@ def is_square(n: int) -> bool:
 
     Returns:
         bool: Whether or not `n` is a square.
+    
+    Examples:
+        >>> from samson.math.general import is_square
+        >>> p = 18431211066281663581
+        >>> is_square(p**2)
+        True
+
+        >>> is_square(6)
+        False
+
     """
     if n in [0, 1]:
         return True
@@ -1366,6 +1379,8 @@ def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
 
 def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> (int, int, int):
     """
+    Generates a Lucas sequence. Used internally for the Lucas primality test.
+
     Adapted from https://docs.sympy.org/latest/_modules/sympy/ntheory/primetest.html#isprime
     """
     D = P**2 - 4*Q
@@ -1407,6 +1422,24 @@ def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> (int, int, int):
 
 
 def is_strong_lucas_pseudoprime(n: int) -> bool:
+    """
+    Determines if `n` is at least a strong Lucas pseudoprime.
+
+    Parameters:
+        n (int): Integer to test.
+    
+    Returns:
+        bool: Whether or not `n` is at least a strong Lucas pseudoprime.
+    
+    Examples:
+        >>> from samson.math.general import is_strong_lucas_pseudoprime
+        >>> is_strong_lucas_pseudoprime(299360470275914662072095298694855259241)
+        True
+
+        >>> is_strong_lucas_pseudoprime(128)
+        False
+
+    """
     if n == 2:
         return True
 
@@ -1462,3 +1495,166 @@ def is_prime(n: int) -> bool:
             return False
 
     return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)
+
+
+def pollards_rho(n: int) -> int:
+    """
+    Uses Pollard's rho to find a factor of `n`.
+
+    Parameters:
+        n (int): Integer to factor.
+    
+    Returns:
+        int: Factor of `n`.
+    
+    Examples:
+        >>> from samson.math.general import ecm
+        >>> pollards_rho(26515460203326943826)
+        2
+
+    """
+    # https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
+    x = 2
+    x_fixed = x
+    cycle_size = 2
+    factor = 1
+    mod = 1
+
+    while factor == 1:
+        count = 1
+        while count <= cycle_size and factor <= 1:
+            x = (x*x + mod) % n
+            factor = gcd(x - x_fixed, n)
+            count += 1
+
+            # If we get stuck on `n`, retry with -1
+            if factor == n:
+                factor = 1
+                mod    = -1
+        
+        cycle_size *= 2
+        x_fixed = x
+    
+    return factor
+
+
+def ecm(n: int, attempts: int=None) -> int:
+    """
+    Uses Lenstra's Elliptic Curve Method to probabilistically find a factor of `n`.
+
+    Parameters:
+        n        (int): Integer to factor.
+        attempts (int): Number of attempts to perform.
+    
+    Returns:
+        int: Factor of `n`.
+    
+    Examples:
+        >>> from samson.math.general import ecm
+        >>> ecm(26515460203326943826)
+        2
+
+    """
+    from samson.math.algebra.rings.integer_ring import ZZ
+    from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+
+    if not attempts:
+        attempts = kth_root(n, 4)
+
+    ring = ZZ/ZZ(n)
+    for a in range(attempts):
+        while True:
+            x = random_int(n)
+            y = random_int(n)
+            a = random_int(n)
+            b = (y**2 - x**3 - (a * x)) % n
+
+            g = gcd(4 * a**3 - 27 * b**2, n)
+            if g != n:
+                break
+
+        # Free factor!
+        if g > 1:
+            return g
+
+        curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
+        curr  = curve.G
+        for fac in range(2, 64):
+            try:
+                curr *= fac
+            except NotInvertibleException as e:
+                return int(gcd(e.parameters['a'], n))
+
+
+
+def factor(n: int, visual: bool=False) -> list:
+    """
+    Factors an integer `n` into its prime factors.
+
+    Parameters:
+        n       (int): Integer to factor.
+        visual (bool): Whether or not to display progress bar.
+    
+    Returns:
+        list: List of factors.
+    
+    Examples:
+        >>> from samson.math.general import factor
+        >>> factor(26515460203326943826)
+        [2, 3262271209, 4063957057]
+
+    """
+    from tqdm import tqdm
+
+    if not n or is_prime(n):
+        return [n]
+    
+    def calc_prog(x):
+        return round(math.log(x, 2), 2)
+    
+    if visual:
+        progress = tqdm(None, total=calc_prog(n), unit='bit')
+        def progress_update(x):
+            progress.update(calc_prog(x))
+            progress.refresh()
+        
+        def progress_finish():
+            progress.close()
+
+    else:
+        def progress_update(x):
+            pass
+        
+        def progress_finish():
+            pass
+
+    try:
+        # Trial division
+        factors = []
+
+        for prime in PRIMES_UNDER_1000:
+            while not n % prime:
+                factors.append(prime)
+                progress_update(prime)
+                n //= prime
+
+
+        if not (n == 1 or is_prime(n)):
+            # Pollard's rho
+            while not is_prime(n):
+                n_fac = pollards_rho(n)
+                if n_fac == n:
+                    break
+
+                factors.append(n_fac)
+                progress_update(n_fac)
+                n //= n_fac
+
+    except KeyboardInterrupt:
+        pass
+
+    progress_finish()
+    if n != 1:
+        factors.append(n)
+
+    return sorted(factors)

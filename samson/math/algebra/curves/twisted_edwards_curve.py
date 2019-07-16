@@ -27,7 +27,6 @@ class TwistedEdwardsCurve(Ring):
             n        (int): Defines the number of bits in EdDSA scalars.
             b        (int): Number of bits the curve can encode.
             magic  (bytes): The magic byte-string (if any) of the curve.
-            q        (int): Modulus.
             l        (int): Order of the curve.
             d        (int): A non-zero element in the finite field GF(q), not equal to 1, in the case of an Edwards curve, or not equal to -1, in the case of a twisted Edwards curve
             B ((int, int)): Base point.
@@ -131,7 +130,7 @@ class TwistedEdwardsCurve(Ring):
             bool: Whether or not the point is on the curve.
         """
         x, y = P
-        return self.a * x*x + y*y - self.ring(1) - self.d * x*x*y*y == self.ring.zero()
+        return self.a * x*x + y*y - self.ring.one() - self.d * x*x*y*y == self.ring.zero()
 
 
 
@@ -219,8 +218,8 @@ class TwistedEdwardsPoint(RingElement):
         x1, y1 = self.x, self.y
         x2, y2 = other.x, other.y
 
-        x3 = (x1*y2+x2*y1) * ~(ring(1)+self.curve.d * x1*x2*y1*y2)
-        y3 = (y1*y2 - self.curve.a*x1*x2) * ~(ring(1)-self.curve.d * x1*x2*y1*y2)
+        x3 = (x1*y2+x2*y1) * ~(ring.one()+self.curve.d * x1*x2*y1*y2)
+        y3 = (y1*y2 - self.curve.a*x1*x2) * ~(ring.one()-self.curve.d * x1*x2*y1*y2)
 
         return TwistedEdwardsPoint(x3, y3, self.curve)
 

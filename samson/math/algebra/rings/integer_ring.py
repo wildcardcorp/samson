@@ -134,8 +134,11 @@ class IntegerRing(Ring):
             IntegerElement: Coerced element.
         """
         if type(other) is int:
-            other = IntegerElement(other, self)
-        return other
+            return IntegerElement(other, self)
+        elif type(other) is IntegerElement:
+            return other
+        
+        raise Exception('Coercion failed')
 
 
     def __eq__(self, other: object) -> bool:

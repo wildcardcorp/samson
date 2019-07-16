@@ -8,7 +8,6 @@ with open(os.path.join(here, 'README.md')) as f:
 
 
 requires = [
-    "fastecdsa",
     "sympy",
     "pyasn1",
     "pyasn1-modules",

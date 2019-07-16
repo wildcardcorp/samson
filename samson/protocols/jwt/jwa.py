@@ -15,7 +15,8 @@ from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.gcm import GCM
 from samson.block_ciphers.modes.kw import KW
-from fastecdsa.curve import P256, P384, P521, Curve
+from samson.math.algebra.curves.named import P256, P384, P521
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
 from enum import Enum
 import hashlib
 import json
@@ -36,7 +37,7 @@ class JWA_HS(object):
 
 
 class JWA_ES(object):
-    def __init__(self, curve: Curve):
+    def __init__(self, curve: WeierstrassCurve):
         self.sig_len = (curve.q.bit_length() + 7) // 8
 
 

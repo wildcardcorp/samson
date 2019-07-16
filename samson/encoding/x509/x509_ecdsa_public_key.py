@@ -5,7 +5,6 @@ from samson.encoding.x509.x509_public_key_base import X509PublicKeyBase
 from samson.encoding.x509.x509_ecdsa_subject_public_key import X509ECDSASubjectPublicKey
 from pyasn1.type.univ import ObjectIdentifier, SequenceOf, Sequence
 from pyasn1.codec.der import encoder
-from fastecdsa.point import Point
 
 class X509ECDSAPublicKey(X509PublicKeyBase):
 
@@ -45,8 +44,8 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
         items[0] = items[0][1]
         d = 1
 
-        Q = Point(*parse_ec_params(items, 0, 1))
-        ecdsa = ECDSA(G=Q.curve.G, hash_obj=None, d=d)
-        ecdsa.Q = Q
+        x, y, curve = parse_ec_params(items, 0, 1)
+        ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
+        ecdsa.Q = curve(x, y)
 
         return ecdsa

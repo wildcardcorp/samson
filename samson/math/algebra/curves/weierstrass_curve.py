@@ -193,6 +193,11 @@ class WeierstrassCurve(Ring):
 
 
     @property
+    def q(self) -> int:
+        return self.cardinality()
+
+
+    @property
     def G(self) -> WeierstrassPoint:
         if not self.G_cache:
             self.G_cache = self.random_point()
