@@ -101,11 +101,11 @@ class FractionField(Field):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
-    
 
+
+    @property
     def characteristic(self):
         return 0
-        #return self.ring.characteristic
 
 
     def zero(self) -> FractionFieldElement:
@@ -134,7 +134,7 @@ class FractionField(Field):
         Returns:
             FractionFieldElement: Random element of the algebra.
         """
-        return FractionFieldElement(self.ring.random(), self.ring.random(), self)
+        return FractionFieldElement(self.ring.random(size), self.ring.random(size), self)
 
 
     def shorthand(self) -> str:

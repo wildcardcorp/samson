@@ -1,4 +1,5 @@
 from samson.math.algebra.rings.ring import Ring
+from samson.utilities.exceptions import CoercionException
 from samson.math.polynomial import Polynomial
 from sympy import Expr
 
@@ -26,7 +27,6 @@ class PolynomialRing(Ring):
     @property
     def characteristic(self):
         return 0
-        #return self.ring.characteristic
 
 
     def zero(self) -> Polynomial:
@@ -93,7 +93,7 @@ class PolynomialRing(Ring):
         elif type(other) is Polynomial:
             return other
 
-        raise Exception('Coercion failed')
+        raise CoercionException('Coercion failed')
 
 
     def element_at(self, x: int) -> Polynomial:

@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidPaddingException
 
 class PKCS7(object):
     """
@@ -50,6 +51,6 @@ class PKCS7(object):
 
         original_text, padding = plaintext[:len(plaintext) - last_byte], last_block[-last_byte:]
         if len(padding) != last_byte or sum([last_byte != pad_char for pad_char in padding]) != 0:
-            raise Exception('Invalid padding ;)')
+            raise InvalidPaddingException('Invalid padding ;)')
 
         return original_text

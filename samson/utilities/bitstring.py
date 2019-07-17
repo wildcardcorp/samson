@@ -37,7 +37,7 @@ class Bitstring(UserString):
 
 
         if not all([bit in ['0', '1'] for bit in str(value)]):
-            raise Exception("Bitstrings can only contain 1's or 0's.")
+            raise ValueError("Bitstrings can only contain 1's or 0's.")
 
         super().__init__(value)
         self.byteorder = byteorder

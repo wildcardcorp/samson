@@ -1,7 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import PKIEncoding
 from samson.public_key.eddsa import EdDSA
-from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, EdwardsCurve448
+from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA512
 from samson.hashes.sha3 import SHA3
 import unittest

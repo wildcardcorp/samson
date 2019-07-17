@@ -1,9 +1,11 @@
 from samson.utilities.general import rand_bytes
+from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
 from sympy.matrices import Matrix, GramSchmidt
 from sympy import sieve
 from sympy.abc import x
 from types import FunctionType
 from copy import deepcopy
+from enum import Enum
 import math
 
 def int_to_poly(integer: int, modulus: int=2) -> object:
@@ -232,13 +234,6 @@ def lcm(a: int, b: int) -> int:
     return a // gcd(a, b) * b
 
 
-class NotInvertibleException(Exception):
-    def __init__(self, msg: str, parameters: dict):
-        self.parameters = parameters
-        super().__init__(msg)
-
-
-
 def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
     """
     Calculates the modular inverse according to
@@ -293,12 +288,20 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         <Polynomial: x**32 + F_(2**8)(x**6 + x**3 + x**2), coeff_ring=F_(2**8)>
 
     """
+    invert = False
+    if u < 0:
+        invert = True
+        u = -u
+
     s = s or g.ring.one()
     while u != 0:
         if u & 1:
             s = (s * g)
         u >>= 1
         g = (g * g)
+
+    if invert:
+        s = ~s
     return s
 
 
@@ -384,35 +387,62 @@ def crt(residues: list, moduli: list=None) -> (int, int):
     
     Examples:
         >>> from samson.math.general import crt
-        >>> moduli = [5,7,11]
-        >>> residues = [366 % modulus for modulus in moduli]
-        >>> crt(residues, moduli)
-        (366, 385)
-
         >>> from samson.math.algebra.all import ZZ
-        >>> residues = [ring(366) for ring in [ZZ/ZZ(5), ZZ/ZZ(7), ZZ/ZZ(11)]]
+        >>> from sympy.abc import x
+
+        >>> n = 17
+        >>> residues = [(17 % mod, mod) for mod in [2, 3, 5]]
         >>> crt(residues)
-        (366, 385)
+        (17, 30)
+
+        >>> n = 17
+        >>> residues = [(ZZ/ZZ(mod))(17) for mod in [2, 3, 5]]
+        >>> crt(residues)
+        (<IntegerElement: val=17, ring=ZZ>, <IntegerElement: val=30, ring=ZZ>)
+
+        >>> P = (ZZ/ZZ(2))[x]
+        >>> moduli = [P(x + 1), P(x**2 + x + 1), P(x**3 + x + 1)]
+        >>> n = P[17]
+        >>> residues = [(P/mod)(n) for mod in moduli]
+        >>> crt(residues)
+        (<Polynomial: x**4 + ZZ(1), coeff_ring=ZZ/ZZ(2)>, <Polynomial: x**6 + x**4 + x + ZZ(1), coeff_ring=ZZ/ZZ(2)>)
 
     """
-    if moduli:
-        assert len(residues) == len(moduli)
-    else:
-        moduli   = [int(residue.ring.quotient) for residue in residues]
-        residues = [int(residue) for residue in residues]
+    from samson.math.algebra.rings.integer_ring import ZZ
 
-    x  = residues[0]
-    Nx = moduli[0]
+    peel_ring = False
+    if type(residues[0]) is tuple:
+        if type(residues[0][0]) is int:
+            ring = ZZ
+            peel_ring = True
+        else:
+            ring = residues[0][0].ring
+        
+        residues = [(ring/ring(mod))(res) for res, mod in residues]
+
+    x  = residues[0].val
+    Nx = residues[0].ring.quotient
+    ring = Nx.ring
 
     for i in range(1, len(residues)):
-        x  = (mod_inv(Nx, moduli[i]) * (residues[i] - x)) * Nx + x
-        Nx = Nx * moduli[i]
+        modulus = residues[i].ring.quotient
+        x  = (mod_inv(Nx, modulus, zero=ring.zero(), one=ring.one()) * (residues[i].val - x)) * Nx + x
+        Nx = Nx * modulus
 
-    return x % Nx, Nx
+    x = x % Nx
+    if peel_ring:
+        x, Nx = x.val, Nx.val
+
+    return x, Nx
 
 
+class ResidueSymbol(Enum):
+    EXISTS = 1
+    DOES_NOT_EXIST = -1
+    IS_ZERO = 0
 
-def legendre(a: int, p: int) -> int:
+
+def legendre(a: int, p: int) -> ResidueSymbol:
     """
     Calculates the Legendre symbol of `a` mod `p`. Nonzero quadratic residues mod `p` return 1 and nonzero, non-quadratic residues return -1. Zero returns 0.
 
@@ -421,21 +451,25 @@ def legendre(a: int, p: int) -> int:
         p (int): Modulus.
     
     Returns:
-        int: Legendre symbol.
+        ResidueSymbol: Legendre symbol.
     
     Examples:
         >>> from samson.math.general import legendre
         >>> legendre(4, 7)
-        1
+        <ResidueSymbol.EXISTS: 1>
 
         >>> legendre(5, 7)
-        6
+        <ResidueSymbol.DOES_NOT_EXIST: -1>
 
     """
-    return pow(a, (p - 1) // 2, p)
+    result = pow(a, (p - 1) // 2, p)
+    if result == p-1:
+        result = -1
+
+    return ResidueSymbol(result)
 
 
-def generalized_eulers_criterion(a: int, k: int, p: int) -> int:
+def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
     """
     Determines if `a` is a `k`-th root over `p`.
 
@@ -445,20 +479,25 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> int:
         p (int): Modulus.
     
     Returns:
-        int: Legendre symbol (basically).
+        ResidueSymbol: Legendre symbol (basically).
 
     Examples:
         >>> from samson.math.general import generalized_eulers_criterion
         >>> generalized_eulers_criterion(4, 2, 7)
-        1
+        <ResidueSymbol.EXISTS: 1>
 
         >>> generalized_eulers_criterion(5, 2, 7)
-        6
+        <ResidueSymbol.DOES_NOT_EXIST: -1>
 
         >>> generalized_eulers_criterion(4, 3, 11)
-        1
+        <ResidueSymbol.EXISTS: 1>
+
     """
-    return pow(a, (p-1) // gcd(k, p-1), p)
+    result = pow(a, (p-1) // gcd(k, p-1), p)
+    if result == p-1:
+        result = -1
+
+    return ResidueSymbol(result)
 
 
 # https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
@@ -486,7 +525,7 @@ def tonelli(n: int, p: int) -> int:
         4
 
     """
-    assert legendre(n, p) == 1, "not a square (mod p)"
+    assert legendre(n, p) == ResidueSymbol.EXISTS, "not a square (mod p)"
     q = p - 1
     s = 0
     while q % 2 == 0:
@@ -497,7 +536,7 @@ def tonelli(n: int, p: int) -> int:
         return pow(n, (p + 1) // 4, p)
 
     for z in range(2, p):
-        if p - 1 == legendre(z, p):
+        if legendre(z, p) == ResidueSymbol.DOES_NOT_EXIST:
             break
 
     c = pow(z, q, p)
@@ -555,11 +594,11 @@ def tonelli_q(a: int, p: int, q: int) -> int:
 
     """
     # Step 1 & 2
-    assert generalized_eulers_criterion(a, q, p) == 1, "not a power (mod p)"
+    assert generalized_eulers_criterion(a, q, p) == ResidueSymbol.EXISTS, "not a power (mod p)"
 
     # Step 3
     for g in range(2, p):
-        if generalized_eulers_criterion(g, q, p) == p-1:
+        if generalized_eulers_criterion(g, q, p) == ResidueSymbol.DOES_NOT_EXIST:
             break
 
     # Step 4
@@ -618,6 +657,16 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
 
     Returns:
         Matrix: Reduced basis.
+    
+    Examples:
+        >>> from samson.math.general import lll
+        >>> from sympy.matrices import Matrix, eye
+        >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
+        >>> lll([m.row(row) for row in range(m.rows)])
+        ⎡3   2  1  0⎤
+        ⎢           ⎥
+        ⎣-2  0  2  4⎦
+
     """
     basis = deepcopy(in_basis)
     n     = len(basis)
@@ -919,6 +968,8 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
         # Didn't find it. Try another `k`
         k -= 1
 
+    raise ProbabilisticFailureException("Discrete logarithm not found")
+
 
 
 def hasse_frobenius_trace_interval(p: int) -> (int, int):
@@ -1146,7 +1197,7 @@ def schoofs_algorithm(curve: object) -> int:
         curve (object): Elliptic curve to find cardinality of.
     
     Returns:
-        int: Curve cardinality
+        int: Curve cardinality.
     
     Examples:
         >>> from samson.math.general import schoofs_algorithm
@@ -1161,7 +1212,7 @@ def schoofs_algorithm(curve: object) -> int:
     return curve.p + 1 - frobenius_trace(curve)
 
 
-def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
+def bsgs(g: object, h: object, end: int, e: object=None, start: int=0) -> int:
     """
     Performs Baby-step Giant-step with an arbitrary finite cyclic group.
 
@@ -1171,9 +1222,9 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
         end   (int): End of the search range.
         e  (object): Starting point of the aggregator.
         start (int): Start of the search range.
-    
+
     Returns:
-        int: The discrete logarithm of `h` given `g` over `p`.
+        int: The discrete logarithm of `h` given `g`.
 
     Examples:
         >>> from samson.math.general import hasse_frobenius_trace_interval, bsgs, mod_inv
@@ -1191,12 +1242,15 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
         >>> exponent = 24
         >>> h = base * exponent
         >>> bsgs(base, h, int(ring.quotient))
-        50
+        24
 
     """
     search_range = end - start
     table        = {}
     m            = kth_root(search_range, 2)
+
+    if not e:
+        e = g.ring.zero()
 
     for i in range(m):
         table[e] = i
@@ -1212,12 +1266,75 @@ def bsgs(g: object, h: object, end: int, e: object=1, start: int=0) -> int:
 
         o += factor
 
-    return None
+    raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
+
+
+
+def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
+    """
+    Computes the discrete logarithm for finite abelian groups with a smooth order.
+
+    https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
+
+    Parameters:
+        g     (object): Generator element.
+        h     (object): Result to find discrete logarithm of.
+        n        (int): Order of the group.
+        factors (dict): `n`'s factorization.
+    
+    Returns:
+        int: The discrete logarithm of `h` given `g`.
+
+    Examples:
+        >>> from samson.math.general import pohlig_hellman
+        >>> from samson.math.algebra.all import *
+
+        >>> p    = 7
+        >>> ring = (ZZ/ZZ(p)).mul_group()
+        >>> g    = ring(3)
+        >>> exp  = 2
+        >>> h    = g * exp
+        >>> pohlig_hellman(g, h, p-1)
+        2
+
+        >>> p    = 2**127-1
+        >>> ring = (ZZ/ZZ(p)).mul_group()
+        >>> g    = ring(5)
+        >>> exp  = 25347992192497823499464681366516589049
+        >>> h    = g * exp
+        >>> exp2 = pohlig_hellman(g, h, p-1)
+        >>> g * exp2 == h
+        True
+
+        >>> ring  = ZZ/ZZ(53)
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
+        >>> g     = curve.G
+        >>> exp   = 28
+        >>> h     = g * exp
+        >>> pohlig_hellman(curve.G, h, curve.G.order)
+        28
+
+    """
+    if not factors:
+        factors = factor(n)
+
+    x = [0] * len(factors)
+
+    for i, (p, e) in enumerate(factors.items()):
+        gamma = g * (n // p)
+        for k in range(e):
+            g_k = g * x[i]
+            h_k = (h + -g_k) * (n // p**(k+1))
+            d_k = bsgs(gamma, h_k, p)
+            x[i] += d_k * p**k
+
+    return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
+
 
 
 def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     """
-    Probablistic primality test. Each iteration has a 1/4 false positive rate.
+    Probabilistic primality test. Each iteration has a 1/4 false positive rate.
     Always returns a false positive on Carmichael numbers.
 
     https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test#Miller%E2%80%93Rabin_test
@@ -1313,7 +1430,7 @@ def is_square(n: int) -> bool:
     return kth_root(n, 2)**2 == n
 
 
-def jacobi_symbol(n: int, k: int) -> int:
+def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
     """
     Generalization of the Legendre symbol.
 
@@ -1324,7 +1441,16 @@ def jacobi_symbol(n: int, k: int) -> int:
         k (int): Modulus (must be odd).
     
     Return:
-        int: Jacobi symbol.
+        ResidueSymbol: Jacobi symbol.
+    
+    Examples:
+        >>> from samson.math.general import jacobi_symbol
+        >>> jacobi_symbol(4, 7)
+        <ResidueSymbol.EXISTS: 1>
+
+        >>> jacobi_symbol(5, 7)
+        <ResidueSymbol.DOES_NOT_EXIST: -1>
+
     """
     assert k > 0 and k % 2 == 1
     n %= k
@@ -1345,9 +1471,9 @@ def jacobi_symbol(n: int, k: int) -> int:
         n %= k
 
     if k == 1:
-        return t
+        return ResidueSymbol(t)
     else:
-        return 0
+        return ResidueSymbol(0)
 
 
 def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
@@ -1366,7 +1492,7 @@ def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
         if g > 1 and g != n:
             return (0, 0, 0)
 
-        if jacobi_symbol(D, n) == -1:
+        if jacobi_symbol(D, n) == ResidueSymbol.DOES_NOT_EXIST:
             break
 
         if D > 0:
@@ -1486,6 +1612,18 @@ def is_prime(n: int) -> bool:
     
     Returns:
         bool: Whether or not `n` is probably prime.
+    
+    Examples:
+        >>> from samson.math.general import is_prime, find_prime
+        >>> is_prime(7)
+        True
+
+        >>> is_prime(15)
+        False
+
+        >>> is_prime(find_prime(32))
+        True
+
     """
     if n in PRIMES_UNDER_1000:
         return True
@@ -1508,7 +1646,7 @@ def pollards_rho(n: int) -> int:
         int: Factor of `n`.
     
     Examples:
-        >>> from samson.math.general import ecm
+        >>> from samson.math.general import pollards_rho
         >>> pollards_rho(26515460203326943826)
         2
 
@@ -1531,10 +1669,10 @@ def pollards_rho(n: int) -> int:
             if factor == n:
                 factor = 1
                 mod    = -1
-        
+
         cycle_size *= 2
         x_fixed = x
-    
+
     return factor
 
 
@@ -1585,6 +1723,8 @@ def ecm(n: int, attempts: int=None) -> int:
             except NotInvertibleException as e:
                 return int(gcd(e.parameters['a'], n))
 
+    raise ProbabilisticFailureException("Factor not found")
+
 
 
 def factor(n: int, visual: bool=False) -> list:
@@ -1607,34 +1747,41 @@ def factor(n: int, visual: bool=False) -> list:
     from tqdm import tqdm
 
     if not n or is_prime(n):
-        return [n]
-    
+        return {n: 1}
+
     def calc_prog(x):
         return round(math.log(x, 2), 2)
-    
+
     if visual:
         progress = tqdm(None, total=calc_prog(n), unit='bit')
         def progress_update(x):
             progress.update(calc_prog(x))
             progress.refresh()
-        
+
         def progress_finish():
             progress.close()
 
     else:
         def progress_update(x):
             pass
-        
+
         def progress_finish():
             pass
 
+
+    factors = {}
+
+    def add_or_inc(fac):
+        if fac in factors:
+            factors[fac] += 1
+        else:
+            factors[fac] = 1
+
     try:
         # Trial division
-        factors = []
-
         for prime in PRIMES_UNDER_1000:
             while not n % prime:
-                factors.append(prime)
+                add_or_inc(prime)
                 progress_update(prime)
                 n //= prime
 
@@ -1646,7 +1793,7 @@ def factor(n: int, visual: bool=False) -> list:
                 if n_fac == n:
                     break
 
-                factors.append(n_fac)
+                add_or_inc(n_fac)
                 progress_update(n_fac)
                 n //= n_fac
 
@@ -1655,6 +1802,6 @@ def factor(n: int, visual: bool=False) -> list:
 
     progress_finish()
     if n != 1:
-        factors.append(n)
+        add_or_inc(n)
 
-    return sorted(factors)
+    return factors

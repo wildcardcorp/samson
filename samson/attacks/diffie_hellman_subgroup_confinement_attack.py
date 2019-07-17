@@ -53,7 +53,6 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         log.debug(f'Found factors: {factors}')
 
         residues = []
-        moduli   = []
 
         # Request residues from crafted public keys
         for factor in RUNTIME.report_progress(factors, desc='Sending malicious public keys', unit='factor'):
@@ -62,12 +61,11 @@ class DiffieHellmanSubgroupConfinementAttack(object):
                 h = pow(max(1, random_int(self.p)), (self.p-1) // factor, self.p)
 
             residue = self.oracle.request(h, factor)
-            residues.append(residue)
-            moduli.append(factor)
+            residues.append((residue, factor))
 
 
         # Build partials using CRT
-        n, r = crt(residues, moduli)
+        n, r = crt(residues)
 
         # Oh, I guess we already found it...
         if r > self.order:

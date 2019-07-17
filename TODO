@@ -11,28 +11,10 @@ X   Flush+Reload key recovery
 
 CURRENT
 ---------------
+
+
 0.2.0
 ===============
-X   Timing attack framework
-    OK  Build TimingOracle
-    X   Time sync
-    X   Techniques to increase sync resolution from a lower resolution oracle
-
-
-X   Document timing attack setup
-
-
-0.3.0
-===============
-X   More encoders/decoders/cryptosystems
-    X   PGP
-    X   SSH
-    X   TLS
-
-
-X   OCB3
-
-
 X   Document new parsers
     X   Add class/function documentation
 
@@ -43,19 +25,16 @@ X   DocTests
 
 
 X   CAS
-    X   All algebras should have repeated addition (multiplication by integer)
-    X   Add the ability to retrieve elements by ordinality to countable sets
-    X   Unify 'order' and 'cardinality' properties/functions
-    X   Choose whether to use properties or functions
-    X   Ability to generate random elements
-    X   Calculate ring characteristics
+    OK  All algebras should have repeated addition (multiplication by integer)
+    OK  Add the ability to retrieve elements by ordinality to countable sets
+    OK  Unify 'order' and 'cardinality' properties/functions
+    OK  Ability to generate random elements
+    OK  Calculate ring characteristics
 
     OK  Polynomial factorization
     OK  Integer factorization
-    X   Discrete logarithms
+    OK  Discrete logarithms
     OK  Integer primality testing
-    X   Fermat pseudoprime generation
-    X   Lucas pseudoprime generation
 
 
 X   Improve Polynomial implementation
@@ -71,19 +50,38 @@ X   Test math
     OK  Doctest algebras
 
 
-X   Remove fastecdsa dependency
-X   Better exceptions
+OK  Remove fastecdsa dependency
+OK  Better exceptions
 X   Unify Diffie-Hellmans
 X   LRU caching?
 
-X   Swappable backends?
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
 
-X   Hierarchical and optionally persistent runtime configuration
-
 X   LCG.crack_truncated crashes during LLL with lots of samples (50+)
+
+X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
+
+X   Ensure samson installs correctly
+    X   Library
+    X   REPL
+    X   CLI
+    X   Man page
+    X   Supported OSs
+        X   Fedora 30
+        X   Kali
+
+
+0.3.0
+===============
+X   Timing attack framework
+    OK  Build TimingOracle
+    X   Time sync
+    X   Techniques to increase sync resolution from a lower resolution oracle
+
+
+X   Document timing attack setup
 
 X   Rabbit stream cipher
 X   HC-256 stream cipher
@@ -110,20 +108,21 @@ X   Refactor ACE tests
     X   Rename variables (what is enc_perm?)
 
 X   Does 'exploit.py/register_knowns' need to exist any more? Why not just use decorators?
-
 X   ACE should be able to enumerate all attack paths
 
+X   Hierarchical and optionally persistent runtime configuration
+X   Swappable backends?
 
-X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
+X   More encoders/decoders/cryptosystems
+    X   PGP
+    X   SSH
+    X   TLS
 
-X   Ensure samson installs correctly
-    X   Library
-    X   REPL
-    X   CLI
-    X   Man page
-    X   Supported OSs
-        X   Fedora 30
-        X   Kali
+
+X   OCB3
+X   Fermat pseudoprime generation
+X   Lucas pseudoprime generation
+
 
 
 Future

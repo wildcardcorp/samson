@@ -49,10 +49,9 @@ class InvalidCurveAttack(object):
         Returns:
             int: Private key.
         """
-        residues = []
-        moduli   = []
-
-        total = 1
+        residues     = []
+        factors_seen = set()
+        total        = 1
 
         # TODO: Generate these curves if the user doesn't specify them
         for inv_curve in invalid_curves:
@@ -65,7 +64,7 @@ class InvalidCurveAttack(object):
                 if total > self.curve.cardinality():
                     break
 
-                if factor in moduli:
+                if factor in factors_seen:
                     continue
 
                 total *= factor
@@ -78,17 +77,17 @@ class InvalidCurveAttack(object):
                     bad_pub = point * (inv_curve.cardinality() // factor)
 
                 residue = self.oracle.request(bad_pub, factor)
-                residues.append(residue)
-                moduli.append(factor)
+                residues.append((ZZ/ZZ(factor))(residue))
+                factors_seen.add(factor)
 
 
         # We have to take into account the fact we can end up on the "negative" side of the field
-        negations = [(residue, int(-((ZZ/ZZ(modulus))(residue)))) for residue, modulus in zip(residues, moduli)]
+        negations = [(residue, -residue) for residue in residues]
 
         # Just bruteforce the correct configuration based off of the public key
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
-            n, r = crt(residue_subset, moduli)
-            if n * self.curve.G == public_key:
+            n, _ = crt(residue_subset)
+            if n.val * self.curve.G == public_key:
                 break
 
-        return n
+        return n.val

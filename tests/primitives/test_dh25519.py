@@ -1,5 +1,5 @@
 from samson.protocols.dh25519 import DH25519
-from samson.math.algebra.curves.montgomery_curve import Curve25519, Curve448
+from samson.math.algebra.curves.named import Curve25519, Curve448
 from samson.utilities.bytes import Bytes
 import unittest
 

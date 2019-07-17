@@ -1,4 +1,5 @@
 from samson.math.general import gcd, mod_inv, lll, is_power_of_two, is_prime
+from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
 from sympy.ntheory import factorint
@@ -159,7 +160,7 @@ class LCG(object):
                     if [predicted_lcg.generate() >> trunc_amount for _ in range(len(outputs_to_predict))] == outputs_to_predict:
                         return predicted_lcg
 
-            raise RuntimeError('Seedspace exhausted')
+            raise SearchspaceExhaustedException('Seedspace exhausted')
 
 
 

@@ -37,6 +37,9 @@ class FiniteFieldElement(FieldElement):
         return FiniteFieldElement(self.val + other.val, self.field)
 
     def __mul__(self, other: object) -> object:
+        if type(other) is int:
+            return fast_mul(self, other)
+
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val * other.val, self.field)
 

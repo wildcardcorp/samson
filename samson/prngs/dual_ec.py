@@ -1,6 +1,6 @@
-from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint 
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.utilities.bytes import Bytes
-from samson.math.general import tonelli, mod_inv
+from samson.math.general import mod_inv
 from samson.utilities.runtime import RUNTIME
 import random
 

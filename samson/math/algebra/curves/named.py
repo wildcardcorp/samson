@@ -136,7 +136,10 @@ _curve_params = {
     }
   }
 
-from samson.math.algebra.all import ZZ, WeierstrassCurve
+from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+from samson.math.algebra.curves.twisted_edwards_curve import TwistedEdwardsCurve
+from samson.math.algebra.curves.montgomery_curve import Curve25519Crv, Curve448Crv
 
 all_curves = {}
 for name, params in _curve_params.items():
@@ -178,3 +181,20 @@ secp521r1 = P521
 
 
 WS_OID_LOOKUP = {curve.oid: curve for curve in [P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1]}
+
+
+ring255 = ZZ/ZZ(2**255 - 19)
+ring448 = ZZ/ZZ(2**448 - 2**224 - 1)
+
+EdwardsCurve25519 = TwistedEdwardsCurve(oid='1.3.101.112', a=-1, c=3, n=254, b=256, magic=b'', l=2**252 + 27742317777372353535851937790883648493, d=-121665 * pow(121666, 2**255 - 19 -2, 2**255 - 19), B=(15112221349535400772501151409588531511454012693041857206046113283949847762202, 46316835694926478169428394003475163141307993866256225615783033603165251855960), ring=ring255)
+EdwardsCurve448   = TwistedEdwardsCurve(oid='1.3.101.113', a=1, c=2, n=447, b=456, magic=b'SigEd448\x00\x00', l=2**446 - 0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d, d=-39081, B=(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710, 298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660), ring=ring448)
+
+Curve25519 = Curve25519Crv()
+Curve448   = Curve448Crv()
+
+EDCURVE_OID_LOOKUP = {
+    Curve25519.oid: Curve25519,
+    Curve448.oid: Curve448,
+    EdwardsCurve25519.oid: EdwardsCurve25519,
+    EdwardsCurve448.oid: EdwardsCurve448,
+}

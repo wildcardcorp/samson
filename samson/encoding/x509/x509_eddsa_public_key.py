@@ -3,7 +3,7 @@ from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
 from samson.encoding.x509.x509_public_key_base import X509PublicKeyBase
 from samson.encoding.x509.x509_eddsa_subject_public_key import X509EdDSASubjectPublicKey
-from samson.math.algebra.curves.util import EDCURVE_OID_LOOKUP
+from samson.math.algebra.curves.named import EDCURVE_OID_LOOKUP
 from pyasn1.type.univ import ObjectIdentifier, SequenceOf, Sequence
 from pyasn1.codec.der import encoder
 

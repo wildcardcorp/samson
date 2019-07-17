@@ -5,6 +5,7 @@ from samson.padding.pkcs7 import PKCS7
 from samson.utilities.general import rand_bytes
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from samson.oracles.padding_oracle import PaddingOracle
+from samson.utilities.exceptions import InvalidPaddingException
 import random
 import base64
 import unittest
@@ -45,9 +46,8 @@ def decrypt_data(data):
     try:
         _ = cbc.decrypt(bytes(data))
         return True
-    except Exception as e:
-        if 'Invalid padding' in str(e):
-            return False
+    except InvalidPaddingException as e:
+        return False
         raise e
 
 

@@ -39,7 +39,7 @@ class OpenSSHEdDSAPrivateKey(object):
     @staticmethod
     def decode(buffer: bytes, **kwargs):
         from samson.public_key.eddsa import EdDSA
-        from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519
+        from samson.math.algebra.curves.named import EdwardsCurve25519
         priv, _ = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, EdDSAPublicKey, EdDSAPrivateKey, kwargs.get('passphrase'))
 
         a, h = priv.a, priv.h

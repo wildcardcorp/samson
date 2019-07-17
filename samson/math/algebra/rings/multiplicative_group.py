@@ -38,7 +38,7 @@ class MultiplicativeGroupElement(RingElement):
         return MultiplicativeGroupElement(self.val ** int(other.val), self.ring)
 
     def __neg__(self) -> object:
-        return MultiplicativeGroupElement(-self.val, self.ring)
+        return MultiplicativeGroupElement(~self.val, self.ring)
 
 
 
@@ -65,12 +65,17 @@ class MultiplicativeGroup(Ring):
         self.ring = ring
 
 
+    @property
+    def characteristic(self):
+        return self.ring.characteristic
+
+
     def zero(self) -> MultiplicativeGroupElement:
         """
         Returns:
             MultiplicativeGroupElement: '0' element of the algebra.
         """
-        return MultiplicativeGroupElement(self.ring.zero(), self)
+        return MultiplicativeGroupElement(self.ring.one(), self)
 
 
     def one(self) -> MultiplicativeGroupElement:
@@ -78,7 +83,7 @@ class MultiplicativeGroup(Ring):
         Returns:
             MultiplicativeGroupElement: '1' element of the algebra.
         """
-        return MultiplicativeGroupElement(self.ring.one(), self)
+        return self.zero()
 
 
     def random(self, size: int=None) -> MultiplicativeGroupElement:
@@ -117,6 +122,8 @@ class MultiplicativeGroup(Ring):
         return other
 
 
+    def element_at(self, x: int) -> MultiplicativeGroupElement:
+        return self(self.ring[x+1])
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.ring == other.ring

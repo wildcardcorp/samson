@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidPaddingException
 import math
 
 # https://tools.ietf.org/html/rfc8017#section-7.2.1
@@ -62,7 +63,7 @@ class PKCS1v15Padding(object):
             Bytes: Unpadded plaintext.
         """
         if allow_padding_oracle and (plaintext[:2] != b'\x00\x02' or len(plaintext) != self.key_byte_length):
-            raise Exception('Invalid padding ;)')
+            raise InvalidPaddingException('Invalid padding ;)')
 
         header_removed = plaintext[2:]
         first_zero = header_removed.index(b'\x00')

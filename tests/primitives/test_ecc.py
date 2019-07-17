@@ -1,5 +1,5 @@
-from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, TwistedEdwardsPoint
-from samson.math.algebra.curves.montgomery_curve import Curve25519, Curve448
+from samson.math.algebra.curves.named import EdwardsCurve25519, Curve25519, Curve448
+from samson.math.algebra.curves.twisted_edwards_curve import TwistedEdwardsPoint
 from samson.utilities.bytes import Bytes
 import unittest
 

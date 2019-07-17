@@ -1,4 +1,5 @@
-from samson.math.algebra.curves.montgomery_curve import Curve25519, MontgomeryCurve
+from samson.math.algebra.curves.montgomery_curve import MontgomeryCurve
+from samson.math.algebra.curves.named import Curve25519
 from samson.utilities.bytes import Bytes
 
 class DH25519(object):

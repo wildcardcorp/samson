@@ -99,6 +99,9 @@ class MontgomeryCurve(Ring):
         return MontgomeryPoint(self.U, self)
 
 
+    def element_at(self, x: int) -> object:
+        return self.G*x
+
     def __eq__(self, other) -> bool:
         return self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
@@ -229,7 +232,3 @@ class Curve448Crv(MontgomeryCurve):
         x &= ~3
         x |= 128 << 8 * 55
         return MontgomeryPoint(x, self)
-
-
-Curve25519 = Curve25519Crv()
-Curve448   = Curve448Crv()

@@ -1,4 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.utilities.exceptions import CoercionException
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.polynomial import Polynomial
 from sympy import Expr
@@ -197,6 +198,6 @@ class CurvePolynomialRing(Ring):
                 coerced.append(Polynomial([poly], self.poly_ring.ring))
 
             else:
-                raise Exception('Coercion failed')
+                raise CoercionException('Coercion failed')
 
         return CurvePolynomialElement(*coerced, ring=self)

@@ -29,7 +29,7 @@ class OAEP(object):
     """
     Optimal Asymmetric Encryption Padding
 
-    Probablistic Feistel Network proven to be semantically secure under chosen plaintext attack.
+    Probabilistic Feistel Network proven to be semantically secure under chosen plaintext attack.
     """
 
     def __init__(self, modulus_len: int, mgf: FunctionType=MGF1, hash_obj: object=SHA1(), label: bytes=b''):

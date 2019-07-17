@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import is_prime
-from sympy import factorint
+from samson.utilities.exceptions import CoercionException
+from samson.math.general import is_prime, factor
 
 class IntegerElement(RingElement):
     """
@@ -22,7 +22,7 @@ class IntegerElement(RingElement):
 
 
     def factor(self) -> list:
-        return [k for k,v in factorint(self.val).items()]
+        return factor(self.val)
 
     def is_prime(self) -> list:
         return is_prime(self.val)
@@ -137,8 +137,8 @@ class IntegerRing(Ring):
             return IntegerElement(other, self)
         elif type(other) is IntegerElement:
             return other
-        
-        raise Exception('Coercion failed')
+
+        raise CoercionException('Coercion failed')
 
 
     def __eq__(self, other: object) -> bool:

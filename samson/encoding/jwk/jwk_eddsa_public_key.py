@@ -1,6 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.math.algebra.curves.twisted_edwards_curve import EdwardsCurve25519, EdwardsCurve448
-from samson.math.algebra.curves.montgomery_curve import Curve25519, Curve448
+from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448, Curve25519, Curve448
 from samson.encoding.general import url_b64_decode, url_b64_encode
 import json
 

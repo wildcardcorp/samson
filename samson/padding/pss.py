@@ -6,7 +6,7 @@ from types import FunctionType
 
 class PSS(object):
     """
-    Probablistic Signature Scheme used for RSA signatures
+    Probabilistic Signature Scheme used for RSA signatures
 
     RFC8017 (https://tools.ietf.org/html/rfc8017)
     """
@@ -42,7 +42,7 @@ class PSS(object):
             salt      (bytes): (Optional) Random salt.
         
         Returns:
-            Bytes: Probablistic signature.
+            Bytes: Probabilistic signature.
         """
         plaintext = Bytes.wrap(plaintext)
         mHash     = self.hash_obj.hash(plaintext)
