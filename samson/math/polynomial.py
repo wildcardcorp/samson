@@ -1,12 +1,19 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import fast_mul, square_and_mul, gcd
+from samson.math.general import fast_mul, square_and_mul, gcd, factor as factor_int
 from samson.math.sparse_vector import SparseVector
-from sympy import Expr, Symbol, Integer, factorint
+from sympy import Expr, Symbol, Integer
 from copy import deepcopy
 
 
 class Polynomial(RingElement):
     def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: Symbol=None, ring: Ring=None):
+        """
+        Parameters:
+            coeffs (list or Expr): Coefficients of the polynomial as a list of increasing degree or an expression.
+            coeff_ring     (Ring): Ring the coefficients are in.
+            symbol       (Symbol): Symbol to use as the indeterminate.
+            ring           (Ring): Parent PolynomialRing.
+        """
         default_symbol = Symbol('x')
         self.coeff_ring = coeff_ring or coeffs[0].ring
 
@@ -96,14 +103,20 @@ class Polynomial(RingElement):
         return hash((self.coeff_ring, self.coeffs, self.__class__))
 
 
-    def LC(self) -> object:
+    def LC(self) -> RingElement:
+        """
+        Returns the leading coefficient.
+
+        Returns:
+            RingElement: Coefficient of the highest degree.
+        """
         try:
             return self.coeffs[-1]
         except IndexError:
             return self.coeff_ring.zero()
 
 
-    def evaluate(self, x: object) -> object:
+    def evaluate(self, x: object) -> RingElement:
         """
         Evaluates the `Polynomial` at `x` using Horner's method.
         
@@ -125,19 +138,64 @@ class Polynomial(RingElement):
 
 
     def monic(self) -> object:
+        """
+        Returns the Polynomial in its monic representation (leading coefficient is 1).
+
+        Returns:
+            Polynomial: Monic representation of self.
+        """
         return Polynomial([(idx, coeff / self.coeffs[-1]) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
 
 
     def is_monic(self) -> bool:
+        """
+        Determines whether or not the Polynomial is monic.
+
+        Returns:
+            bool: Whether or not the Polynomial is monic
+        """
         return self.LC() == self.coeff_ring.one()
 
 
     def derivative(self) -> object:
+        """
+        Returns the derivative of the Polynomial.
+
+        Returns:
+            Polynomial: Derivative of self.
+        """
         return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0], self.coeff_ring, self.symbol)
+
+
+    def trunc_kth_root(self, k: int) -> object:
+        """
+        Calculates an inexact `k`-th root.
+
+        Parameters:
+            k (int): Root to take.
+        
+        Returns:
+            Polynomial: `k`-th root.
+        
+        Examples:
+            >>> from samson.math.polynomial import Polynomial
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> ZZ[x](x**4 + 2*x**2).trunc_kth_root(2)
+            <Polynomial: x**2 + ZZ(2)*x, coeff_ring=ZZ>
+
+        """
+        return Polynomial([(idx // k, coeff) for idx, coeff in self.coeffs if idx >= k and not idx % k], self.coeff_ring, self.symbol)
 
 
     def square_free_decomposition(self) -> list:
         """
+        Decomposes a Polynomial into its square-free factors. Used as the first step in factorization.
+
+        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
+
+        Returns:
+            list: Square-free factors of self.
+
         Examples:
             >>> from samson.math.all import Polynomial, ZZ
             >>> from sympy.abc import x
@@ -146,8 +204,6 @@ class Polynomial(RingElement):
             [<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>, <Polynomial: x**3, coeff_ring=ZZ>]
 
         """
-        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
-        #R = 1
         c = gcd(self, self.derivative()).monic()
         w = self / c
 
@@ -157,26 +213,36 @@ class Polynomial(RingElement):
         while w != self.ring.one():
             y = gcd(w, c).monic()
             fac = w / y
-            #R *= fac**i
             factors.append(fac)
+
             w, c, i = y, c / y, i + 1
 
         if c != self.ring.one():
-            # TODO: Take the p-th root
-            c = c**(1/self.coeff_ring.characteristic)
+            c        = c.trunc_kth_root(self.coeff_ring.characteristic)
             new_facs = c.square_free_decomposition()
-            #R *= new_R**p
-            factors.extend(new_facs)
+            factors.append(new_facs[0]**self.coeff_ring.characteristic)
 
         return [(fac**(idx+1)).monic() for idx, fac in enumerate(factors) if fac != self.ring.one()]
 
 
     def sff(self) -> list:
+        """
+        See `square_free_decomposition`.
+        """
         return self.square_free_decomposition()
 
 
     def distinct_degree_factorization(self) -> list:
-        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
+        """
+        Factors a Polynomial into factors of different degrees.
+
+        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
+
+        Returns:
+            list: Distinct-degree factors of self.
+        """
+        from samson.math.general import frobenius_map, frobenius_monomial_base
+
         f = self
         f_star = f
         S = []
@@ -184,12 +250,21 @@ class Polynomial(RingElement):
         q = self.coeff_ring.characteristic
 
         x = self.symbol
+        x_poly = f.ring(x)
 
         while f_star.degree() > 2*i:
             if not f_star.is_monic():
                 f_star = f_star.monic()
 
-            g = gcd(f_star, Polynomial(x**q**i - x, f.coeff_ring)).monic()
+            # Calculate P(x**q**i - x)
+            bases = frobenius_monomial_base(f_star)
+            h     = frobenius_map(bases[1], f_star, bases=bases)
+
+            for _ in range(i-1):
+                h = frobenius_map(h, f_star, bases=bases)
+
+            g = gcd(f_star, h - x_poly).monic()
+
             if g != self.ring.one():
                 S.append((g, i))
                 f_star /= g
@@ -206,22 +281,35 @@ class Polynomial(RingElement):
 
 
     def ddf(self) -> list:
+        """
+        See `distinct_degree_factorization`.
+        """
         return self.distinct_degree_factorization()
 
 
     # TODO: This method only works for FF due to `self.coeff_ring.order` and `f.coeff_ring.random(f.coeff_ring.reducing_poly.degree())`
-    def equal_degree_factorization(self, d: int, subgroup_divisor: int=2) -> list:
+    def equal_degree_factorization(self, d: int, subgroup_divisor: int=None) -> list:
+        """
+        Factors a Polynomial into factors of equal degrees.
+
+        Returns:
+            list: Equal-degree factors of self.
+        """
         from samson.math.general import frobenius_map, frobenius_monomial_base
 
         f = self.monic()
-        q = self.coeff_ring.order
-
         n = f.degree()
         r = n // d
         S = [f]
 
         f_quot   = f.ring / f
-        exponent = (q - 1) // subgroup_divisor
+        if hasattr(self.coeff_ring, 'order'):
+            q = self.coeff_ring.order 
+            if not subgroup_divisor:
+                subgroup_divisor = [f for f in factor_int((q - 1))][0]
+
+            exponent = (q - 1) // subgroup_divisor
+
         one      = self.ring.one()
         bases    = frobenius_monomial_base(f)
 
@@ -232,7 +320,8 @@ class Polynomial(RingElement):
 
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
-                h = Polynomial([f.coeff_ring.random() for _ in range(n)], f.coeff_ring)
+                # h = Polynomial([f.coeff_ring.random() for _ in range(n)], f.coeff_ring)
+                h = f.ring.random(f)
                 g = gcd(h, f).monic()
 
                 if g == one:
@@ -266,13 +355,23 @@ class Polynomial(RingElement):
         return S
 
 
-    def edf(self, d: int, subgroup_divisor: int=2) -> list:
+    def edf(self, d: int, subgroup_divisor: int=None) -> list:
+        """
+        See `equal_degree_factorization`.
+        """
         return self.equal_degree_factorization(d, subgroup_divisor)
 
 
     def is_irreducible(self) -> bool:
-        # https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
-        # https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+        """
+        Determines if a Polynomial is irreducible over its ring.
+
+        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
+        https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+
+        Returns:
+            bool: Whether or not the Polynomial is irreducible over its ring.
+        """
         from samson.math.general import frobenius_map, frobenius_monomial_base
         n = self.degree()
 
@@ -283,7 +382,7 @@ class Polynomial(RingElement):
         f = self.monic()
         P = self.ring
 
-        subgroups = {n // fac for fac in factorint(n)}
+        subgroups = {n // fac for fac in factor_int(n)}
 
         bases  = frobenius_monomial_base(f)
         h      = bases[1]
@@ -301,15 +400,52 @@ class Polynomial(RingElement):
 
 
     def is_prime(self) -> bool:
+        """
+        See `is_irreducible`.
+        """
         return self.is_irreducible()
 
 
-    def factor(self, d: int=1, subgroup_divisor: int=2) -> list:
+    def factor(self, d: int=1, subgroup_divisor: int=None) -> list:
+        """
+        Factors the Polynomial into its constituent, irreducible factors.
+
+        Parameters:
+            d                (int): Degree to factor into.
+            subgroup_divisor (int): Smallest divisor of `order - 1`.
+
+        Returns:
+            list: Factors.
+
+        Example:
+            >>> from samson.math.algebra.all import *
+            >>> from functools import reduce
+            >>> Z7 = ZZ/ZZ(7)
+            >>> P  = Z7[x]
+
+            >>> # Generate random factors
+            >>> factors = []
+            >>> while len(factors) < 4:
+            >>>     factor = P.random(random_int(7) + 1)
+            >>>     if factor:
+            >>>         factors.append(factor)
+
+            >>> p = reduce(Polynomial.__mul__, factors, P[1]) # Build the Polynomial
+            >>> reduce(Polynomial.__mul__, p.factor(), P[1]) == p.monic() # Check the factorization is right
+            True
+
+        """
         distinct_degrees = [factor for poly in self.sff() for factor in poly.ddf()]
         return [factor for poly, _ in distinct_degrees for factor in poly.edf(d, subgroup_divisor)]
 
 
     def degree(self) -> int:
+        """
+        Return the degree of the Polynomial.
+
+        Returns:
+            int: Degree.
+        """
         try:
             return self.coeffs.last()
         except IndexError:
@@ -317,6 +453,12 @@ class Polynomial(RingElement):
 
 
     def ordinality(self) -> int:
+        """
+        Returns the ordinality of the Polynomial within its PolynomialRing.
+
+        Returns:
+            int: Ordinality.
+        """
         return int(self)
 
 
@@ -417,10 +559,8 @@ class Polynomial(RingElement):
         return self.ordinality() < other.ordinality()
 
 
-
     def __gt__(self, other):
         return self.ordinality() > other.ordinality()
-
 
 
     def __bool__(self) -> bool:
@@ -432,3 +572,13 @@ class Polynomial(RingElement):
 
     def __rshift__(self, num: int):
         return Polynomial(SparseVector([(idx-num, coeff) for idx, coeff in self.coeffs[num:]], self.coeff_ring.zero()), coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)
+
+
+    def is_invertible(self) -> bool:
+        """
+        Determines if the element is invertible.
+
+        Returns:
+            bool: Whether the element is invertible.
+        """
+        return self != self.ring.zero() and all([coeff.is_invertible() for _, coeff in self.coeffs])

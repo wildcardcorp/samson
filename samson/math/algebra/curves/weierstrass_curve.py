@@ -42,7 +42,8 @@ class WeierstrassPoint(RingElement):
 
 
     def __hash__(self):
-        return int(str(hash(self.x.val)) + str(hash(self.y.val)) + str(hash(self.curve)))
+        return int(str(hash(self.x.val) + hash(self.y.val)) + str(hash(self.curve)))
+        # return int(str(hash(self.x.val)) + str(hash(self.y.val)) + str(hash(self.curve)))
 
 
     def __eq__(self, P2: object) -> bool:
@@ -210,7 +211,7 @@ class WeierstrassCurve(Ring):
     @property
     def G(self) -> WeierstrassPoint:
         if not self.G_cache:
-            self.G_cache = self.random_point()
+            self.G_cache = self.random()
 
         return self.G_cache
 
@@ -224,6 +225,15 @@ class WeierstrassCurve(Ring):
 
 
     def element_at(self, x: int) -> WeierstrassPoint:
+        """
+        Returns the `x`-th element w.r.t to the generator.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           WeierstrassPoint: The `x`-th point.
+        """
         return self.G*x
 
 

@@ -37,7 +37,7 @@ class InvalidCurveAttack(object):
 
 
     @RUNTIME.report
-    def execute(self, public_key: WeierstrassPoint, invalid_curves: List[WeierstrassCurve], max_factor_size: int=2**16) -> int:
+    def execute(self, public_key: WeierstrassPoint, invalid_curves: List[WeierstrassCurve]=None, max_factor_size: int=2**16) -> int:
         """
         Executes the attack.
 
@@ -53,15 +53,37 @@ class InvalidCurveAttack(object):
         factors_seen = set()
         total        = 1
 
-        # TODO: Generate these curves if the user doesn't specify them
-        for inv_curve in invalid_curves:
+        reached_card = False
+
+        if not invalid_curves:
+            invalid_curves = []
+        
+
+        # Generate invalid curves if the user doesn't specify them or have enough factors
+        def curve_gen():
+            orig = self.curve
+            while True:
+                b = orig.b
+
+                while b == orig.b:
+                    b = orig.ring.random()
+
+                curve = WeierstrassCurve(a=orig.a, b=b, ring=orig.ring)
+                curve.cardinality()
+
+                curve.G_cache = orig.G_cache
+                yield curve
+
+
+        for inv_curve in itertools.chain(invalid_curves, curve_gen()):
             # Factor as much as we can
             factors = [r for r,_ in factorint(inv_curve.cardinality(), limit=max_factor_size).items() if r > 2 and r < max_factor_size]
             log.debug(f'Found factors: {factors}')
 
             # Request residues from crafted public keys
-            for factor in RUNTIME.report_progress(factors, desc='Sending malicious public keys', unit='factor'):
+            for factor in RUNTIME.report_progress(set(factors) - factors_seen, desc='Sending malicious public keys', unit='factor'):
                 if total > self.curve.cardinality():
+                    reached_card = True
                     break
 
                 if factor in factors_seen:
@@ -80,6 +102,8 @@ class InvalidCurveAttack(object):
                 residues.append((ZZ/ZZ(factor))(residue))
                 factors_seen.add(factor)
 
+            if reached_card:
+                break
 
         # We have to take into account the fact we can end up on the "negative" side of the field
         negations = [(residue, -residue) for residue in residues]
@@ -87,7 +111,7 @@ class InvalidCurveAttack(object):
         # Just bruteforce the correct configuration based off of the public key
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
             n, _ = crt(residue_subset)
-            if n.val * self.curve.G == public_key:
+            if int(n) * self.curve.G == public_key:
                 break
 
         return n.val

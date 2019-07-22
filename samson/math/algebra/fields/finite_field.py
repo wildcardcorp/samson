@@ -29,6 +29,12 @@ class FiniteFieldElement(FieldElement):
 
 
     def ordinality(self) -> int:
+        """
+        The ordinality of this element within the set.
+
+        Returns:
+            int: Ordinality.
+        """
         return int(self)
 
 
@@ -68,7 +74,6 @@ class FiniteFieldElement(FieldElement):
         return self.__truediv__(other)
 
 
-
 class FiniteField(Field):
     """
     Finite field of GF(p**n) constructed using a `PolynomialRing`.
@@ -77,9 +82,9 @@ class FiniteField(Field):
         >>> from samson.math import *
         >>> from sympy.abc import x
         >>> F = FiniteField(2, 8)
-        >>> assert F(5) / F(5) == F(1)
-        >>> F[x]/(F[x].one()*2)
-        <QuotientRing ring=F_(2**8)[x], quotient=<Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>>
+        >>> assert F[5] / F[5] == F(1)
+        >>> F[x]/F[x](x**7 + x**2 + 1)
+        <QuotientRing ring=F_(2**8)[x], quotient=<Polynomial: x**7 + x**2 + F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>>
 
     """
 
@@ -115,7 +120,6 @@ class FiniteField(Field):
 
 
         self.reducing_poly  = reducing_poly
-
         poly_ring           = PolynomialRing(self.internal_ring)
         self.internal_field = poly_ring/poly_ring(reducing_poly)
 
@@ -144,20 +148,6 @@ class FiniteField(Field):
         return self.coerce(1)
 
 
-    def random(self, size: int=None) -> FiniteFieldElement:
-        """
-        Generate a random element.
-
-        Parameters:
-            size (int): The ring-specific 'size' of the element.
-    
-        Returns:
-            FiniteFieldElement: Random element of the algebra.
-        """
-        from samson.math.general import random_int
-        return self[random_int(size or self.order)]
-
-
     def shorthand(self) -> str:
         return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
 
@@ -182,9 +172,6 @@ class FiniteField(Field):
         Returns:
             FiniteFieldElement: Coerced element.
         """
-        if type(other) is int:
-            other = int_to_poly(other, self.p) % self.reducing_poly
-
         if not type(other) is FiniteFieldElement:
             other = FiniteFieldElement(self.internal_field(other), self)
 
@@ -192,6 +179,15 @@ class FiniteField(Field):
 
 
     def element_at(self, x: int) -> object:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+
+        Returns:
+           FiniteFieldElement: The `x`-th element.
+        """
         return FiniteFieldElement(self.internal_field.element_at(x), self)
 
 

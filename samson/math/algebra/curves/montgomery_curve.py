@@ -100,6 +100,15 @@ class MontgomeryCurve(Ring):
 
 
     def element_at(self, x: int) -> object:
+        """
+        Returns the `x`-th element w.r.t to the generator.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           MontgomeryPoint: The `x`-th point.
+        """
         return self.G*x
 
     def __eq__(self, other) -> bool:

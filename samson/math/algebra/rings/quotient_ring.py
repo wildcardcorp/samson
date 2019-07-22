@@ -25,6 +25,12 @@ class QuotientElement(RingElement):
 
 
     def ordinality(self) -> int:
+        """
+        The ordinality of this element within the set.
+
+        Returns:
+            int: Ordinality.
+        """
         return self.val.ordinality()
 
 
@@ -48,7 +54,7 @@ class QuotientElement(RingElement):
         return QuotientElement((self.val % other.val) % self.ring.quotient, self.ring)
 
     def __invert__(self) -> object:
-        return QuotientElement(mod_inv(self.val, self.ring.quotient, zero=self.ring.ring.zero(), one=self.ring.ring.one()), self.ring)
+        return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
 
     def __truediv__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -60,6 +66,16 @@ class QuotientElement(RingElement):
 
     def __neg__(self) -> object:
         return QuotientElement((-self.val) % self.ring.quotient, self.ring)
+
+    def is_invertible(self) -> bool:
+        """
+        Determines if the element is invertible.
+
+        Returns:
+            bool: Whether the element is invertible.
+        """
+        from samson.math.general import gcd
+        return gcd(self.val, self.ring.quotient) == self.ring.ring.one()
 
 
 class QuotientRing(Ring):
@@ -139,19 +155,6 @@ class QuotientRing(Ring):
         return QuotientElement(self.ring.one(), self)
 
 
-    def random(self, size: int=None) -> QuotientElement:
-        """
-        Generate a random element.
-
-        Parameters:
-            size (int): The ring-specific 'size' of the element.
-    
-        Returns:
-            QuotientElement: Random element of the algebra.
-        """
-        return QuotientElement(self.ring.random(size or self.order), self)
-
-
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}/{self.quotient.shorthand()}'
 
@@ -172,6 +175,15 @@ class QuotientRing(Ring):
 
 
     def element_at(self, x: int) -> QuotientElement:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           QuotientElement: The `x`-th element.
+        """
         return self(self.ring.element_at(x))
 
 

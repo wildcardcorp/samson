@@ -18,9 +18,23 @@ class Ring(ABC):
     def one(self):
         pass
 
-    @abstractmethod
-    def random(self, size: int=None):
-        pass
+    def random(self, size: object) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int/RingElement): The maximum ordinality/element (non-inclusive).
+    
+        Returns:
+            RingElement: Random element of the algebra.
+        """
+        from samson.math.general import random_int
+
+        if type(size) is int:
+            return self[random_int(size)]
+        else:
+            return self[random_int(size.ordinality())]
+
 
     def coerce(self, other: object) -> object:
         """
@@ -48,6 +62,15 @@ class Ring(ABC):
 
 
     def element_at(self, x: int) -> object:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           RingElement: The `x`-th element.
+        """
         raise NotImplementedError()
 
 
@@ -137,3 +160,12 @@ class RingElement(ABC):
 
     def __int__(self) -> int:
         return int(self.val)
+
+    def is_invertible(self) -> bool:
+        """
+        Determines if the element is invertible.
+
+        Returns:
+            bool: Whether the element is invertible.
+        """
+        return False

@@ -39,7 +39,20 @@ class MultiplicativeGroupElement(RingElement):
 
     def __neg__(self) -> object:
         return MultiplicativeGroupElement(~self.val, self.ring)
+    
 
+    def ordinality(self) -> int:
+        return self.val.ordinality() - 1
+    
+
+    def is_invertible(self) -> bool:
+        """
+        Determines if the element is invertible.
+
+        Returns:
+            bool: Whether the element is invertible.
+        """
+        return self.val.is_invertible()
 
 
 class MultiplicativeGroup(Ring):
@@ -86,19 +99,6 @@ class MultiplicativeGroup(Ring):
         return self.zero()
 
 
-    def random(self, size: int=None) -> MultiplicativeGroupElement:
-        """
-        Generate a random element.
-
-        Parameters:
-            size (int): The ring-specific 'size' of the element.
-    
-        Returns:
-            MultiplicativeGroupElement: Random element of the algebra.
-        """
-        return MultiplicativeGroupElement(self.ring.random(size), self)
-
-
     def __repr__(self):
         return f"<MultiplicativeGroup ring={self.ring}>"
 
@@ -123,6 +123,15 @@ class MultiplicativeGroup(Ring):
 
 
     def element_at(self, x: int) -> MultiplicativeGroupElement:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           MultiplicativeGroupElement: The `x`-th element.
+        """
         return self(self.ring[x+1])
 
     def __eq__(self, other: object) -> bool:

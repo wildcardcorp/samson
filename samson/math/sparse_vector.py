@@ -2,7 +2,16 @@ from samson.utilities.general import binary_search
 from sortedcontainers import SortedDict
 
 class SparseVector(object):
-    def __init__(self, items: list, zero: int=0):
+    """
+    Sparse vector implementation. Saves on memory when representing high-dimensional vectors with many zeroes.
+    """
+
+    def __init__(self, items: list, zero: object=0):
+        """
+        Parameters:
+            items  (list): Items as dictionary, list of tuples, or just a list.
+            zero (object): The zero element. This element will not be stored.
+        """
         if type(items) is dict:
             self.values = SortedDict({k:v for k,v in items if v != zero})
 
@@ -29,7 +38,13 @@ class SparseVector(object):
         return hash(tuple([_ for _ in self.values.items()]))
 
 
-    def last(self) -> object:
+    def last(self) -> int:
+        """
+        Returns the index of the last element.
+
+        Returns:
+            int: Index of last element.
+        """
         return self.values.keys()[-1]
 
 

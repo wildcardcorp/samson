@@ -43,3 +43,12 @@ class FieldElement(RingElement):
 
     def __floordiv__(self, other: object) -> object:
         return self.__truediv__(other)
+
+    def is_invertible(self) -> bool:
+        """
+        Determines if the element is invertible.
+
+        Returns:
+            bool: Whether the element is invertible.
+        """
+        return self != self.ring.zero()

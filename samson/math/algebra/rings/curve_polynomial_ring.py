@@ -145,10 +145,7 @@ class CurvePolynomialRing(Ring):
         Returns:
             CurvePolynomialElement: Random element of the algebra.
         """
-        if not size:
-            size = 1
-
-        return CurvePolynomialElement(Polynomial([self.poly_ring.ring.random() for _ in range(size)], self.poly_ring.ring), None, self)
+        return CurvePolynomialElement(self.poly_ring.random(size.x_poly), None, self)
 
 
     def __repr__(self):

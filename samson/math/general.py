@@ -59,7 +59,7 @@ def poly_to_int(poly: object) -> int:
         100
 
     """
-    modulus = int(poly.coeff_ring.quotient.val)
+    modulus = poly.coeff_ring.order
     value   = 0
     for idx, coeff in poly.coeffs:
         value += int(coeff) * modulus**idx
@@ -173,11 +173,12 @@ def gcd(a: int, b: int) -> int:
             a, b = b, a % b
 
 
-# https://anh.cs.luc.edu/331/notes/xgcd.pdf
-def xgcd(a: int, b: int, zero: int=0, one: int=1) -> (int, int, int):
+def xgcd(a: int, b: int) -> (int, int, int):
     """
     Extended Euclidean algorithm form of GCD.
     `ax + by = gcd(a, b)`
+
+    https://anh.cs.luc.edu/331/notes/xgcd.pdf
 
     Parameters:
         a (int): First integer.
@@ -194,18 +195,45 @@ def xgcd(a: int, b: int, zero: int=0, one: int=1) -> (int, int, int):
         >>> from samson.math.algebra.all import FF
         >>> from sympy.abc import x
         >>> P = FF(2, 8)[x]
-        >>> xgcd(P(x**2), P(x**5), P.zero(), P.one())
+        >>> xgcd(P(x**2), P(x**5))
         (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
 
     """
-    prevx, x = one, zero; prevy, y = zero, one
+    from samson.math.algebra.rings.integer_ring import ZZ
+    from samson.math.polynomial import Polynomial
+
+    # For convenience
+    peel_ring = False
+    if type(a) is int:
+        peel_ring = True
+        a = ZZ(a)
+        b = ZZ(b)
+
+    R = a.ring
+
+    # Generic xgcd
+    prevx, x = R.one(), R.zero(); prevy, y = R.zero(), R.one()
     while b:
         q = a // b
         x, prevx = prevx - q*x, x
         y, prevy = prevy - q*y, y
         a, b = b, a % b
-    return a, prevx, prevy
 
+    g, s, t = a, prevx, prevy
+
+    # Normalize if possible
+    if g.is_invertible() and s:
+        s_g = s // g
+        if s_g:
+            g, s, t = g // g, s_g, t // g
+
+
+    if peel_ring:
+        g = g.val
+        s = s.val
+        t = t.val
+
+    return g, s, t
 
 
 def lcm(a: int, b: int) -> int:
@@ -234,7 +262,7 @@ def lcm(a: int, b: int) -> int:
     return a // gcd(a, b) * b
 
 
-def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
+def mod_inv(a: int, n: int) -> int:
     """
     Calculates the modular inverse according to
     https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
@@ -253,14 +281,27 @@ def mod_inv(a: int, n: int, zero: int=0, one: int=1) -> int:
         9
 
     """
-    _, x, _ = xgcd(a, n, zero=zero, one=one)
+    from samson.math.algebra.rings.integer_ring import ZZ
 
-    if (a * x) % n != one:
+    # For convenience
+    peel_ring = False
+    if type(a) is int:
+        peel_ring = True
+        a = ZZ(a)
+        n = ZZ(n)
+
+    _, x, _ = xgcd(a, n)
+    R = a.ring
+
+    if (a * x) % n != R.one():
         raise NotInvertibleException("'a' is not invertible", parameters={'a': a, 'x': x, 'n': n})
 
-    if type(x) is int and x < zero:
+    if x < R.zero():
         x = x + n
 
+    if peel_ring:
+        x = x.val
+    
     return x
 
 
@@ -374,16 +415,15 @@ def kth_root(n: int, k: int) -> int:
     return lb
 
 
-def crt(residues: list, moduli: list=None) -> (int, int):
+def crt(residues: list, moduli: list=None) -> (object, object):
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
 
     Parameters:
-        residues (list): Residues of `x` in order relative to `moduli`.
-        moduli   (list): Moduli of the residues.
-    
+        residues (list): Residues of `x` as QuotientElements or tuples.
+
     Returns:
-        (int, int): Formatted as (computed `x`, modulus).
+        (RingElement, RingElement): Formatted as (computed `x`, modulus).
     
     Examples:
         >>> from samson.math.general import crt
@@ -426,7 +466,7 @@ def crt(residues: list, moduli: list=None) -> (int, int):
 
     for i in range(1, len(residues)):
         modulus = residues[i].ring.quotient
-        x  = (mod_inv(Nx, modulus, zero=ring.zero(), one=ring.one()) * (residues[i].val - x)) * Nx + x
+        x  = (mod_inv(Nx, modulus) * (residues[i].val - x)) * Nx + x
         Nx = Nx * modulus
 
     x = x % Nx
@@ -574,7 +614,7 @@ def tonelli_q(a: int, p: int, q: int) -> int:
         n (int): Integer.
         p (int): Modulus.
         q (int): Root to take.
-    
+
     Returns:
         int: `q`th-root of `n` mod `p`.
 
@@ -1281,7 +1321,7 @@ def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
         h     (object): Result to find discrete logarithm of.
         n        (int): Order of the group.
         factors (dict): `n`'s factorization.
-    
+
     Returns:
         int: The discrete logarithm of `h` given `g`.
 
@@ -1727,13 +1767,16 @@ def ecm(n: int, attempts: int=None) -> int:
 
 
 
-def factor(n: int, visual: bool=False) -> list:
+def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, visual: bool=False) -> list:
     """
     Factors an integer `n` into its prime factors.
 
     Parameters:
-        n       (int): Integer to factor.
-        visual (bool): Whether or not to display progress bar.
+        n          (int): Integer to factor.
+        use_trial (bool): Whether or not to use trial division.
+        use_rho   (bool): Whether or not to use Pollard's rho factorization.
+        use_ecm   (bool): Whether or not to use ECM factorization.
+        visual    (bool): Whether or not to display progress bar.
     
     Returns:
         list: List of factors.
@@ -1741,13 +1784,23 @@ def factor(n: int, visual: bool=False) -> list:
     Examples:
         >>> from samson.math.general import factor
         >>> factor(26515460203326943826)
-        [2, 3262271209, 4063957057]
+        {2: 1, 3262271209: 1, 4063957057: 1}
 
     """
     from tqdm import tqdm
 
-    if not n or is_prime(n):
-        return {n: 1}
+    factors = {}
+
+    # Handle negatives
+    if n < 1:
+        factors[-1] = 1
+        n //= - 1
+
+    # Handle [0, 1] or prime
+    if n < 2 or is_prime(n):
+        factors[n] = 1
+        return factors
+
 
     def calc_prog(x):
         return round(math.log(x, 2), 2)
@@ -1769,8 +1822,6 @@ def factor(n: int, visual: bool=False) -> list:
             pass
 
 
-    factors = {}
-
     def add_or_inc(fac):
         if fac in factors:
             factors[fac] += 1
@@ -1779,20 +1830,28 @@ def factor(n: int, visual: bool=False) -> list:
 
     try:
         # Trial division
-        for prime in PRIMES_UNDER_1000:
-            while not n % prime:
-                add_or_inc(prime)
-                progress_update(prime)
-                n //= prime
+        if use_trial:
+            for prime in PRIMES_UNDER_1000:
+                while not n % prime:
+                    add_or_inc(prime)
+                    progress_update(prime)
+                    n //= prime
 
 
-        if not (n == 1 or is_prime(n)):
+        if use_rho and not (n == 1 or is_prime(n)):
             # Pollard's rho
             while not is_prime(n):
                 n_fac = pollards_rho(n)
                 if n_fac == n:
                     break
 
+                add_or_inc(n_fac)
+                progress_update(n_fac)
+                n //= n_fac
+        
+        if use_ecm and not (n == 1 or is_prime(n)):
+            while not is_prime(n):
+                n_fac = ecm(n)
                 add_or_inc(n_fac)
                 progress_update(n_fac)
                 n //= n_fac

@@ -134,7 +134,14 @@ class FractionField(Field):
         Returns:
             FractionFieldElement: Random element of the algebra.
         """
-        return FractionFieldElement(self.ring.random(size), self.ring.random(size), self)
+        if type(size) is int:
+            numerator   = size
+            denominator = size
+        else:
+            numerator   = size.numerator
+            denominator = size.denominator
+
+        return FractionFieldElement(self.ring.random(numerator), max(self.ring.one(), self.ring.random(denominator)), self)
 
 
     def shorthand(self) -> str:

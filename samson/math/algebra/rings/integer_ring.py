@@ -29,6 +29,12 @@ class IntegerElement(RingElement):
 
 
     def ordinality(self) -> int:
+        """
+        The ordinality of this element within the set.
+
+        Returns:
+            int: Ordinality.
+        """
         return self.val
 
     def __add__(self, other: object) -> object:
@@ -48,17 +54,21 @@ class IntegerElement(RingElement):
     def __mul__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val * other.val, self.ring)
+    
+
+    def __divmod__(self, other: object) -> (object, object):
+        other = self.ring.coerce(other)
+        q, r = divmod(self.val, other.val)
+        return IntegerElement(q, self.ring), IntegerElement(r, self.ring)
 
     def __mod__(self, other: object) -> object:
-        other = self.ring.coerce(other)
-        return IntegerElement(self.val % other.val, self.ring)
+        return divmod(self, other)[1]
 
     def __rmod__(self, other: object) -> object:
         return self.ring.coerce(other) % self
 
     def __floordiv__(self, other: object) -> object:
-        other = self.ring.coerce(other)
-        return IntegerElement(self.val // other.val, self.ring)
+        return divmod(self, other)[0]
 
     __truediv__ = __floordiv__
 
@@ -97,21 +107,16 @@ class IntegerRing(Ring):
         return IntegerElement(1, self)
 
 
-    def random(self, size: int=None) -> IntegerElement:
+    def element_at(self, x: int) -> IntegerElement:
         """
-        Generate a random element.
+        Returns the `x`-th element of the set.
 
         Parameters:
-            size (int): The ring-specific 'size' of the element.
-    
+            x (int): Element ordinality.
+        
         Returns:
-            IntegerElement: Random element of the algebra.
+           IntegerElement: The `x`-th element.
         """
-        from samson.math.general import random_int
-        return IntegerElement(random_int(size), self)
-
-
-    def element_at(self, x: int) -> IntegerElement:
         return self(x)
 
 

@@ -82,6 +82,15 @@ class TwistedEdwardsCurve(Ring):
 
 
     def element_at(self, x: int) -> object:
+        """
+        Returns the `x`-th element w.r.t to the generator.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           TwistedEdwardsPoint: The `x`-th point.
+        """
         return self.B*x
 
 

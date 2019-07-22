@@ -23,25 +23,10 @@ X   DocTests
     X   Swap to Pytest
     X   Write doctests
 
-
-X   CAS
-    OK  All algebras should have repeated addition (multiplication by integer)
-    OK  Add the ability to retrieve elements by ordinality to countable sets
-    OK  Unify 'order' and 'cardinality' properties/functions
-    OK  Ability to generate random elements
-    OK  Calculate ring characteristics
-
-    OK  Polynomial factorization
-    OK  Integer factorization
-    OK  Discrete logarithms
-    OK  Integer primality testing
-
-
-X   Improve Polynomial implementation
-    X   NTT-DFT (or something for arbitrary algebras) for multiplication/division
-    OK  Sparse vector as underlying list
-    X   Fast modulo
-
+OK  Ring random should take a maximum element
+X   Polynomial SFF k-th root
+X   Polynomial factorization works in any ring
+OK  Can't invert FF(3, 8)
 
 X   Test math
     X   Unittest math.general
@@ -50,16 +35,9 @@ X   Test math
     OK  Doctest algebras
 
 
-OK  Remove fastecdsa dependency
-OK  Better exceptions
-X   Unify Diffie-Hellmans
-X   LRU caching?
-
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
-
-X   LCG.crack_truncated crashes during LLL with lots of samples (50+)
 
 X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
 
@@ -87,6 +65,13 @@ X   Rabbit stream cipher
 X   HC-256 stream cipher
 
 X   DHParams ASN1
+X   Increase performance
+    X   Weierstrass curves
+    X   Polynomial mul/div (NTT-FFT)
+    X   Schoof's algorithm
+    X   LLL
+
+X   LCG.crack_truncated crashes during LLL with lots of samples (50+; sympy related?)
 
 
 X   Composable exploits and ACE
@@ -122,6 +107,7 @@ X   More encoders/decoders/cryptosystems
 X   OCB3
 X   Fermat pseudoprime generation
 X   Lucas pseudoprime generation
+X   Unify Diffie-Hellmans
 
 
 

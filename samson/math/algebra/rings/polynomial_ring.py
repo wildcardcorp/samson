@@ -26,7 +26,7 @@ class PolynomialRing(Ring):
 
     @property
     def characteristic(self):
-        return 0
+        return self.ring.characteristic
 
 
     def zero(self) -> Polynomial:
@@ -43,22 +43,6 @@ class PolynomialRing(Ring):
             Polynomial: '1' element of the algebra.
         """
         return Polynomial([self.ring(1)], coeff_ring=self.ring, ring=self)
-
-
-    def random(self, size: int=None) -> Polynomial:
-        """
-        Generate a random element.
-
-        Parameters:
-            size (int): The ring-specific 'size' of the element.
-    
-        Returns:
-            Polynomial: Random element of the algebra.
-        """
-        if not size:
-            size = 1
-
-        return Polynomial([self.ring.random(self.ring.order) for _ in range(size)], coeff_ring=self.ring, ring=self)
 
 
     def __repr__(self):
@@ -87,6 +71,9 @@ class PolynomialRing(Ring):
         Returns:
             Polynomial: Coerced element.
         """
+        if type(other) is int:
+            other = [other]
+
         if type(other) is list or issubclass(type(other), Expr):
             return Polynomial(other, coeff_ring=self.ring, ring=self)
 
@@ -97,6 +84,15 @@ class PolynomialRing(Ring):
 
 
     def element_at(self, x: int) -> Polynomial:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           Polynomial: The `x`-th element.
+        """
         base_coeffs = []
         modulus     = self.ring.characteristic
 

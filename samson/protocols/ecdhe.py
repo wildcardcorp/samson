@@ -1,5 +1,6 @@
 from samson.math.algebra.curves.named import P256
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassPoint
+from samson.math.general import random_int
 from samson.utilities.bytes import Bytes
 
 class ECDHE(object):
@@ -13,7 +14,7 @@ class ECDHE(object):
             d              (int): Secret key.
             G (WeierstrassPoint): Generator point on an elliptical curve.
         """
-        self.d   = d or Bytes.random(16).int()
+        self.d   = d or random_int(G.ring.cardinality())
         self.G   = G
         self.pub = pub
 
