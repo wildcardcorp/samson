@@ -1,8 +1,7 @@
-from samson.math.general import gcd, mod_inv, lll, is_power_of_two, is_prime
+from samson.math.general import gcd, mod_inv, lll, is_power_of_two, is_prime, factor as factorint
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
-from sympy.ntheory import factorint
 from sympy.ntheory.residue_ntheory import is_primitive_root
 import functools
 
@@ -65,7 +64,7 @@ class LCG(object):
             if self.m % 4 == 0:
                 divisible_by_four = (self.a - 1) % 4 == 0
 
-            factors = [factor for factor, count in factorint(self.m).items()]
+            factors = [factor for factor in factorint(self.m)]
             divisible_by_all_factors = all([((self.a - 1) % factor) == 0 for factor in factors])
             return gcd(self.m, self.c) == 1 and divisible_by_four and divisible_by_all_factors
 

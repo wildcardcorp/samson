@@ -54,7 +54,7 @@ class IntegerElement(RingElement):
     def __mul__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val * other.val, self.ring)
-    
+
 
     def __divmod__(self, other: object) -> (object, object):
         other = self.ring.coerce(other)
@@ -75,6 +75,14 @@ class IntegerElement(RingElement):
     def __neg__(self) -> object:
         return IntegerElement(-self.val, self.ring)
 
+    def __eq__(self, other: object) -> bool:
+        if other is IntegerElement:
+            other = other.val
+
+        return self.val == other
+
+    def __hash__(self):
+        return super().__hash__()
 
 
 class IntegerRing(Ring):

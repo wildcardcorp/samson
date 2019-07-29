@@ -19,20 +19,7 @@ X   Document new parsers
     X   Add class/function documentation
 
 
-X   DocTests
-    X   Swap to Pytest
-    X   Write doctests
-
-OK  Ring random should take a maximum element
-X   Polynomial SFF k-th root
 X   Polynomial factorization works in any ring
-OK  Can't invert FF(3, 8)
-
-X   Test math
-    X   Unittest math.general
-    X   Unittest algebras
-    X   Doctest math.general
-    OK  Doctest algebras
 
 
 X   Separate key parameters from use? Explains some gaps in functions vs data

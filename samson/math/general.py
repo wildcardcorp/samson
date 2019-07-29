@@ -1,7 +1,8 @@
-from samson.utilities.general import rand_bytes
+from samson.utilities.general import rand_bytes, add_or_increment
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
 from sympy.matrices import Matrix, GramSchmidt
 from sympy import sieve
+from itertools import chain
 from sympy.abc import x
 from types import FunctionType
 from copy import deepcopy
@@ -200,7 +201,6 @@ def xgcd(a: int, b: int) -> (int, int, int):
 
     """
     from samson.math.algebra.rings.integer_ring import ZZ
-    from samson.math.polynomial import Polynomial
 
     # For convenience
     peel_ring = False
@@ -256,7 +256,7 @@ def lcm(a: int, b: int) -> int:
         >>> from sympy.abc import x
         >>> P = FF(2, 8)[x]
         >>> lcm(P(x**2 + 5), P(x-6))
-        <Polynomial: x**3 + F_(2**8)(x)*x**2 + F_(2**8)(x**2 + ZZ(1))*x + F_(2**8)(x**3 + x), coeff_ring=F_(2**8)>
+        <Polynomial: x**3 + x, coeff_ring=F_(2**8)>
 
     """
     return a // gcd(a, b) * b
@@ -301,7 +301,7 @@ def mod_inv(a: int, n: int) -> int:
 
     if peel_ring:
         x = x.val
-    
+
     return x
 
 
@@ -322,11 +322,11 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         >>> square_and_mul(5, 10, 1)
         9765625
 
-        >>> from samson.math.algebra.all import FF
+        >>> from samson.math.algebra.all import ZZ
         >>> from sympy.abc import x
-        >>> P = FF(2, 8)[x]
-        >>> square_and_mul(P(x+5), 32)
-        <Polynomial: x**32 + F_(2**8)(x**6 + x**3 + x**2), coeff_ring=F_(2**8)>
+        >>> P = (ZZ/ZZ(127))[x]
+        >>> square_and_mul(P(x+5), 6)
+        <Polynomial: x**6 + ZZ(30)*x**5 + ZZ(121)*x**4 + ZZ(87)*x**3 + ZZ(104)*x**2 + ZZ(81)*x + ZZ(4), coeff_ring=ZZ/ZZ(127)>
 
     """
     invert = False
@@ -363,11 +363,11 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         >>> fast_mul(5, 12, 0)
         60
 
-        >>> from samson.math.algebra.all import FF
+        >>> from samson.math.algebra.all import ZZ
         >>> from sympy.abc import x
-        >>> P = FF(2, 8)[x]
+        >>> P = (ZZ/ZZ(127))[x]
         >>> fast_mul(P(x+5), 5)
-        <Polynomial: x + F_(2**8)(x**2 + ZZ(1)), coeff_ring=F_(2**8)>
+        <Polynomial: ZZ(5)*x + ZZ(25), coeff_ring=ZZ/ZZ(127)>
 
     """
     s = s if s is not None else a.ring.zero()
@@ -383,10 +383,11 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
     return s
 
 
-# https://stackoverflow.com/questions/23621833/is-cube-root-integer
 def kth_root(n: int, k: int) -> int:
     """
     Calculates the `k`-th integer root of `n`.
+
+    https://stackoverflow.com/questions/23621833/is-cube-root-integer
 
     Parameters:
         n (int): Integer.
@@ -457,7 +458,7 @@ def crt(residues: list, moduli: list=None) -> (object, object):
             peel_ring = True
         else:
             ring = residues[0][0].ring
-        
+
         residues = [(ring/ring(mod))(res) for res, mod in residues]
 
     x  = residues[0].val
@@ -515,7 +516,7 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
 
     Parameters:
         a (int): Possible `k`-th residue.
-        k (int): Root.
+        k (int): Root to take.
         p (int): Modulus.
     
     Returns:
@@ -534,20 +535,20 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
 
     """
     result = pow(a, (p-1) // gcd(k, p-1), p)
-    if result == p-1:
+    if result > 1:
         result = -1
 
     return ResidueSymbol(result)
 
 
-# https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
-# https://www.geeksforgeeks.org/find-square-root-modulo-p-set-2-shanks-tonelli-algorithm/
-# https://rosettacode.org/wiki/Tonelli-Shanks_algorithm#Python
-
 
 def tonelli(n: int, p: int) -> int:
     """
     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
+
+    https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
+    https://www.geeksforgeeks.org/find-square-root-modulo-p-set-2-shanks-tonelli-algorithm/
+    https://rosettacode.org/wiki/Tonelli-Shanks_algorithm#Python
 
     Parameters:
         n (int): Integer.
@@ -703,9 +704,9 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
         >>> from sympy.matrices import Matrix, eye
         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
         >>> lll([m.row(row) for row in range(m.rows)])
-        ⎡3   2  1  0⎤
-        ⎢           ⎥
-        ⎣-2  0  2  4⎦
+        Matrix([
+        [ 3, 2, 1, 0],
+        [-2, 0, 2, 4]])
 
     """
     basis = deepcopy(in_basis)
@@ -946,50 +947,87 @@ def is_power_of_two(n: int) -> bool:
     return n != 0 and (n & (n - 1) == 0)
 
 
+def totient(n: int, factors: dict=None) -> int:
+    """
+    Calculates Euler's totient of `n`. The totient is the number of elements coprime to `n`.
 
-def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30, f: FunctionType=None) -> int:
+    Parameters:
+        n        (int): Number to find the totient of.
+        factors (dict): Factors of `n`.
+    
+    Returns:
+        int: Totient of `n`.
+    """
+    if not factors:
+        factors = factor(n)
+
+    t = 1
+    for p, e in factors.items():
+        t *= (p-1) * p**(e-1)
+
+    return t
+
+
+def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, f: FunctionType=None, apply_reduction: bool=True) -> int:
     """
     Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
 
+    https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
+
     Parameters:
-        p          (int): Prime modulus.
-        g          (int): Generator.
-        y          (int): Number to find the discrete logarithm of.
-        a          (int): Interval start.
-        b          (int): Interval end.
-        iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
-        f         (func): pseudorandom map function.
+        g             (object): Generator.
+        y             (object): Number to find the discrete logarithm of.
+        a                (int): Interval start.
+        b                (int): Interval end.
+        iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
+        f               (func): Pseudorandom map function of signature (y: RingElement, k: int) -> int.
+        apply_reduction (bool): Whether or not to reduce the answer by the ring's order.
     
     Returns:
         int: The discrete logarithm. Possibly None if it couldn't be found.
     
     Examples:
         >>> from samson.math.general import pollards_kangaroo
-        >>> g, x, p = 5, 13, 67
-        >>> y = pow(g, x, p)
-        >>> pollards_kangaroo(p, g, y, 0, 20)
-        585
+        >>> from samson.math.algebra.all import *
+        >>> p = find_prime(2048) 
+        >>> g, x = 5, max(random_int(p), 1) 
+        >>> R = (ZZ/ZZ(p)).mul_group() 
+        >>> g = R(g) 
+        >>> y = g*x 
+        >>> dlog = pollards_kangaroo(g, y, x-1000, x+1000)
+        >>> g * dlog == y
+        True
 
-        >>> pow(5, 585, 67) == y
+        >>> p =  53
+        >>> ring = ZZ/ZZ(p)
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
+        >>> start, end = hasse_frobenius_trace_interval(curve.p)
+        >>> dlog = pollards_kangaroo(g=curve.G, y=curve.POINT_AT_INFINITY, a=start + curve.p, b=end + curve.p)
+        >>> curve.G * dlog == curve.zero()
         True
 
     """
     k = iterations
+    R = g.ring
 
+    # This pseudorandom map function has the following desirable properties:
+    # 1) Never returns zero. Zero can form an infinite loop
+    # 2) Works across all rings
     if not f:
-        f = lambda y: pow(2, y % k, p)
+        n = kth_root(b-a, 2)
+        f = lambda y, k: pow(2, hash(y) % k, n)
 
     while k > 1:
-        N = (f(0) + f(b)) // 2  * 4
+        N = (f(g, k) + f(g*b, k)) // 2 * 4
 
         # Tame kangaroo
         xT = 0
-        yT = pow(g, b, p)
+        yT = g*b
 
         for _ in range(N):
-            f_yT  = f(yT)
+            f_yT  = f(yT, k)
             xT   += f_yT
-            yT    = (yT * pow(g, f_yT, p)) % p
+            yT   += g*f_yT
 
 
         # Wild kangaroo
@@ -997,18 +1035,84 @@ def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30
         yW = y
 
         while xW < b - a + xT:
-            f_yW = f(yW)
+            f_yW = f(yW, k)
             xW  += f_yW
-            yW   = (yW * pow(g, f_yW, p)) % p
+            yW  += g*f_yW
 
             if yW == yT:
-                return b + xT - xW
+                result = b + xT - xW
+
+                if apply_reduction:
+                    result %= R.order
+
+                return result
 
 
         # Didn't find it. Try another `k`
         k -= 1
 
     raise ProbabilisticFailureException("Discrete logarithm not found")
+
+
+# def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30, f: FunctionType=None) -> int:
+#     """
+#     Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
+#     Parameters:
+#         p          (int): Prime modulus.
+#         g          (int): Generator.
+#         y          (int): Number to find the discrete logarithm of.
+#         a          (int): Interval start.
+#         b          (int): Interval end.
+#         iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
+#         f         (func): pseudorandom map function.
+
+#     Returns:
+#         int: The discrete logarithm. Possibly None if it couldn't be found.
+
+#     Examples:
+#         >>> from samson.math.general import pollards_kangaroo
+#         >>> g, x, p = 5, 13, 67
+#         >>> y = pow(g, x, p)
+#         >>> pollards_kangaroo(p, g, y, 0, 20)
+#         585
+#         >>> pow(5, 585, 67) == y
+#         True
+#     """
+#     k = iterations
+
+#     if not f:
+#         f = lambda y: pow(2, y % k, p)
+
+#     while k > 1:
+#         N = (f(0) + f(b)) // 2  * 4
+
+#         # Tame kangaroo
+#         xT = 0
+#         yT = pow(g, b, p)
+
+#         for _ in range(N):
+#             f_yT  = f(yT)
+#             xT   += f_yT
+#             yT    = (yT * pow(g, f_yT, p)) % p
+
+
+#         # Wild kangaroo
+#         xW = 0
+#         yW = y
+
+#         while xW < b - a + xT:
+#             f_yW = f(yW)
+#             xW  += f_yW
+#             yW   = (yW * pow(g, f_yW, p)) % p
+
+#             if yW == yT:
+#                 return b + xT - xW
+
+
+#         # Didn't find it. Try another `k`
+#         k -= 1
+
+#     raise ProbabilisticFailureException("Discrete logarithm not found")
 
 
 
@@ -1679,6 +1783,8 @@ def pollards_rho(n: int) -> int:
     """
     Uses Pollard's rho to find a factor of `n`.
 
+    https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
+
     Parameters:
         n (int): Integer to factor.
     
@@ -1691,7 +1797,6 @@ def pollards_rho(n: int) -> int:
         2
 
     """
-    # https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
     x = 2
     x_fixed = x
     cycle_size = 2
@@ -1767,7 +1872,7 @@ def ecm(n: int, attempts: int=None) -> int:
 
 
 
-def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, visual: bool=False) -> list:
+def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, limit: int=1000, visual: bool=False) -> list:
     """
     Factors an integer `n` into its prime factors.
 
@@ -1777,14 +1882,14 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         use_rho   (bool): Whether or not to use Pollard's rho factorization.
         use_ecm   (bool): Whether or not to use ECM factorization.
         visual    (bool): Whether or not to display progress bar.
-    
+
     Returns:
         list: List of factors.
     
     Examples:
         >>> from samson.math.general import factor
-        >>> factor(26515460203326943826)
-        {2: 1, 3262271209: 1, 4063957057: 1}
+        >>> factor(26515460203326943826) == {2: 1, 3262271209: 1, 4063957057: 1} # equality because pytest sorts dicts weird
+        True
 
     """
     from tqdm import tqdm
@@ -1794,7 +1899,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
     # Handle negatives
     if n < 1:
         factors[-1] = 1
-        n //= - 1
+        n //= -1
 
     # Handle [0, 1] or prime
     if n < 2 or is_prime(n):
@@ -1821,19 +1926,12 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         def progress_finish():
             pass
 
-
-    def add_or_inc(fac):
-        if fac in factors:
-            factors[fac] += 1
-        else:
-            factors[fac] = 1
-
     try:
         # Trial division
         if use_trial:
-            for prime in PRIMES_UNDER_1000:
+            for prime in chain(PRIMES_UNDER_1000, sieve.primerange(1000, limit)):
                 while not n % prime:
-                    add_or_inc(prime)
+                    add_or_increment(factors, prime)
                     progress_update(prime)
                     n //= prime
 
@@ -1845,14 +1943,15 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                 if n_fac == n:
                     break
 
-                add_or_inc(n_fac)
+                add_or_increment(factors, n_fac)
                 progress_update(n_fac)
                 n //= n_fac
-        
+
         if use_ecm and not (n == 1 or is_prime(n)):
+            # Lenstra's ECM
             while not is_prime(n):
                 n_fac = ecm(n)
-                add_or_inc(n_fac)
+                add_or_increment(factors, n_fac)
                 progress_update(n_fac)
                 n //= n_fac
 
@@ -1861,6 +1960,6 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
 
     progress_finish()
     if n != 1:
-        add_or_inc(n)
+        add_or_increment(factors, n)
 
     return factors

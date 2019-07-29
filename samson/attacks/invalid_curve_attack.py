@@ -1,9 +1,8 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import crt
+from samson.math.general import crt, factor as factorint
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle
-from sympy import factorint
 from typing import List
 import itertools
 
@@ -57,7 +56,7 @@ class InvalidCurveAttack(object):
 
         if not invalid_curves:
             invalid_curves = []
-        
+
 
         # Generate invalid curves if the user doesn't specify them or have enough factors
         def curve_gen():
@@ -77,7 +76,7 @@ class InvalidCurveAttack(object):
 
         for inv_curve in itertools.chain(invalid_curves, curve_gen()):
             # Factor as much as we can
-            factors = [r for r,_ in factorint(inv_curve.cardinality(), limit=max_factor_size).items() if r > 2 and r < max_factor_size]
+            factors = [r for r,_ in factorint(inv_curve.cardinality(), use_rho=False, limit=max_factor_size).items() if r > 2 and r < max_factor_size]
             log.debug(f'Found factors: {factors}')
 
             # Request residues from crafted public keys

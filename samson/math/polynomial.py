@@ -1,6 +1,7 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import fast_mul, square_and_mul, gcd, factor as factor_int
 from samson.math.sparse_vector import SparseVector
+from samson.utilities.general import add_or_increment
 from sympy import Expr, Symbol, Integer
 from copy import deepcopy
 
@@ -180,11 +181,12 @@ class Polynomial(RingElement):
         Examples:
             >>> from samson.math.polynomial import Polynomial
             >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> from sympy.abc import x
             >>> ZZ[x](x**4 + 2*x**2).trunc_kth_root(2)
             <Polynomial: x**2 + ZZ(2)*x, coeff_ring=ZZ>
 
         """
-        return Polynomial([(idx // k, coeff) for idx, coeff in self.coeffs if idx >= k and not idx % k], self.coeff_ring, self.symbol)
+        return Polynomial([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k], self.coeff_ring, self.symbol)
 
 
     def square_free_decomposition(self) -> list:
@@ -201,28 +203,32 @@ class Polynomial(RingElement):
             >>> from sympy.abc import x
             >>> poly = Polynomial(3*x**3+x**7-x**18, ZZ)
             >>> poly.square_free_decomposition()
-            [<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>, <Polynomial: x**3, coeff_ring=ZZ>]
+            {<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
         """
-        c = gcd(self, self.derivative()).monic()
-        w = self / c
+        f = self.monic()
+        c = gcd(f, f.derivative().monic()).monic()
+        w = f / c
 
-        factors = []
+        factors = {}
 
         i = 1
         while w != self.ring.one():
             y = gcd(w, c).monic()
-            fac = w / y
-            factors.append(fac)
+            fac = (w / y).monic()
+
+            if fac != self.ring.one():
+                add_or_increment(factors, fac, i)
 
             w, c, i = y, c / y, i + 1
 
         if c != self.ring.one():
             c        = c.trunc_kth_root(self.coeff_ring.characteristic)
             new_facs = c.square_free_decomposition()
-            factors.append(new_facs[0]**self.coeff_ring.characteristic)
+            for new_fac in new_facs:
+                add_or_increment(factors, new_fac, self.coeff_ring.characteristic)
 
-        return [(fac**(idx+1)).monic() for idx, fac in enumerate(factors) if fac != self.ring.one()]
+        return factors
 
 
     def sff(self) -> list:
@@ -247,7 +253,6 @@ class Polynomial(RingElement):
         f_star = f
         S = []
         i = 1
-        q = self.coeff_ring.characteristic
 
         x = self.symbol
         x_poly = f.ring(x)
@@ -287,10 +292,13 @@ class Polynomial(RingElement):
         return self.distinct_degree_factorization()
 
 
-    # TODO: This method only works for FF due to `self.coeff_ring.order` and `f.coeff_ring.random(f.coeff_ring.reducing_poly.degree())`
     def equal_degree_factorization(self, d: int, subgroup_divisor: int=None) -> list:
         """
         Factors a Polynomial into factors of equal degrees.
+
+        Parameters:
+            d                (int): Degree to factor into.
+            subgroup_divisor (int): Smallest divisor of `order - 1`.
 
         Returns:
             list: Equal-degree factors of self.
@@ -304,7 +312,7 @@ class Polynomial(RingElement):
 
         f_quot   = f.ring / f
         if hasattr(self.coeff_ring, 'order'):
-            q = self.coeff_ring.order 
+            q = self.coeff_ring.order
             if not subgroup_divisor:
                 subgroup_divisor = [f for f in factor_int((q - 1))][0]
 
@@ -320,7 +328,6 @@ class Polynomial(RingElement):
 
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
-                # h = Polynomial([f.coeff_ring.random() for _ in range(n)], f.coeff_ring)
                 h = f.ring.random(f)
                 g = gcd(h, f).monic()
 
@@ -419,24 +426,26 @@ class Polynomial(RingElement):
 
         Example:
             >>> from samson.math.algebra.all import *
+            >>> from sympy.abc import x
             >>> from functools import reduce
             >>> Z7 = ZZ/ZZ(7)
             >>> P  = Z7[x]
 
             >>> # Generate random factors
-            >>> factors = []
-            >>> while len(factors) < 4:
-            >>>     factor = P.random(random_int(7) + 1)
-            >>>     if factor:
-            >>>         factors.append(factor)
-
+            >>> factors = [fac for fac in [P.random(P(x**3)) for _ in range(4)] if fac]
             >>> p = reduce(Polynomial.__mul__, factors, P[1]) # Build the Polynomial
-            >>> reduce(Polynomial.__mul__, p.factor(), P[1]) == p.monic() # Check the factorization is right
+            >>> reduce(Polynomial.__mul__, [fac**exp for fac, exp in p.factor().items()], P[1]) == p.monic() # Check the factorization is right
             True
 
         """
-        distinct_degrees = [factor for poly in self.sff() for factor in poly.ddf()]
-        return [factor for poly, _ in distinct_degrees for factor in poly.edf(d, subgroup_divisor)]
+        factors = {}
+        distinct_degrees = [(factor, num) for poly, num in self.sff().items() for factor in poly.ddf()]
+        for (poly, _), num in distinct_degrees:
+            for factor in poly.edf(d, subgroup_divisor):
+                if factor != self.ring.one():
+                    add_or_increment(factors, factor, num)
+
+        return factors
 
 
     def degree(self) -> int:

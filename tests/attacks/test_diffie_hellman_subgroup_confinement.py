@@ -12,7 +12,7 @@ class DiffieHellmanSubgroupConfinementAttackTestCase(unittest.TestCase):
     def _run_test(self, p, g, q):
         m       = b"crazy flamboyant for the rap enjoyment"
         sha256  = SHA256()
-        bob_key = DiffieHellman(p=p, g=g)
+        bob_key = DiffieHellman(p=p, g=g, q=q)
 
         def oracle_func(h, r):
             K    = bob_key.derive_key(h)

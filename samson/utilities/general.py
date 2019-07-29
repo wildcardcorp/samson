@@ -19,7 +19,7 @@ def rand_bytes(size: int=16) -> bytes:
 
 def shuffle(in_list: list) -> list:
     """
-    Shuffles a list in place using random numbers generated from /dev/urandom.
+    Shuffles a list in place using random numbers generated from RUNTIME.random.
 
     Parameters:
         in_list (list): List to be shuffled.
@@ -120,3 +120,20 @@ def binary_search(in_list: list, value: object, key: FunctionType=lambda item: i
         return curr + fuzz_mod
     else:
         raise Exception("Item not in list")
+
+
+
+def add_or_increment(dictionary: dict, key: object, value: int=1):
+    """
+    Adds the `value` to the `key` if the `key` is in the `dictionary`. Otherwise, it creates the entry
+    and initializes it with `value`. Useful for counting observed values.
+
+    Parameters:
+        dictionary (dict): Dictionary to update.
+        key      (object): Key to update.
+        value       (int): Value to increment.
+    """
+    if key in dictionary:
+        dictionary[key] += value
+    else:
+        dictionary[key] = value

@@ -139,8 +139,9 @@ def generate_arbitrary_ntt_params(v1, v2):
 
     # TODO: Remove all int casting to make generic
     # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
-    char_zero = orig_ring.characteristic == 0
-    if not char_zero:
+    #char_zero = orig_ring.characteristic == 0
+    has_order = hasattr(orig_ring, 'order')
+    if has_order:
         orig_ring = orig_ring.ring
         max_value = max_value.val
 
@@ -158,7 +159,6 @@ def generate_arbitrary_ntt_params(v1, v2):
     for offset in count(start*10):
         modulus = orig_ring[offset] * vec_len_elem + one #vec_len + one
 
-        # TODO: Need ring-agnostic primality test
         if modulus.is_prime():
             break
 
@@ -168,6 +168,8 @@ def generate_arbitrary_ntt_params(v1, v2):
     print(modulus)
 
     new_ring = orig_ring / modulus
+    print(new_ring)
+    print(type(new_ring.quotient))
 
     #totient = modulus - 1
     totient = new_ring.order - 1

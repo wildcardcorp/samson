@@ -67,6 +67,17 @@ class QuotientElement(RingElement):
     def __neg__(self) -> object:
         return QuotientElement((-self.val) % self.ring.quotient, self.ring)
 
+
+    def __eq__(self, other: object) -> bool:
+        if type(other) is int:
+            return self.val == other
+
+        return type(self) == type(other) and self.val == other.val and self.ring == other.ring
+
+    def __hash__(self) -> bool:
+        return hash(self.val) + hash(self.ring)
+
+
     def is_invertible(self) -> bool:
         """
         Determines if the element is invertible.

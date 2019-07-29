@@ -42,8 +42,11 @@ class WeierstrassPoint(RingElement):
 
 
     def __hash__(self):
-        return int(str(hash(self.x.val) + hash(self.y.val)) + str(hash(self.curve)))
-        # return int(str(hash(self.x.val)) + str(hash(self.y.val)) + str(hash(self.curve)))
+        return hash(self.curve) ^ (hash(self.x.val) ^ hash(self.y.val))
+
+
+    def __int__(self) -> int:
+        return int(self.x)
 
 
     def __eq__(self, P2: object) -> bool:

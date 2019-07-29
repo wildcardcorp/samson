@@ -38,70 +38,65 @@ samson's key focuses are:
                                                                 
                                                                 
                                                                 
-    v0.1.11 -- https://github.com/wildcardcorp/samson
+    v0.2.0 -- https://github.com/wildcardcorp/samson
 
-Python 3.5.3 (89428233efed, Apr 12 2018, 16:18:00)
-[PyPy 5.10.1 with GCC 8.0.1 20180324 (Red Hat 8.0.1-0.20)]
-IPython 7.1.1
+Python 3.5.3 (11af55503d5c, May 23 2019, 09:37:40)
+[PyPy 7.0.0 with GCC 9.1.1 20190503 (Red Hat 9.1.1-1)]
+IPython 7.6.0
 
 
-In [1]: RC4(b'what a key!').generate(12) ^ b'Hello world!'                                                                                  
-Out[1]: <Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder=big>
+In [1]: logging.getLogger("samson").setLevel(logging.INFO)                                                                                  
+In [2]: RC4(b'what a key!').generate(12) ^ b'Hello world!'                                                                                  
+Out[2]: <Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder=big>
 
-In [2]: gcm = GCM(Rijndael(Bytes.random(32)).encrypt) 
-   ...: data = b"Auth'd data" 
-   ...: nonce = Bytes.random(8) 
-   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data) 
+In [3]: gcm = GCM(Rijndael(Bytes.random(32)).encrypt)  
+   ...: data = b"Auth'd data"  
+   ...: nonce = Bytes.random(8)  
+   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data)  
    ...: gcm.decrypt(nonce, ciphertext, data)                                                                                                
-Out[2]: <Bytes: b'Hello world!', byteorder=big>
+Out[3]: <Bytes: b'Hello world!', byteorder=big>
 
-In [3]: bf = Blowfish(b"world's worst key") 
-   ...: cbc = CBC(bf.encrypt, bf.decrypt, block_size=8, iv=Bytes.random(8)) 
+In [4]: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?', data=b'') 
    ...:  
-   ...: def oracle_func(attempt): 
-   ...:     try: 
-   ...:         _ = cbc.decrypt(attempt) 
-   ...:         return True 
-   ...:     except Exception as _: 
-   ...:         return False 
+   ...: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:] 
+   ...: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:] 
    ...:  
-   ...:  
-   ...: ciphertext = cbc.encrypt(b'secret plaintext') 
-   ...: attack = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv) 
+   ...: candidates = ForbiddenAttack().execute(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b) 
+   ...: gcm.H in candidates                                                                                                                 
+Out[4]: True
+
+In [5]: bf = Blowfish(b"world's worst key")  
+   ...: cbc = CBC(bf.encrypt, bf.decrypt, block_size=8, iv=Bytes.random(8))  
+   ...:   
+   ...: def oracle_func(attempt):  
+   ...:     try:  
+   ...:         _ = cbc.decrypt(attempt)  
+   ...:         return True  
+   ...:     except Exception as _:  
+   ...:         return False  
+   ...:   
+   ...:   
+   ...: ciphertext = cbc.encrypt(b'secret plaintext')  
+   ...: attack = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv)  
    ...: recovered_plaintext = attack.execute(ciphertext)                                                                                    
-2019-03-21 16:03:02,300 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 0                                             
-2019-03-21 16:03:02,327 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x01'                                      
-2019-03-21 16:03:02,329 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,339 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,344 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,356 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,378 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,379 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,381 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,393 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'\x08'                                      
-2019-03-21 16:03:02,394 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 1                                             
-2019-03-21 16:03:02,431 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
-2019-03-21 16:03:02,442 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'x'                                         
-2019-03-21 16:03:02,449 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
-2019-03-21 16:03:02,458 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
-2019-03-21 16:03:02,474 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'n'                                         
-2019-03-21 16:03:02,479 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'i'                                         
-2019-03-21 16:03:02,495 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'a'                                         
-2019-03-21 16:03:02,499 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'l'                                         
-2019-03-21 16:03:02,499 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Starting iteration 2                                             
-2019-03-21 16:03:02,529 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'p'                                         
-2019-03-21 16:03:02,531 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b' '                                         
-2019-03-21 16:03:02,554 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b't'                                         
-2019-03-21 16:03:02,561 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
-2019-03-21 16:03:02,564 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'r'                                         
-2019-03-21 16:03:02,565 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'c'                                         
-2019-03-21 16:03:02,568 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b'e'                                         
-2019-03-21 16:03:02,579 - samson.attacks.cbc_padding_oracle_attack [DEBUG] Found working byte: b's'                                         
-Blocks cracked: 100%|█████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 10.70blocks/s]
-Bytes cracked: 100%|██████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 127.34bytes/s]
+Blocks cracked: 100%|█████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 14.25blocks/s]
+Bytes cracked: 100%|██████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 226.56bytes/s]
 
-In [4]: recovered_plaintext                                                                                                                 
-Out[4]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder=big>
+In [6]: recovered_plaintext                                                                                                                 
+Out[6]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder=big>
+
+In [7]: Z_p = ZZ/ZZ(49339) 
+   ...: Z_p[x](x**5 - x**3 + 1).factor()                                                                                                    
+Out[7]: 
+{<Polynomial: x**2 + ZZ(34751)*x + ZZ(20606), coeff_ring=ZZ/ZZ(49339)>: 1,
+ <Polynomial: x**3 + ZZ(14588)*x**2 + ZZ(39369)*x + ZZ(31211), coeff_ring=ZZ/ZZ(49339)>: 1}
+
+In [8]: F = FF(2, 8) 
+   ...: F[36] / F(x + 1)                                                                                                                    
+Out[8]: <FiniteFieldElement: val=x**4 + x**3 + x**2, field=F_(2**8)>
+
+In [9]: gcd(F[2], F[10])                                                                                                                    
+Out[9]: <FiniteFieldElement: val=x, field=F_(2**8)>
 ```
 
 ### **CLI**
@@ -191,26 +186,44 @@ KzxOGlBrUMD0vXbjp0wpDnpynBxYXNZxHIrERMolw1wJBS72VR5m4ubujrW2ynM5p9hoc3
 
 
 ## Testing Environment
-* **Runtime**: Python 3.6.7
-* **Architecture**: Linux 4.18.17-200.fc28.x86_64 #1 SMP Mon Nov 5 18:04:28 UTC 2018 GNU/Linux
-* **OS**: Fedora Security Lab (Fedora release 28)
+* **Runtime**: PyPy 7.0.0 (Python 3.5.3)
+* **Architecture**: Linux 5.1.18-300.fc30.x86_64_64 #1 SMP
+* **OS**: Fedora Security Lab (Fedora release 30)
 
 
 ## Installation
 ### **Recommended OS is Fedora and recommended Python implementation is PyPy**
+Note that PyPy may not install samson's scripts to PATH.
 
-### RHEL derivatives (tested on Fedora Security Lab 28)
+Workarounds include:
+* Calling samson from where PyPy *did* install it
+* Installing samson with CPython's pip as well
+
+samson's `samson` script tries to call CPython for CLI commands anyway due to the load times of PyPy.
+
+### RHEL derivatives (tested on Fedora Security Lab 30)
 ```bash
-sudo dnf -y install pypy3 pypy3-devel redhat-rpm-config gmp-devel lapack-devel.x86_64 blas-devel.x86_64 gcc-c++
+sudo dnf -y install pypy3 pypy3-devel
 pypy3 -m ensurepip
 pypy3 -m pip install samson-crypto
 ```
 
-### Debian derivatives (tested on Kali Linux 2018.4 64-bit)
+### Debian derivatives (tested on Kali Linux 2019.2 64-bit)
+Debian/Ubuntu/Kali don't want you to install pip with `ensurepip`, but they only provide the package for CPython. The following is a workaround that creates a virtualenv to prevent screwing with the system's pip.
+
 ```bash
-apt-get -y install python3-pip
-pip3 install samson-crypto
+apt-get -y install pypy3 pypy3-dev
+pypy3 -m venv myvenv --without-pip --system-site-packages
+wget https://bootstrap.pypa.io/get-pip.py
+./myvenv/bin/pypy3-c ./get-pip.py
+./myvenv/bin/pypy3-c -m pip install samson-crypto
 ```
+
+Which can then by accessed like
+```bash
+./myvenv/bin/pypy3-c ./myvenv/bin/samson-py
+```
+
 
 ## Performance
 samson's primitives aren't the fastest nor were they meant to be. If you're concerned about performance, you have a couple of options:

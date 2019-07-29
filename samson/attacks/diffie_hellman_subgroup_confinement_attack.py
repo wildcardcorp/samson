@@ -1,8 +1,8 @@
-from samson.math.general import random_int, crt, pollards_kangaroo, mod_inv
+from samson.math.general import random_int, crt, pollards_kangaroo, mod_inv, factor as factorint
+from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle
 from functools import reduce
-from sympy import factorint
 import math
 
 import logging
@@ -49,7 +49,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
             int: Private key.
         """
         # Factor as much as we can
-        factors = [r for r,_ in factorint((self.p - 1) // self.order, limit=max_factor_size).items() if r < max_factor_size]
+        factors = [r for r in factorint((self.p - 1) // self.order, use_rho=False, limit=max_factor_size) if r < max_factor_size]
         log.debug(f'Found factors: {factors}')
 
         residues = []
@@ -81,5 +81,6 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         log.info('Attempting to catch a kangaroo...')
 
         # Probabilistically solve DLP
-        m = pollards_kangaroo(self.p, g_prime, y_prime, a=0, b=(self.order - 1) // r)
+        R = (ZZ/ZZ(self.p)).mul_group()
+        m = pollards_kangaroo(R(g_prime), R(y_prime), a=0, b=(self.order - 1) // r)
         return n + m*r

@@ -1,4 +1,4 @@
-from samson.math.general import int_to_poly, fast_mul, is_prime
+from samson.math.general import fast_mul, is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.polynomial import Polynomial

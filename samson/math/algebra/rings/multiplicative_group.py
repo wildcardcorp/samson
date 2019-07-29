@@ -1,4 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.math.general import totient
 
 class MultiplicativeGroupElement(RingElement):
     """
@@ -39,11 +40,11 @@ class MultiplicativeGroupElement(RingElement):
 
     def __neg__(self) -> object:
         return MultiplicativeGroupElement(~self.val, self.ring)
-    
+
 
     def ordinality(self) -> int:
         return self.val.ordinality() - 1
-    
+
 
     def is_invertible(self) -> bool:
         """
@@ -75,12 +76,27 @@ class MultiplicativeGroup(Ring):
         Parameters:
             ring (Ring): Underlying ring.
         """
-        self.ring = ring
+        self.ring        = ring
+        self.order_cache = None
 
 
     @property
-    def characteristic(self):
+    def characteristic(self) -> int:
         return self.ring.characteristic
+
+
+    @property
+    def order(self) -> int:
+        from samson.math.algebra.rings.quotient_ring import QuotientRing
+
+        if not self.order_cache:
+            if type(self.ring) is QuotientRing:
+                self.order_cache = totient(int(self.ring.quotient))
+
+            else:
+                raise NotImplementedError()
+
+        return self.order_cache
 
 
     def zero(self) -> MultiplicativeGroupElement:
@@ -107,7 +123,7 @@ class MultiplicativeGroup(Ring):
         return f'{self.ring}*'
 
 
-    def coerce(self, other: int) -> MultiplicativeGroupElement:
+    def coerce(self, other: object) -> MultiplicativeGroupElement:
         """
         Attempts to coerce other into an element of the algebra.
 
@@ -117,6 +133,11 @@ class MultiplicativeGroup(Ring):
         Returns:
             MultiplicativeGroupElement: Coerced element.
         """
+        from samson.math.algebra.rings.quotient_ring import QuotientRing
+
+        if type(other) is int and type(self.ring) is QuotientRing:
+            other %= self.order
+
         if type(other) is not MultiplicativeGroupElement:
             other = MultiplicativeGroupElement(self.ring.coerce(other), self)
         return other
