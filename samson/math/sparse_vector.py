@@ -13,7 +13,7 @@ class SparseVector(object):
             zero (object): The zero element. This element will not be stored.
         """
         if type(items) is dict:
-            self.values = SortedDict({k:v for k,v in items if v != zero})
+            self.values = SortedDict({k:v for k,v in items.items() if v != zero})
 
         elif type(items) is list:
             if len(items) == 0 or type(items[0]) is tuple:

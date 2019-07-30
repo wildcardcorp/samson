@@ -12,34 +12,16 @@ X   Flush+Reload key recovery
 CURRENT
 ---------------
 
-
-0.2.0
+0.3.0
 ===============
-X   Document new parsers
-    X   Add class/function documentation
-
-
 X   Polynomial factorization works in any ring
-
 
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
-
-X   samson-py currently requires Python3 + PyPy3 dependencies; fix?
-
-X   Ensure samson installs correctly
-    X   Library
-    X   REPL
-    X   CLI
-    X   Man page
-    X   Supported OSs
-        X   Fedora 30
-        X   Kali
+X   Switch NTRU over to native Polynomial
 
 
-0.3.0
-===============
 X   Timing attack framework
     OK  Build TimingOracle
     X   Time sync

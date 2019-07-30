@@ -33,14 +33,13 @@ class Polynomial(RingElement):
             self.coeffs = coeff_vec
 
 
-        elif type(coeffs) is list or type(coeffs) is tuple:
-            if len(coeffs) > 0 and type(coeffs[0]) is tuple:
+        elif type(coeffs) is list or type(coeffs) is tuple or type(coeffs) is dict:
+            if type(coeffs) is dict or (len(coeffs) > 0 and type(coeffs[0]) is tuple):
                 vec = coeffs
             else:
                 vec = [self.coeff_ring.coerce(coeff) for coeff in coeffs]
 
             self.coeffs = SparseVector(vec, self.coeff_ring.zero())
-
 
         elif type(coeffs) is SparseVector:
             self.coeffs = coeffs

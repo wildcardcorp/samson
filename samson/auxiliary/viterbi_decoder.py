@@ -65,8 +65,8 @@ class ViterbiDecoder(object):
         Scores and tokenizes the text according to the maximum likelihood.
 
         Parameters:
-            text        (str): Text to tokenize/decode.
-            max_word_len(int): Maximum token length.
+            text         (str): Text to tokenize/decode.
+            max_word_len (int): Maximum token length.
         
         Returns:
             (float, list): Most probable decoding as (score, token_list).
