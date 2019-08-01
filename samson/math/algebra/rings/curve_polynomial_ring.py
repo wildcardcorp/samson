@@ -97,6 +97,14 @@ class CurvePolynomialElement(RingElement):
         return bool(self.x_poly) or bool(self.y_poly)
 
 
+    def __lt__(self, other: object) -> bool:
+        raise NotImplementedError()
+
+
+    def __gt__(self, other: object) -> bool:
+        raise NotImplementedError()
+
+
 class CurvePolynomialRing(Ring):
     """
     Polynomial ring that represents an Elliptic curve.

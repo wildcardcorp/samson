@@ -54,8 +54,6 @@ class Ring(ABC):
         return MultiplicativeGroup(self)
 
 
-    __mul__ = mul_group
-
 
     def __call__(self, args) -> object:
         return self.coerce(args)
@@ -87,7 +85,7 @@ class Ring(ABC):
         from sympy import Symbol
 
         if type(x) is Symbol:
-            return PolynomialRing(self)
+            return PolynomialRing(self, x)
         else:
             return self.element_at(x)
 
@@ -161,6 +159,7 @@ class RingElement(ABC):
     def __int__(self) -> int:
         return int(self.val)
 
+
     def is_invertible(self) -> bool:
         """
         Determines if the element is invertible.
@@ -169,3 +168,29 @@ class RingElement(ABC):
             bool: Whether the element is invertible.
         """
         return False
+
+
+    def get_ground(self) -> object:
+        """
+        Gets the "ground" value (i.e. IntegerElement or Polynomial). Useful for traversing complex
+        algebras.
+
+        Returns:
+            RingElement: Ground element.
+
+        Examples:
+            >>> from samson.math.algebra.all import FF
+            >>> F = FF(2, 8)
+            >>> R = F/F[11]
+            >>> R[5].get_ground()
+            <Polynomial: x**2 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+
+        """
+        from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.polynomial import Polynomial
+
+        if type(self) in [IntegerElement, Polynomial]:
+            return self
+
+        else:
+            return self.val.get_ground()

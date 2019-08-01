@@ -58,7 +58,7 @@ class Polynomial(RingElement):
 
     def shorthand(self) -> str:
         poly_repr   = []
-        poly_coeffs = type(self.LC()) is Polynomial
+        poly_coeffs = type(self.LC().get_ground()) is Polynomial
 
         if self.LC():
             for idx, coeff in self.coeffs.values.items():
@@ -69,7 +69,7 @@ class Polynomial(RingElement):
                     coeff_short_mul = ''
                 else:
                     shorthand = coeff.shorthand()
-                    if poly_coeffs:
+                    if poly_coeffs and idx != 0:
                         shorthand = f'({shorthand})'
 
                     coeff_short_mul = shorthand + '*'
@@ -303,6 +303,7 @@ class Polynomial(RingElement):
             list: Equal-degree factors of self.
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base
+        from samson.math.algebra.symbols import oo
 
         f = self.monic()
         n = f.degree()
@@ -310,7 +311,7 @@ class Polynomial(RingElement):
         S = [f]
 
         f_quot   = f.ring / f
-        if hasattr(self.coeff_ring, 'order'):
+        if self.coeff_ring.order != oo:
             q = self.coeff_ring.order
             if not subgroup_divisor:
                 subgroup_divisor = [f for f in factor_int((q - 1))][0]

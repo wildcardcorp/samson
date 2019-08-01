@@ -73,6 +73,21 @@ class FractionFieldElement(FieldElement):
         return int(self.numerator) / int(self.denominator)
 
 
+    def __lt__(self, other: object) -> bool:
+        other = self.ring.coerce(other)
+        if self.ring != other.ring:
+            raise Exception("Cannot compare elements with different underlying rings.")
+
+        return self.numerator * other.denominator < other.numerator * self.denominator
+
+
+    def __gt__(self, other: object) -> bool:
+        other = self.ring.coerce(other)
+        if self.ring != other.ring:
+            raise Exception("Cannot compare elements with different underlying rings.")
+
+        return self.numerator * other.denominator > other.numerator * self.denominator
+
 
 class FractionField(Field):
     """
@@ -105,7 +120,12 @@ class FractionField(Field):
 
     @property
     def characteristic(self):
-        return 0
+        return self.ring.characteristic
+
+
+    @property
+    def order(self) -> int:
+        return self.ring.order**2
 
 
     def zero(self) -> FractionFieldElement:

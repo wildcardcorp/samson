@@ -94,6 +94,11 @@ class IntegerRing(Ring):
     def characteristic(self):
         return 0
 
+    @property
+    def order(self) -> int:
+        from samson.math.algebra.symbols import oo
+        return oo
+
 
     def __hash__(self) -> int:
         return hash(self.__class__)
@@ -148,6 +153,7 @@ class IntegerRing(Ring):
         """
         if type(other) is int:
             return IntegerElement(other, self)
+
         elif type(other) is IntegerElement:
             return other
 

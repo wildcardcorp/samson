@@ -21,6 +21,12 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
 
 X   Switch NTRU over to native Polynomial
 
+X   Swap out sympy expressions for custom expressions
+        F = FF(2, 8)
+        F[x](x + F[5])
+
+        <Polynomial: x + F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)> # sympy's expression engine converts it to an int, and it gets re-coerced into the ring
+
 
 X   Timing attack framework
     OK  Build TimingOracle

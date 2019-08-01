@@ -1,4 +1,5 @@
 from samson.math.general import mod_inv, is_prime
+from samson.math.algebra.symbols import oo
 from sympy import factorint
 from itertools import chain, count
 from enum import Enum
@@ -140,8 +141,8 @@ def generate_arbitrary_ntt_params(v1, v2):
     # TODO: Remove all int casting to make generic
     # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
     #char_zero = orig_ring.characteristic == 0
-    has_order = hasattr(orig_ring, 'order')
-    if has_order:
+    finite_order = orig_ring.order != oo
+    if finite_order:
         orig_ring = orig_ring.ring
         max_value = max_value.val
 

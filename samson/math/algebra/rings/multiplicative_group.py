@@ -35,12 +35,24 @@ class MultiplicativeGroupElement(RingElement):
         return self.ring.coerce(other) - self
 
     def __mul__(self, other: object) -> object:
-        other = self.ring.coerce(other)
-        return MultiplicativeGroupElement(self.val ** int(other.val), self.ring)
+        other = int(other)
+        if self.ring.order_cache:
+            other %= self.ring.order_cache
+
+        return MultiplicativeGroupElement(self.val ** other, self.ring)
 
     def __neg__(self) -> object:
         return MultiplicativeGroupElement(~self.val, self.ring)
 
+
+    def __truediv__(self, other: object) -> object:
+        from samson.math.general import pohlig_hellman
+
+        g = self.ring.coerce(other)
+        return pohlig_hellman(g, self, self.ring.order)
+
+
+    __floordiv__ = __truediv__
 
     def ordinality(self) -> int:
         return self.val.ordinality() - 1
@@ -88,10 +100,29 @@ class MultiplicativeGroup(Ring):
     @property
     def order(self) -> int:
         from samson.math.algebra.rings.quotient_ring import QuotientRing
+        from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.polynomial import Polynomial
+        from samson.math.algebra.symbols import oo
 
         if not self.order_cache:
             if type(self.ring) is QuotientRing:
-                self.order_cache = totient(int(self.ring.quotient))
+                quotient = self.ring.quotient
+
+                if type(quotient) is IntegerElement:
+                    self.order_cache = totient(int(quotient))
+
+                elif type(quotient) is Polynomial:
+                    if quotient.is_prime():
+                        self.order_cache = int(quotient) - 1
+
+                    else:
+                        self.order_cache = totient(int(quotient))
+
+                else:
+                    raise NotImplementedError()
+
+            elif self.ring.order == oo:
+                self.order_cache = oo
 
             else:
                 raise NotImplementedError()

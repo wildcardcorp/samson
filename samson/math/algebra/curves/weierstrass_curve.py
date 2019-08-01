@@ -53,6 +53,22 @@ class WeierstrassPoint(RingElement):
         return self.curve == P2.curve and self.x == P2.x and self.y == P2.y
 
 
+    def __lt__(self, other: object) -> bool:
+        other = self.ring.coerce(other)
+        if self.ring != other.ring:
+            raise Exception("Cannot compare elements with different underlying rings.")
+
+        return self.x < other.x
+
+
+    def __gt__(self, other: object) -> bool:
+        other = self.ring.coerce(other)
+        if self.ring != other.ring:
+            raise Exception("Cannot compare elements with different underlying rings.")
+
+        return self.x > other.x
+
+
     def __neg__(self) -> object:
         return WeierstrassPoint(self.x, -self.y, self.curve)
 
@@ -87,6 +103,14 @@ class WeierstrassPoint(RingElement):
     def __rsub__(self, P2: object) -> object:
         return -self + P2
 
+    def __truediv__(self, other: object) -> object:
+        from samson.math.general import pohlig_hellman
+
+        g = self.ring.coerce(other)
+        return pohlig_hellman(g, self, self.ring.order)
+
+
+    __floordiv__ = __truediv__
 
 
 
@@ -95,18 +119,23 @@ class WeierstrassCurve(Ring):
     Elliptic curve of form y**2 = x**3 + a*x + b
     """
 
-    def __init__(self, a: RingElement, b: RingElement, ring: Ring=None, base_tuple: tuple=None, cardinality: int=None):
+    def __init__(self, a: RingElement, b: RingElement, ring: Ring=None, base_tuple: tuple=None, cardinality: int=None, check_singularity: bool=True):
         """
         Parameters:
-            a    (RingElement): `a` coefficient.
-            b    (RingElement): `b` constant.
-            ring        (Ring): Underlying ring.
-            base_tuple (tuple): Tuple representing the base point 'G'.
-            cardinality  (int): Number of points on the curve.
+            a          (RingElement): `a` coefficient.
+            b          (RingElement): `b` constant.
+            ring              (Ring): Underlying ring.
+            base_tuple       (tuple): Tuple representing the base point 'G'.
+            cardinality        (int): Number of points on the curve.
+            check_singularity (bool): Check if the curve is singular (no cusps or self-intersections).
         """
         self.a  = a
         self.b  = b
         self.ring = ring or self.a.ring
+
+        if check_singularity:
+            if (4 * a**3 - 27 * b**2) == self.ring.zero():
+                raise ValueError("Elliptic curve can't be singular")
 
         if base_tuple:
             base_tuple = WeierstrassPoint(*base_tuple, self)
@@ -254,7 +283,7 @@ class WeierstrassCurve(Ring):
         return WeierstrassPoint(x, y, self)
 
 
-    def random(self, size: int=None) -> WeierstrassPoint:
+    def random(self, size: WeierstrassPoint=None) -> WeierstrassPoint:
         """
         Generate a random element.
 
@@ -266,7 +295,7 @@ class WeierstrassCurve(Ring):
         """
         while True:
             try:
-                return self.recover_point_from_x(max(1, random_int(size or self.p)))
+                return self.recover_point_from_x(max(1, random_int(int(size.x) if size else self.p)))
             except AssertionError:
                 pass
 

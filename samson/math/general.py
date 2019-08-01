@@ -80,12 +80,14 @@ def frobenius_monomial_base(poly: object) -> list:
     Returns:
         list: List of monomial bases mod g.
     """
+    from samson.math.algebra.symbols import oo
+
     n = poly.degree()
     if n == 0:
         return []
 
     P = poly.ring
-    q = poly.coeff_ring.order if hasattr(poly.coeff_ring, 'order') else poly.coeff_ring.characteristic
+    q = poly.coeff_ring.order if poly.coeff_ring.order != oo else poly.coeff_ring.characteristic
     bases = [None]*n
     bases[0] = P.one()
 

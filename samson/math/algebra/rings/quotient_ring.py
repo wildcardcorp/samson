@@ -121,11 +121,16 @@ class QuotientRing(Ring):
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
 
-        if type(self.quotient) is IntegerElement:
-            return int(self.quotient)
+        quotient = self.quotient.get_ground()
 
-        elif type(self.quotient) is Polynomial:
-            return self.quotient.ring.ring.characteristic
+        if type(quotient) is IntegerElement:
+            return int(quotient)
+
+        elif type(quotient) is Polynomial:
+            return quotient.ring.ring.characteristic
+
+        else:
+            raise NotImplementedError
 
 
     @property
@@ -140,11 +145,13 @@ class QuotientRing(Ring):
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
 
-        if type(self.quotient) is IntegerElement and self.quotient.is_prime():
-            return int(self.quotient)
+        quotient = self.quotient.get_ground()
 
-        elif type(self.quotient) is Polynomial and self.quotient.is_prime():
-            return self.characteristic**self.quotient.degree()
+        if type(quotient) is IntegerElement:
+            return int(quotient)
+
+        elif type(quotient) is Polynomial:
+            return self.characteristic**quotient.degree()
 
         else:
             raise NotImplementedError
@@ -180,8 +187,14 @@ class QuotientRing(Ring):
         Returns:
             QuotientElement: Coerced element.
         """
-        if type(other) is not QuotientElement:
-            other = QuotientElement(self.ring.coerce(other), self)
+        is_int  = type(other) is int
+        is_elem = issubclass(type(other), RingElement)
+
+        if is_int or not is_elem or other.ring != self:
+            if is_int or not is_elem or other.ring != self.ring:
+                other = self.ring.coerce(other)
+
+            other = QuotientElement(other, self)
         return other
 
 
@@ -200,9 +213,6 @@ class QuotientRing(Ring):
 
     def __eq__(self, other: object) -> bool:
         return type(self) == type(other) and self.ring == other.ring and self.quotient == other.quotient
-
-    def __call__(self, args):
-        return QuotientElement(self.ring(args), self)
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))

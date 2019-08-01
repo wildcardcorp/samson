@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring
 from samson.utilities.exceptions import CoercionException
 from samson.math.polynomial import Polynomial
-from sympy import Expr
+from sympy import Expr, Symbol
 
 
 class PolynomialRing(Ring):
@@ -16,12 +16,13 @@ class PolynomialRing(Ring):
 
     """
 
-    def __init__(self, ring: Ring):
+    def __init__(self, ring: Ring, symbol: Symbol=None):
         """
         Parameters:
             ring (Ring): Underlying ring.
         """
-        self.ring = ring
+        self.ring   = ring
+        self.symbol = symbol or Symbol('x')
 
 
     @property
@@ -29,12 +30,17 @@ class PolynomialRing(Ring):
         return self.ring.characteristic
 
 
+    @property
+    def order(self) -> int:
+        from samson.math.algebra.symbols import oo
+        return oo
+
     def zero(self) -> Polynomial:
         """
         Returns:
             Polynomial: '0' element of the algebra.
         """
-        return Polynomial([self.ring(0)], coeff_ring=self.ring, ring=self)
+        return Polynomial([self.ring.zero()], coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
 
     def one(self) -> Polynomial:
@@ -42,7 +48,7 @@ class PolynomialRing(Ring):
         Returns:
             Polynomial: '1' element of the algebra.
         """
-        return Polynomial([self.ring(1)], coeff_ring=self.ring, ring=self)
+        return Polynomial([self.ring.one()], coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
 
     def __repr__(self):
@@ -50,7 +56,7 @@ class PolynomialRing(Ring):
 
 
     def shorthand(self) -> str:
-        return f'{self.ring.shorthand()}[x]'
+        return f'{self.ring.shorthand()}[{self.symbol}]'
 
 
     def __eq__(self, other: object) -> bool:
@@ -74,8 +80,8 @@ class PolynomialRing(Ring):
         if type(other) is int:
             other = [other]
 
-        if type(other) is list or issubclass(type(other), Expr):
-            return Polynomial(other, coeff_ring=self.ring, ring=self)
+        if type(other) is list or type(other) is dict or issubclass(type(other), Expr):
+            return Polynomial(other, coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
         elif type(other) is Polynomial:
             return other
@@ -94,7 +100,8 @@ class PolynomialRing(Ring):
            Polynomial: The `x`-th element.
         """
         base_coeffs = []
-        modulus     = self.ring.characteristic
+        # modulus     = self.ring.characteristic
+        modulus     = self.ring.order
 
         if modulus != 0:
             # Use != to handle negative numbers

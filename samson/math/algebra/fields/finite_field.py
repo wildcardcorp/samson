@@ -95,7 +95,7 @@ class FiniteField(Field):
             n                    (int): Exponent.
             reducing_poly (Polynomial): Polynomial to reduce the `PolynomialRing`.
         """
-        from samson.math.algebra.all import ZZ
+        from samson.math.algebra.rings.integer_ring import ZZ
         from sympy import ZZ as sym_ZZ
 
         assert is_prime(p)

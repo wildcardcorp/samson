@@ -16,8 +16,26 @@ class Infinity(object):
     def __neg__(self):
         return NegativeInfinity()
 
+    def __add__(self, other):
+        return self
 
-class NegativeInfinity(object):
+    def __sub__(self, other):
+        return self
+
+    def __mul__(self, other):
+        return self
+
+    def __pow__(self, other):
+        return self
+
+    def __truediv__(self, other):
+        return self
+
+    def __floordiv__(self, other):
+        return self
+
+
+class NegativeInfinity(Infinity):
     def __repr__(self):
         return '-∞'
 
