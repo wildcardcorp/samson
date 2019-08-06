@@ -9,6 +9,9 @@ from tempfile import NamedTemporaryFile
 import os
 import unittest
 
+import sys
+sys.setrecursionlimit(50)
+
 class CertSigningTestCase(unittest.TestCase):
     def _run_test(self, ca, leaf):
         leaf_crt = leaf.export_public_key(encoding=PKIEncoding.X509_CERT, signing_key=ca, subject='CN=leaf')

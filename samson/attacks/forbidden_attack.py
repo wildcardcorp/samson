@@ -1,9 +1,11 @@
 from samson.utilities.bytes import Bytes
 from samson.math.algebra.all import FF, ZZ
 from samson.math.polynomial import Polynomial
-from sympy.abc import x
+from samson.math.symbols import Symbol
 
-F = FF(2, 128, reducing_poly=Polynomial(x**128 + x**7 + x**2 + x + ZZ(1), ZZ/ZZ(2)))
+x = Symbol('x')
+_ = (ZZ/ZZ(2))[x]
+F = FF(2, 128, reducing_poly=x**128 + x**7 + x**2 + x + 1)
 
 def int_to_elem(a):
     return F([int(bit) for bit in bin(a)[2:].zfill(128)])

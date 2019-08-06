@@ -1,12 +1,8 @@
-start_exec = """from __future__ import division
-from sympy import *
-x, y, z, t = symbols('x y z t')
-k, m, n = symbols('k m n', integer=True)
-f, g, h = symbols('f g h', cls=Function)
-
+start_exec = """
 from samson.all import *
-
-init_printing()
+x = Symbol('x')
+y = Symbol('y')
+z = Symbol('z')
 
 import logging
 logging.getLogger().setLevel(logging.WARNING)

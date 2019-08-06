@@ -1,5 +1,46 @@
 from samson.math.general import fast_mul, square_and_mul
+from types import FunctionType
 from abc import ABC, abstractmethod
+
+
+def try_poly_first(element: object, other: object, func: FunctionType) -> object:
+    """
+    Tests if `other` is a Polynomial, and gives precedence to its operator.
+
+    Parameters:
+        other (RingElement): Possible Polynomial.
+        func         (func): Function to execute.
+    
+    Returns:
+        RingElement/None: The output of the Polynomial's function if possible.
+    """
+    from samson.math.polynomial import Polynomial
+    if issubclass(type(other), Polynomial) and other.coeff_ring == element.ring:
+        return func(other, element)
+
+
+def left_expression_intercept(func: FunctionType) -> object:
+    """
+    Intercepts "left" operators to give Polynomials precedence so elements from the coefficient ring can be coerced.
+    """
+    from samson.math.polynomial import Polynomial
+
+    def poly_build(*args, **kwargs):
+        try:
+            name = func.__name__
+            name = '__r' + name[2:]
+            poly_res = try_poly_first(*args, **kwargs, func=getattr(Polynomial, name))
+
+            if poly_res is not None:
+                return poly_res
+
+        except Exception:
+            pass
+
+        return func(*args, **kwargs)
+
+    return poly_build
+
 
 class Ring(ABC):
 
@@ -82,7 +123,7 @@ class Ring(ABC):
 
     def __getitem__(self, x: int):
         from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-        from sympy import Symbol
+        from samson.math.symbols import Symbol
 
         if type(x) is Symbol:
             return PolynomialRing(self, x)
@@ -128,6 +169,20 @@ class RingElement(ABC):
 
         return self.ring.coerce(other) * self
 
+
+    def __rmod__(self, other: object) -> object:
+        return self.ring.coerce(other) % self
+
+    def __rdivmod__(self, other: object) -> object:
+        return divmod(self.ring.coerce(other), self)
+
+
+    def __rtruediv__(self, other: object) -> object:
+        return self.ring.coerce(other) / self
+
+    def __rfloordiv__(self, other: object) -> object:
+        return self.ring.coerce(other) / self
+
     def __bool__(self) -> bool:
         return self != self.ring.zero()
 
@@ -158,6 +213,27 @@ class RingElement(ABC):
 
     def __int__(self) -> int:
         return int(self.val)
+
+
+
+    def ground_mul(self, other: object) -> object:
+        """
+        Tries "special" multiplications first.
+
+        Parameter:
+            other (RingElement): Other operand.
+        
+        Returns:
+            RingElement/None: Returns the special __mul__ if possible.
+        """
+        from samson.math.polynomial import Polynomial
+        type_o = type(other)
+
+        if type_o is int:
+            return fast_mul(self, other)
+
+        else:
+            return try_poly_first(self, other, Polynomial.__rmul__)
 
 
     def is_invertible(self) -> bool:

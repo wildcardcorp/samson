@@ -1,19 +1,23 @@
-from samson.math.algebra.all import FF, ZZ, QQ, P256, oo
+from samson.math.algebra.all import FF, ZZ, QQ, P256
+from samson.math.symbols import Symbol, oo
 from samson.math.general import random_int, find_prime, factor
 from samson.utilities.exceptions import NotInvertibleException
-from sympy.abc import x, y
 from functools import reduce
 import unittest
 
+x = Symbol('x')
+y = Symbol('y')
 
 F       = FF(2, 8)
 F23     = F/F[23]
+FX2     = F[x]/(x**2)
 Z_star  = ZZ.mul_group()
 Zp_star = (ZZ/ZZ(find_prime(128))).mul_group()
 Zn_star = (ZZ/ZZ(random_int(2**32))).mul_group()
 Z_2     = ZZ/ZZ(2)
 P       = Z_2[x]
-P_q     = P/P(x**8 + x**4 + x**3 + x + 1)
+P_q     = P/(x**8 + x**4 + x**3 + x + 1)
+R       = ZZ[x]/(x**167 - 1)
 P256C   = P256[x, y]
 
 ALGEBRAS = [ZZ, QQ, F, F23, P, Z_star, Z_2, P_q, P256, P256C]
@@ -49,11 +53,14 @@ class AlgebraTestCase(unittest.TestCase):
         self.assertEqual(Z_2.order, 2)
         self.assertEqual(P_q.order, 256)
         self.assertEqual(P256.order, P256.q)
+        self.assertEqual(R.order, oo)
+        self.assertEqual(FX2.order, 65536)
 
 
         # Verify mathematical property
         for i in range(30):
             self.assertEqual(F[i] * F.order, F.zero())
+            self.assertEqual(FX2[i] * FX2.order, FX2.zero())
             self.assertEqual(F23[i] * F23.order, F23.zero())
             self.assertEqual(Z_2[i] * Z_2.order, Z_2.zero())
             self.assertEqual(P_q[i] * P_q.order, P_q.zero())
@@ -70,8 +77,8 @@ class AlgebraTestCase(unittest.TestCase):
             for _ in range(20):
                 try:
                     AQ = max(algebra[2], algebra.random(max_elem))
-                    PX = (algebra/AQ)[x]
-                    PQ = max(PX[2], PX.random(PX(x**5)))
+                    PX = (algebra/AQ)[y]
+                    PQ = max(PX[2], PX.random(PX(y**5)))
                     RX = PX/PQ
                 except NotInvertibleException:
                     continue
@@ -96,16 +103,17 @@ class AlgebraTestCase(unittest.TestCase):
 
 
 
-
     def test_characteristic(self):
         self.assertEqual(ZZ.characteristic, 0)
         self.assertEqual(QQ.characteristic, 0)
         self.assertEqual(F.characteristic, 2)
+        self.assertEqual(FX2.characteristic, 2)
         self.assertEqual(F23.characteristic, 2)
         self.assertEqual(P.characteristic, 2)
         self.assertEqual(Z_star.characteristic, 0)
         self.assertEqual(Z_2.characteristic, 2)
         self.assertEqual(P_q.characteristic, 2)
+        self.assertEqual(R.characteristic, 0)
 
         self.assertEqual(F.one() * F.characteristic, F.zero())
         self.assertEqual(F23.one() * F23.characteristic, F23.zero())

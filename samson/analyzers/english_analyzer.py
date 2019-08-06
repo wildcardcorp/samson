@@ -33,7 +33,7 @@ def key_count(in_bytes, key):
 
 
 TOKENIZER = Tokenizer([word for word, _ in WORDLIST.items() if len(word) > 2], TokenListHandler, delimiter=' ')
-TOKENIZE = TOKENIZER.tokenize
+TOKENIZE  = TOKENIZER.tokenize
 
 class EnglishAnalyzer(Analyzer):
     """
@@ -52,14 +52,14 @@ class EnglishAnalyzer(Analyzer):
         """
         processed_dict = self.preprocess(in_bytes)
 
-        word_freq           = processed_dict['word_freq']
-        alphabet_ratio      = processed_dict['alphabet_ratio']
-        ascii_ratio         = processed_dict['ascii_ratio']
-        common_words        = processed_dict['common_words']
-        first_letter_freq   = processed_dict['first_letter_freq']
-        found_words         = processed_dict['found_words']
-        delimited_words     = processed_dict['delimited_words']
-        bigram_score        = processed_dict['bigram_score']
+        word_freq         = processed_dict['word_freq']
+        alphabet_ratio    = processed_dict['alphabet_ratio']
+        ascii_ratio       = processed_dict['ascii_ratio']
+        common_words      = processed_dict['common_words']
+        first_letter_freq = processed_dict['first_letter_freq']
+        found_words       = processed_dict['found_words']
+        delimited_words   = processed_dict['delimited_words']
+        bigram_score      = processed_dict['bigram_score']
 
         word_score = sum([len(word) ** (3.5 + (bytes(word, 'utf-8') in delimited_words) * 1) for word in found_words])
 
@@ -89,7 +89,7 @@ class EnglishAnalyzer(Analyzer):
         alphabet_ratio = sum([1 for char in bytes_lower if char in ASCII_LOWER]) / byte_len
         ascii_ratio    = sum([1 for char in bytes_lower if char in ASCII_RANGE]) / byte_len
 
-        bigram_score   = weighted_token_ratio(bytes_lower, MOST_COMMON_BIGRAMS, byte_len)
+        bigram_score      = weighted_token_ratio(bytes_lower, MOST_COMMON_BIGRAMS, byte_len)
         first_letter_freq = _num_common_first_letters(delimited_words)
 
         found_words  = TOKENIZE([bytes_lower.decode('latin-1')])

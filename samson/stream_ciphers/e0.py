@@ -1,9 +1,8 @@
 from samson.prngs.flfsr import FLFSR
 from samson.utilities.bytes import Bytes
 from samson.core.encryption_alg import EncryptionAlg
-from samson.math.polynomial import Polynomial
+from samson.math.symbols import Symbol
 from samson.math.algebra.rings.integer_ring import ZZ
-from sympy.abc import x
 
 
 FSM_MATRIX = [
@@ -61,11 +60,13 @@ class E0(EncryptionAlg):
             addr       (list): Hardware address.
             master_clk (list): Master clock values.
         """
+        x = Symbol('x')
+        _ = (ZZ/ZZ(2))[x]
         self.lfsrs = [
-            FLFSR(0, Polynomial(x**25 + x**20 + x**12 + x**8  + 1, coeff_ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**31 + x**24 + x**16 + x**12 + 1, coeff_ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**33 + x**28 + x**24 + x**4  + 1, coeff_ring=ZZ/ZZ(2))),
-            FLFSR(0, Polynomial(x**39 + x**36 + x**28 + x**4  + 1, coeff_ring=ZZ/ZZ(2)))
+            FLFSR(0, x**25 + x**20 + x**12 + x**8  + 1),
+            FLFSR(0, x**31 + x**24 + x**16 + x**12 + 1),
+            FLFSR(0, x**33 + x**28 + x**24 + x**4  + 1),
+            FLFSR(0, x**39 + x**36 + x**28 + x**4  + 1)
         ]
 
         self.kc = kc

@@ -1,4 +1,4 @@
-from samson.math.algebra.expression import Expression#, Operation
+from samson.math.polynomial import Polynomial
 
 class Infinity(object):
     def __repr__(self):
@@ -52,18 +52,41 @@ class NegativeInfinity(Infinity):
         return Infinity()
 
 
-class Symbol(Expression):
+class Symbol(Polynomial):
     def __init__(self, str_representation):
         self.repr = str_representation
+        self.ring = None
+        self.var  = None
 
     def __repr__(self):
-        return self.repr
+        return f'<Symbol: {self.repr}, ring={self.ring}>'
 
     def __str__(self):
-        return self.__repr__()
+        return self.repr
+
+    def __hash__(self):
+        return hash(self.var)
 
     def __eq__(self, other: object) -> bool:
-        return type(self) == type(other) and self.repr == other.repr
+        return type(self) == type(other) and self.repr == other.repr and self.ring == other.ring
+
+    def __bool__(self) -> bool:
+        return True
+
+    def build(self, ring):
+        from samson.math.polynomial import Polynomial
+        self.ring = ring
+        self.var  = Polynomial([ring.ring.zero(), ring.ring.one()], coeff_ring=ring.ring, ring=ring, symbol=self)
+
+
+    def __getattribute__(self, name):
+        try:
+            attr = object.__getattribute__(self, name)
+        except AttributeError:
+            attr = object.__getattribute__(self.var, name)
+
+        return attr
+
 
 
 oo = Infinity()

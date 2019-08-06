@@ -2,8 +2,6 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
 from samson.math.algebra.rings.polynomial_ring import PolynomialRing
 from samson.math.polynomial import Polynomial
-from sympy import Expr
-from sympy.abc import x
 
 class CurvePolynomialElement(RingElement):
     """
@@ -22,12 +20,15 @@ class CurvePolynomialElement(RingElement):
         self.ring   = ring
 
     def __repr__(self):
-        return f"<CurvePolynomialElement x_poly={self.x_poly}, y_poly={self.y_poly}, ring={self.ring}>"
+        return f"<CurvePolynomialElement: x_poly={self.x_poly}, y_poly={self.y_poly}, ring={self.ring}>"
 
 
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}({self.x_poly.shorthand()}, {self.y_poly.shorthand()})'
 
+
+    def __hash__(self):
+        return hash((self.x_poly, self.y_poly, self.ring))
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -47,6 +48,7 @@ class CurvePolynomialElement(RingElement):
         yx = self.y_poly * other.x_poly
 
         y = xy + yx
+        x = self.ring.poly_ring.symbol
 
         if self.y_poly and other.y_poly:
             nx += self.y_poly * other.y_poly * self.ring.poly_ring(x**3 + self.ring.a*x + self.ring.b)
@@ -157,7 +159,7 @@ class CurvePolynomialRing(Ring):
 
 
     def __repr__(self):
-        return f"<CurvePolynomialRing poly_ring={self.poly_ring}>"
+        return f"<CurvePolynomialRing: poly_ring={self.poly_ring}>"
 
 
     def shorthand(self) -> str:
@@ -193,10 +195,10 @@ class CurvePolynomialRing(Ring):
 
         coerced = []
         for poly in [x_poly, y_poly]:
-            if type(poly) is list or issubclass(type(poly), Expr):
+            if type(poly) is list:
                 coerced.append(Polynomial(poly, self.poly_ring.ring))
 
-            elif type(poly) is Polynomial:
+            elif issubclass(type(poly), Polynomial):
                 coerced.append(poly)
 
             elif type(poly) is int:

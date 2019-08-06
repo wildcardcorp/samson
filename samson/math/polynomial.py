@@ -1,13 +1,10 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import fast_mul, square_and_mul, gcd, factor as factor_int
+from samson.math.general import square_and_mul, gcd, factor as factor_int
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
-from sympy import Expr, Symbol, Integer
-from copy import deepcopy
-
 
 class Polynomial(RingElement):
-    def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: Symbol=None, ring: Ring=None):
+    def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: object=None, ring: Ring=None):
         """
         Parameters:
             coeffs (list or Expr): Coefficients of the polynomial as a list of increasing degree or an expression.
@@ -15,25 +12,11 @@ class Polynomial(RingElement):
             symbol       (Symbol): Symbol to use as the indeterminate.
             ring           (Ring): Parent PolynomialRing.
         """
-        default_symbol = Symbol('x')
+        from samson.math.symbols import Symbol
+
         self.coeff_ring = coeff_ring or coeffs[0].ring
 
-        # Parse expressions
-        if issubclass(type(coeffs), Expr):
-            default_symbol = list(coeffs.free_symbols)[0]
-            coeff_vec      = SparseVector([], self.coeff_ring.zero())
-
-            for sub_expr, coeff in coeffs.as_coefficients_dict().items():
-                coeff = self.coeff_ring.coerce(int(coeff))
-                if issubclass(type(sub_expr), Integer):
-                    coeff_vec[0] = coeff
-                else:
-                    coeff_vec[int(sub_expr.args[1] if sub_expr.args else 1)] = coeff
-
-            self.coeffs = coeff_vec
-
-
-        elif type(coeffs) is list or type(coeffs) is tuple or type(coeffs) is dict:
+        if type(coeffs) is list or type(coeffs) is tuple or type(coeffs) is dict:
             if type(coeffs) is dict or (len(coeffs) > 0 and type(coeffs[0]) is tuple):
                 vec = coeffs
             else:
@@ -48,8 +31,8 @@ class Polynomial(RingElement):
             raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
 
 
-        self.symbol = symbol or default_symbol
-        self.ring = ring or self.coeff_ring[self.symbol]
+        self.symbol = symbol or Symbol('x')
+        self.ring   = ring or self.coeff_ring[self.symbol]
 
         if len(self.coeffs.values) == 0:
             self.coeffs = SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())
@@ -180,12 +163,35 @@ class Polynomial(RingElement):
         Examples:
             >>> from samson.math.polynomial import Polynomial
             >>> from samson.math.algebra.rings.integer_ring import ZZ
-            >>> from sympy.abc import x
+            >>> from samson.math.symbols import Symbol
+            >>> x = Symbol('x')
             >>> ZZ[x](x**4 + 2*x**2).trunc_kth_root(2)
             <Polynomial: x**2 + ZZ(2)*x, coeff_ring=ZZ>
 
         """
         return Polynomial([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k], self.coeff_ring, self.symbol)
+
+
+    def trunc(self, mod: RingElement) -> object:
+        """
+        Reduces (modulo) the Polynomial's coefficients by `mod`.
+
+        Parameters:
+            mod (RingElement): Modulus.
+        
+        Returns:
+            Polynomial: Polynomial with reduced coefficients.
+        
+        Examples:
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> from samson.math.symbols import Symbol
+            >>> x = Symbol('x')
+            >>> _ = ZZ[x]
+            >>> (5*x**5 + 4*x**4 + 3*x**3 + 2*x**2 + x + 1).trunc(3)
+            <Polynomial: ZZ(2)*x**5 + x**4 + ZZ(2)*x**2 + x + ZZ(1), coeff_ring=ZZ>
+
+        """
+        return Polynomial([(idx, coeff % mod) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
 
 
     def square_free_decomposition(self) -> list:
@@ -199,8 +205,10 @@ class Polynomial(RingElement):
 
         Examples:
             >>> from samson.math.all import Polynomial, ZZ
-            >>> from sympy.abc import x
-            >>> poly = Polynomial(3*x**3+x**7-x**18, ZZ)
+            >>> from samson.math.symbols import Symbol
+            >>> x = Symbol('x')
+            >>> _ = ZZ[x]
+            >>> poly = 3*x**3+x**7-x**18
             >>> poly.square_free_decomposition()
             {<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
@@ -303,7 +311,7 @@ class Polynomial(RingElement):
             list: Equal-degree factors of self.
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base
-        from samson.math.algebra.symbols import oo
+        from samson.math.symbols import oo
 
         f = self.monic()
         n = f.degree()
@@ -318,8 +326,8 @@ class Polynomial(RingElement):
 
             exponent = (q - 1) // subgroup_divisor
 
-        one      = self.ring.one()
-        bases    = frobenius_monomial_base(f)
+        one   = self.ring.one()
+        bases = frobenius_monomial_base(f)
 
         irreducibility_cache = {}
 
@@ -380,12 +388,13 @@ class Polynomial(RingElement):
             bool: Whether or not the Polynomial is irreducible over its ring.
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base
+
         n = self.degree()
 
         if n <= 1:
             return True
 
-        x = Symbol('x')
+        x = self.symbol
         f = self.monic()
         P = self.ring
 
@@ -426,8 +435,9 @@ class Polynomial(RingElement):
 
         Example:
             >>> from samson.math.algebra.all import *
-            >>> from sympy.abc import x
+            >>> from samson.math.symbols import Symbol
             >>> from functools import reduce
+            >>> x = Symbol('x')
             >>> Z7 = ZZ/ZZ(7)
             >>> P  = Z7[x]
 
@@ -471,14 +481,56 @@ class Polynomial(RingElement):
         return int(self)
 
 
+    def embed_coeffs(self, ring: Ring) -> object:
+        """
+        Returns a new Polynomial with the coefficients coerced into `ring`.
+
+        Parameters:
+            ring (Ring): Ring to embed into.
+        
+        Returns:
+            Polynomial: Resultant Polynomial.
+
+        Examples:
+            >>> from samson.math.all import *
+            >>> x = Symbol('x')
+            >>> _ = ZZ[x]
+            >>> p = x**4 + x**2 + 1
+            >>> p.embed_coeffs(ZZ/ZZ(2))
+            <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+
+        """
+        return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs})
+
+
+    def peel_coeffs(self) -> object:
+        """
+        Returns a new Polynomial with the coefficients peeled from their ring.
+
+        Returns:
+            Polynomial: Resultant Polynomial.
+        
+            Examples:
+            >>> from samson.math.all import *
+            >>> x = Symbol('x')
+            >>> _ = (ZZ/ZZ(2))[x]
+            >>> p = x**4 + x**2 + 1
+            >>> p.peel_coeffs()
+            <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ>
+
+        """
+        return Polynomial({idx: coeff.val for idx, coeff in self.coeffs})
+
+
     def __divmod__(self, other: object) -> (object, object):
+        other = self.ring.coerce(other)
         assert other != self.ring.zero()
 
         n = other.degree()
         if n > self.degree():
             return self.ring.zero(), self
 
-        dividend = deepcopy(self.coeffs)
+        dividend = SparseVector([c for c in self.coeffs], self.coeff_ring.zero())
         divisor  = other.coeffs
 
         n = other.degree()
@@ -496,6 +548,8 @@ class Polynomial(RingElement):
 
 
     def __add__(self, other: object) -> object:
+        other = self.ring.coerce(other)
+
         vec = SparseVector([], self.coeff_ring.zero())
         for idx, coeff in self.coeffs:
             vec[idx] = coeff + other.coeffs[idx]
@@ -508,6 +562,8 @@ class Polynomial(RingElement):
 
 
     def __sub__(self, other: object) -> object:
+        other = self.ring.coerce(other)
+
         vec = SparseVector([], self.coeff_ring.zero())
         for idx, coeff in self.coeffs:
             vec[idx] = coeff - other.coeffs[idx]
@@ -520,8 +576,11 @@ class Polynomial(RingElement):
 
 
     def __mul__(self, other: object) -> object:
-        if type(other) is int:
-            return fast_mul(self, other, self.ring.zero())
+        gmul = self.ground_mul(other)
+        if gmul:
+            return gmul
+
+        other = self.ring.coerce(other)
 
         new_coeffs = SparseVector([], self.coeff_ring.zero())
 

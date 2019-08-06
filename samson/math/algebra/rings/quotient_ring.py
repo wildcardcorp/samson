@@ -1,5 +1,5 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import mod_inv, fast_mul
+from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.general import mod_inv
 
 class QuotientElement(RingElement):
     """
@@ -34,21 +34,28 @@ class QuotientElement(RingElement):
         return self.val.ordinality()
 
 
+    @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return QuotientElement((self.val + other.val) % self.ring.quotient, self.ring)
 
+
+    @left_expression_intercept
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return QuotientElement((self.val - other.val) % self.ring.quotient, self.ring)
 
+
     def __mul__(self, other: object) -> object:
-        if type(other) is int:
-            return fast_mul(self, other)
+        gmul = self.ground_mul(other)
+        if gmul:
+            return gmul
 
         other = self.ring.coerce(other)
         return QuotientElement((self.val * other.val) % self.ring.quotient, self.ring)
 
+
+    @left_expression_intercept
     def __mod__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return QuotientElement((self.val % other.val) % self.ring.quotient, self.ring)
@@ -56,10 +63,14 @@ class QuotientElement(RingElement):
     def __invert__(self) -> object:
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
 
+
+    @left_expression_intercept
     def __truediv__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return self * ~other
 
+
+    @left_expression_intercept
     def __floordiv__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return QuotientElement((self.val // other.val) % self.ring.quotient, self.ring)
@@ -73,6 +84,7 @@ class QuotientElement(RingElement):
             return self.val == other
 
         return type(self) == type(other) and self.val == other.val and self.ring == other.ring
+
 
     def __hash__(self) -> bool:
         return hash(self.val) + hash(self.ring)
@@ -113,7 +125,7 @@ class QuotientRing(Ring):
 
 
     def __repr__(self):
-        return f"<QuotientRing ring={self.ring}, quotient={self.quotient}>"
+        return f"<QuotientRing: ring={self.ring}, quotient={self.quotient}>"
 
 
     @property
@@ -146,12 +158,13 @@ class QuotientRing(Ring):
         from samson.math.polynomial import Polynomial
 
         quotient = self.quotient.get_ground()
+        type_o   = type(quotient)
 
-        if type(quotient) is IntegerElement:
+        if type_o is IntegerElement:
             return int(quotient)
 
-        elif type(quotient) is Polynomial:
-            return self.characteristic**quotient.degree()
+        elif type_o is Polynomial:
+            return quotient.ring.ring.order**quotient.degree()
 
         else:
             raise NotImplementedError

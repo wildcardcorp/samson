@@ -1,5 +1,5 @@
 from samson.math.general import mod_inv, is_prime
-from samson.math.algebra.symbols import oo
+from samson.math.symbols import oo
 from sympy import factorint
 from itertools import chain, count
 from enum import Enum
@@ -133,66 +133,95 @@ def fft_op(v1, v2, operation: FFTOp=FFTOp.CONVOLVE):
 
 
 
+# def generate_arbitrary_ntt_params(v1, v2):
+#     vec_len   = len(v1)
+#     max_value = max(chain(v1, v2))
+#     orig_ring = v1[0].ring
+
+#     # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
+#     #char_zero = orig_ring.characteristic == 0
+#     finite_order = orig_ring.order != oo
+#     if finite_order:
+#         orig_ring = orig_ring.ring
+#         max_value = max_value.val
+
+#     one = orig_ring.one()
+
+
+#     #print((max_value**2).ordinality())
+#     min_mod = (max_value**2).ordinality() * vec_len + 1
+#     #mod_too_small = type(orig_ring) == QuotientRing and orig_ring.quotient < min_mod
+
+#     vec_len_elem = orig_ring[vec_len]
+
+#     start = max(1, min_mod + vec_len - 2)
+#     # TODO: Remove the 10 multiplier
+#     for offset in count(start*10):
+#         modulus = orig_ring[offset] * vec_len_elem + one #vec_len + one
+
+#         if modulus.is_prime():
+#             break
+
+#     #sub_ring = orig_ring if char_zero else orig_ring.ring
+#     print(max_value)
+#     print(min_mod)
+#     print(modulus)
+
+#     new_ring = orig_ring / modulus
+#     print(new_ring)
+#     print(type(new_ring.quotient))
+
+#     #totient = modulus - 1
+#     totient = new_ring.order - 1
+
+#     # Find a generator
+#     factors = [f for f in factorint(totient)]
+
+#     print('order', new_ring.order)
+
+#     # for possible_gen in range(1, modulus):
+#     for possible_gen in range(2, new_ring.order):
+#         possible_gen = new_ring[possible_gen]
+#         if possible_gen**totient == new_ring.one() and all([possible_gen**(totient // f) != new_ring.one() for f in factors]):
+#             gen = possible_gen
+#             break
+
+#     # Find a primitive root
+#     root = gen**(totient // vec_len)
+#     print('gen', gen)
+#     print('root', root)
+
+#     return root, new_ring
+
+
 def generate_arbitrary_ntt_params(v1, v2):
     vec_len   = len(v1)
     max_value = max(chain(v1, v2))
     orig_ring = v1[0].ring
 
-    # TODO: Remove all int casting to make generic
-    # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
-    #char_zero = orig_ring.characteristic == 0
     finite_order = orig_ring.order != oo
     if finite_order:
         orig_ring = orig_ring.ring
         max_value = max_value.val
 
-    one = orig_ring.one()
-
-
-    #print((max_value**2).ordinality())
+    one     = orig_ring.one()
     min_mod = (max_value**2).ordinality() * vec_len + 1
-    #mod_too_small = type(orig_ring) == QuotientRing and orig_ring.quotient < min_mod
 
     vec_len_elem = orig_ring[vec_len]
 
     start = max(1, min_mod + vec_len - 2)
-    # TODO: Remove the 10 multiplier
-    for offset in count(start*10):
-        modulus = orig_ring[offset] * vec_len_elem + one #vec_len + one
+    for offset in count(start):
+        modulus = orig_ring[offset] * vec_len_elem + one
 
         if modulus.is_prime():
             break
 
-    #sub_ring = orig_ring if char_zero else orig_ring.ring
-    print(max_value)
-    print(min_mod)
-    print(modulus)
 
-    new_ring = orig_ring / modulus
-    print(new_ring)
-    print(type(new_ring.quotient))
+    # Find root
+    new_ring = (orig_ring / modulus).mul_group()
+    root     = new_ring.find_gen()*(totient // vec_len)
 
-    #totient = modulus - 1
-    totient = new_ring.order - 1
-
-    # Find a generator
-    factors = [f for f in factorint(totient)]
-
-    print('order', new_ring.order)
-
-    # for possible_gen in range(1, modulus):
-    for possible_gen in range(2, new_ring.order):
-        possible_gen = new_ring[possible_gen]
-        if possible_gen**totient == new_ring.one() and all([possible_gen**(totient // f) != new_ring.one() for f in factors]):
-            gen = possible_gen
-            break
-
-    # Find a primitive root
-    root = gen**(totient // vec_len)
-    print('gen', gen)
-    print('root', root)
-
-    return root, new_ring
+    return root.val, new_ring.ring
 
 
 

@@ -1,8 +1,7 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import random_int, tonelli
-from sympy.abc import x, y
 
 
 class WeierstrassPoint(RingElement):
@@ -31,6 +30,11 @@ class WeierstrassPoint(RingElement):
 
 
     @property
+    def val(self):
+        return self.x
+
+
+    @property
     def order(self) -> int:
         from samson.math.general import bsgs, hasse_frobenius_trace_interval
         if not self.order_cache:
@@ -42,7 +46,7 @@ class WeierstrassPoint(RingElement):
 
 
     def __hash__(self):
-        return hash(self.curve) ^ (hash(self.x.val) ^ hash(self.y.val))
+        return hash(self.curve) ^ hash(self.x) ^ hash(self.y)
 
 
     def __int__(self) -> int:
@@ -73,6 +77,7 @@ class WeierstrassPoint(RingElement):
         return WeierstrassPoint(self.x, -self.y, self.curve)
 
 
+    @left_expression_intercept
     def __add__(self, P2: object) -> object:
         if self == self.curve.POINT_AT_INFINITY:
             return P2
@@ -97,12 +102,14 @@ class WeierstrassPoint(RingElement):
     def __radd__(self, P2: object) -> object:
         return self.__add__(P2)
 
+    @left_expression_intercept
     def __sub__(self, P2: object) -> object:
         return self + (-P2)
 
     def __rsub__(self, P2: object) -> object:
         return -self + P2
 
+    @left_expression_intercept
     def __truediv__(self, other: object) -> object:
         from samson.math.general import pohlig_hellman
 
@@ -129,6 +136,8 @@ class WeierstrassCurve(Ring):
             cardinality        (int): Number of points on the curve.
             check_singularity (bool): Check if the curve is singular (no cusps or self-intersections).
         """
+        from samson.math.symbols import Symbol
+
         self.a  = a
         self.b  = b
         self.ring = ring or self.a.ring
@@ -145,7 +154,7 @@ class WeierstrassCurve(Ring):
         self.dpoly_cache = {}
 
         self.cardinality_cache = cardinality
-        self.curve_poly_ring   = self[x, y]
+        self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
 
 
@@ -176,7 +185,7 @@ class WeierstrassCurve(Ring):
     def __getitem__(self, args):
         from samson.math.algebra.rings.curve_polynomial_ring import CurvePolynomialRing
         if type(args) is tuple:
-            return CurvePolynomialRing(self.ring[x], self.a, self.b)
+            return CurvePolynomialRing(self.ring[args[0]], self.a, self.b)
         else:
             return super().__getitem__(args)
 
@@ -186,6 +195,20 @@ class WeierstrassCurve(Ring):
             return WeierstrassPoint(x, y, self)
         else:
             return self.recover_point_from_x(x)
+
+
+    def __eq__(self, other: object) -> bool:
+        return type(other) == type(self) and self.a == other.a and self.b == other.b
+
+
+    def __hash__(self):
+        return hash((self.a, self.b))
+
+
+    def __deepcopy__(self, memo):
+        result = WeierstrassCurve(a=self.a, b=self.b, ring=self.ring, base_tuple=(self.G.x, self.G.y), cardinality=self.cardinality_cache)
+        memo[id(self)] = result
+        return result
 
 
     @property
@@ -312,6 +335,8 @@ class WeierstrassCurve(Ring):
         """
         if n in self.dpoly_cache:
             return self.dpoly_cache[n]
+
+        x = self.curve_poly_ring.poly_ring.symbol
 
         a, b   = self.a, self.b
         d_poly = None

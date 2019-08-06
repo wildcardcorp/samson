@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring
 from samson.utilities.exceptions import CoercionException
 from samson.math.polynomial import Polynomial
-from sympy import Expr, Symbol
+from samson.math.symbols import Symbol
 
 
 class PolynomialRing(Ring):
@@ -10,6 +10,8 @@ class PolynomialRing(Ring):
 
     Examples:
         >>> from samson.math.all import *
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> poly_ring = (ZZ/ZZ(53))[x]
         >>> poly_ring(x**3 + 4*x - 3)
         <Polynomial: x**3 + ZZ(4)*x + ZZ(50), coeff_ring=ZZ/ZZ(53)>
@@ -23,6 +25,7 @@ class PolynomialRing(Ring):
         """
         self.ring   = ring
         self.symbol = symbol or Symbol('x')
+        self.symbol.build(self)
 
 
     @property
@@ -32,7 +35,7 @@ class PolynomialRing(Ring):
 
     @property
     def order(self) -> int:
-        from samson.math.algebra.symbols import oo
+        from samson.math.symbols import oo
         return oo
 
     def zero(self) -> Polynomial:
@@ -52,7 +55,7 @@ class PolynomialRing(Ring):
 
 
     def __repr__(self):
-        return f"<PolynomialRing ring={self.ring}>"
+        return f"<PolynomialRing: ring={self.ring}>"
 
 
     def shorthand(self) -> str:
@@ -77,14 +80,20 @@ class PolynomialRing(Ring):
         Returns:
             Polynomial: Coerced element.
         """
-        if type(other) is int:
-            other = [other]
+        # Handle grounds
+        type_o = type(other)
+        if type_o is int or hasattr(other, 'ring') and other.ring == self.ring:
+            other  = [other]
+            type_o = type(other)
 
-        if type(other) is list or type(other) is dict or issubclass(type(other), Expr):
+        if type_o is list or type_o is dict:
             return Polynomial(other, coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
-        elif type(other) is Polynomial:
+        elif type_o is Polynomial and other.ring == self:
             return other
+
+        elif type_o is Symbol and other.var.ring == self:
+            return other.var
 
         raise CoercionException('Coercion failed')
 
@@ -100,7 +109,6 @@ class PolynomialRing(Ring):
            Polynomial: The `x`-th element.
         """
         base_coeffs = []
-        # modulus     = self.ring.characteristic
         modulus     = self.ring.order
 
         if modulus != 0:

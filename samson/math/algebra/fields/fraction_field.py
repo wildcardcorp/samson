@@ -1,5 +1,5 @@
 from samson.math.algebra.fields.field import Field, FieldElement
-from samson.math.algebra.rings.ring import Ring
+from samson.math.algebra.rings.ring import Ring, left_expression_intercept
 from samson.math.general import gcd
 
 
@@ -39,21 +39,34 @@ class FractionFieldElement(FieldElement):
         return f'{self.field.shorthand()}({self.numerator}/{self.denominator})'
 
 
+    def __hash__(self):
+        return hash((self.numerator, self.denominator, self.field))
+
     def __eq__(self, other: object):
         return type(self) == type(other) and self.numerator * other.denominator == self.denominator * other.numerator
 
+
+    @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FractionFieldElement(self.numerator * other.denominator + self.denominator * other.numerator, self.denominator * other.denominator, self.ring)
 
+
+    @left_expression_intercept
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return self + (-other)
 
+
     def __mul__(self, other: object) -> object:
+        gmul = self.ground_mul(other)
+        if gmul:
+            return gmul
+
         other = self.ring.coerce(other)
         return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
+    @left_expression_intercept
     def __truediv__(self, other: object) -> object:
         return self * (~self.ring.coerce(other))
 

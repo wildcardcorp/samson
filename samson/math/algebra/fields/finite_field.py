@@ -1,6 +1,6 @@
-from samson.math.general import fast_mul, is_prime
+from samson.math.general import is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
-from samson.math.algebra.rings.polynomial_ring import PolynomialRing
+from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.math.polynomial import Polynomial
 from sympy.polys.galoistools import gf_irreducible_p
 import itertools
@@ -38,24 +38,25 @@ class FiniteFieldElement(FieldElement):
         return int(self)
 
 
+    @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val + other.val, self.field)
 
     def __mul__(self, other: object) -> object:
-        if type(other) is int:
-            return fast_mul(self, other)
+        gmul = self.ground_mul(other)
+        if gmul:
+            return gmul
 
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val * other.val, self.field)
 
-    def __rmul__(self, other: object) -> object:
-        return self.__mul__(other)
-
+    @left_expression_intercept
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val - other.val, self.field)
 
+    @left_expression_intercept
     def __mod__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val % other.val, self.field)
@@ -66,10 +67,12 @@ class FiniteFieldElement(FieldElement):
     def __neg__(self) -> object:
         return FiniteFieldElement(-self.val, self.field)
 
+    @left_expression_intercept
     def __truediv__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return self * ~other
 
+    @left_expression_intercept
     def __floordiv__(self, other: object) -> object:
         return self.__truediv__(other)
 
@@ -80,10 +83,11 @@ class FiniteField(Field):
 
     Examples:
         >>> from samson.math import *
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> F = FiniteField(2, 8)
         >>> assert F[5] / F[5] == F(1)
-        >>> F[x]/F[x](x**7 + x**2 + 1)
+        >>> F[x]/(x**7 + x**2 + 1)
         <QuotientRing ring=F_(2**8)[x], quotient=<Polynomial: x**7 + x**2 + F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>>
 
     """
@@ -120,7 +124,7 @@ class FiniteField(Field):
 
 
         self.reducing_poly  = reducing_poly
-        poly_ring           = PolynomialRing(self.internal_ring)
+        poly_ring           = self.reducing_poly.ring
         self.internal_field = poly_ring/poly_ring(reducing_poly)
 
 

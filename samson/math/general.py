@@ -3,7 +3,6 @@ from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFai
 from sympy.matrices import Matrix, GramSchmidt
 from sympy import sieve
 from itertools import chain
-from sympy.abc import x
 from types import FunctionType
 from copy import deepcopy
 from enum import Enum
@@ -80,7 +79,7 @@ def frobenius_monomial_base(poly: object) -> list:
     Returns:
         list: List of monomial bases mod g.
     """
-    from samson.math.algebra.symbols import oo
+    from samson.math.symbols import oo
 
     n = poly.degree()
     if n == 0:
@@ -97,6 +96,7 @@ def frobenius_monomial_base(poly: object) -> list:
 
     elif n > 1:
         R = P/poly
+        x = P.symbol
         bases[1] = R(x)**q
 
         for i in range(2, n):
@@ -163,7 +163,8 @@ def gcd(a: int, b: int) -> int:
         128
 
         >>> from samson.math.algebra.all import FF
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> gcd(P(x**2), P(x**5))
         <Polynomial: x**2, coeff_ring=F_(2**8)>
@@ -196,7 +197,8 @@ def xgcd(a: int, b: int) -> (int, int, int):
         (5, 0, 1)
 
         >>> from samson.math.algebra.all import FF
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> xgcd(P(x**2), P(x**5))
         (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
@@ -255,7 +257,8 @@ def lcm(a: int, b: int) -> int:
         10
 
         >>> from samson.math.algebra.all import FF
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> lcm(P(x**2 + 5), P(x-6))
         <Polynomial: x**3 + x, coeff_ring=F_(2**8)>
@@ -325,7 +328,8 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         9765625
 
         >>> from samson.math.algebra.all import ZZ
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> square_and_mul(P(x+5), 6)
         <Polynomial: x**6 + ZZ(30)*x**5 + ZZ(121)*x**4 + ZZ(87)*x**3 + ZZ(104)*x**2 + ZZ(81)*x + ZZ(4), coeff_ring=ZZ/ZZ(127)>
@@ -366,7 +370,8 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         60
 
         >>> from samson.math.algebra.all import ZZ
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> fast_mul(P(x+5), 5)
         <Polynomial: ZZ(5)*x + ZZ(25), coeff_ring=ZZ/ZZ(127)>
@@ -431,7 +436,8 @@ def crt(residues: list, moduli: list=None) -> (object, object):
     Examples:
         >>> from samson.math.general import crt
         >>> from samson.math.algebra.all import ZZ
-        >>> from sympy.abc import x
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
 
         >>> n = 17
         >>> residues = [(17 % mod, mod) for mod in [2, 3, 5]]
@@ -688,11 +694,12 @@ def tonelli_q(a: int, p: int, q: int) -> int:
 
 
 
-# https://github.com/orisano/olll/blob/master/olll.py
-# https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
 def lll(in_basis: list, delta: float=0.75) -> Matrix:
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
+
+    https://github.com/orisano/olll/blob/master/olll.py
+    https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
 
     Parameters:
         in_basis (list): List of Matrix objects representing the original basis.
@@ -872,10 +879,11 @@ def next_prime(start_int: int) -> int:
 
 
 
-# https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
 def berlekamp_massey(output_list: list) -> object:
     """
     Performs the Berlekamp-Massey algorithm to find the shortest LFSR for a binary output sequence.
+
+    https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
 
     Parameters:
         output_list (list): Output of LFSR.
@@ -887,7 +895,10 @@ def berlekamp_massey(output_list: list) -> object:
         >>> from samson.prngs.flfsr import FLFSR
         >>> from samson.math.general import berlekamp_massey
         >>> from samson.math.all import Polynomial, ZZ
-        >>> lfsr = FLFSR(3, Polynomial(x**25 + x**20 + x**12 + x**8  + 1, coeff_ring=ZZ/ZZ(2)))
+        >>> from samson.math.symbols import Symbol
+        >>> x = Symbol('x')
+        >>> _ = (ZZ/ZZ(2))[x]
+        >>> lfsr = FLFSR(3, x**25 + x**20 + x**12 + x**8  + 1)
         >>> outputs = [lfsr.generate() for _ in range(50)]
         >>> berlekamp_massey(outputs)
         <Polynomial: x**25 + x**17 + x**13 + x**5 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
@@ -1056,66 +1067,6 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
     raise ProbabilisticFailureException("Discrete logarithm not found")
 
 
-# def pollards_kangaroo(p: int, g: int, y: int, a: int, b: int, iterations: int=30, f: FunctionType=None) -> int:
-#     """
-#     Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
-#     Parameters:
-#         p          (int): Prime modulus.
-#         g          (int): Generator.
-#         y          (int): Number to find the discrete logarithm of.
-#         a          (int): Interval start.
-#         b          (int): Interval end.
-#         iterations (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
-#         f         (func): pseudorandom map function.
-
-#     Returns:
-#         int: The discrete logarithm. Possibly None if it couldn't be found.
-
-#     Examples:
-#         >>> from samson.math.general import pollards_kangaroo
-#         >>> g, x, p = 5, 13, 67
-#         >>> y = pow(g, x, p)
-#         >>> pollards_kangaroo(p, g, y, 0, 20)
-#         585
-#         >>> pow(5, 585, 67) == y
-#         True
-#     """
-#     k = iterations
-
-#     if not f:
-#         f = lambda y: pow(2, y % k, p)
-
-#     while k > 1:
-#         N = (f(0) + f(b)) // 2  * 4
-
-#         # Tame kangaroo
-#         xT = 0
-#         yT = pow(g, b, p)
-
-#         for _ in range(N):
-#             f_yT  = f(yT)
-#             xT   += f_yT
-#             yT    = (yT * pow(g, f_yT, p)) % p
-
-
-#         # Wild kangaroo
-#         xW = 0
-#         yW = y
-
-#         while xW < b - a + xT:
-#             f_yW = f(yW)
-#             xW  += f_yW
-#             yW   = (yW * pow(g, f_yW, p)) % p
-
-#             if yW == yT:
-#                 return b + xT - xW
-
-
-#         # Didn't find it. Try another `k`
-#         k -= 1
-
-#     raise ProbabilisticFailureException("Discrete logarithm not found")
-
 
 
 def hasse_frobenius_trace_interval(p: int) -> (int, int):
@@ -1256,6 +1207,8 @@ def frobenius_trace_mod_l(curve: object, l: int) -> object:
     T = Frac(S, simplify=False)
     sym_curve = WeierstrassCurve(a=curve.a, b=curve.b, ring=T)
 
+    x = R.poly_ring.symbol
+
     p_x = T(R((x, 0)))
     p_y = T(R((0, 1)))
 
@@ -1307,7 +1260,7 @@ def frobenius_trace(curve: object) -> int:
 
     """
     from samson.math.algebra.rings.integer_ring import ZZ
-    from samson.math.polynomial import Polynomial
+    from samson.math.symbols import Symbol
 
     search_range      = hasse_frobenius_trace_interval(curve.p)
     torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
@@ -1315,12 +1268,15 @@ def frobenius_trace(curve: object) -> int:
 
     # Handle 2 separately to prevent multivariate poly arithmetic
     if 2 in torsion_primes:
-        defining_poly = Polynomial(x**3 + curve.a*x + curve.b, coeff_ring=curve.ring)
+        x = Symbol('x')
+        _ = curve.ring[x]
+
+        defining_poly = x**3 + curve.a*x + curve.b
         bases         = frobenius_monomial_base(defining_poly)
         rational_char = bases[1]
         rational_char = frobenius_map(rational_char, defining_poly, bases=bases)
 
-        if gcd(rational_char - curve.ring[x](x), defining_poly).degree() == 0:
+        if gcd(rational_char - x, defining_poly).degree() == 0:
             trace_congruences.append((ZZ/ZZ(2))(1))
         else:
             trace_congruences.append((ZZ/ZZ(2))(0))

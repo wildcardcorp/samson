@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
+from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.utilities.exceptions import CoercionException
 from samson.math.general import is_prime, factor
 
@@ -37,36 +37,36 @@ class IntegerElement(RingElement):
         """
         return self.val
 
+    @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val + other.val, self.ring)
 
-    def __radd__(self, other: object) -> object:
-        return self.ring.coerce(other) + self
-
+    @left_expression_intercept
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return IntegerElement(self.val - other.val, self.ring)
 
-    def __rsub__(self, other: object) -> object:
-        return self.ring.coerce(other) - self
-
     def __mul__(self, other: object) -> object:
+        gmul = self.ground_mul(other)
+        if gmul:
+            return gmul
+
         other = self.ring.coerce(other)
         return IntegerElement(self.val * other.val, self.ring)
 
 
+    @left_expression_intercept
     def __divmod__(self, other: object) -> (object, object):
         other = self.ring.coerce(other)
         q, r = divmod(self.val, other.val)
         return IntegerElement(q, self.ring), IntegerElement(r, self.ring)
 
+    @left_expression_intercept
     def __mod__(self, other: object) -> object:
         return divmod(self, other)[1]
 
-    def __rmod__(self, other: object) -> object:
-        return self.ring.coerce(other) % self
-
+    @left_expression_intercept
     def __floordiv__(self, other: object) -> object:
         return divmod(self, other)[0]
 
@@ -96,7 +96,7 @@ class IntegerRing(Ring):
 
     @property
     def order(self) -> int:
-        from samson.math.algebra.symbols import oo
+        from samson.math.symbols import oo
         return oo
 
 

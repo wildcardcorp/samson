@@ -28,7 +28,7 @@ class SparseVector(object):
 
 
     def __repr__(self):
-        return f'<SparseVector values={self.values}>'
+        return f'<SparseVector: values={self.values}>'
 
     def __str__(self):
         return self.__repr__()

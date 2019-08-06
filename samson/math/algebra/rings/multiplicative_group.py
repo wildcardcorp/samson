@@ -1,5 +1,6 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import totient
+from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.general import totient, factor
+from samson.utilities.exceptions import SearchspaceExhaustedException
 
 class MultiplicativeGroupElement(RingElement):
     """
@@ -20,19 +21,15 @@ class MultiplicativeGroupElement(RingElement):
         return f"<MultiplicativeGroupElement: val={self.val}, ring={self.ring}>"
 
 
+    @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val * other.val, self.ring)
 
-    def __radd__(self, other: object) -> object:
-        return self.ring.coerce(other) + self
-
+    @left_expression_intercept
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val / other.val, self.ring)
-
-    def __rsub__(self, other: object) -> object:
-        return self.ring.coerce(other) - self
 
     def __mul__(self, other: object) -> object:
         other = int(other)
@@ -45,6 +42,7 @@ class MultiplicativeGroupElement(RingElement):
         return MultiplicativeGroupElement(~self.val, self.ring)
 
 
+    @left_expression_intercept
     def __truediv__(self, other: object) -> object:
         from samson.math.general import pohlig_hellman
 
@@ -102,7 +100,7 @@ class MultiplicativeGroup(Ring):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
-        from samson.math.algebra.symbols import oo
+        from samson.math.symbols import oo
 
         if not self.order_cache:
             if type(self.ring) is QuotientRing:
@@ -147,7 +145,7 @@ class MultiplicativeGroup(Ring):
 
 
     def __repr__(self):
-        return f"<MultiplicativeGroup ring={self.ring}>"
+        return f"<MultiplicativeGroup: ring={self.ring}>"
 
 
     def shorthand(self) -> str:
@@ -192,3 +190,20 @@ class MultiplicativeGroup(Ring):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
+
+
+    def find_gen(self) -> MultiplicativeGroupElement:
+        """
+        Finds a generator of the MultiplicativeGroup.
+
+        Returns:
+            MultiplicativeGroupElement: A generator element.
+        """
+        factors = [f for f in factor(self.order)]
+
+        for i in range(2, self.order):
+            possible_gen = self[i]
+            if possible_gen * self.order == self.one() and all([possible_gen * (self.order // f) != self.one() for f in factors]):
+                return possible_gen
+
+        raise SearchspaceExhaustedException("Unable to find generator")
