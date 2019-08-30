@@ -19,7 +19,7 @@ class RSAPublicKey(object):
 
 
     def __repr__(self):
-        return f"<RSAPublicKey name={self.name}, n={self.n}, e={self.e}>"
+        return f"<RSAPublicKey: name={self.name}, n={self.n}, e={self.e}>"
 
     def __str__(self):
         return self.__repr__()

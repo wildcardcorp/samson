@@ -25,7 +25,7 @@ class Playfair(object):
 
 
     def __repr__(self):
-        return "<Playfair key={}>".format(self.key)
+        return "<Playfair: key={}>".format(self.key)
 
     def __str__(self):
         return self.__repr__()

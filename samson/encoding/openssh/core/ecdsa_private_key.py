@@ -28,7 +28,7 @@ class ECDSAPrivateKey(object):
 
 
     def __repr__(self):
-        return f"<ECDSAPrivateKey name={self.name}, curve={self.curve}, x_y_bytes={self.x_y_bytes}, d={self.d}, host={self.host}>"
+        return f"<ECDSAPrivateKey: name={self.name}, curve={self.curve}, x_y_bytes={self.x_y_bytes}, d={self.d}, host={self.host}>"
 
     def __str__(self):
         return self.__repr__()

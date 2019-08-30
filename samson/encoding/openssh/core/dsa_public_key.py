@@ -23,7 +23,7 @@ class DSAPublicKey(object):
 
 
     def __repr__(self):
-        return f"<DSAPublicKey name={self.name}, p={self.p}, q={self.q}, g={self.g}, y={self.y}>"
+        return f"<DSAPublicKey: name={self.name}, p={self.p}, q={self.q}, g={self.g}, y={self.y}>"
 
     def __str__(self):
         return self.__repr__()

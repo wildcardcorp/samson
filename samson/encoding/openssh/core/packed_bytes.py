@@ -17,7 +17,7 @@ class PackedBytes(object):
 
 
     def __repr__(self):
-        return f"<PackedBytes name={self.name}>"
+        return f"<PackedBytes: name={self.name}>"
 
     def __str__(self):
         return self.__repr__()

@@ -34,7 +34,7 @@ class DSAPrivateKey(object):
 
 
     def __repr__(self):
-        return f"<DSAPrivateKey name={self.name}, p={self.p}, q={self.q}, g={self.g}, y={self.y}, x={self.x}, host={self.host}>"
+        return f"<DSAPrivateKey: name={self.name}, p={self.p}, q={self.q}, g={self.g}, y={self.y}, x={self.x}, host={self.host}>"
 
     def __str__(self):
         return self.__repr__()

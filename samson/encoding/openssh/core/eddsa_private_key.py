@@ -27,7 +27,7 @@ class EdDSAPrivateKey(object):
 
 
     def __repr__(self):
-        return f"<EdDSAPrivateKey name={self.name}, a={self.a}, h={self.h}, host={self.host}>"
+        return f"<EdDSAPrivateKey: name={self.name}, a={self.a}, h={self.h}, host={self.host}>"
 
     def __str__(self):
         return self.__repr__()

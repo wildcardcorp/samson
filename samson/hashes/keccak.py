@@ -47,7 +47,7 @@ class Keccak(SpongeConstruction):
 
 
     def __repr__(self):
-        return f"<Keccak r={self.r}, c={self.c}, n={self.n}, w={self.w}, digest_size={self.digest_size}, block_size={self.block_size}>"
+        return f"<Keccak: r={self.r}, c={self.c}, n={self.n}, w={self.w}, digest_size={self.digest_size}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()

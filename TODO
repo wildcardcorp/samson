@@ -25,7 +25,6 @@ X   Timing attack framework
     X   Time sync
     X   Techniques to increase sync resolution from a lower resolution oracle
 
-
 X   Document timing attack setup
 
 X   Rabbit stream cipher
@@ -65,10 +64,16 @@ X   ACE should be able to enumerate all attack paths
 X   Hierarchical and optionally persistent runtime configuration
 X   Swappable backends?
 
-X   More encoders/decoders/cryptosystems
+X   More protocols
     X   PGP
     X   SSH
     X   TLS
+    X   CRAM
+    X   SCRAM
+    X   DIGEST
+    X   AKA (Authentication and Key Agreement)
+    X   Kerberos
+    X   NTLMv2
 
 
 X   OCB3

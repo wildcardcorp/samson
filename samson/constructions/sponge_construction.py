@@ -28,7 +28,7 @@ class SpongeConstruction(object):
 
 
     def __repr__(self):
-        return f"<Sponge r={self.r}, c={self.c}, block_size={self.block_size}, S={self.S}, pad_func={self.pad_func}>"
+        return f"<Sponge: r={self.r}, c={self.c}, block_size={self.block_size}, S={self.S}, pad_func={self.pad_func}>"
 
     def __str__(self):
         return self.__repr__()

@@ -20,7 +20,7 @@ class FeistelNetwork(object):
 
 
     def __repr__(self):
-        return f"<FeistelNetwork round_func={self.round_func}, key_schedule={self.key_schedule}>"
+        return f"<FeistelNetwork: round_func={self.round_func}, key_schedule={self.key_schedule}>"
 
     def __str__(self):
         return self.__repr__()

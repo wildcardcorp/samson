@@ -18,7 +18,7 @@ class MiyaguchiPreneelConstruction(object):
 
 
     def __repr__(self):
-        return f"<MiyaguchiPreneelConstruction initial_state={self.initial_state}, encryptor={self.encryptor}>"
+        return f"<MiyaguchiPreneelConstruction: initial_state={self.initial_state}, encryptor={self.encryptor}>"
 
     def __str__(self):
         return self.__repr__()

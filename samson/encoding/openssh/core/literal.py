@@ -16,7 +16,7 @@ class Literal(object):
 
 
     def __repr__(self):
-        return f"<Literal name={self.name}, length={self.length}>"
+        return f"<Literal: name={self.name}, length={self.length}>"
 
     def __str__(self):
         return self.__repr__()

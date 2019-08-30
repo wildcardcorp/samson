@@ -66,7 +66,7 @@ class OpenSSHPrivateHeader(object):
 
 
     def __repr__(self):
-        return f"<OpenSSHPrivateHeader header={self.header}, encryption={self.encryption}, kdf={self.kdf}, kdf_params={self.kdf_params}, num_keys={self.num_keys}>"
+        return f"<OpenSSHPrivateHeader: header={self.header}, encryption={self.encryption}, kdf={self.kdf}, kdf_params={self.kdf_params}, num_keys={self.num_keys}>"
 
     def __str__(self):
         return self.__repr__()

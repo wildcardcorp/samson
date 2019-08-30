@@ -20,7 +20,7 @@ class KDFParams(object):
 
 
     def __repr__(self):
-        return f"<KDFParams name={self.name}, salt={self.salt}, rounds={self.rounds}>"
+        return f"<KDFParams: name={self.name}, salt={self.salt}, rounds={self.rounds}>"
 
     def __str__(self):
         return self.__repr__()

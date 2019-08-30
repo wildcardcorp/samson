@@ -17,7 +17,7 @@ class EdDSAPublicKey(object):
 
 
     def __repr__(self):
-        return f"<EdDSAPublicKey name={self.name}, a={self.a}>"
+        return f"<EdDSAPublicKey: name={self.name}, a={self.a}>"
 
     def __str__(self):
         return self.__repr__()

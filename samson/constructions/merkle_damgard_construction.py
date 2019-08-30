@@ -54,7 +54,7 @@ class MerkleDamgardConstruction(object):
 
 
     def __repr__(self):
-        return f"<MerkleDamgardConstruction initial_state={self.initial_state}, compression_func={self.compression_func}, block_size={self.block_size}, pad_func={self.pad_func}>"
+        return f"<MerkleDamgardConstruction: initial_state={self.initial_state}, compression_func={self.compression_func}, block_size={self.block_size}, pad_func={self.pad_func}>"
 
     def __str__(self):
         return self.__repr__()

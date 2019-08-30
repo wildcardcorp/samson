@@ -19,7 +19,7 @@ class DaviesMeyerConstruction(object):
 
 
     def __repr__(self):
-        return f"<DaviesMeyerConstruction initial_state={self.initial_state}, encryptor={self.encryptor}, block_size={self.block_size}>"
+        return f"<DaviesMeyerConstruction: initial_state={self.initial_state}, encryptor={self.encryptor}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()

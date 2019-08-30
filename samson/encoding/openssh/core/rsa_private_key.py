@@ -34,7 +34,7 @@ class RSAPrivateKey(object):
 
 
     def __repr__(self):
-        return f"<RSAPrivateKey name={self.name}, n={self.n}, e={self.e}, d={self.d}, q_mod_p={self.q_mod_p}, p={self.p}, q={self.q}, host={self.host}>"
+        return f"<RSAPrivateKey: name={self.name}, n={self.n}, e={self.e}, d={self.d}, q_mod_p={self.q_mod_p}, p={self.p}, q={self.q}, host={self.host}>"
 
     def __str__(self):
         return self.__repr__()

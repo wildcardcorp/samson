@@ -19,7 +19,7 @@ class ECDSAPublicKey(object):
 
 
     def __repr__(self):
-        return f"<ECDSAPublicKey name={self.name}, curve={self.curve}, x_y_bytes={self.x_y_bytes}>"
+        return f"<ECDSAPublicKey: name={self.name}, curve={self.curve}, x_y_bytes={self.x_y_bytes}>"
 
     def __str__(self):
         return self.__repr__()

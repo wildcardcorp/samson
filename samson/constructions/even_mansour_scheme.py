@@ -20,7 +20,7 @@ class EvenMansourScheme(object):
 
 
     def __repr__(self):
-        return f"<EvenMansourScheme F={self.F}, K1={self.K1}, K2={self.K2}, block_size={self.block_size}>"
+        return f"<EvenMansourScheme: F={self.F}, K1={self.K1}, K2={self.K2}, block_size={self.block_size}>"
 
     def __str__(self):
         return self.__repr__()
