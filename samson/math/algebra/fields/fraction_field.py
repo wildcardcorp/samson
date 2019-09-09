@@ -193,6 +193,11 @@ class FractionField(Field):
         """
         if type(other) is FractionFieldElement:
             return other
+        
+        elif type(other) is float:
+            from fractions import Fraction
+            frac = Fraction(other)
+            result = (self.ring.coerce(frac.numerator), self.ring.coerce(frac.denominator))
 
         elif type(other) is tuple:
             if len(other) < 2:

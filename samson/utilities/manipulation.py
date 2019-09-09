@@ -45,15 +45,15 @@ def stretch_key(key: bytes, length: int, offset: int=0) -> bytes:
 
 
 
-def transpose(ciphertext: bytes, size: int) -> bytes:
+def transpose(ciphertext: bytes, size: int) -> list:
     """
-    Builds a matrix of `size` row-length, transposes the matrix, and collapses it back into a bytes object.
+    Builds a matrix of `size` row-length and transposes the matrix.
 
     Parameters:
         size (int): Length of the rows/chunks.
     
     Returns:
-        bytes: Transposed bytes.
+        list: Transposed bytes.
     """
     return [ciphertext[i::size] for i in range(size)]
 

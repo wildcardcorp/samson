@@ -1,7 +1,6 @@
 from samson.utilities.general import rand_bytes, add_or_increment
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
 from sympy.matrices import Matrix, GramSchmidt
-from sympy import sieve
 from itertools import chain
 from types import FunctionType
 from copy import deepcopy
@@ -170,11 +169,10 @@ def gcd(a: int, b: int) -> int:
         <Polynomial: x**2, coeff_ring=F_(2**8)>
 
     """
-    while True:
-        if not b:
-            return a
-        else:
-            a, b = b, a % b
+    while b:
+        a, b = b, a % b
+    return a
+            
 
 
 def xgcd(a: int, b: int) -> (int, int, int):
@@ -412,7 +410,7 @@ def kth_root(n: int, k: int) -> int:
         3
 
     """
-    lb, ub = 0, n #lower bound, upper bound
+    lb, ub = 0, n # lower bound, upper bound
     while lb < ub:
         guess = (lb + ub) // 2
         if pow(guess, k) < n:
@@ -469,8 +467,8 @@ def crt(residues: list, moduli: list=None) -> (object, object):
 
         residues = [(ring/ring(mod))(res) for res, mod in residues]
 
-    x  = residues[0].val
-    Nx = residues[0].ring.quotient
+    x    = residues[0].val
+    Nx   = residues[0].ring.quotient
     ring = Nx.ring
 
     for i in range(1, len(residues)):
@@ -906,6 +904,7 @@ def berlekamp_massey(output_list: list) -> object:
     """
     from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.polynomial import Polynomial
+
     n = len(output_list)
     b = [1] + [0] * (n - 1)
     c = [1] + [0] * (n - 1)
@@ -1038,9 +1037,9 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
         yT = g*b
 
         for _ in range(N):
-            f_yT  = f(yT, k)
-            xT   += f_yT
-            yT   += g*f_yT
+            f_yT = f(yT, k)
+            xT  += f_yT
+            yT  += g*f_yT
 
 
         # Wild kangaroo
@@ -1068,7 +1067,6 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
 
 
 
-
 def hasse_frobenius_trace_interval(p: int) -> (int, int):
     """
     Finds the interval relative to `p` in which the Frobenius trace must reside according to Hasse's theorem.
@@ -1088,6 +1086,36 @@ def hasse_frobenius_trace_interval(p: int) -> (int, int):
     l = 2 * math.ceil(math.sqrt(p))
     return (-l , l + 1)
 
+
+def sieve_of_eratosthenes(n: int) -> list:
+    """
+    Finds all primes up to `n`.
+
+    Parameters:
+        n (int): Limit.
+    
+    Returns:
+        list: List of prime numbers.
+    
+    Examples:
+        >>> from samson.math.general import sieve_of_eratosthenes
+        >>> sieve_of_eratosthenes(100)
+        [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+
+    """
+    k = kth_root(n, 2)
+    A = [True] * n
+
+    # Remove 0 and 1
+    A[0] = False
+    A[1] = False
+
+    for i in range(2, k):
+        if A[i]:
+            for j in range(i*i, n, i):
+                A[j] = False
+    
+    return [idx for idx, is_prime in enumerate(A) if is_prime]
 
 
 def primes_product(n: int, blacklist: list=None) -> list:
@@ -1111,7 +1139,7 @@ def primes_product(n: int, blacklist: list=None) -> list:
     primes    = []
     blacklist = blacklist if blacklist else []
 
-    for prime in sieve.primerange(2, n.bit_length()*2+1):
+    for prime in sieve_of_eratosthenes(n.bit_length()*2+1):
         if total >= n:
 
             # We might be able to remove some of the large primes
@@ -1425,9 +1453,9 @@ def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
     for i, (p, e) in enumerate(factors.items()):
         gamma = g * (n // p)
         for k in range(e):
-            g_k = g * x[i]
-            h_k = (h + -g_k) * (n // p**(k+1))
-            d_k = bsgs(gamma, h_k, p)
+            g_k   = g * x[i]
+            h_k   = (h + -g_k) * (n // p**(k+1))
+            d_k   = bsgs(gamma, h_k, p)
             x[i] += d_k * p**k
 
     return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
@@ -1885,9 +1913,9 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
             pass
 
     try:
-        # Trial division
         if use_trial:
-            for prime in chain(PRIMES_UNDER_1000, sieve.primerange(1000, limit)):
+            # Trial division
+            for prime in chain(PRIMES_UNDER_1000, [p for p in sieve_of_eratosthenes(limit) if p > 1000]):
                 while not n % prime:
                     add_or_increment(factors, prime)
                     progress_update(prime)
@@ -1921,3 +1949,113 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         add_or_increment(factors, n)
 
     return factors
+
+
+
+def gaussian_elimination(system_matrix: object, rhs: object) -> object:
+    """
+    Solves `Ax = b` for `x` where `A` is `system_matrix` and `b` is `rhs`.
+
+    Adapted from https://rosettacode.org/wiki/Gaussian_elimination#Python.
+
+    Parameters:
+        system_matrix (Matrix): The `A` matrix.
+        rhs           (Matrix): The right-hand side matrix.
+    
+    Returns
+        Matrix: The `x` matrix.
+    
+    Examples:
+        >>> from samson.math.matrix import Matrix
+        >>> from samson.math.general import gaussian_elimination
+        >>> a = Matrix([[3, 2,-4], [2, 3, 3], [5, -3, 1]], coeff_ring=QQ)
+        >>> b = Matrix([[3], [15], [14]], coeff_ring=QQ)
+        >>> c = gaussian_elimination(a, b)
+        >>> a*c == b
+        True
+
+    """
+    A = deepcopy(system_matrix)
+    b = deepcopy(rhs)
+
+    A_len  = len(A)
+    b_cols = b.num_cols
+
+    for i in range(A_len - 1):
+        # Find pivot
+        k = A.rows.index(max(A, key=lambda row: row[i]))
+
+        # Swap rows
+        if k != i:
+            A[i], A[k] = A[k], A[i]
+            b[i], b[k] = b[k], b[i]
+ 
+        # Reduce
+        for j in range(i + 1, A_len):
+            t = A[j][i]/A[i][i]
+
+            for k in range(i + 1, A_len):
+                A[j][k] -= t*A[i][k]
+
+            for k in range(b_cols):
+                b[j][k] -= t*b[i][k]
+ 
+
+    # Solve upper triangular matrix A
+    for i in reversed(range(A_len)):
+        for j in range(i + 1, A_len):
+            t = A[i][j]
+            for k in range(b_cols):
+                b[i][k] -= t*b[j][k]
+
+        t = ~A[i][i]
+
+        for j in range(b_cols):
+            b[i][j] *= t
+
+    return b
+
+
+
+def gram_schmidt(A: object) -> object:
+    """
+    Performs Gram-Schmidt orthonormalization.
+
+    Parameters:
+        A (Matrix): Matrix of row vectors.
+    
+    Returns:
+        Matrix: Orthonormalized row vectors.
+    
+    Examples:
+        >>> from samson.math.matrix import Matrix
+        >>> from samson.math.general import gram_schmidt
+        >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
+        >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
+        [[0.9486832980505138, 0.31622776601683794], [-0.3162277660168377, 0.9486832980505139]]
+
+    """
+    from samson.math.matrix import Matrix
+    from math import sqrt
+    from fractions import Fraction
+    from functools import reduce
+
+    R = A.coeff_ring
+    n = A.num_cols
+    A = [Matrix([row], coeff_ring=A.coeff_ring) for row in deepcopy(A).rows]
+    for j in range(n):
+        for k in range(j):
+            A[j] -= (A[k] * A[j].T) * A[k]
+
+        # Normalize vector
+        # TODO: This only works with QQ since we're letting Python's `sqrt` function coerce it into a Python float.
+        # The root problem is two-fold:
+        # 1) Finding the square-root of an element in an arbitrary ring
+        # 2) Handling irrational numbers
+
+        # Python's floating-point arithmetic will automatically truncate irrational numbers to 53 bits, however, `Frac(ZZ)` will use arbitrary-precision integers
+        # to represent the numerator and denominator, resulting in an infinite expansion.
+        magnitude = R(sqrt((A[j].apply_elementwise(lambda elem: elem**2)*Matrix.fill(A[j].coeff_ring.one(), rows=A[j].num_cols, cols=1))[0][0]))
+        A[j]     *= ~magnitude
+    
+    return reduce(Matrix.row_join, A[1:], A[0])

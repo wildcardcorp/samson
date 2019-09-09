@@ -1,6 +1,7 @@
 from .fields.finite_field import FiniteField
 from .fields.fraction_field import FractionField
 from .rings.integer_ring import IntegerRing, ZZ
+from .rings.matrix_ring import MatrixRing
 from .rings.polynomial_ring import PolynomialRing
 from .rings.quotient_ring import QuotientRing
 from .curves.montgomery_curve import MontgomeryCurve

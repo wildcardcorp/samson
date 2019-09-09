@@ -66,8 +66,8 @@ class SparseVector(object):
                 if start_not_none and idx.start < 0 or end_not_none and idx.stop < 0:
                     raise Exception("Negative slices not supported for SparseVectors")
 
-                start   = binary_search(items, idx.start, key=key, fuzzy=True) if start_not_none else 0
-                end     = binary_search(items, idx.stop, key=key, fuzzy=True) if end_not_none else length
+                start = binary_search(items, idx.start, key=key, fuzzy=True) if start_not_none else 0
+                end   = binary_search(items, idx.stop, key=key, fuzzy=True) if end_not_none else length
 
                 if end < 0:
                     end = 0
