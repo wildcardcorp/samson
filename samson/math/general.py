@@ -70,13 +70,14 @@ def frobenius_monomial_base(poly: object) -> list:
     """
     Generates a list of monomials of x**(i*p) % g for range(poly.degrees()). Used with Frobenius map.
 
-    Adapted from https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
-
     Parameters:
         poly (Polynomial): Polynomial to generate bases for.
 
     Returns:
         list: List of monomial bases mod g.
+    
+    References:
+        https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
     """
     from samson.math.symbols import oo
 
@@ -111,9 +112,7 @@ def frobenius_monomial_base(poly: object) -> list:
 def frobenius_map(f: object, g: object, bases: list=None) -> object:
     """
     Computes f**p % g using the Frobenius map.
-
-    https://en.wikipedia.org/wiki/Finite_field#Frobenius_automorphism_and_Galois_theory
-
+    
     Parameters:
         f (Polynomial): Base.
         g (Polynomial): Modulus.
@@ -121,6 +120,9 @@ def frobenius_map(f: object, g: object, bases: list=None) -> object:
     
     Returns:
         Polynomial: f**p % g
+    
+    References:
+        https://en.wikipedia.org/wiki/Finite_field#Frobenius_automorphism_and_Galois_theory
     """
     if not bases:
         bases = frobenius_monomial_base(g)
@@ -172,15 +174,13 @@ def gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
     return a
-            
+
 
 
 def xgcd(a: int, b: int) -> (int, int, int):
     """
     Extended Euclidean algorithm form of GCD.
     `ax + by = gcd(a, b)`
-
-    https://anh.cs.luc.edu/331/notes/xgcd.pdf
 
     Parameters:
         a (int): First integer.
@@ -201,6 +201,8 @@ def xgcd(a: int, b: int) -> (int, int, int):
         >>> xgcd(P(x**2), P(x**5))
         (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
 
+    References:
+        https://anh.cs.luc.edu/331/notes/xgcd.pdf
     """
     from samson.math.algebra.rings.integer_ring import ZZ
 
@@ -267,9 +269,7 @@ def lcm(a: int, b: int) -> int:
 
 def mod_inv(a: int, n: int) -> int:
     """
-    Calculates the modular inverse according to
-    https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
-    and https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm.
+    Calculates the modular inverse.
 
     Parameters:
         a (int): Integer.
@@ -283,6 +283,9 @@ def mod_inv(a: int, n: int) -> int:
         >>> mod_inv(5, 11)
         9
 
+    References:
+        https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
+        https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
     """
     from samson.math.algebra.rings.integer_ring import ZZ
 
@@ -392,8 +395,6 @@ def kth_root(n: int, k: int) -> int:
     """
     Calculates the `k`-th integer root of `n`.
 
-    https://stackoverflow.com/questions/23621833/is-cube-root-integer
-
     Parameters:
         n (int): Integer.
         k (int): Root (e.g. 2).
@@ -409,6 +410,8 @@ def kth_root(n: int, k: int) -> int:
         >>> kth_root(129, 7)
         3
 
+    References:
+        https://stackoverflow.com/questions/23621833/is-cube-root-integer
     """
     lb, ub = 0, n # lower bound, upper bound
     while lb < ub:
@@ -552,10 +555,6 @@ def tonelli(n: int, p: int) -> int:
     """
     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
 
-    https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
-    https://www.geeksforgeeks.org/find-square-root-modulo-p-set-2-shanks-tonelli-algorithm/
-    https://rosettacode.org/wiki/Tonelli-Shanks_algorithm#Python
-
     Parameters:
         n (int): Integer.
         p (int): Modulus.
@@ -571,6 +570,10 @@ def tonelli(n: int, p: int) -> int:
         >>> tonelli(2, 7)
         4
 
+    References:
+        https://crypto.stackexchange.com/questions/22919/explanation-of-each-of-the-parameters-used-in-ecc
+        https://www.geeksforgeeks.org/find-square-root-modulo-p-set-2-shanks-tonelli-algorithm/
+        https://rosettacode.org/wiki/Tonelli-Shanks_algorithm#Python
     """
     assert legendre(n, p) == ResidueSymbol.EXISTS, "not a square (mod p)"
     q = p - 1
@@ -615,8 +618,6 @@ def tonelli_q(a: int, p: int, q: int) -> int:
     """
     Performs the Tonelli-Shanks algorithm for calculating the `q`th-root of `n` mod `p`.
 
-    From "On Taking Roots in Finite Fields" (https://www.cs.cmu.edu/~glmiller/Publications/AMM77.pdf)
-
     Parameters:
         n (int): Integer.
         p (int): Modulus.
@@ -639,6 +640,8 @@ def tonelli_q(a: int, p: int, q: int) -> int:
         >>> 58**3 % 67
         8
 
+    References:
+        "On Taking Roots in Finite Fields" (https://www.cs.cmu.edu/~glmiller/Publications/AMM77.pdf)
     """
     # Step 1 & 2
     assert generalized_eulers_criterion(a, q, p) == ResidueSymbol.EXISTS, "not a power (mod p)"
@@ -692,12 +695,123 @@ def tonelli_q(a: int, p: int, q: int) -> int:
 
 
 
-def lll(in_basis: list, delta: float=0.75) -> Matrix:
+def gaussian_elimination(system_matrix: object, rhs: object) -> object:
+    """
+    Solves `Ax = b` for `x` where `A` is `system_matrix` and `b` is `rhs`.
+
+    Parameters:
+        system_matrix (Matrix): The `A` matrix.
+        rhs           (Matrix): The right-hand side matrix.
+    
+    Returns
+        Matrix: The `x` matrix.
+    
+    Examples:
+        >>> from samson.math.all import QQ
+        >>> from samson.math.matrix import Matrix
+        >>> from samson.math.general import gaussian_elimination
+        >>> a = Matrix([[3, 2,-4], [2, 3, 3], [5, -3, 1]], coeff_ring=QQ)
+        >>> b = Matrix([[3], [15], [14]], coeff_ring=QQ)
+        >>> c = gaussian_elimination(a, b)
+        >>> a*c == b
+        True
+
+    References:
+        https://rosettacode.org/wiki/Gaussian_elimination#Python
+    """
+    A = deepcopy(system_matrix)
+    b = deepcopy(rhs)
+
+    A_len  = len(A)
+    b_cols = b.num_cols
+
+    for i in range(A_len - 1):
+        # Find pivot
+        k = A.rows.index(max(A, key=lambda row: row[i]))
+
+        # Swap rows
+        if k != i:
+            A[i], A[k] = A[k], A[i]
+            b[i], b[k] = b[k], b[i]
+
+        # Reduce
+        for j in range(i + 1, A_len):
+            t = A[j][i]/A[i][i]
+
+            for k in range(i + 1, A_len):
+                A[j][k] -= t*A[i][k]
+
+            for k in range(b_cols):
+                b[j][k] -= t*b[i][k]
+
+
+    # Solve upper triangular matrix A
+    for i in reversed(range(A_len)):
+        for j in range(i + 1, A_len):
+            t = A[i][j]
+            for k in range(b_cols):
+                b[i][k] -= t*b[j][k]
+
+        t = ~A[i][i]
+
+        for j in range(b_cols):
+            b[i][j] *= t
+
+    return b
+
+
+
+def gram_schmidt(matrix: object, normalize: bool=True) -> object:
+    """
+    Performs Gram-Schmidt orthonormalization.
+
+    Parameters:
+        matrix  (Matrix): Matrix of row vectors.
+        normalize (bool): Whether or not to normalize the vectors.
+    
+    Returns:
+        Matrix: Orthonormalized row vectors.
+    
+    Examples:
+        >>> from samson.math.all import QQ
+        >>> from samson.math.matrix import Matrix
+        >>> from samson.math.general import gram_schmidt
+        >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
+        >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
+        [[0.9486832980505138, 0.31622776601683794], [-0.3162277660168377, 0.9486832980505139]]
+
+    References:
+        https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
+    """
+    from samson.math.matrix import Matrix
+    from functools import reduce
+
+    R = matrix.coeff_ring
+    n = matrix.num_rows
+    A = [Matrix([row], coeff_ring=R) for row in deepcopy(matrix).rows]
+    A_star = [deepcopy(A[0])]
+
+    if normalize:
+        A_star[0] = A_star[0].normalize()
+
+    mu = Matrix([[R.zero() for _ in range(n)] for _ in range(n)])
+    for j in range(1,n):
+        for k in range(j):
+            mu[j][k] = (A[j] * A_star[k].T)[0][0] / (A_star[k] * A_star[k].T)[0][0]
+
+        fac = sum([A_star[k]*mu[j][k] for k in range(j)], Matrix([[R.zero() for _ in range(matrix.num_cols)]]))
+        A_star.append(A[j] - fac)
+
+        if normalize:
+            A_star[j] = A_star[j].normalize()
+
+    return reduce(Matrix.col_join, A_star[1:], A_star[0])
+
+
+
+def lll_old(in_basis: list, delta: float=0.75) -> Matrix:
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
-
-    https://github.com/orisano/olll/blob/master/olll.py
-    https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
 
     Parameters:
         in_basis (list): List of Matrix objects representing the original basis.
@@ -707,14 +821,17 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
         Matrix: Reduced basis.
     
     Examples:
-        >>> from samson.math.general import lll
-        >>> from sympy.matrices import Matrix, eye
+        >>> from samson.math.general import lll_old
+        >>> from sympy.matrices import Matrix
         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
         >>> lll([m.row(row) for row in range(m.rows)])
         Matrix([
         [ 3, 2, 1, 0],
         [-2, 0, 2, 4]])
 
+    References:
+        https://github.com/orisano/olll/blob/master/olll.py
+        https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
     """
     basis = deepcopy(in_basis)
     n     = len(basis)
@@ -731,7 +848,6 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
                 basis[k] = basis[k] - basis[j] * round(mu_kj)
                 ortho = GramSchmidt(basis)
 
-
         if ortho[k].dot(ortho[k]) >= (delta - mu(k, k - 1)**2) * (ortho[k - 1].dot(ortho[k - 1])):
             k += 1
         else:
@@ -741,6 +857,69 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
 
     return Matrix([list(map(int, b)) for b in basis])
 
+
+
+def lll(in_basis: list, delta: float=0.75) -> Matrix:
+    """
+    Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
+
+    Parameters:
+        in_basis (list): List of Matrix objects representing the original basis.
+        delta   (float): Minimum optimality of the reduced basis.
+
+    Returns:
+        Matrix: Reduced basis.
+
+    Examples:
+        >>> from samson.math.general import lll
+        >>> from samson.math.matrix import Matrix
+        >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
+        >>> lll(m)
+        <Matrix: rows=
+        [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
+        [Frac(ZZ)(ZZ(-2)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(4)/ZZ(1))]>
+
+    References:
+        https://github.com/orisano/olll/blob/master/olll.py
+        https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
+    """
+    from samson.math.matrix import Matrix
+    from samson.math.dense_vector import DenseVector
+
+    def matrix_to_vecs(matrix):
+        return [DenseVector(row) for row in matrix.rows]
+
+    def vecs_to_matrix(vecs):
+        return Matrix([vec.values for vec in vecs])
+
+
+    basis = deepcopy(in_basis)
+    n     = len(basis)
+    basis = matrix_to_vecs(basis)
+    ortho = gram_schmidt(in_basis, False)
+    ortho = matrix_to_vecs(ortho)
+
+    def mu(i, j):
+        return float(ortho[j].dot(basis[i]) / ortho[j].dot(ortho[j]))
+
+    k = 1
+    while k < n:
+        for j in reversed(range(k)):
+            mu_kj = mu(k, j)
+            if abs(mu_kj) > 0.5:
+                basis[k] -= basis[j] * round(mu_kj)
+                ortho = gram_schmidt(vecs_to_matrix(basis), False)
+                ortho = matrix_to_vecs(ortho)
+
+        if ortho[k].dot(ortho[k]) >= (delta - mu(k, k - 1)**2) * (ortho[k - 1].dot(ortho[k - 1])):
+            k += 1
+        else:
+            basis[k], basis[k - 1] = deepcopy(basis[k - 1]), deepcopy(basis[k])
+            ortho = gram_schmidt(vecs_to_matrix(basis), False)
+            ortho = matrix_to_vecs(ortho)
+            k = max(k - 1, 1)
+
+    return vecs_to_matrix(basis)
 
 
 def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) -> list:
@@ -881,8 +1060,6 @@ def berlekamp_massey(output_list: list) -> object:
     """
     Performs the Berlekamp-Massey algorithm to find the shortest LFSR for a binary output sequence.
 
-    https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
-
     Parameters:
         output_list (list): Output of LFSR.
     
@@ -901,6 +1078,8 @@ def berlekamp_massey(output_list: list) -> object:
         >>> berlekamp_massey(outputs)
         <Polynomial: x**25 + x**17 + x**13 + x**5 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
 
+    References:
+        https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
     """
     from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.polynomial import Polynomial
@@ -984,8 +1163,6 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
     """
     Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
 
-    https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
-
     Parameters:
         g             (object): Generator.
         y             (object): Number to find the discrete logarithm of.
@@ -1018,6 +1195,8 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
         >>> curve.G * dlog == curve.zero()
         True
 
+    References:
+        https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
     """
     k = iterations
     R = g.ring
@@ -1114,7 +1293,7 @@ def sieve_of_eratosthenes(n: int) -> list:
         if A[i]:
             for j in range(i*i, n, i):
                 A[j] = False
-    
+
     return [idx for idx, is_prime in enumerate(A) if is_prime]
 
 
@@ -1404,8 +1583,6 @@ def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
     """
     Computes the discrete logarithm for finite abelian groups with a smooth order.
 
-    https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
-
     Parameters:
         g     (object): Generator element.
         h     (object): Result to find discrete logarithm of.
@@ -1444,6 +1621,8 @@ def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
         >>> pohlig_hellman(curve.G, h, curve.G.order)
         28
 
+    References:
+        https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
     """
     if not factors:
         factors = factor(n)
@@ -1465,9 +1644,6 @@ def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
 def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     """
     Probabilistic primality test. Each iteration has a 1/4 false positive rate.
-    Always returns a false positive on Carmichael numbers.
-
-    https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test#Miller%E2%80%93Rabin_test
 
     Parameters:
         n (int): Number to determine if probably prime.
@@ -1484,6 +1660,8 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
         >>> miller_rabin(6)
         False
 
+    References:
+        https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test#Miller%E2%80%93Rabin_test
     """
     n_1 = n - 1
     d   = n_1
@@ -1522,8 +1700,6 @@ def is_square(n: int) -> bool:
     """
     Determines if `n` is a square using "fenderbender" tests first.
 
-    https://mersenneforum.org/showpost.php?p=110896
-
     Parameters:
         n (int): Number to test.
 
@@ -1539,6 +1715,8 @@ def is_square(n: int) -> bool:
         >>> is_square(6)
         False
 
+    References:
+        https://mersenneforum.org/showpost.php?p=110896
     """
     if n in [0, 1]:
         return True
@@ -1564,8 +1742,6 @@ def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
     """
     Generalization of the Legendre symbol.
 
-    https://en.wikipedia.org/wiki/Jacobi_symbol
-
     Parameters:
         n (int): Possible quadatric residue.
         k (int): Modulus (must be odd).
@@ -1581,6 +1757,8 @@ def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
         >>> jacobi_symbol(5, 7)
         <ResidueSymbol.DOES_NOT_EXIST: -1>
 
+    References:
+        https://en.wikipedia.org/wiki/Jacobi_symbol
     """
     assert k > 0 and k % 2 == 1
     n %= k
@@ -1637,7 +1815,8 @@ def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> (int, int, int):
     """
     Generates a Lucas sequence. Used internally for the Lucas primality test.
 
-    Adapted from https://docs.sympy.org/latest/_modules/sympy/ntheory/primetest.html#isprime
+    References:
+        https://docs.sympy.org/latest/_modules/sympy/ntheory/primetest.html#isprime
     """
     D = P**2 - 4*Q
 
@@ -1735,8 +1914,6 @@ def is_prime(n: int) -> bool:
     """
     Determines if `n` is probably prime using the Baillie-PSW primality test.
 
-    https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
-
     Parameters:
         n (int): Positive integer.
     
@@ -1754,6 +1931,8 @@ def is_prime(n: int) -> bool:
         >>> is_prime(find_prime(32))
         True
 
+    References:
+        https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
     """
     if n in PRIMES_UNDER_1000:
         return True
@@ -1769,8 +1948,6 @@ def pollards_rho(n: int) -> int:
     """
     Uses Pollard's rho to find a factor of `n`.
 
-    https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
-
     Parameters:
         n (int): Integer to factor.
     
@@ -1782,6 +1959,8 @@ def pollards_rho(n: int) -> int:
         >>> pollards_rho(26515460203326943826)
         2
 
+    References:
+        https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
     """
     x = 2
     x_fixed = x
@@ -1828,7 +2007,7 @@ def ecm(n: int, attempts: int=None) -> int:
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
 
     if not attempts:
-        attempts = kth_root(n, 4)
+        attempts = max(kth_root(n, 4), 10)
 
     ring = ZZ/ZZ(n)
     for a in range(attempts):
@@ -1858,16 +2037,18 @@ def ecm(n: int, attempts: int=None) -> int:
 
 
 
-def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, limit: int=1000, visual: bool=False) -> list:
+def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, limit: int=1000, visual: bool=False) -> list:
     """
     Factors an integer `n` into its prime factors.
 
     Parameters:
-        n          (int): Integer to factor.
-        use_trial (bool): Whether or not to use trial division.
-        use_rho   (bool): Whether or not to use Pollard's rho factorization.
-        use_ecm   (bool): Whether or not to use ECM factorization.
-        visual    (bool): Whether or not to display progress bar.
+        n            (int): Integer to factor.
+        use_trial   (bool): Whether or not to use trial division.
+        use_rho     (bool): Whether or not to use Pollard's rho factorization.
+        use_ecm     (bool): Whether or not to use ECM factorization.
+        ecm_attempts (int): Maximum number of ECM attempts before giving up. Defaults to kth_root(n, 4).
+        limit        (int): Upper limit of factors tried in trial division.
+        visual      (bool): Whether or not to display progress bar.
 
     Returns:
         list: List of factors.
@@ -1936,10 +2117,16 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         if use_ecm and not (n == 1 or is_prime(n)):
             # Lenstra's ECM
             while not is_prime(n):
-                n_fac = ecm(n)
-                add_or_increment(factors, n_fac)
-                progress_update(n_fac)
-                n //= n_fac
+                try:
+                    n_fac = ecm(n, attempts=ecm_attempts)
+
+                    # ECM will give a factor, but not necessarily a prime
+                    for fac in factor(n_fac):
+                        add_or_increment(factors, fac)
+                        progress_update(fac)
+                        n //= fac
+                except ProbabilisticFailureException:
+                    pass
 
     except KeyboardInterrupt:
         pass
@@ -1949,113 +2136,3 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         add_or_increment(factors, n)
 
     return factors
-
-
-
-def gaussian_elimination(system_matrix: object, rhs: object) -> object:
-    """
-    Solves `Ax = b` for `x` where `A` is `system_matrix` and `b` is `rhs`.
-
-    Adapted from https://rosettacode.org/wiki/Gaussian_elimination#Python.
-
-    Parameters:
-        system_matrix (Matrix): The `A` matrix.
-        rhs           (Matrix): The right-hand side matrix.
-    
-    Returns
-        Matrix: The `x` matrix.
-    
-    Examples:
-        >>> from samson.math.matrix import Matrix
-        >>> from samson.math.general import gaussian_elimination
-        >>> a = Matrix([[3, 2,-4], [2, 3, 3], [5, -3, 1]], coeff_ring=QQ)
-        >>> b = Matrix([[3], [15], [14]], coeff_ring=QQ)
-        >>> c = gaussian_elimination(a, b)
-        >>> a*c == b
-        True
-
-    """
-    A = deepcopy(system_matrix)
-    b = deepcopy(rhs)
-
-    A_len  = len(A)
-    b_cols = b.num_cols
-
-    for i in range(A_len - 1):
-        # Find pivot
-        k = A.rows.index(max(A, key=lambda row: row[i]))
-
-        # Swap rows
-        if k != i:
-            A[i], A[k] = A[k], A[i]
-            b[i], b[k] = b[k], b[i]
- 
-        # Reduce
-        for j in range(i + 1, A_len):
-            t = A[j][i]/A[i][i]
-
-            for k in range(i + 1, A_len):
-                A[j][k] -= t*A[i][k]
-
-            for k in range(b_cols):
-                b[j][k] -= t*b[i][k]
- 
-
-    # Solve upper triangular matrix A
-    for i in reversed(range(A_len)):
-        for j in range(i + 1, A_len):
-            t = A[i][j]
-            for k in range(b_cols):
-                b[i][k] -= t*b[j][k]
-
-        t = ~A[i][i]
-
-        for j in range(b_cols):
-            b[i][j] *= t
-
-    return b
-
-
-
-def gram_schmidt(A: object) -> object:
-    """
-    Performs Gram-Schmidt orthonormalization.
-
-    Parameters:
-        A (Matrix): Matrix of row vectors.
-    
-    Returns:
-        Matrix: Orthonormalized row vectors.
-    
-    Examples:
-        >>> from samson.math.matrix import Matrix
-        >>> from samson.math.general import gram_schmidt
-        >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
-        >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-        [[0.9486832980505138, 0.31622776601683794], [-0.3162277660168377, 0.9486832980505139]]
-
-    """
-    from samson.math.matrix import Matrix
-    from math import sqrt
-    from fractions import Fraction
-    from functools import reduce
-
-    R = A.coeff_ring
-    n = A.num_cols
-    A = [Matrix([row], coeff_ring=A.coeff_ring) for row in deepcopy(A).rows]
-    for j in range(n):
-        for k in range(j):
-            A[j] -= (A[k] * A[j].T) * A[k]
-
-        # Normalize vector
-        # TODO: This only works with QQ since we're letting Python's `sqrt` function coerce it into a Python float.
-        # The root problem is two-fold:
-        # 1) Finding the square-root of an element in an arbitrary ring
-        # 2) Handling irrational numbers
-
-        # Python's floating-point arithmetic will automatically truncate irrational numbers to 53 bits, however, `Frac(ZZ)` will use arbitrary-precision integers
-        # to represent the numerator and denominator, resulting in an infinite expansion.
-        magnitude = R(sqrt((A[j].apply_elementwise(lambda elem: elem**2)*Matrix.fill(A[j].coeff_ring.one(), rows=A[j].num_cols, cols=1))[0][0]))
-        A[j]     *= ~magnitude
-    
-    return reduce(Matrix.row_join, A[1:], A[0])

@@ -1,9 +1,19 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring
 from samson.utilities.exceptions import CoercionException
 from samson.math.matrix import Matrix
 
 class MatrixRing(Ring):
     """
+    Ring of square matrices over a ring.
+
+    Examples:
+        >>> from samson.math.all import *
+        >>> M = MatrixRing(3, ZZ)
+        >>> M.one() * 5
+        <Matrix: rows=
+        [ZZ(5), ZZ(0), ZZ(0)]
+        [ZZ(0), ZZ(5), ZZ(0)]
+        [ZZ(0), ZZ(0), ZZ(5)]>
 
     """
 
@@ -66,14 +76,14 @@ class MatrixRing(Ring):
 
         if type_o is list:
             elem = Matrix(other, coeff_ring=self.ring, ring=self)
-        
+
         elif type_o is Matrix:
             elem = other
-        
+
         else:
             raise CoercionException('Coercion failed')
 
-        
+
         assert elem.is_square(), "Elements must be square in a MatrixRing"
         return elem
 

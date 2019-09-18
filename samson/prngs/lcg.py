@@ -1,4 +1,4 @@
-from samson.math.general import gcd, mod_inv, lll, is_power_of_two, is_prime, factor as factorint
+from samson.math.general import gcd, mod_inv, lll_old, is_power_of_two, is_prime, factor as factorint
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from sympy.matrices import Matrix
@@ -189,7 +189,7 @@ class LCG(object):
 
 
         l_matrix = Matrix(l_matrix)
-        reduced_basis = lll([l_matrix.row(row) for row in range(l_matrix.rows)])
+        reduced_basis = lll_old([l_matrix.row(row) for row in range(l_matrix.rows)])
 
         # Construct and reduce `y` vector
         y = Matrix([2**trunc_amount * x % modulus for x in outputs])

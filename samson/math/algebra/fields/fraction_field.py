@@ -131,6 +131,9 @@ class FractionField(Field):
         return hash((self.ring, self.__class__))
 
 
+    def __eq__(self, other: object):
+        return type(self) == type(other) and self.ring == other.ring
+
     @property
     def characteristic(self):
         return self.ring.characteristic
@@ -193,7 +196,7 @@ class FractionField(Field):
         """
         if type(other) is FractionFieldElement:
             return other
-        
+
         elif type(other) is float:
             from fractions import Fraction
             frac = Fraction(other)

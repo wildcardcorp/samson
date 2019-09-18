@@ -1,6 +1,5 @@
-from samson.math.general import mod_inv, is_prime
+from samson.math.general import mod_inv, is_prime, factor
 from samson.math.symbols import oo
-from sympy import factorint
 from itertools import chain, count
 from enum import Enum
 import math
@@ -31,7 +30,7 @@ def generate_ntt_params(v1, v2):
     totient = modulus - 1
 
     # Find a generator
-    factors = [f for f,_ in factorint(totient).items()]
+    factors = [f for f,_ in factor(totient).items()]
 
     for possible_gen in range(1, modulus):
         if pow(possible_gen, totient, modulus) == 1 and all([pow(possible_gen, totient // f, modulus) != 1 for f in factors]):

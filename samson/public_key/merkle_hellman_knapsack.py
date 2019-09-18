@@ -1,8 +1,8 @@
 
-from samson.math.general import mod_inv, lll, generate_superincreasing_seq, find_coprime
+from samson.math.general import mod_inv, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
-from sympy.matrices import Matrix, eye
+#from sympy.matrices import Matrix, eye
 from samson.core.encryption_alg import EncryptionAlg
 
 
@@ -107,21 +107,24 @@ class MerkleHellmanKnapsack(EncryptionAlg):
         Returns:
             Bytes: Recovered plaintext.
         """
-        ident = eye(len(pub))
-        pub_matrix = ident.col_join(Matrix([pub]))
-        problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]]).T)
+        from samson.math.matrix import Matrix
+        from samson.math.algebra.all import QQ
 
+        # Construct the problem matrix
+        ident          = Matrix.identity(len(pub), coeff_ring=QQ)
+        pub_matrix     = ident.col_join(Matrix([pub], coeff_ring=QQ))
+        problem_matrix = pub_matrix.row_join(Matrix([[0] * len(pub) + [-ciphertext]], coeff_ring=QQ).T)
+
+        # Attempt to crack the ciphertext using various punishment coefficients
         for i in RUNTIME.report_progress(range(len(pub)), desc='Alphaspace searched'):
-            alpha_penalizer = Matrix([alpha] * len(pub) + [-alpha * i]).T
+            alpha_penalizer      = Matrix([[alpha] * len(pub) + [-alpha * i]], coeff_ring=QQ)
             problem_matrix_prime = problem_matrix.col_join(alpha_penalizer).T
-            matrices = [problem_matrix_prime.row(row) for row in range(problem_matrix_prime.rows)]
+            solution_matrix      = problem_matrix_prime.LLL(0.99)
 
-            solution_matrix = lll(matrices, 0.99)
+            for row in solution_matrix.rows:
+                relevant = row[:-2]
+                new_row  = [item for item in relevant if item >= QQ.zero() and item <= QQ.one()]
 
-            for row in range(solution_matrix.rows):
-                row_mat = solution_matrix.row(row)
-                new_row = [item for item in row_mat if item >= 0 and item <= 1]
-
-                if len(new_row) == len(row_mat):
-                    return Bytes(int(''.join([str(val) for val in row_mat[:-2]]), 2))
+                if len(new_row) == len(relevant):
+                    return Bytes(int(''.join([str(int(float(val))) for val in relevant]), 2))
         return solution_matrix

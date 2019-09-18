@@ -1,8 +1,10 @@
 from samson.auxiliary.progress import Progress
+from samson.auxiliary.colored_formatter import ColoredFormatter
 from samson.ace.exploit import DynamicExploit, register_knowns
 from types import FunctionType
 import logging
 import inspect
+import sys
 
 
 URANDOM = open("/dev/urandom", "rb")
@@ -18,8 +20,14 @@ class RuntimeConfiguration(object):
             from samson.auxiliary.tqdm_handler import TqdmHandler
             from samson.auxiliary.tqdm_reporter import TqdmReporter
 
-            handler   = TqdmHandler()
-            formatter = logging.Formatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+            handler = TqdmHandler()
+
+            # Only color if attached to TTY
+            if sys.stdout.isatty():
+                formatter = ColoredFormatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+            else:
+                formatter = logging.Formatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+
             handler.setFormatter(formatter)
             handler.setLevel(logging.DEBUG)
 

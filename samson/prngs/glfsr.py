@@ -11,7 +11,7 @@ class GLFSR(object):
         """
         Parameters:
             seed              (int): Initial value.
-            polynomial (Polynomial): Either a `sympy` `Poly` or an integer that represents the polynomal.
+            polynomial (Polynomial): Either a `Polynomial` or an integer that represents the polynomal.
         """
         self.state = seed
 

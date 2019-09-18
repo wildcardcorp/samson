@@ -3,10 +3,7 @@ from samson.utilities.bytes import Bytes
 from samson.stream_ciphers.salsa import Salsa
 from copy import deepcopy
 
-# from samson.utilities
 # https://en.wikipedia.org/wiki/Salsa20
-
-
 def QUARTER_ROUND(a: int, b: int, c: int, d: int) -> (int, int, int, int):
     """
     Performs a quarter round of ChaCha.

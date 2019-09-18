@@ -27,10 +27,11 @@ class Matrix(RingElement):
             ring = MatrixRing(size=r_len, ring=ring)
 
         self.ring = ring
-    
+
 
     def __repr__(self):
-        return f'<Matrix: rows={"".join([NEWLINE + "[" + ", ".join(([elem.shorthand() for elem in row])) + "]" for row in self.rows])}>'
+        max_elem_size = max([len(elem.shorthand()) for row in self.rows for elem in row])
+        return f'<Matrix: rows={"".join([NEWLINE + "[" + ", ".join(([elem.shorthand().rjust(max_elem_size) for elem in row])) + "]" for row in self.rows])}>'
 
     def __str__(self):
         return self.__repr__()
@@ -44,12 +45,12 @@ class Matrix(RingElement):
     @property
     def num_cols(self) -> int:
         return len(self.rows[0])
-    
+
 
     def transpose(self) -> object:
         return Matrix([[self.rows[r][c] for r in range(self.num_rows)] for c in range(self.num_cols)], coeff_ring=self.coeff_ring, ring=self.ring)
-    
-    
+
+
     @property
     def T(self) -> object:
         return self.transpose()
@@ -67,32 +68,56 @@ class Matrix(RingElement):
     @staticmethod
     def fill(value: object, rows: int, cols: int=None, coeff_ring: Ring=None, ring: Ring=None) -> object:
         return Matrix([[value for c in range(cols or rows)] for r in range(rows)], coeff_ring=coeff_ring, ring=ring)
-    
+
 
     def apply_elementwise(self, func) -> object:
         return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
-
-
-    def col_join(self, other: object) -> object:
-        type_o = type(other)
-
-        if type_o is Matrix:
-            cols = other.rows
-        else:
-            cols = other
-        
-        return Matrix([row_a + row_b for row_a, row_b in zip(self.rows, cols)], coeff_ring=self.coeff_ring, ring=self.ring)
 
 
     def row_join(self, other: object) -> object:
         type_o = type(other)
 
         if type_o is Matrix:
+            cols = other.rows
+        else:
+            cols = other
+
+        return Matrix([row_a + row_b for row_a, row_b in zip(self.rows, cols)], coeff_ring=self.coeff_ring, ring=self.ring)
+
+
+    def col_join(self, other: object) -> object:
+        type_o = type(other)
+
+        if type_o is Matrix:
             rows = other.rows
         else:
             rows = other
-        
+
         return Matrix(self.rows + rows, coeff_ring=self.coeff_ring, ring=self.ring)
+
+
+    def LLL(self, delta: float=0.75) -> object:
+        from samson.math.general import lll
+        return lll(self, delta)
+
+
+    def gram_schmidt(self, normalize: bool=True) -> object:
+        from samson.math.general import gram_schmidt
+        return gram_schmidt(self, normalize)
+
+
+    # TODO: This only works with QQ since we're letting Python's `sqrt` function coerce it into a Python float.
+    # The root problem is two-fold:
+    # 1) Finding the square-root of an element in an arbitrary ring
+    # 2) Handling irrational numbers
+
+    # Python's floating-point arithmetic will automatically truncate irrational numbers to 53 bits, however, `Frac(ZZ)` will use arbitrary-precision integers
+    # to represent the numerator and denominator, resulting in an infinite expansion.
+    def normalize(self) -> object:
+        from math import sqrt
+
+        magnitude  = self.coeff_ring(sqrt((self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0][0]))
+        return self * ~magnitude
 
 
     def __getitem__(self, idx) -> object:
@@ -100,10 +125,10 @@ class Matrix(RingElement):
 
     def __setitem__(self, idx, value) -> object:
         self.rows[idx] = value
-    
+
     def __len__(self) -> int:
         return len(self.rows)
-    
+
     def __or__(self, other: object) -> object:
         return self.col_join(other)
 
@@ -140,9 +165,9 @@ class Matrix(RingElement):
                     col_total = 0
                     for col in range(s_cols):
                         col_total += self.rows[row][col] * other.rows[col][o_col]
-                
+
                     ans[-1].append(col_total)
-            
+
             return Matrix(ans, coeff_ring=self.coeff_ring, ring=self.ring)
 
 
