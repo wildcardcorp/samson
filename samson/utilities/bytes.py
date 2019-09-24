@@ -9,7 +9,7 @@ class Bytes(bytearray):
     Manipulations always return a new Bytes instance instead of editing the old one.
     """
 
-    def __init__(self, bytes_like: bytes, byteorder: str='big'):
+    def __init__(self, bytes_like: bytes=b'', byteorder: str='big'):
         """
         Parameters:
             bytes_like (bytes): Any bytes-like interface or integer. Integers will be converted using the byteorder.

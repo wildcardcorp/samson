@@ -1,6 +1,7 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.utilities.exceptions import CoercionException
 from samson.math.general import is_prime, factor
+from samson.math.symbols import oo
 
 class IntegerElement(RingElement):
     """
@@ -26,6 +27,17 @@ class IntegerElement(RingElement):
 
     def is_prime(self) -> list:
         return is_prime(self.val)
+
+
+    @property
+    def order(self) -> int:
+        """
+        The minimum number of times the element can be added to itself before reaching the additive identity.
+
+        Returns:
+            int: Order.
+        """
+        return oo
 
 
     def ordinality(self) -> int:
@@ -96,7 +108,6 @@ class IntegerRing(Ring):
 
     @property
     def order(self) -> int:
-        from samson.math.symbols import oo
         return oo
 
 

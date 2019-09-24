@@ -1,6 +1,5 @@
 from samson.utilities.general import rand_bytes, add_or_increment
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
-from sympy.matrices import Matrix, GramSchmidt
 from itertools import chain
 from types import FunctionType
 from copy import deepcopy
@@ -719,45 +718,47 @@ def gaussian_elimination(system_matrix: object, rhs: object) -> object:
     References:
         https://rosettacode.org/wiki/Gaussian_elimination#Python
     """
-    A = deepcopy(system_matrix)
-    b = deepcopy(rhs)
+    from samson.math.matrix import Matrix
 
-    A_len  = len(A)
-    b_cols = b.num_cols
+    A = deepcopy(system_matrix).row_join(rhs)
 
-    for i in range(A_len - 1):
+    n = A.num_rows
+    m = A.num_cols
+    R = A.coeff_ring
+
+    # Forward elimination
+    for i in range(n):
         # Find pivot
-        k = A.rows.index(max(A, key=lambda row: row[i]))
+        k = max(range(i, n), key=lambda r: max(A[r][i], -A[r][i]))
 
         # Swap rows
-        if k != i:
-            A[i], A[k] = A[k], A[i]
-            b[i], b[k] = b[k], b[i]
+        A[i], A[k] = A[k], A[i]
 
-        # Reduce
-        for j in range(i + 1, A_len):
-            t = A[j][i]/A[i][i]
-
-            for k in range(i + 1, A_len):
-                A[j][k] -= t*A[i][k]
-
-            for k in range(b_cols):
-                b[j][k] -= t*b[i][k]
+        # Reduce rows
+        scalar = ~A[i, i]
+        for j in range(i+1, n):
+            A[j] = [A[j, k] - A[i, k] * A[j, i] * scalar for k in range(m)]
 
 
-    # Solve upper triangular matrix A
-    for i in reversed(range(A_len)):
-        for j in range(i + 1, A_len):
-            t = A[i][j]
-            for k in range(b_cols):
-                b[i][k] -= t*b[j][k]
+    # Back substitution
+    # This works with any size matrix
+    rhs_cols = m - rhs.num_cols
+    for i in reversed(range(n)):
+        for j in range(i + 1, n):
+            t = A[i, j]
+            for k in range(rhs_cols, m):
+                A[i, k] -= t*A[j, k]
 
-        t = ~A[i][i]
+        if not A[i, i]:
+            continue
 
-        for j in range(b_cols):
-            b[i][j] *= t
+        t = ~A[i, i]
 
-    return b
+        for j in range(rhs_cols, m):
+            A[i, j] *= t
+
+    return Matrix(A[:, rhs_cols:m], coeff_ring=R, ring=A.ring)
+
 
 
 
@@ -778,7 +779,7 @@ def gram_schmidt(matrix: object, normalize: bool=True) -> object:
         >>> from samson.math.general import gram_schmidt
         >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-        [[0.9486832980505138, 0.31622776601683794], [-0.3162277660168377, 0.9486832980505139]]
+        [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
 
     References:
         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
@@ -809,57 +810,7 @@ def gram_schmidt(matrix: object, normalize: bool=True) -> object:
 
 
 
-def lll_old(in_basis: list, delta: float=0.75) -> Matrix:
-    """
-    Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
-
-    Parameters:
-        in_basis (list): List of Matrix objects representing the original basis.
-        delta   (float): Minimum optimality of the reduced basis.
-
-    Returns:
-        Matrix: Reduced basis.
-    
-    Examples:
-        >>> from samson.math.general import lll_old
-        >>> from sympy.matrices import Matrix
-        >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
-        >>> lll([m.row(row) for row in range(m.rows)])
-        Matrix([
-        [ 3, 2, 1, 0],
-        [-2, 0, 2, 4]])
-
-    References:
-        https://github.com/orisano/olll/blob/master/olll.py
-        https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
-    """
-    basis = deepcopy(in_basis)
-    n     = len(basis)
-    ortho = GramSchmidt(basis)
-
-    def mu(i, j):
-        return ortho[j].dot(basis[i]) / ortho[j].dot(ortho[j])
-
-    k = 1
-    while k < n:
-        for j in range(k - 1, -1, -1):
-            mu_kj = mu(k, j)
-            if abs(mu_kj) > 0.5:
-                basis[k] = basis[k] - basis[j] * round(mu_kj)
-                ortho = GramSchmidt(basis)
-
-        if ortho[k].dot(ortho[k]) >= (delta - mu(k, k - 1)**2) * (ortho[k - 1].dot(ortho[k - 1])):
-            k += 1
-        else:
-            basis[k], basis[k - 1] = deepcopy(basis[k - 1]), deepcopy(basis[k])
-            ortho = GramSchmidt(basis)
-            k = max(k - 1, 1)
-
-    return Matrix([list(map(int, b)) for b in basis])
-
-
-
-def lll(in_basis: list, delta: float=0.75) -> Matrix:
+def lll(in_basis: list, delta: float=0.75) -> object:
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
 
@@ -873,7 +824,8 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
     Examples:
         >>> from samson.math.general import lll
         >>> from samson.math.matrix import Matrix
-        >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]])
+        >>> from samson.math.all import QQ
+        >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
         >>> lll(m)
         <Matrix: rows=
         [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
@@ -885,6 +837,7 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
     """
     from samson.math.matrix import Matrix
     from samson.math.dense_vector import DenseVector
+    from samson.math.algebra.fields.fraction_field import FractionField
 
     def matrix_to_vecs(matrix):
         return [DenseVector(row) for row in matrix.rows]
@@ -893,6 +846,12 @@ def lll(in_basis: list, delta: float=0.75) -> Matrix:
         return Matrix([vec.values for vec in vecs])
 
 
+
+    if type(in_basis.coeff_ring) is not FractionField:
+        R = FractionField(in_basis.coeff_ring)
+        in_basis = Matrix([[R(elem) for elem in row] for row in in_basis.rows], coeff_ring=R)
+
+    R     = in_basis.coeff_ring
     basis = deepcopy(in_basis)
     n     = len(basis)
     basis = matrix_to_vecs(basis)
@@ -2136,3 +2095,41 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         add_or_increment(factors, n)
 
     return factors
+
+
+def is_primitive_root(a: int, p: int) -> bool:
+    """
+    Returns whether or not `a` is a primitive root in ZZ/ZZ(p)*.
+    `a` is a primitive root of `p` if `a` is the smallest integer such that `a`'s order is the order of the ring.
+
+    Parameters:
+        a (int): Possible primitive root.
+        p (int): Modulus.
+    
+    Returns:
+        bool: Whether or not `a` is a primitive root.
+    
+    Examples:
+        >>> from samson.math.general import is_primitive_root
+        >>> is_primitive_root(3, 10)
+        True
+
+        >>> is_primitive_root(9, 10)
+        False
+
+        >>> is_primitive_root(45, 2)
+        True
+
+        >>> is_primitive_root(208, 3)
+        False
+
+        >>> is_primitive_root(120, 173)
+        True
+
+    """
+    from samson.math.algebra.rings.integer_ring import ZZ
+
+    Z_star = (ZZ/ZZ(p)).mul_group()
+    a_star = Z_star(a)
+
+    return gcd(a, p) == 1 and a_star*Z_star.order == Z_star.one() and a_star.order == Z_star.order

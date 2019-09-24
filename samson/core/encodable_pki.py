@@ -4,7 +4,7 @@ from samson.encoding.pem import pem_decode
 ORDER = [PKIEncoding.JWK, PKIEncoding.OpenSSH, PKIEncoding.SSH2, PKIEncoding.X509_CERT, PKIEncoding.X509, PKIEncoding.PKCS8, PKIEncoding.PKCS1]
 
 class EncodablePKI(object):
-    PUB_ENCODINGS = {}
+    PUB_ENCODINGS  = {}
     PRIV_ENCODINGS = {}
 
     @classmethod
@@ -46,7 +46,7 @@ class EncodablePKI(object):
             bytes: Encoding of PKI instance.
         """
         if encoding not in self.PUB_ENCODINGS:
-            raise ValueError(f'Unsupported encoding "{encoding}"')
+            raise ValueError(f'Unsupported public encoding "{encoding}" for "{self.__class__}"')
 
         encoder = self.PUB_ENCODINGS[encoding]
         encoded = encoder.encode(self, encode_pem=encode_pem, marker=marker, **kwargs)
@@ -71,7 +71,7 @@ class EncodablePKI(object):
             bytes: Bytes-encoded PKI instance.
         """
         if encoding not in self.PRIV_ENCODINGS:
-            raise ValueError(f'Unsupported encoding "{encoding}"')
+            raise ValueError(f'Unsupported private encoding "{encoding}" for "{self.__class__}"')
 
         encoder = self.PRIV_ENCODINGS[encoding]
         encoded = encoder.encode(self, encode_pem=encode_pem, marker=marker, encryption=encryption, passphrase=passphrase, iv=iv, **kwargs)

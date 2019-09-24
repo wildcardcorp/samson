@@ -55,7 +55,7 @@ class MatrixRing(Ring):
 
 
     def __repr__(self):
-        return f"<Matrix: size={self.size}, ring={self.ring}>"
+        return f"<MatrixRing: size={self.size}, ring={self.ring}>"
 
 
     def shorthand(self) -> str:

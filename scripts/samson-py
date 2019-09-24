@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from samson.encoding.general import PKIAutoParser
 from samson.utilities.cli import start_repl, start_exec, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
 from samson.utilities.bytes import Bytes
 import argparse
@@ -31,7 +32,7 @@ Available encodings: {', '.join([k for k,v in ENCODING_MAPPING.items()])}
 """
 
 
-pki_parser.add_argument('action')
+pki_parser.add_argument('action', help='generate, parse, info')
 pki_parser.add_argument('type')
 pki_parser.add_argument('--args', nargs="?")
 pki_parser.add_argument('filename', nargs="?")
@@ -73,6 +74,11 @@ def export_pki(pki_obj, arguments):
             processed_args[i][1] = preprocessed_literals.get(v) or v
 
         encoding_args = {k: PARSE_METHOD(v) for k,v in processed_args}
+        if 'signing_key' in encoding_args:
+            with open(encoding_args['signing_key'], 'rb') as f:
+                encoding_args['signing_key'] = PKIAutoParser.import_key(f.read())
+
+                
     else:
         encoding_args = {}
 
@@ -157,6 +163,12 @@ if __name__ == '__main__':
                     export_pki(pki_obj, arguments)
                 else:
                     print(pki_obj)
+            
+            elif arguments.action == 'info':
+                print(f'Class: {pki_cls}\n')
+                print(f"Available private key encodings: {', '.join([str(k) for k,v in pki_cls.PRIV_ENCODINGS.items()])}")
+                print(f"Available public key encodings : {', '.join([str(k) for k,v in pki_cls.PUB_ENCODINGS.items()])}")
+                print(f'{pki_cls.__doc__}{pki_cls.__init__.__doc__}')
             
             else:
                 raise Exception('Invalid action. Please choose from "generate" and "parse".')

@@ -85,6 +85,9 @@ class FractionFieldElement(FieldElement):
     def __float__(self):
         return int(self.numerator) / int(self.denominator)
 
+    def __int__(self):
+        return int(self.numerator) // int(self.denominator)
+
 
     def __lt__(self, other: object) -> bool:
         other = self.ring.coerce(other)

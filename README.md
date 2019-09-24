@@ -7,7 +7,7 @@
 
 samson is a cryptanalysis and attack library. The intent is to provide a way to quickly prototype and execute cryptographic and side-channel attacks. samson was born from frustration with existing libraries artificially limiting user control over cryptographic primitives.
 
-Many of the biggest cryptographic attacks have been implemented including:
+Many of the most prevalent cryptographic attacks have been implemented including:
 * CBC/PKCS#1v1.5/OAEP Padding Oracle
 * CRIME/BREACH
 * DSA/ECDSA nonce reuse

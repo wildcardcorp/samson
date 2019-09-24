@@ -30,14 +30,14 @@ X   Document timing attack setup
 X   Rabbit stream cipher
 X   HC-256 stream cipher
 
-X   DHParams ASN1
 X   Increase performance
     X   Weierstrass curves
     X   Polynomial mul/div (NTT-FFT)
     X   Schoof's algorithm
     X   LLL
 
-X   LCG.crack_truncated crashes during LLL with lots of samples (50+; sympy related?)
+X   DualEC is incredibly slow
+X   LCG.crack_truncated crashes during LLL with lots of samples (50+; related to max precision in Python)
 
 
 X   Composable exploits and ACE

@@ -1,8 +1,7 @@
-from samson.math.general import gcd, mod_inv, lll_old, is_power_of_two, is_prime, factor as factorint
+from samson.math.general import gcd, mod_inv, is_power_of_two, is_prime, factor as factorint, is_primitive_root
+from samson.math.matrix import Matrix
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
-from sympy.matrices import Matrix
-from sympy.ntheory.residue_ntheory import is_primitive_root
 import functools
 
 
@@ -45,32 +44,41 @@ class LCG(object):
         return self.X
 
 
-    # https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
     def check_full_period(self) -> bool:
         """
         Checks whether the LCG will achieve a full period with its current parameters.
 
         Returns:
             bool: Whether or not it will acheive a full period.
+        
+        References:
+            https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
         """
+        # Technically, this achieves m-1
         if is_prime(self.m) and self.c == 0 and is_primitive_root(self.a, self.m):
             return True
 
+        # Maximially m/4
         elif is_power_of_two(self.m) and self.c == 0:
             return False
 
         else:
+            # 1. m and c are relatively prime
+            relatively_prime = gcd(self.m, self.c) == 1
+
+            # 2. a-1 is divisible by all prime factors of m
+            factors = [factor for factor in factorint(self.m)]
+            divisible_by_all_factors = all([((self.a - 1) % factor) == 0 for factor in factors])
+
+            # 3. a-1 is divisible by 4 if m is divisible by 4
             divisible_by_four = True
             if self.m % 4 == 0:
                 divisible_by_four = (self.a - 1) % 4 == 0
 
-            factors = [factor for factor in factorint(self.m)]
-            divisible_by_all_factors = all([((self.a - 1) % factor) == 0 for factor in factors])
-            return gcd(self.m, self.c) == 1 and divisible_by_four and divisible_by_all_factors
+            return relatively_prime and divisible_by_all_factors and divisible_by_four
 
 
 
-    # https://tailcall.net/blog/cracking-randomness-lcgs/
     @staticmethod
     def crack(states: list, multiplier: int=None, increment: int=None, modulus: int=None):
         """
@@ -84,6 +92,9 @@ class LCG(object):
         
         Returns:
             LCG: Replica LCG that predicts all future outputs of the original.
+        
+        References:
+            https://tailcall.net/blog/cracking-randomness-lcgs/
         """
         if not modulus:
             diffs = [state1 - state0 for state0, state1 in zip(states, states[1:])]
@@ -101,13 +112,9 @@ class LCG(object):
         return LCG(states[-1], multiplier, increment, modulus)
 
 
-
-    # Reference: https://github.com/mariuslp/PCG_attack
-    # Reference: https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf
-    # ^^ "Reconstructing Truncated Integer Variables Satisfying Linear Congruences"
     @classmethod
     @RUNTIME.report
-    def crack_truncated(cls: object, outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int):
+    def crack_truncated(cls: object, outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int) -> object:
         """
         Given a decent number of truncated states (about 200 when there's only 3-bit outputs), returns a replica LCG.
 
@@ -120,6 +127,10 @@ class LCG(object):
         
         Returns:
             LCG: Replica LCG that predicts all future outputs of the original.
+        
+        References:
+            https://github.com/mariuslp/PCG_attack
+            "Reconstructing Truncated Integer Variables Satisfying Linear Congruences" (https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf)
         """
         # Trivial case
         if increment == 0:
@@ -129,10 +140,9 @@ class LCG(object):
             return LCG((multiplier * computed_seed[-2]) % modulus, multiplier, increment, modulus)
 
         else:
-            diffs = [o2 - o1 for o1, o2 in zip(outputs, outputs[1:])]
+            diffs      = [o2 - o1 for o1, o2 in zip(outputs, outputs[1:])]
             seed_diffs = LCG.solve_tlcg(diffs, multiplier, modulus, trunc_amount)
-            seed_diffs = [seed_diff % modulus for seed_diff in seed_diffs]
-
+            seed_diffs = [int(seed_diff) % modulus for row in seed_diffs for seed_diff in row]
 
             # Bruteforce low bits
             for z in RUNTIME.report_progress(range(2 ** trunc_amount), desc='Seedspace searched', unit='seeds'):
@@ -141,7 +151,7 @@ class LCG(object):
                 computed_c = (x_1 - multiplier * x_0) % modulus
 
                 computed_x_2 = (multiplier * x_1 + computed_c) % modulus
-                actual_x_2 = (seed_diffs[1] + x_1) % modulus
+                actual_x_2   = (seed_diffs[1] + x_1) % modulus
 
                 if computed_x_2 == actual_x_2:
                     computed_seeds = [x_0]
@@ -154,13 +164,12 @@ class LCG(object):
                     # The accuracy of `predicted_lcg` is dependent on the size of `outputs_to_predict` and the
                     # parameters of the LCG.
                     predicted_seed = (multiplier * computed_seeds[-2] + computed_c) % modulus
-                    predicted_lcg = LCG(X=int(predicted_seed), a=multiplier, c=int(computed_c), m=modulus)
+                    predicted_lcg  = LCG(X=int(predicted_seed), a=multiplier, c=int(computed_c), m=modulus)
 
                     if [predicted_lcg.generate() >> trunc_amount for _ in range(len(outputs_to_predict))] == outputs_to_predict:
                         return predicted_lcg
 
             raise SearchspaceExhaustedException('Seedspace exhausted')
-
 
 
 
@@ -176,9 +185,10 @@ class LCG(object):
             modulus    (int): The LCG's modulus.
         
         Returns:
-            Matrix: `sympy` `Matrix` representing seed differentials.
-
+            Matrix: Seed differentials.
         """
+        from samson.math.all import QQ
+
         # Initialize matrix `L`
         l_matrix = [[0 for _ in range(len(outputs))] for _ in range(len(outputs))]
         l_matrix[0][0] = modulus
@@ -189,13 +199,14 @@ class LCG(object):
 
 
         l_matrix = Matrix(l_matrix)
-        reduced_basis = lll_old([l_matrix.row(row) for row in range(l_matrix.rows)])
+        reduced_basis = l_matrix.LLL()
 
-        # Construct and reduce `y` vector
-        y = Matrix([2**trunc_amount * x % modulus for x in outputs])
+        # Construct and reduce
+        y = Matrix([[2**trunc_amount * x % modulus for x in outputs]], QQ).T
         reduced_outputs = reduced_basis * y
 
-        c_prime = Matrix([(round(x / modulus) * modulus) - x for x in reduced_outputs])
-        z = Matrix(reduced_basis.LUsolve(c_prime))
+        # Solve system
+        c_prime = Matrix([[(round(float(x[0] / modulus)) * modulus) - x[0] for x in reduced_outputs]]).T
+        z = reduced_basis.LUsolve(c_prime)
 
         return y + z

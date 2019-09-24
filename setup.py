@@ -8,7 +8,6 @@ with open(os.path.join(here, 'README.md')) as f:
 
 
 requires = [
-    "sympy",
     "pyasn1",
     "pyasn1-modules",
     "ipython",
@@ -29,8 +28,12 @@ setup(name='samson-crypto',
       classifiers=[
           "Topic :: Security",
           "Topic :: Security :: Cryptography",
-          "Programming Language :: Python",
+          "Topic :: Scientific/Engineering",
+          "Topic :: Scientific/Engineering :: Mathematics",
+          "Programming Language :: Python :: 3",
           "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: Implementation :: CPython",
+          "Programming Language :: Python :: Implementation :: PyPy",
       ],
       author='Daniel Cronce',
       author_email='daniel.cronce@wildcardcorp.com',

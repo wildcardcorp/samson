@@ -38,5 +38,7 @@ class CLITestCase(unittest.TestCase):
                     continue
                 elif pki_name == 'auto':
                     continue
+                elif pki_name == 'dh' and len(encoding) > 0 and ('OpenSSH' in encoding[0] or 'ssh2' in encoding[1] or 'jwk' in encoding[0]):
+                    continue
 
                 check_output(["samson", "pki", "generate", *params] + encoding)

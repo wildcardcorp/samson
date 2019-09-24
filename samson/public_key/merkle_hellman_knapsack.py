@@ -2,7 +2,6 @@
 from samson.math.general import mod_inv, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
-#from sympy.matrices import Matrix, eye
 from samson.core.encryption_alg import EncryptionAlg
 
 

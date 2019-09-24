@@ -1,15 +1,6 @@
+from samson.auxiliary.console_colors import ConsoleColors, PREFIX, SUFFIX
 from logging import Formatter
 from copy import copy
-from enum import Enum
-
-
-class ConsoleColors(Enum):
-    WHITE  = 37
-    GREEN  = 32
-    YELLOW = 33
-    RED    = 31
-    WH_RED = 41
-
 
 LEVEL_MAPPING = {
     'DEBUG'   : ConsoleColors.WHITE,
@@ -18,9 +9,6 @@ LEVEL_MAPPING = {
     'ERROR'   : ConsoleColors.RED,
     'CRITICAL': ConsoleColors.WH_RED
 }
-
-PREFIX = '\033['
-SUFFIX = '\033[0m'
 
 class ColoredFormatter(Formatter):
     """

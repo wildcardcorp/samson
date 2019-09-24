@@ -2,7 +2,6 @@ from samson.math.general import is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.math.polynomial import Polynomial
-from sympy.polys.galoistools import gf_irreducible_p
 import itertools
 
 class FiniteFieldElement(FieldElement):
@@ -100,7 +99,6 @@ class FiniteField(Field):
             reducing_poly (Polynomial): Polynomial to reduce the `PolynomialRing`.
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from sympy import ZZ as sym_ZZ
 
         assert is_prime(p)
         self.p = p
@@ -113,14 +111,10 @@ class FiniteField(Field):
                 reducing_poly = Polynomial([0, 1], self.internal_ring)
             else:
                 for c in itertools.product(range(p), repeat=n):
-                    poly = (1, *c)
-                    if gf_irreducible_p(poly, p, sym_ZZ):
-                        reducing_poly = Polynomial(poly[::-1], self.internal_ring)
+                    poly = Polynomial((1, *c)[::-1], self.internal_ring)
+                    if poly.is_irreducible():
+                        reducing_poly = poly
                         break
-                    # poly = Polynomial((1, *c)[::-1], self.internal_ring)
-                    # if poly.is_irreducible():
-                    #     reducing_poly = poly
-                    #     break
 
 
         self.reducing_poly  = reducing_poly

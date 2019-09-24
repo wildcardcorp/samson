@@ -1,6 +1,8 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.math.general import totient, factor
 from samson.utilities.exceptions import SearchspaceExhaustedException
+from itertools import combinations
+from functools import reduce
 
 class MultiplicativeGroupElement(RingElement):
     """
@@ -19,6 +21,27 @@ class MultiplicativeGroupElement(RingElement):
 
     def __repr__(self):
         return f"<MultiplicativeGroupElement: val={self.val}, ring={self.ring}>"
+
+
+    @property
+    def order(self) -> int:
+        """
+        The minimum number of times the element can be added to itself before reaching the additive identity.
+
+        Returns:
+            int: Order.
+        """
+        expanded_factors = [1] + [item for fac, num in factor(self.ring.order).items() for item in [fac]*num]
+        all_orders = []
+
+        for product_size in range(1, len(expanded_factors)+1):
+            for combination in set(combinations(expanded_factors, product_size)):
+                product = reduce(int.__mul__, combination, 1)
+                if self*product == self.ring.one():
+                    all_orders.append(product)
+
+        return min(all_orders)
+
 
 
     @left_expression_intercept
@@ -165,7 +188,7 @@ class MultiplicativeGroup(Ring):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
 
         if type(other) is int and type(self.ring) is QuotientRing:
-            other %= self.order
+            other %= self.ring.quotient
 
         if type(other) is not MultiplicativeGroupElement:
             other = MultiplicativeGroupElement(self.ring.coerce(other), self)
@@ -199,11 +222,9 @@ class MultiplicativeGroup(Ring):
         Returns:
             MultiplicativeGroupElement: A generator element.
         """
-        factors = [f for f in factor(self.order)]
-
         for i in range(2, self.order):
             possible_gen = self[i]
-            if possible_gen * self.order == self.one() and all([possible_gen * (self.order // f) != self.one() for f in factors]):
+            if possible_gen * self.order == self.one() and possible_gen.order == self.order:
                 return possible_gen
 
         raise SearchspaceExhaustedException("Unable to find generator")

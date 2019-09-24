@@ -5,7 +5,7 @@ import unittest
 
 
 class DualECTestCase(unittest.TestCase):
-    def test_generate_backdoor(self):
+    def OPTIONAL_test_generate_backdoor(self):
         for num_next_bytes in range(1, 3):
             (P, Q, d) = DualEC.generate_backdoor(P256)
             dual_ec = DualEC(P, Q, Bytes.random(8).int())

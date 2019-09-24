@@ -176,7 +176,7 @@ def export_der(items: list, item_types: list=None) -> bytes:
     Converts items (in order) to DER-encoded bytes.
 
     Parameters:
-        items      (list): Items to be encoded.
+        items (list): Items to be encoded.
     
     Returns:
         bytes: DER-encoded sequence bytes.
@@ -186,6 +186,7 @@ def export_der(items: list, item_types: list=None) -> bytes:
     if not item_types:
         item_types = [Integer] * len(items)
 
+    seq_len = 0
     for val, item_type in zip(items, item_types):
         if item_type == SequenceOf:
             item = item_type()
@@ -193,7 +194,8 @@ def export_der(items: list, item_types: list=None) -> bytes:
         else:
             item = item_type(val)
 
-        seq.setComponentByPosition(len(seq), item)
+        seq.setComponentByPosition(seq_len, item)
+        seq_len += 1
 
     return encoder.encode(seq)
 
