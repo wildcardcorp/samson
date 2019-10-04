@@ -1,6 +1,8 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import StreamCipher, Primitive
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
+from samson.ace.decorators import register_primitive
 import math
 
 S0 = [
@@ -64,12 +66,18 @@ def ADD_M(a, b):
 
 
 # Reference: https://www.gsma.com/aboutus/wp-content/uploads/2014/12/eea3eia3zucv16.pdf
-class ZUC(EncryptionAlg):
+@register_primitive()
+class ZUC(StreamCipher):
     """
     ZUC stream cipher
 
     Used in celluar encryption.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.LFSR]
+    USAGE_TYPE         = UsageType.CELLULAR
+    KEY_SIZE           = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=128))
 
     def __init__(self, key: bytes, iv: bytes):
         """
@@ -77,6 +85,7 @@ class ZUC(EncryptionAlg):
             key (bytes): Key (128 bits).
             iv  (bytes): Initialization vector (16 bytes).
         """
+        Primitive.__init__(self)
         self.key         = Bytes.wrap(key)
         self.iv          = iv
         self.lfsr_states = [0] * 16
@@ -90,13 +99,11 @@ class ZUC(EncryptionAlg):
 
 
 
-
     def __repr__(self):
         return f"<ZUC: key={self.key}, iv={self.iv}, lfsr_states={self.lfsr_states}, R={self.R}>"
 
     def __str__(self):
         return self.__repr__()
-
 
 
     def reorganize_bits(self):
@@ -159,7 +166,6 @@ class ZUC(EncryptionAlg):
             f = ADD_M(f, u)
 
         self.shift_states(f)
-
 
 
 

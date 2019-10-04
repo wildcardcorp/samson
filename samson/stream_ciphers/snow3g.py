@@ -1,6 +1,8 @@
 from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import StreamCipher, Primitive
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
+from samson.ace.decorators import register_primitive
 
 SQ = [
     0x25,0x24,0x73,0x67,0xD7,0xAE,0x5C,0x30,0xA4,0xEE,0x6E,0xCB,0x7D,0xB5,0x82,0xDB,
@@ -23,12 +25,17 @@ SQ = [
 
 # https://www.gsma.com/aboutus/wp-content/uploads/2014/12/snow3gspec.pdf
 # https://github.com/mitshell/CryptoMobile/blob/master/C_alg/SNOW_3G.c
-class SNOW3G(EncryptionAlg):
+@register_primitive()
+class SNOW3G(StreamCipher):
     """
     SNOW3G stream cipher
 
     Used in 4G LTE encryption.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.LFSR]
+    USAGE_TYPE         = UsageType.CELLULAR
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=128))
 
     def __init__(self, key: bytes, iv: bytes):
         """
@@ -36,8 +43,10 @@ class SNOW3G(EncryptionAlg):
             key (bytes): Key (128 or 256 bits).
             iv  (bytes): Initialization vector (16 bytes).
         """
+        Primitive.__init__(self)
+
         self.key = Bytes.wrap(key)
-        self.iv = Bytes.wrap(iv)
+        self.iv  = Bytes.wrap(iv)
 
         k0, k1, k2, k3 = [chunk.to_int() for chunk in self.key.chunk(4)]
         iv0, iv1, iv2, iv3 = [chunk.to_int() for chunk in self.iv.chunk(4)]
@@ -153,7 +162,6 @@ class SNOW3G(EncryptionAlg):
             self.s[i] = self.s[i + 1]
 
         self.s[15] = v
-
 
 
     def generate(self, length: int) -> Bytes:

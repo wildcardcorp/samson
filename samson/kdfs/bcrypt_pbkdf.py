@@ -15,7 +15,7 @@ class BcryptPBKDF(object):
             rounds      (int): Number of rounds to perform.
             hash_obj (object): Instantiated object with compatible hash interface. Normally SHA512.
         """
-        self.rounds = rounds
+        self.rounds   = rounds
         self.hash_obj = hash_obj
 
 

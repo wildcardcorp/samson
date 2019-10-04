@@ -2,15 +2,24 @@ from samson.block_ciphers.blowfish import Blowfish
 from samson.block_ciphers.modes.ecb import ECB
 from samson.encoding.general import bcrypt_b64_encode
 from samson.utilities.bytes import Bytes
+from samson.core.metadata import PrimitiveType, SecurityProofType, CipherType, SymmetryType, ConstructionType
+from samson.ace.decorators import register_primitive
 
 CONSTANT = b"OrpheanBeholderScryDoubt"
 
 # https://en.wikipedia.org/wiki/Bcrypt
 # Tested against https://github.com/fwenzel/python-bcrypt
+@register_primitive()
 class Bcrypt(object):
     """
     Blowfish based password-hashing algorithm
     """
+
+    PRIMITIVE_TYPE     = PrimitiveType.KDF
+    CIPHER_TYPE        = CipherType.NONE
+    SYMMETRY_TYPE      = SymmetryType.NONE
+    CONSTRUCTION_TYPES = []
+    SECURITY_PROOF     = SecurityProofType.NONE
 
     def __init__(self, cost: int, constant: bytes=CONSTANT, output_size: int=23, version: str='2a', use_specs_eks: bool=False):
         """

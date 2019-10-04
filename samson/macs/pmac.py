@@ -1,8 +1,10 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
 from types import FunctionType
-from samson.core.mac import MAC
+from samson.core.primitives import MAC, Primitive
+from samson.ace.decorators import register_primitive
 
+@register_primitive()
 class PMAC(MAC):
     """
     Parallelizable message authentication code.
@@ -15,6 +17,8 @@ class PMAC(MAC):
             encryptor (func): Function that takes in a plaintext and returns a ciphertext.
             block_size (int): Block size of cipher.
         """
+        Primitive.__init__(self)
+
         self.encryptor = encryptor
         self.block_size = block_size
         self.L = [self.encryptor(Bytes(b'').zfill(self.block_size))]

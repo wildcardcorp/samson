@@ -7,8 +7,8 @@ from .ntlm import NTLM
 from .ripemd160 import RIPEMD160
 from .sha1 import SHA1
 from .sha2 import SHA224, SHA256, SHA384, SHA512
-from .sha3 import SHA3
+from .sha3 import SHA3_224, SHA3_256, SHA3_384, SHA3_512, SHAKE128, SHAKE256
 from .whirlpool import Whirlpool
 
 
-__all__ = ["BLAKE2b", "BLAKE2s", "Keccak", "LM", "MD4", "MD5", "NTLM", "RIPEMD160", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512", "SHA3", "Whirlpool"]
+__all__ = ["BLAKE2b", "BLAKE2s", "Keccak", "LM", "MD4", "MD5", "NTLM", "RIPEMD160", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512", "SHA3_224", "SHA3_256", "SHA3_384", "SHA3_512", "SHAKE128", "SHAKE256", "Whirlpool"]

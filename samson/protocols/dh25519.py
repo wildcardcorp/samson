@@ -1,11 +1,18 @@
 from samson.math.algebra.curves.montgomery_curve import MontgomeryCurve
 from samson.math.algebra.curves.named import Curve25519
+from samson.math.general import random_int_between
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KeyExchangeAlg, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
-class DH25519(object):
+@register_primitive()
+class DH25519(KeyExchangeAlg):
     """
     Elliptical curve Diffie-Hellman using Montgomery curves.
     """
+
+    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[255, 448])
 
     def __init__(self, d: int=None, pub: int=None, base: int=None, curve: MontgomeryCurve=Curve25519):
         """
@@ -14,7 +21,8 @@ class DH25519(object):
             base              (int): Base multiplier used in generating the challenge.
             curve (MontgomeryCurve): The curve used.
         """
-        self.d     = Bytes.wrap(d or Bytes.random(32)).int()
+        Primitive.__init__(self)
+        self.d     = Bytes.wrap(d or random_int_between(1, curve.ring.order)).int()
         self.curve = curve
         self.key   = curve.clamp_to_curve(self.d)
         self.base  = base or curve.U

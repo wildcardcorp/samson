@@ -1,4 +1,4 @@
-from samson.math.general import random_int, crt, pollards_kangaroo, mod_inv, factor as factorint
+from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv, factor as factorint
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.default_oracle import DefaultOracle
@@ -58,7 +58,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         for factor in RUNTIME.report_progress(factors, desc='Sending malicious public keys', unit='factor'):
             h = 1
             while h == 1:
-                h = pow(max(1, random_int(self.p)), (self.p-1) // factor, self.p)
+                h = pow(random_int_between(1, self.p), (self.p-1) // factor, self.p)
 
             residue = self.oracle.request(h, factor)
             residues.append((residue, factor))

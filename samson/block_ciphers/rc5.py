@@ -1,18 +1,24 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate, right_rotate
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 import math
 
 P_w = [0xB7E1, 0xB7E15163, 0xB7E151628AED2A6B]
 Q_w = [0x9E37, 0x9E3779B9, 0x9E3779B97F4A7C15]
 
 # https://en.wikipedia.org/wiki/RC5#Algorithm
-class RC5(EncryptionAlg):
+@register_primitive()
+class RC5(BlockCipher):
     """
     Structure: Feistel Network
     Key size: 0-2040 bits
     Block size: 32, 64, 128 bits
     """
+
+    KEY_SIZE   = SizeSpec(size_type=SizeType.RANGE, sizes=range(0, 2041))
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.RANGE, sizes=[32, 64, 128])
 
     def __init__(self, key: bytes, num_rounds: int=12, block_size: int=128):
         """
@@ -21,6 +27,8 @@ class RC5(EncryptionAlg):
             num_rounds (int): Number of rounds to perform.
             block_size (int): The desired block size in bits.
         """
+        Primitive.__init__(self)
+
         if not block_size in [32, 64, 128]:
             raise Exception("Invalid block size: must be 32, 64, or 128 bits")
 

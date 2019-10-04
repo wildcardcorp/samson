@@ -1,6 +1,9 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.constructions.miyaguchi_preneel_construction import MiyaguchiPreneelConstruction
 from samson.utilities.bytes import Bytes
+from samson.core.metadata import ConstructionType
+from samson.core.primitives import Primitive
+from samson.ace.decorators import register_primitive
 
 # The Whirlpool Secure Hash Function by William Stallings
 # https://pdfs.semanticscholar.org/f7e3/75bc947377816162c4ee37bd34f161042462.pdf
@@ -650,11 +653,14 @@ def compression_func(message, state):
     return compression.hash(message)
 
 
+@register_primitive()
 class Whirlpool(MerkleDamgardConstruction):
     """
     Hash built using the Merkle-Damgard construction whose compression function is a Miyaguchi-Preneel construction
     of an AES-like block cipher 'W'.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.MERKLE_DAMGARD, ConstructionType.MIYAGUCHI_PRENEEL]
 
     def __init__(self, initial_state: bytes=Bytes(b'').zfill(64)):
         """
@@ -668,6 +674,8 @@ class Whirlpool(MerkleDamgardConstruction):
             endianness='big',
             encoded_size_length=32
         )
+
+        Primitive.__init__(self)
 
 
     def __repr__(self):

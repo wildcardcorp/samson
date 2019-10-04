@@ -19,6 +19,7 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
 
         eve_ecdhe = ECDHE(d=1, G=curve.G)
         def oracle_func(h, r):
+            h    = h.cache_mul(h.curve.cardinality().bit_length())
             K    = bob_key.derive_key(h)
             hmac = HMAC(key=K, hash_obj=sha256)
             mac  = hmac.generate(m)

@@ -1,8 +1,10 @@
 from samson.macs.cbc_mac import CBCMAC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
-from samson.core.mac import MAC
+from samson.core.primitives import MAC, Primitive
+from samson.ace.decorators import register_primitive
 
+@register_primitive()
 class CMAC(MAC):
     """
     Message authentication code scheme based off of CBCMAC.
@@ -16,6 +18,7 @@ class CMAC(MAC):
             iv       (bytes): Initialization vector for CBC mode.
             block_size (int): Block size of cipher.
         """
+        Primitive.__init__(self)
         self.key = key
         self.cipher = cipher
         self.block_size = block_size
@@ -63,7 +66,7 @@ class CMAC(MAC):
         message = Bytes.wrap(message)
 
         incomplete_block = len(message) % self.block_size
-        message_chunks = message.chunk(self.block_size, allow_partials=True)
+        message_chunks   = message.chunk(self.block_size, allow_partials=True)
 
         if len(message_chunks) == 0:
             message_chunks = [Bytes(b'')]

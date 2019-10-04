@@ -2,6 +2,9 @@ from math import log
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.sponge_construction import SpongeConstruction
+from samson.core.primitives import Hash, Primitive
+from samson.core.metadata import ConstructionType
+from samson.ace.decorators import register_primitive
 
 # https://github.com/ctz/keccak/blob/master/keccak.py
 
@@ -24,10 +27,12 @@ R = [
 ]
 
 # https://keccak.team/keccak_specs_summary.html
-class Keccak(SpongeConstruction):
+class Keccak(SpongeConstruction, Hash):
     """
     SHA3 winner based on the SpongeConstruction.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.SPONGE]
 
     def __init__(self, r: int, c: int, digest_bit_size: int, auto_reset_state: bool=True):
         """
@@ -38,6 +43,7 @@ class Keccak(SpongeConstruction):
             auto_reset_state (bool): Whether or not to reset the internal state before hashing.
         """
         super().__init__(self.keccak_f, self.pad, r, c)
+        Primitive.__init__(self)
         self.w = (r + c) // 25
 
         self.n = int(log(self.w, 2) * 2 + 12)

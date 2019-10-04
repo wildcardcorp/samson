@@ -1,5 +1,7 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
+from samson.core.metadata import ConstructionType
+from samson.core.primitives import Hash, Primitive
 from types import FunctionType
 from copy import deepcopy
 
@@ -22,11 +24,13 @@ def md_pad(msg: bytes, fakeLen: int=None, byteorder: str='little', bit_size: int
     return msg + padding
 
 
-class MerkleDamgardConstruction(object):
+class MerkleDamgardConstruction(Hash):
     """
     An iterative construction for building collision-resistant cryptographic hash functions from collision-resistant
     one-way compression functions. Used in MD4, MD5, SHA1, SHA2, RIPEMD, and more.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.MERKLE_DAMGARD]
 
     def __init__(self, initial_state: bytes, compression_func: FunctionType, digest_size: int, block_size: int=64, endianness: str='big', encoded_size_length: int=None):
         """

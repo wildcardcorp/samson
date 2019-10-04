@@ -1,5 +1,4 @@
 from samson.math.general import gcd, lcm, mod_inv, find_prime
-from samson.core.encryption_alg import EncryptionAlg
 
 from samson.encoding.openssh.openssh_rsa_private_key import OpenSSHRSAPrivateKey
 from samson.encoding.openssh.openssh_rsa_public_key import OpenSSHRSAPublicKey
@@ -15,13 +14,14 @@ from samson.encoding.general import PKIEncoding
 
 from samson.utilities.bytes import Bytes
 from samson.core.encodable_pki import EncodablePKI
-import random
-
-from samson.ace.decorators import creates_constraint
+from samson.core.primitives import Primitive, NumberTheoreticalAlg
+from samson.core.metadata import SecurityProofType
+from samson.ace.decorators import creates_constraint, register_primitive
 from samson.ace.constraints import RSAConstraint
 
 @creates_constraint(RSAConstraint())
-class RSA(EncryptionAlg, EncodablePKI):
+@register_primitive()
+class RSA(NumberTheoreticalAlg, EncodablePKI):
     """
     Rivest-Shamir-Adleman public key cryptosystem
     """
@@ -46,6 +46,8 @@ class RSA(EncryptionAlg, EncodablePKI):
     X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509RSASigningAlgorithms.sha256WithRSAEncryption
 
+    SECURITY_PROOF = SecurityProofType.INTEGER_FACTORIZATION
+
     def __init__(self, bits: int, p: int=None, q: int=None, e: int=65537):
         """
         Parameters:
@@ -54,6 +56,8 @@ class RSA(EncryptionAlg, EncodablePKI):
             q    (int): Secret prime modulus.
             e    (int): Public exponent.
         """
+        Primitive.__init__(self)
+
         self.e = e
         phi = 0
 
@@ -194,6 +198,8 @@ class RSA(EncryptionAlg, EncodablePKI):
         Returns:
             RSA: Full RSA instance.
         """
+        import random
+
         k = d*e - 1
         p = None
         q = None

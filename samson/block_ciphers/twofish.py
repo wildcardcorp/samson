@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
 from samson.math.general import poly_to_int, int_to_poly
 from samson.utilities.manipulation import right_rotate, left_rotate
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.ace.decorators import register_primitive
 
 GF_MOD = 2**8 + 2**6 + 2**5 + 2**3 + 1
 GF_MOD_POLY = int_to_poly(GF_MOD)
@@ -125,7 +126,8 @@ def EXPAND_KEY(M_e, M_o, k):
 
 
 # https://www.schneier.com/academic/paperfiles/paper-twofish-paper.pdf
-class Twofish(EncryptionAlg):
+@register_primitive()
+class Twofish(BlockCipher):
     """
     Structure: Feistel Network
     Key size: 128, 192, 256 bits
@@ -137,6 +139,7 @@ class Twofish(EncryptionAlg):
         Parameters:
             key (bytes): Bytes-like object to key the cipher.
         """
+        Primitive.__init__(self)
         self.key = Bytes.wrap(key)
         self.S = []
         self.K = None

@@ -3,9 +3,10 @@ import struct
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
+from samson.core.primitives import Primitive
+from samson.ace.decorators import register_primitive
 
-#h0, h1, h2, h3, h4
-#_process_chunk
+
 def compression_func(chunk, state):
     """Process a chunk of data and return the new digest variables."""
     assert len(chunk) == 64
@@ -69,7 +70,7 @@ def bytes_to_state(state_bytes):
     return [(as_int>>(32*i)) & 0xffffffff for i in range(4, -1, -1)]
 
 
-
+@register_primitive()
 class SHA1(MerkleDamgardConstruction):
     """
     Cryptographic hash function considered to be broken but is still widely used.
@@ -88,6 +89,8 @@ class SHA1(MerkleDamgardConstruction):
             compression_func=compression_func,
             digest_size=20,
         )
+        
+        Primitive.__init__(self)
 
 
     def __repr__(self):

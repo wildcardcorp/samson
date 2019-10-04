@@ -2,7 +2,7 @@
 from samson.math.general import mod_inv, generate_superincreasing_seq, find_coprime
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import EncryptionAlg
 
 
 class MerkleHellmanKnapsack(EncryptionAlg):

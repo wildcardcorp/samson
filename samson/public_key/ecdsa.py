@@ -1,4 +1,4 @@
-from samson.math.general import mod_inv, random_int
+from samson.math.general import mod_inv, random_int_between
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
@@ -14,10 +14,13 @@ from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
 from samson.encoding.general import PKIEncoding
-
+from samson.core.metadata import SizeType, SizeSpec
+from samson.core.primitives import Primitive
+from samson.ace.decorators import register_primitive
 import math
 
 # https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+@register_primitive()
 class ECDSA(DSA):
     """
     Elliptical Curve Digital Signature Algorithm
@@ -42,6 +45,7 @@ class ECDSA(DSA):
     X509_SIGNING_ALGORITHMS = X509ECDSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509ECDSASigningAlgorithms.ecdsa_with_SHA256
 
+    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[192, 224, 256, 384, 521])
 
     def __init__(self, G: WeierstrassCurve, hash_obj: object=SHA256(), d: int=None):
         """
@@ -50,9 +54,10 @@ class ECDSA(DSA):
             hash_obj    (object): Instantiated object with compatible hash interface.
             d              (int): (Optional) Private key.
         """
+        Primitive.__init__(self)
         self.G = G
         self.q = self.G.curve.q
-        self.d = Bytes.wrap(d).int() if d else max(1, random_int(self.q))
+        self.d = Bytes.wrap(d).int() if d else random_int_between(1, self.q)
         self.Q = self.d * self.G
         self.hash_obj = hash_obj
 
@@ -80,7 +85,7 @@ class ECDSA(DSA):
         s = 0
 
         while s == 0 or r == 0:
-            k = k or max(1, random_int(self.q))
+            k = k or random_int_between(1, self.q)
             inv_k = mod_inv(k, self.q)
 
             z = self.hash_obj.hash(message).int()

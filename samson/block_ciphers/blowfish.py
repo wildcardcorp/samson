@@ -1,5 +1,7 @@
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 from copy import deepcopy
 
 P = [
@@ -237,12 +239,16 @@ def round_func(a, b, c, d):
 
 
 # https://en.wikipedia.org/wiki/Blowfish_(cipher)
-class Blowfish(EncryptionAlg):
+@register_primitive()
+class Blowfish(BlockCipher):
     """
     Structure: Feistel Network
     Key size: 32-448 bits
     Block size: 64 bits
     """
+
+    KEY_SIZE   = SizeSpec(size_type=SizeType.RANGE, sizes=range(32, 449))
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
 
     def __init__(self, key: bytes, run_key_schedule: bool=True):
         """
@@ -250,6 +256,8 @@ class Blowfish(EncryptionAlg):
             key             (bytes): Bytes-like object to key the cipher.
             run_key_schedule (bool): Whether or not to run the key schedule. Useful when extending Blowfish (i.e. bcrypt).
         """
+        Primitive.__init__(self)
+
         self.key = Bytes.wrap(key)
         self.P = deepcopy(P)
         self.S = [deepcopy(S1), deepcopy(S2), deepcopy(S3), deepcopy(S4)]

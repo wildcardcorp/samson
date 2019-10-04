@@ -8,6 +8,12 @@ class CCM(object):
     """Counter with CBC-MAC block cipher mode."""
 
     def __init__(self, key: bytes, cipher: object, mac_len: int):
+        """
+        Parameters:
+            key     (bytes): Encryption key.
+            cipher (object): Instantiated cipher object.
+            mac_len   (int): Length of AMC to generate.
+        """
         self.key = key
         self.cipher = cipher
         self.cmac = CBCMAC(self.key, self.cipher)

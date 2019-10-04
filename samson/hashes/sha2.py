@@ -1,6 +1,9 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import right_rotate, get_blocks
+from samson.core.primitives import Primitive
+from samson.core.metadata import ConstructionType
+from samson.ace.decorators import register_primitive
 import math
 
 # https://en.wikipedia.org/wiki/SHA-2
@@ -48,6 +51,8 @@ class SHA2(MerkleDamgardConstruction):
     SHA2 hash function base class.
     """
 
+    CONSTRUCTION_TYPES = [ConstructionType.MERKLE_DAMGARD, ConstructionType.DAVIES_MEYER]
+
     def __init__(self, initial_state: list, digest_size: int, state_size: int, block_size: int, rounds: int, rot: list, k: list):
         """
         Parameters:
@@ -65,6 +70,8 @@ class SHA2(MerkleDamgardConstruction):
             digest_size=digest_size,
             block_size=block_size
         )
+
+        Primitive.__init__(self)
 
         self.state_size = state_size
         self.rounds = rounds
@@ -157,6 +164,7 @@ class SHA2(MerkleDamgardConstruction):
         return Bytes(b''.join([int.to_bytes(h_i & bit_mask, self.state_size, 'big') for h_i in state]))
 
 
+@register_primitive()
 class SHA224(SHA2):
     def __init__(self, h: list=None):
         """
@@ -174,6 +182,7 @@ class SHA224(SHA2):
         )
 
 
+@register_primitive()
 class SHA256(SHA2):
     def __init__(self, h: list=None):
         """
@@ -191,6 +200,7 @@ class SHA256(SHA2):
         )
 
 
+@register_primitive()
 class SHA384(SHA2):
     def __init__(self, h: list=None):
         """
@@ -208,6 +218,7 @@ class SHA384(SHA2):
         )
 
 
+@register_primitive()
 class SHA512(SHA2):
     def __init__(self, h: list=None, trunc: int=None):
         """

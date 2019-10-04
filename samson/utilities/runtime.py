@@ -1,10 +1,10 @@
 from samson.auxiliary.progress import Progress
-from samson.auxiliary.colored_formatter import ColoredFormatter
 from samson.ace.exploit import DynamicExploit, register_knowns
 from types import FunctionType
 import logging
 import inspect
 import sys
+import os
 
 
 URANDOM = open("/dev/urandom", "rb")
@@ -14,19 +14,22 @@ class RuntimeConfiguration(object):
     Global runtime configuration. Allows for the dynamic configuration of existing samson code.
     """
 
-    def __init__(self):
+    def __init__(self, log_fmt: str='%(asctime)s - %(name)s [%(levelname)s] %(message)s', use_color: bool=True):
         # Initialize reporter
         try:
             from samson.auxiliary.tqdm_handler import TqdmHandler
             from samson.auxiliary.tqdm_reporter import TqdmReporter
+            from samson.auxiliary.colored_formatter import ColoredFormatter
 
             handler = TqdmHandler()
 
-            # Only color if attached to TTY
-            if sys.stdout.isatty():
-                formatter = ColoredFormatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+            self.use_color = use_color
+
+            # Only color logs if attached to TTY
+            if sys.stdout.isatty() and use_color:
+                formatter = ColoredFormatter(fmt=log_fmt)
             else:
-                formatter = logging.Formatter(fmt='%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+                formatter = logging.Formatter(fmt=log_fmt)
 
             handler.setFormatter(formatter)
             handler.setLevel(logging.DEBUG)
@@ -58,6 +61,8 @@ class RuntimeConfiguration(object):
         self.exploits = {}
         self.exploit_mappings = {}
         self.constraints = {}
+
+        self.primitives = []
 
 
 
@@ -146,5 +151,32 @@ class RuntimeConfiguration(object):
         self.exploit_mappings[cls].append(attack)
 
 
-RUNTIME = RuntimeConfiguration()
+    def register_primitive(self, cls):
+        self.primitives.append(cls)
+    
+
+    def search_primitives(self, filter_func: FunctionType=lambda primitive: True):
+        return [primitive for primitive in self.primitives if filter_func(primitive)]
+
+
+    def show_primitives(self, filter_func: FunctionType=lambda primitive: True, sort_key: FunctionType=lambda primitive: str(primitive).split('.')[-1][:-2], reverse: bool=False):
+        lines = []
+        all_columns = [['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType']]
+        max_column_sizes = [len(col) for col in all_columns[0]]
+
+        for primitive in sorted(self.search_primitives(filter_func), key=sort_key, reverse=reverse):
+            columns = [str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES])]
+            max_column_sizes = [max(len(col), curr_max) for col, curr_max in zip(columns, max_column_sizes)]
+            all_columns.append(columns)
+
+        for columns in all_columns:
+            lines.append('| ' + ' | '.join([col.ljust(max_column_sizes[idx]) for idx, col in enumerate(columns)]) + ' |')
+            lines.append('-' * len(lines[-1]))
+
+        table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
+        print(table)
+
+    
+
+RUNTIME = RuntimeConfiguration(use_color=(os.environ.get('USE_COLOR', 'True') == 'True'))
 register_knowns()

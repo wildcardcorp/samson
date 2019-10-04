@@ -1,6 +1,6 @@
 from samson.math.general import find_prime, mod_inv, gcd, random_int
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import EncryptionAlg
 
 
 class Paillier(EncryptionAlg):

@@ -23,27 +23,6 @@ class MultiplicativeGroupElement(RingElement):
         return f"<MultiplicativeGroupElement: val={self.val}, ring={self.ring}>"
 
 
-    @property
-    def order(self) -> int:
-        """
-        The minimum number of times the element can be added to itself before reaching the additive identity.
-
-        Returns:
-            int: Order.
-        """
-        expanded_factors = [1] + [item for fac, num in factor(self.ring.order).items() for item in [fac]*num]
-        all_orders = []
-
-        for product_size in range(1, len(expanded_factors)+1):
-            for combination in set(combinations(expanded_factors, product_size)):
-                product = reduce(int.__mul__, combination, 1)
-                if self*product == self.ring.one():
-                    all_orders.append(product)
-
-        return min(all_orders)
-
-
-
     @left_expression_intercept
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
@@ -213,18 +192,3 @@ class MultiplicativeGroup(Ring):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
-
-
-    def find_gen(self) -> MultiplicativeGroupElement:
-        """
-        Finds a generator of the MultiplicativeGroup.
-
-        Returns:
-            MultiplicativeGroupElement: A generator element.
-        """
-        for i in range(2, self.order):
-            possible_gen = self[i]
-            if possible_gen * self.order == self.one() and possible_gen.order == self.order:
-                return possible_gen
-
-        raise SearchspaceExhaustedException("Unable to find generator")

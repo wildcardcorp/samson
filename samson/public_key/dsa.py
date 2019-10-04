@@ -1,4 +1,4 @@
-from samson.math.general import mod_inv, find_prime, random_int, is_prime
+from samson.math.general import mod_inv, find_prime, random_int_between, is_prime
 from samson.utilities.bytes import Bytes
 
 from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
@@ -8,12 +8,14 @@ from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DSASigningAlgorithms
-from samson.core.encodable_pki import EncodablePKI
 from samson.encoding.general import PKIEncoding
-
+from samson.core.encodable_pki import EncodablePKI
+from samson.core.primitives import SignatureAlg, Primitive
+from samson.ace.decorators import register_primitive
 from samson.hashes.sha2 import SHA256
 
-class DSA(EncodablePKI):
+@register_primitive()
+class DSA(EncodablePKI, SignatureAlg):
     """
     Digital Signature Algorithm
     """
@@ -46,6 +48,7 @@ class DSA(EncodablePKI):
             L           (int): (Optional) Bit length of `p`.
             N           (int): (Optional) Bit length of `q`.
         """
+        Primitive.__init__(self)
         # Parameter generation
         # https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
         if not q:
@@ -74,7 +77,7 @@ class DSA(EncodablePKI):
         self.q = q
         self.g = g
 
-        self.x = x or random_int(self.q)
+        self.x = x or random_int_between(1, self.q)
         self.y = pow(self.g, self.x, self.p)
         self.hash_obj = hash_obj
 
@@ -99,7 +102,7 @@ class DSA(EncodablePKI):
         Returns:
             (int, int): Signature formatted as (r, s).
         """
-        k = k or max(1, random_int(self.q))
+        k = k or random_int_between(1, self.q)
         inv_k = mod_inv(k, self.q)
         r = pow(self.g, k, self.p) % self.q
         s = (inv_k * (self.hash_obj.hash(message).int() + self.x * r)) % self.q

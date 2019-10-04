@@ -2,7 +2,9 @@ from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_bitstring
 from samson.utilities.manipulation import left_rotate
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, PrimitiveType
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/Data_Encryption_Standard
 
@@ -175,12 +177,16 @@ def round_func(R_i, k_i):
     return int.to_bytes(int(permutations, 2), 4, 'big')
 
 
-class DES(FeistelNetwork, EncryptionAlg):
+@register_primitive()
+class DES(FeistelNetwork, BlockCipher):
     """
     Structure: Feistel Network
     Key size: 64 (56, actually)
     Block size: 64
     """
+
+    KEY_SIZE   = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
 
     def __init__(self, key: bytes):
         """
@@ -188,6 +194,8 @@ class DES(FeistelNetwork, EncryptionAlg):
             key (bytes): Bytes-like object to key the cipher.
         """
         super().__init__(round_func, key_schedule)
+        PrimitiveType.__init__(self)
+
         self.key = Bytes.wrap(key).zfill(8)
         self.block_size = 8
 

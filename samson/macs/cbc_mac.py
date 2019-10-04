@@ -1,8 +1,10 @@
 from samson.block_ciphers.modes.cbc import CBC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
-from samson.core.mac import MAC
+from samson.core.primitives import MAC, Primitive
+from samson.ace.decorators import register_primitive
 
+@register_primitive()
 class CBCMAC(MAC):
     """
     Message authentication code scheme based off of a block cipher in CBC mode.
@@ -15,8 +17,9 @@ class CBCMAC(MAC):
             cipher (class): Instantiable class representing a block cipher.
             iv     (bytes): Initialization vector for CBC mode.
         """
-        self.key = key
-        self.iv = iv
+        Primitive.__init__(self)
+        self.key    = key
+        self.iv     = iv
         self.cipher = cipher
 
 
@@ -39,5 +42,5 @@ class CBCMAC(MAC):
             Bytes: The MAC.
         """
         cryptor = self.cipher(self.key)
-        cbc = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size)
+        cbc     = CBC(cryptor.encrypt, cryptor.decrypt, self.iv, cryptor.block_size)
         return cbc.encrypt(Bytes.wrap(message), pad)[-(cryptor.block_size):]

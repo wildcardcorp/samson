@@ -1,5 +1,18 @@
 from samson.auxiliary.console_colors import ConsoleColors, PREFIX, SUFFIX
 
+def color_format(color: ConsoleColors, text: str):
+    from samson.utilities.runtime import RUNTIME
+    if RUNTIME.use_color:
+        formatted = f"{PREFIX}{color.value}m{text}{SUFFIX}"
+    else:
+        formatted = text
+
+    return formatted
+
+def type_format(cls):
+    return color_format(ConsoleColors.GREEN, cls)
+
+
 class DocParameter(object):
     def __init__(self, name: str, cls: type, desc: str):
         self.name = name
@@ -18,7 +31,7 @@ class ClassTuple(object):
 class DocReturns(object):
     def __init__(self, cls: type, desc: str):
         def strip_namespace(cls):
-            return str(cls).split('.')[-1][:-2]
+            return type_format(str(cls).split('.')[-1][:-2])
 
         if type(cls) is type:
             cls = strip_namespace(cls)
@@ -35,19 +48,23 @@ class DocReference(object):
         self.url  = url
 
 
+class DocExample(object):
+    def __init__(self, code: str, result: str):
+        self.code   = code
+        self.result = result
+    
+    def load(self):
+        from IPython import get_ipython
+        get_ipython().set_next_input(self.code)
+
+
 NEWLINE = '\n'
 TAB = '\t'
 QUOTE = '\"'
 
 
-def color_format(color, text):
-    return f"{PREFIX}{color.value}m{text}{SUFFIX}"
 
-def type_format(cls):
-    return color_format(ConsoleColors.GREEN, cls)
-
-
-def autodoc(description: str=None, parameters: list=None, returns: DocReturns=None, examples: str=None, references: list=None):
+def autodoc(description: str=None, parameters: list=None, returns: DocReturns=None, examples: list=None, references: list=None):
     def _doc(func):
         parameters_str = ""
         returns_str    = ""
@@ -73,7 +90,7 @@ def autodoc(description: str=None, parameters: list=None, returns: DocReturns=No
             examples_str = f"""
 
     Examples:
-    {NEWLINE.join([f'{TAB}>>> {line}' for line in examples.splitlines()])}"""
+    {(NEWLINE + NEWLINE).join([f'{TAB}>>> # Example {idx}{NEWLINE}' + NEWLINE.join([f'{TAB}>>> {line}' for line in example.code.splitlines()]) + f'{NEWLINE}{TAB}{example.result}' for idx, example in enumerate(examples)])}"""
 
 
         if references:
@@ -84,5 +101,6 @@ def autodoc(description: str=None, parameters: list=None, returns: DocReturns=No
 
 
         func.__doc__ = f"{description}{parameters_str}{returns_str}{examples_str}{references_str}"
+        func.examples = examples
         return func
     return _doc

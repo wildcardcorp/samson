@@ -53,10 +53,10 @@ class Scrypt(object):
     def __init__(self, desired_len: int, cost: int, parallelization_factor: int, block_size_factor: int=8, hash_fn: FunctionType=lambda passwd, msg: HMAC(passwd, SHA256()).generate(msg)):
         """
         Parameters:
-            desired_len         (int): Desired output length.
-            cost                (int): Cost (usually a power of two).
-            block_size_factor   (int): `r` from the RFC.
-            hash_fn            (func): Function that takes in bytes and returns them hashed.
+            desired_len       (int): Desired output length.
+            cost              (int): Cost (usually a power of two).
+            block_size_factor (int): `r` from the RFC.
+            hash_fn          (func): Function that takes in bytes and returns them hashed.
         """
         self.block_size = block_size_factor * 128
         self.hash_fn = hash_fn

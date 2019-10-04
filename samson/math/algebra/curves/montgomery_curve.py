@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import random_int
+from samson.math.general import random_int_between
 from samson.utilities.bytes import Bytes
 
 # https://tools.ietf.org/html/rfc7748
@@ -84,7 +84,7 @@ class MontgomeryCurve(Ring):
         """
         while True:
             try:
-                return self.clamp_to_curve(max(1, random_int(size or self.p)))
+                return self.clamp_to_curve(random_int_between(1, size or self.p))
             except AssertionError:
                 pass
 

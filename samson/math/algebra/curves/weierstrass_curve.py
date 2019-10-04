@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import random_int, tonelli
+from samson.math.general import random_int_between, tonelli
 
 
 class WeierstrassPoint(RingElement):
@@ -13,7 +13,8 @@ class WeierstrassPoint(RingElement):
         self.x     = curve.ring.coerce(x)
         self.y     = curve.ring.coerce(y)
         self.curve = curve
-        self.order_cache = None
+        self.order_cache  = None
+        self.result_cache = {}
 
 
     def __repr__(self):
@@ -75,8 +76,8 @@ class WeierstrassPoint(RingElement):
 
     def __neg__(self) -> object:
         return WeierstrassPoint(self.x, -self.y, self.curve)
-
-
+    
+    
     @left_expression_intercept
     def __add__(self, P2: object) -> object:
         if self == self.curve.POINT_AT_INFINITY:
@@ -318,7 +319,7 @@ class WeierstrassCurve(Ring):
         """
         while True:
             try:
-                return self.recover_point_from_x(max(1, random_int(int(size.x) if size else self.p)))
+                return self.recover_point_from_x(random_int_between(1, int(size.x) if size else self.p))
             except AssertionError:
                 pass
 

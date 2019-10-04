@@ -15,7 +15,7 @@ class HKDF(object):
             hash_obj (object): Instantiated object with compatible hash interface.
             desired_len (int): Desired output length (in bytes).
         """
-        self.hash_obj = hash_obj
+        self.hash_obj    = hash_obj
         self.desired_len = desired_len
 
 

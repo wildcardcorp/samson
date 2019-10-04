@@ -85,6 +85,7 @@ class DualEC(object):
         r2 = observed_out[30:]
 
         possible_states = []
+        Q_cache         = Q.cache_mul(curve.cardinality().bit_length())
 
         for i in RUNTIME.report_progress(range(2**16), desc='Statespace searched', unit='states'):
             test_r1 = int.to_bytes(i, 2, 'big') + r1
@@ -92,7 +93,7 @@ class DualEC(object):
             try:
                 R  = curve(test_x)
                 dR = d * R
-                test_r2 = int(dR.x) * Q
+                test_r2 = Q_cache * int(dR.x)
 
                 if int.to_bytes(int(test_r2.x), 32, 'big')[2:2 + len(r2)] == r2:
                     possible_states.append(DualEC(P, Q, int(dR.x)))

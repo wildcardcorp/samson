@@ -1,5 +1,4 @@
-from samson.utilities.bytes import Bytes
-from samson.math.general import mod_inv
+from samson.math.general import mod_inv, random_int_between
 from samson.hashes.sha2 import SHA256
 from samson.protocols.diffie_hellman import DiffieHellman
 from types import FunctionType
@@ -22,8 +21,8 @@ class Dragonfly(object):
         """
         self.key = key
         self.q = q
-        self.A = Bytes.random(16).to_int()
-        self.a = Bytes.random(16).to_int()
+        self.A = random_int_between(1, q)
+        self.a = random_int_between(1, q)
         self.H = H
 
 

@@ -1,10 +1,10 @@
 from samson.utilities.manipulation import left_rotate, get_blocks
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
-import math
+from samson.core.primitives import StreamCipher, Primitive
+from samson.core.metadata import SizeType, SizeSpec, EphemeralSpec, EphemeralType, ConstructionType
+from samson.ace.decorators import register_primitive
 from copy import deepcopy
-
-# https://en.wikipedia.org/wiki/Salsa20
+import math
 
 
 def QUARTER_ROUND(a: int, b: int, c: int, d: int) -> (int, int, int, int):
@@ -27,12 +27,18 @@ def QUARTER_ROUND(a: int, b: int, c: int, d: int) -> (int, int, int, int):
     return a, b, c, d
 
 
-class Salsa(EncryptionAlg):
+@register_primitive()
+class Salsa(StreamCipher):
     """
     Salsa stream cipher
 
     Add-rotate-xor (ARX) structure.
+
+    https://en.wikipedia.org/wiki/Salsa20
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.ADD_ROTATE_XOR]
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
 
     def __init__(self, key: bytes, nonce: bytes, rounds: int=20, constant: bytes=b"expand 32-byte k"):
         """
@@ -42,6 +48,8 @@ class Salsa(EncryptionAlg):
             rounds     (int): Number of rounds to perform.
             constant (bytes): Constant used in generating the keystream (16 bytes).
         """
+        Primitive.__init__(self)
+
         self.key = key
         self.nonce = nonce
         self.rounds = rounds

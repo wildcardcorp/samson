@@ -12,10 +12,14 @@ from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.encoding.general import PKIEncoding
+from samson.core.primitives import Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
 # Fit to RFC8032 (https://tools.ietf.org/html/rfc8032#appendix-A)
 # and against OpenSSH_7.8p1
+@register_primitive()
 class EdDSA(DSA):
     """
     Edwards Curve Digitial Signature Algorithm
@@ -35,6 +39,8 @@ class EdDSA(DSA):
         PKIEncoding.JWK: JWKEdDSAPublicKey
     }
 
+    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[255, 448])
+
     def __init__(self, curve: TwistedEdwardsCurve=EdwardsCurve25519, hash_obj: object=SHA512(), d: int=None, A: TwistedEdwardsPoint=None, a: int=None, h: bytes=None, clamp: bool=True):
         """
         Parameters:
@@ -46,6 +52,8 @@ class EdDSA(DSA):
             h                   (bytes): (Optional) Hashed private key.
             clamp                (bool): Whether or not to clamp the public scalar.
         """
+        Primitive.__init__(self)
+
         self.B = curve.B
         self.curve = curve
         self.d = Bytes.wrap(d or max(1, Bytes.random(hash_obj.digest_size).int()))
@@ -92,7 +100,7 @@ class EdDSA(DSA):
         Returns:
             TwistedEdwardsPoint: Decoded point.
         """
-        y_bytes = Bytes([_ for _ in in_bytes], 'little')
+        y_bytes      = Bytes([_ for _ in in_bytes], 'little')
         y_bytes[-1] &= 0x7F
         y = y_bytes.int()
         x = int(self.curve.recover_point_from_y(y).x)

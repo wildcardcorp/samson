@@ -1,7 +1,9 @@
 from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import int_to_bytes, bytes_to_bitstring
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
 # https://asecuritysite.com/encryption/kasumi
 S7 = (
@@ -126,18 +128,23 @@ def fun_fo(KO_i, KI_i, x):
 
 
 # I WANT TO GET OFF MR. BONES' WILD RIDE
-class KASUMI(FeistelNetwork, EncryptionAlg):
+@register_primitive()
+class KASUMI(FeistelNetwork, BlockCipher):
     """
     Structure: Feistel Network
     Key size: 128
     Block size: 64
     """
 
+    KEY_SIZE   = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+
     def __init__(self, key: bytes):
         """
         Parameters:
             key (bytes): Bytes-like object to key the cipher.
         """
+        Primitive.__init__(self)
         self.key = Bytes.wrap(key)
         self.key_schedule = key_schedule
         self.round_func = round_func

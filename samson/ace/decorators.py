@@ -19,3 +19,10 @@ def define_exploit(consequence, requirements):
         RUNTIME.register_exploit(cls, consequence, requirements)
         return cls
     return real_decorator
+
+
+def register_primitive():
+    def real_decorator(cls):
+        RUNTIME.register_primitive(cls)
+        return cls
+    return real_decorator

@@ -1,15 +1,23 @@
 from samson.prngs.bitsliced_flfsr import BitslicedFLFSR
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import StreamCipher, Primitive
 from samson.utilities.bytes import Bytes
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
+from samson.ace.decorators import register_primitive
 
 # https://github.com/ttsou/airprobe/blob/master/A5.1/python/A51_Tables/a51.py
 # Implemented in big endian
-class A51(EncryptionAlg):
+@register_primitive()
+class A51(StreamCipher):
     """
     A5/1 stream cipher
 
     Used in GSM celluar encryption.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.LFSR]
+    USAGE_TYPE         = UsageType.CELLULAR
+    KEY_SIZE           = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=22))
 
     def __init__(self, key: bytes, frame_num: int):
         """
@@ -17,6 +25,8 @@ class A51(EncryptionAlg):
             key     (bytes): Key (64 bits).
             frame_num (int): Current frame number (22 bits).
         """
+        Primitive.__init__(self)
+
         self.key = key
         self.frame_num = frame_num
 

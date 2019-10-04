@@ -6,7 +6,9 @@ from samson.utilities.exceptions import NotInvertibleException
 from samson.utilities.general import shuffle
 from samson.math.general import is_power_of_two, is_prime, mod_inv
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import NumberTheoreticalAlg, Primitive
+from samson.core.metadata import SizeType, SizeSpec, SecurityProofType
+from samson.ace.decorators import register_primitive
 import math
 
 x = Symbol('x')
@@ -127,10 +129,14 @@ def invert_poly(f_poly: Polynomial, R_poly: Polynomial, p: int) -> Polynomial:
 
 
 # https://en.wikipedia.org/wiki/NTRUEncrypt
-class NTRU(EncryptionAlg):
+@register_primitive()
+class NTRU(NumberTheoreticalAlg):
     """
     Nth-degree TRUncated polynomial ring
     """
+
+    SECURITY_PROOF = SecurityProofType.SHORTEST_VECTOR
+    KEY_SIZE       = SizeSpec(size_type=SizeType.ARBITRARY, typical=[167, 251, 347, 503])
 
     def __init__(self, N: int, p: int=3, q: int=128, f_poly: Polynomial=None, g_poly: Polynomial=None):
         """
@@ -141,6 +147,7 @@ class NTRU(EncryptionAlg):
             f_poly (Polynomial): F-polynomial of private key.
             g_poly (Polynomial): G-polynomial of private key.
         """
+        Primitive.__init__(self)
         self.N = N
         self.p = p
         self.q = q

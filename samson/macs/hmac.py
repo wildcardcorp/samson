@@ -1,7 +1,9 @@
 from samson.utilities.bytes import Bytes
-from samson.core.mac import MAC
+from samson.core.primitives import MAC, Primitive
+from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/HMAC
+@register_primitive()
 class HMAC(MAC):
     """
     Hash-based message authentication code using a generic interface to hash functions.
@@ -13,6 +15,8 @@ class HMAC(MAC):
             key       (bytes): Bytes-like object to key the HMAC.
             hash_obj (object): Instantiated object with compatible hash interface.
         """
+        Primitive.__init__(self)
+
         self.key = Bytes.wrap(key)
         self.hash_obj = hash_obj
 

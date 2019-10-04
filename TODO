@@ -20,6 +20,8 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
 
+X   Crypto fingerprinting
+
 X   Timing attack framework
     OK  Build TimingOracle
     X   Time sync

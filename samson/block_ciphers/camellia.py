@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.ace.decorators import register_primitive
 
 MASK8   = 0xFF
 MASK32  = 0xFFFFFFFF
@@ -123,7 +124,8 @@ def ROTL128(x, amount):
 
 # https://tools.ietf.org/html/rfc3713
 # http://info.isl.ntt.co.jp/crypt/eng/camellia/dl/01espec.pdf
-class Camellia(EncryptionAlg):
+@register_primitive()
+class Camellia(BlockCipher):
     """
     Comparable to AES in Europe.
 
@@ -137,6 +139,7 @@ class Camellia(EncryptionAlg):
         Parameters:
             key (bytes): Bytes-like object to key the cipher.
         """
+        Primitive.__init__(self)
         key = Bytes.wrap(key)
 
         if not len(key) in [16, 24, 32]:

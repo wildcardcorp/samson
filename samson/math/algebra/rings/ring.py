@@ -91,6 +91,9 @@ class Ring(ABC):
 
 
     def mul_group(self) -> object:
+        """
+        Returns the `MultiplicativeGroup` of `self`.
+        """
         from samson.math.algebra.rings.multiplicative_group import MultiplicativeGroup
         return MultiplicativeGroup(self)
 
@@ -111,6 +114,33 @@ class Ring(ABC):
            RingElement: The `x`-th element.
         """
         raise NotImplementedError()
+
+
+    @property
+    def order(self) -> int:
+        raise NotImplementedError()
+
+
+    def find_gen(self) -> object:
+        """
+        Finds a generator of the `Ring`.
+
+        Returns:
+            RingElement: A generator element.
+        """
+        from samson.utilities.exceptions import SearchspaceExhaustedException
+        from samson.math.symbols import oo
+
+        if self.order == oo:
+            return self.one()
+
+        for i in range(1, self.order):
+            possible_gen = self[i]
+            if possible_gen * self.order == self.zero() and possible_gen.order == self.order:
+                return possible_gen
+
+        raise SearchspaceExhaustedException("Unable to find generator")
+
 
 
     def __truediv__(self, element):
@@ -246,6 +276,48 @@ class RingElement(ABC):
         return False
 
 
+    def cache_op(self, start: object, operation: FunctionType, size: int) -> object:
+        """
+        Caches a repeated `operation` in a `BitVectorCache`.
+
+        Parameters:
+            start (RingElement): Starting value.
+            operation    (func): Operation to cache.
+            size          (int): Size of cache.
+
+        Returns:
+            BitVectorCache: Cached vector.
+        """
+        from samson.math.bit_vector_cache import BitVectorCache
+        return BitVectorCache(self, start, operation, size)
+
+    
+    def cache_mul(self, size: int) -> object:
+        """
+        Caches scalar multiplication (i.e. repeated addition) in a `BitVectorCache`.
+
+        Parameters:
+            size (int): Size of cache.
+
+        Returns:
+            BitVectorCache: Cached vector.
+        """
+        return self.cache_op(self.ring.zero(), self.__class__.__add__, size)
+
+
+    def cache_pow(self, size: int) -> object:
+        """
+        Caches exponentiation (i.e. repeated multiplication) in a `BitVectorCache`.
+
+        Parameters:
+            size (int): Size of cache.
+
+        Returns:
+            BitVectorCache: Cached vector.
+        """
+        return self.cache_op(self.ring.one(), self.__class__.__mul__, size)
+
+
     def get_ground(self) -> object:
         """
         Gets the "ground" value (i.e. IntegerElement or Polynomial). Useful for traversing complex
@@ -270,3 +342,31 @@ class RingElement(ABC):
 
         else:
             return self.val.get_ground()
+
+
+    @property
+    def order(self) -> int:
+        """
+        The minimum number of times the element can be added to itself before reaching the additive identity.
+
+        Returns:
+            int: Order.
+        """
+        from samson.math.general import factor
+        from samson.math.symbols import oo
+        from itertools import combinations
+        from functools import reduce
+
+        if self.ring.order == oo:
+            return oo
+
+        expanded_factors = [1] + [item for fac, num in factor(self.ring.order).items() for item in [fac]*num]
+        all_orders = []
+
+        for product_size in range(1, len(expanded_factors)+1):
+            for combination in set(combinations(expanded_factors, product_size)):
+                product = reduce(int.__mul__, combination, 1)
+                if self*product == self.ring.zero():
+                    all_orders.append(product)
+
+        return min(all_orders)

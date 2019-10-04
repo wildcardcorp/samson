@@ -1,6 +1,8 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import Primitive
+from samson.ace.decorators import register_primitive
 import math
 
 # https://rosettacode.org/wiki/MD5/Implementation#Python
@@ -57,7 +59,7 @@ def compression_func(message, state):
     return Bytes(state_to_bytes(new_state))
 
 
-
+@register_primitive()
 class MD5(MerkleDamgardConstruction):
     """
     Popular but completely broken cryptographic hash function.
@@ -74,6 +76,8 @@ class MD5(MerkleDamgardConstruction):
             digest_size=16,
             endianness='little'
         )
+
+        Primitive.__init__(self)
 
 
     def __repr__(self):

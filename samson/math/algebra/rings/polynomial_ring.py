@@ -120,3 +120,13 @@ class PolynomialRing(Ring):
             return self(base_coeffs)
         else:
             return self([x])
+
+
+    def find_gen(self) -> object:
+        """
+        Finds a generator of the `Ring`.
+
+        Returns:
+            RingElement: A generator element.
+        """
+        return self.symbol

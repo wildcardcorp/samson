@@ -1,6 +1,8 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
+from samson.core.primitives import Primitive
+from samson.ace.decorators import register_primitive
 
 # http://cacr.uwaterloo.ca/hac/about/chap9.pdf
 RL = [
@@ -84,6 +86,7 @@ def COMPRESS(message, state):
     return sum([Bytes(state, 'little').zfill(4) for state in h])
 
 
+@register_primitive()
 class RIPEMD160(MerkleDamgardConstruction):
     """
     Stands for RACE Integrity Primitives Evaluation Message Digest (RIPEMD). While there exist other
@@ -101,6 +104,8 @@ class RIPEMD160(MerkleDamgardConstruction):
             digest_size=20,
             endianness='little'
         )
+
+        Primitive.__init__(self)
 
 
     def __repr__(self):

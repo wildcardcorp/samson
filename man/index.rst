@@ -34,6 +34,7 @@ TOP-LEVEL
 LOAD SUBCOMMANDS
 ----------------
 **-h** - shows the help menu
+
 **file** - file to execute using samson environment
 
 
@@ -61,7 +62,7 @@ PKI SUBCOMMANDS
 
 **--encoding-args [ENCODING_ARGS]** - arguments to pass into the encoding function
 
-**action** - action to perform (currently 'parse' or 'generate')
+**action** - action to perform (currently 'parse', 'generate', or 'info')
 
 **type** - PKI type (call **-h** for dynamic listing)
 

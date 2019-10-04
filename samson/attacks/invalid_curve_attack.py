@@ -53,6 +53,7 @@ class InvalidCurveAttack(object):
         total        = 1
 
         reached_card = False
+        cardinality  = self.curve.cardinality()
 
         if not invalid_curves:
             invalid_curves = []
@@ -81,7 +82,7 @@ class InvalidCurveAttack(object):
 
             # Request residues from crafted public keys
             for factor in RUNTIME.report_progress(set(factors) - factors_seen, desc='Sending malicious public keys', unit='factor'):
-                if total > self.curve.cardinality():
+                if total > cardinality:
                     reached_card = True
                     break
 
@@ -93,7 +94,7 @@ class InvalidCurveAttack(object):
                 # Generate a low-order point on the invalid curve
                 bad_pub = inv_curve.POINT_AT_INFINITY
 
-                while bad_pub == inv_curve.POINT_AT_INFINITY:
+                while bad_pub == inv_curve.POINT_AT_INFINITY or bad_pub == inv_curve.G:
                     point   = inv_curve.random()
                     bad_pub = point * (inv_curve.cardinality() // factor)
 
@@ -106,11 +107,12 @@ class InvalidCurveAttack(object):
 
         # We have to take into account the fact we can end up on the "negative" side of the field
         negations = [(residue, -residue) for residue in residues]
+        G_cache   = self.curve.G.cache_mul(cardinality.bit_length())
 
         # Just bruteforce the correct configuration based off of the public key
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
             n, _ = crt(residue_subset)
-            if int(n) * self.curve.G == public_key:
+            if G_cache * (int(n) % cardinality) == public_key:
                 break
 
         return n.val

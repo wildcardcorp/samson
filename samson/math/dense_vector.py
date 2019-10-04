@@ -23,11 +23,13 @@ class DenseVector(object):
         return DenseVector([-a for a in self.values])
 
     def __mul__(self, other: object) -> object:
-        if type(other) is int:
-            return DenseVector([a*other for a in self.values])
-
-        raise NotImplementedError("Only scalar multiplication implemented")
+        return DenseVector([a*other for a in self.values])
 
 
     def dot(self, other: object) -> object:
-        return sum([a*b for a,b in zip(self.values, other.values)])
+        if hasattr(self.values[0], 'ring'):
+            zero = self.values[0].ring.zero()
+        else:
+            zero = 0
+
+        return sum([a*b for a,b in zip(self.values, other.values)], zero)

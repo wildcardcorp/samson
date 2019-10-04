@@ -5,18 +5,19 @@ import unittest
 
 
 class DualECTestCase(unittest.TestCase):
-    def OPTIONAL_test_generate_backdoor(self):
-        for num_next_bytes in range(1, 3):
-            (P, Q, d) = DualEC.generate_backdoor(P256)
-            dual_ec = DualEC(P, Q, Bytes.random(8).int())
+    # TODO: This is too slow to run in testing! Need better performance
+    # def test_generate_backdoor(self):
+    #     for num_next_bytes in range(1, 3):
+    #         (P, Q, d) = DualEC.generate_backdoor(P256)
+    #         dual_ec = DualEC(P, Q, Bytes.random(8).int())
 
-            next_bytes = dual_ec.generate() + dual_ec.generate()[:num_next_bytes]
+    #         next_bytes = dual_ec.generate() + dual_ec.generate()[:num_next_bytes]
 
-            derived_dual_ecs = DualEC.derive_from_backdoor(P, Q, d, next_bytes)
-            expected_output = [dual_ec.generate() for _ in range(5)]
-            cracked_outputs = [[possible_crack.generate() for _ in range(5)] for possible_crack in derived_dual_ecs]
+    #         derived_dual_ecs = DualEC.derive_from_backdoor(P, Q, d, next_bytes)
+    #         expected_output  = [dual_ec.generate() for _ in range(5)]
+    #         cracked_outputs  = [[possible_crack.generate() for _ in range(5)] for possible_crack in derived_dual_ecs]
 
-            self.assertTrue(any([expected_output in cracked_outputs]))
+    #         self.assertTrue(any([expected_output in cracked_outputs]))
 
 
 

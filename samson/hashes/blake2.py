@@ -1,6 +1,9 @@
 from samson.utilities.manipulation import right_rotate
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha2 import H_512, H_256
+from samson.core.primitives import Hash, Primitive
+from samson.core.metadata import ConstructionType
+from samson.ace.decorators import register_primitive
 from copy import deepcopy
 
 SIGMA = [
@@ -17,11 +20,12 @@ SIGMA = [
 ]
 
 
-
-class BLAKE2(object):
+class BLAKE2(Hash):
     """
     Cryptographic hash function based on ChaCha.
     """
+
+    CONSTRUCTION_TYPES = [ConstructionType.HASH_ITERATIVE_FRAMEWORK]
 
     def __init__(self, key: bytes, desired_hash_len: int):
         """
@@ -29,14 +33,15 @@ class BLAKE2(object):
             key            (bytes): (Optional) Bytes-like object to key the hash.
             desired_hash_len (int): Desired output length.
         """
+        Primitive.__init__(self)
         self.key = key
         self.digest_size = desired_hash_len
-        self.block_size = self.BLOCK_SIZE
+        self.block_size = self.IMPL_BLOCK_SIZE
 
 
     def padding_func(self, message: bytes) -> bytes:
-        if len(message) % self.BLOCK_SIZE != 0 or len(message) == 0:
-            message = message + b'\x00' * (self.BLOCK_SIZE - (len(message) % self.BLOCK_SIZE))
+        if len(message) % self.IMPL_BLOCK_SIZE != 0 or len(message) == 0:
+            message = message + b'\x00' * (self.IMPL_BLOCK_SIZE - (len(message) % self.IMPL_BLOCK_SIZE))
         return message
 
 
@@ -92,7 +97,6 @@ class BLAKE2(object):
 
 
 
-
     def hash(self, message: bytes) -> Bytes:
         """
         Hashes the `message`.
@@ -106,10 +110,10 @@ class BLAKE2(object):
         message = Bytes(message, 'little')
         state = deepcopy(self.IV)
 
-        last_block_size = len(message) % self.BLOCK_SIZE
+        last_block_size = len(message) % self.IMPL_BLOCK_SIZE
 
         if last_block_size == 0 and len(message) > 0:
-            last_block_size = self.BLOCK_SIZE
+            last_block_size = self.IMPL_BLOCK_SIZE
 
         state[0] ^= (0x0101 << 16) + (len(self.key) << 8) + (self.digest_size)
 
@@ -119,11 +123,11 @@ class BLAKE2(object):
         padded_msg = self.padding_func(message)
         bytes_compressed = 0
 
-        msg_chunks = padded_msg.chunk(self.BLOCK_SIZE)
+        msg_chunks = padded_msg.chunk(self.IMPL_BLOCK_SIZE)
 
         for i, chunk in enumerate(msg_chunks):
             is_last_block = i == (len(msg_chunks) - 1)
-            bytes_compressed += last_block_size if is_last_block else self.BLOCK_SIZE
+            bytes_compressed += last_block_size if is_last_block else self.IMPL_BLOCK_SIZE
             state = self.compress(state, self.IV, chunk, bytes_compressed, is_last_block)
 
 
@@ -131,13 +135,12 @@ class BLAKE2(object):
 
 
 
-
-
+@register_primitive()
 class BLAKE2b(BLAKE2):
     WORD_SIZE = 64
     MASKBITS = 0xFFFFFFFFFFFFFFFF
     ROUNDS = 12
-    BLOCK_SIZE = 128
+    IMPL_BLOCK_SIZE = 128
     IV = H_512
     ROTATIONS = [32, 24, 16, 63]
 
@@ -157,11 +160,13 @@ class BLAKE2b(BLAKE2):
         return self.__repr__()
 
 
+
+@register_primitive()
 class BLAKE2s(BLAKE2):
     WORD_SIZE = 32
     MASKBITS = 0xFFFFFFFF
     ROUNDS = 10
-    BLOCK_SIZE = 64
+    IMPL_BLOCK_SIZE = 64
     IV = H_256
     ROTATIONS = [16, 12, 8, 7]
 

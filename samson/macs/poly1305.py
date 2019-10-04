@@ -1,7 +1,9 @@
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
-from samson.core.mac import MAC
+from samson.core.primitives import MAC, Primitive
+from samson.ace.decorators import register_primitive
 
+@register_primitive()
 class Poly1305(MAC):
     """
     Message authentication code using an underlying block cipher. The (r, nonce) combination MUST
@@ -18,9 +20,10 @@ class Poly1305(MAC):
             r      (bytes): Bytes-like polynomial.
             cipher (class): Instantiable class representing a block cipher.
         """
-        self.key = key
-        self.nonce = nonce
-        self.r = Bytes.wrap(r, byteorder='little').to_int()
+        Primitive.__init__(self)
+        self.key    = key
+        self.nonce  = nonce
+        self.r      = Bytes.wrap(r, byteorder='little').to_int()
         self.cipher = cipher
 
 

@@ -1,21 +1,30 @@
 from samson.block_ciphers.des import DES
 from samson.utilities.bytes import Bytes
-from samson.core.encryption_alg import EncryptionAlg
+from samson.core.primitives import BlockCipher, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
-class TDES(EncryptionAlg):
+@register_primitive()
+class TDES(BlockCipher):
     """
     3DES in EDE mode.
 
     Structure: Feistel Network
-    Key size: 64, 128, 192 bits (56, 112, 168 bits of security)
+    Key size: 64, 128, 192 bits (56, 80, 112 bits of security)
     Block size: 64 bits
     """
+
+    KEY_SIZE   = SizeSpec(size_type=SizeType.RANGE, sizes=[64, 128, 192], typical=[128, 192])
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+
 
     def __init__(self, key: bytes):
         """
         Parameters:
             key (bytes): Bytes-like object to key the cipher.
         """
+        Primitive.__init__(self)
+
         key = Bytes.wrap(key)
         if not len(key) in [8, 16, 24]:
             raise ValueError('`key` size must be in [8, 16, 24]')

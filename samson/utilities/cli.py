@@ -52,7 +52,7 @@ IPython {IPython.__version__}
     IPython.start_ipython(config=conf)
 
 
-from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3, Whirlpool
+from samson.hashes.all import MD4, MD5, BLAKE2b, BLAKE2s, Keccak, RIPEMD160, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3_224, SHA3_256, SHA3_384, SHA3_512, SHAKE128, SHAKE256, Whirlpool
 from samson.public_key.all import RSA, DSA, ECDSA, EdDSA
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448
@@ -71,12 +71,12 @@ HASHES = {
     'sha256': SHA256,
     'sha384': SHA384,
     'sha512': SHA512,
-    'sha3_224': SHA3.K224,
-    'sha3_256': SHA3.K256,
-    'sha3_384': SHA3.K384,
-    'sha3_512': SHA3.K512,
-    'shake128': SHA3.SHAKE128,
-    'shake256': SHA3.SHAKE256,
+    'sha3_224': SHA3_224,
+    'sha3_256': SHA3_256,
+    'sha3_384': SHA3_384,
+    'sha3_512': SHA3_512,
+    'shake128': SHAKE128,
+    'shake256': SHAKE256,
     'whirlpool': Whirlpool
 }
 

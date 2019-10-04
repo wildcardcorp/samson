@@ -1,9 +1,11 @@
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.utilities.bytes import Bytes
-from samson.math.general import mod_inv, random_int
-from samson.core.encryption_alg import EncryptionAlg
+from samson.math.general import mod_inv, random_int_between
+from samson.core.primitives import NumberTheoreticalAlg, Primitive
+from samson.ace.decorators import register_primitive
 
-class ElGamal(EncryptionAlg):
+@register_primitive()
+class ElGamal(NumberTheoreticalAlg):
     """
     ElGamal public key encryption
     """
@@ -15,21 +17,21 @@ class ElGamal(EncryptionAlg):
             p   (int): Prime modulus.
             key (int): Key.
         """
-        self.key = key or Bytes.random().int()
-        self.g = g
-        self.p = p
+        Primitive.__init__(self)
+
+        self.key = key or random_int_between(1, p)
+        self.g   = g
+        self.p   = p
         self.pub = pow(self.g, self.key, self.p)
 
 
     def __repr__(self):
         return f"<ElGamal: key={self.key}, g={self.g}, p={self.p}, pub={self.pub}>"
 
-
     def __str__(self):
         return self.__repr__()
 
 
-    # https://en.wikipedia.org/wiki/ElGamal_encryption
     def encrypt(self, plaintext: bytes, k: int=None) -> (int, int):
         """
         Encrypts `plaintext`.
@@ -40,10 +42,13 @@ class ElGamal(EncryptionAlg):
         
         Returns:
             (int, int): Formatted as (ephemeral key, ciphertext).
+        
+        References:
+            https://en.wikipedia.org/wiki/ElGamal_encryption
         """
-        K_e = k or max(1, random_int(self.p))
+        K_e = k or random_int_between(1, self.p)
         c_1 = pow(self.g, K_e, self.p)
-        s = pow(self.pub, K_e, self.p)
+        s   = pow(self.pub, K_e, self.p)
         plaintext = Bytes.wrap(plaintext)
         return c_1, (s * plaintext.int()) % self.p
 

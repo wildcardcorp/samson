@@ -835,6 +835,7 @@ def lll(in_basis: list, delta: float=0.75) -> object:
         https://github.com/orisano/olll/blob/master/olll.py
         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
     """
+    from samson.utilities.exceptions import CoercionException
     from samson.math.matrix import Matrix
     from samson.math.dense_vector import DenseVector
     from samson.math.algebra.fields.fraction_field import FractionField
@@ -866,7 +867,15 @@ def lll(in_basis: list, delta: float=0.75) -> object:
         for j in reversed(range(k)):
             mu_kj = mu(k, j)
             if abs(mu_kj) > 0.5:
-                basis[k] -= basis[j] * round(mu_kj)
+                scalar = round(mu_kj)
+
+                # Attempt coercion for ring-specific speed-ups
+                try:
+                    scalar = R(scalar)
+                except CoercionException:
+                    pass
+
+                basis[k] -= basis[j] * scalar
                 ortho = gram_schmidt(vecs_to_matrix(basis), False)
                 ortho = matrix_to_vecs(ortho)
 
@@ -959,6 +968,26 @@ def random_int(n: int) -> int:
         if attempt <= max_num:
             return attempt % n
 
+
+def random_int_between(a: int, b :int) -> int:
+    """
+    Finds a unbiased, uniformly-random integer between a and `b`-1 (i.e. "[a, b)").
+
+    Parameters:
+        a (int): Lower bound.
+        b (int): Upper bound.
+    
+    Returns:
+        int: Random integer.
+    
+    Example:
+        >>> from samson.math.general import random_int_between
+        >>> n = random_int_between(500, 1000)
+        >>> n >= 500 and n < 1000
+        True
+
+    """
+    return a + random_int(b - a)
 
 
 def find_prime(bits: int, ensure_halfway: bool=True) -> int:
@@ -1138,7 +1167,7 @@ def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, 
         >>> from samson.math.general import pollards_kangaroo
         >>> from samson.math.algebra.all import *
         >>> p = find_prime(2048) 
-        >>> g, x = 5, max(random_int(p), 1) 
+        >>> g, x = 5, random_int_between(1, p)
         >>> R = (ZZ/ZZ(p)).mul_group() 
         >>> g = R(g) 
         >>> y = g*x 
@@ -1632,7 +1661,7 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     if not bases:
         def generator():
             for _ in range(k):
-                yield max(2, random_int(n_1))
+                yield random_int_between(2, n_1)
 
         bases = generator()
 

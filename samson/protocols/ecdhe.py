@@ -2,8 +2,12 @@ from samson.math.algebra.curves.named import P256
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassPoint
 from samson.math.general import random_int
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KeyExchangeAlg, Primitive
+from samson.ace.decorators import register_primitive
 
-class ECDHE(object):
+
+@register_primitive()
+class ECDHE(KeyExchangeAlg):
     """
     Elliptical curve Diffie-Hellman (Ephemeral).
     """
@@ -14,6 +18,7 @@ class ECDHE(object):
             d              (int): Secret key.
             G (WeierstrassPoint): Generator point on an elliptical curve.
         """
+        Primitive.__init__(self)
         self.d   = d or random_int(G.ring.cardinality())
         self.G   = G
         self.pub = pub
