@@ -1,5 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import MAC, Primitive
+from samson.core.metadata import FrequencyType
 from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/HMAC
@@ -8,6 +9,8 @@ class HMAC(MAC):
     """
     Hash-based message authentication code using a generic interface to hash functions.
     """
+
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, key: bytes, hash_obj: object):
         """

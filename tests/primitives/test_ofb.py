@@ -7,7 +7,7 @@ import unittest
 class OFBTestCase(unittest.TestCase):
     def _run_test(self, key, iv, plaintext, expected_ciphertext):
         rij = Rijndael(key)
-        ofb = OFB(rij.encrypt, iv, block_size=16)
+        ofb = OFB(rij, iv)
         ciphertext = ofb.encrypt(plaintext)
 
         self.assertEqual(ciphertext, expected_ciphertext)

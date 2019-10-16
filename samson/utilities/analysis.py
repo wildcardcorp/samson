@@ -1,5 +1,5 @@
 from samson.encoding.general import bytes_to_bitstring
-from math import log, sqrt
+from math import log, sqrt, pi
 import operator
 import json
 import difflib
@@ -192,6 +192,24 @@ def birthday_attack_analysis(bits: int, probability: float) -> float:
     """
     return sqrt(2 * 2**bits * log(1/(1-probability)))
 
+
+EULER_MASCHERONI_CONSTANT = 0.577216
+def coupon_collector_analysis(n: int) -> (float, float):
+    """
+    Determines the average number of attempts to collect all `n` items from a pseudorandom function.
+
+    Paramters:
+        n (int): Number of items.
+    
+    Returns:
+        (float, float): Tuple formatted as (average_number, standard_deviation).
+    
+    References:
+        https://brilliant.org/wiki/coupon-collector-problem/
+    """
+    average_number     = n * (log(n) + EULER_MASCHERONI_CONSTANT) + 0.5
+    standard_deviation = sqrt((pi**2 * n**2) / 6 - n * (log(n) + EULER_MASCHERONI_CONSTANT) - 0.5)
+    return (average_number, standard_deviation)
 
 
 def ncr(n: int, r: int) -> int:

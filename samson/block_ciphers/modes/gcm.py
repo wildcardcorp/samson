@@ -1,6 +1,8 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
+from samson.ace.decorators import register_primitive
 
 # Reference
 # https://github.com/tomato42/tlslite-ng/blob/master/tlslite/utils/aesgcm.py
@@ -14,17 +16,22 @@ def reverse_bits(int32: int) -> int:
     return int(bin(int32)[2:].zfill(4)[::-1], 2)
 
 
-class GCM(object):
+@register_primitive()
+class GCM(StreamingBlockCipherMode):
     """Galois counter mode (GCM) block cipher mode"""
 
-    def __init__(self, encryptor: FunctionType):
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
+
+    def __init__(self, cipher: EncryptionAlg):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
         """
-        self.encryptor = encryptor
-        self.H   = self.encryptor(b'\x00' * 16).int()
-        self.ctr = CTR(self.encryptor, b'\x00' * 8, 16)
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.H      = self.cipher.encrypt(b'\x00' * 16).int()
+        self.ctr    = CTR(self.cipher, b'\x00' * 8)
 
         # Precompute the product table
         self.product_table = [0] * 16
@@ -36,7 +43,7 @@ class GCM(object):
 
 
     def __repr__(self):
-        return f"<GCM: encryptor={self.encryptor}, H={self.H}, ctr={self.ctr}>"
+        return f"<GCM: cipher={self.cipher}, H={self.H}, ctr={self.ctr}>"
 
     def __str__(self):
         return self.__repr__()

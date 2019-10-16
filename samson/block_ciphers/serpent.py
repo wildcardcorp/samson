@@ -2,7 +2,7 @@ from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bitstring import Bitstring
 from samson.core.primitives import BlockCipher, Primitive
-from samson.core.metadata import ConstructionType, SizeType, SizeSpec
+from samson.core.metadata import ConstructionType
 from samson.ace.decorators import register_primitive
 
 # https://www.cl.cam.ac.uk/~rja14/Papers/serpent.pdf
@@ -316,7 +316,7 @@ class Serpent(BlockCipher):
             key (bytes): Bytes-like object to key the cipher.
         """
         Primitive.__init__(self)
-    
+
         self.key = Bytes(key, byteorder='big')
         self._stretch_key()
         self.key = Bytes(self.key.int(), 'little').zfill(32)

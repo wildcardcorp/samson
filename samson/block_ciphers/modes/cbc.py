@@ -1,31 +1,33 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.padding.pkcs7 import PKCS7
-from samson.ace.decorators import has_exploit
+from samson.ace.decorators import has_exploit, register_primitive
 from samson.attacks.cbc_padding_oracle_attack import CBCPaddingOracleAttack
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 
 @has_exploit(CBCPaddingOracleAttack)
-class CBC(object):
+@register_primitive()
+class CBC(BlockCipherMode):
     """Cipherblock chaining block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, iv: bytes, block_size: int):
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.IV, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
+
+    def __init__(self, cipher: EncryptionAlg, iv: bytes):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
-            iv       (bytes): Bytes-like initialization vector.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Bytes-like initialization vector.
         """
-        self.encryptor = encryptor
-        self.decryptor = decryptor
-        self.iv = iv
-        self.block_size = block_size
-        self.padder = PKCS7(block_size)
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.iv     = iv
+        self.padder = PKCS7(self.cipher.block_size)
 
 
     def __repr__(self):
-        return f"<CBC: encryptor={self.encryptor}, decryptor={self.decryptor}, iv={self.iv}, block_size={self.block_size}>"
+        return f"<CBC: cipher={self.cipher}, iv={self.iv}>"
 
     def __str__(self):
         return self.__repr__()
@@ -44,19 +46,18 @@ class CBC(object):
         """
         plaintext = Bytes.wrap(plaintext)
 
-
         if pad:
             plaintext = self.padder.pad(plaintext)
 
 
-        if len(plaintext) % self.block_size != 0:
+        if len(plaintext) % self.cipher.block_size != 0:
             raise Exception("Plaintext is not a multiple of the block size")
 
         ciphertext = Bytes(b'')
         last_block = self.iv
 
-        for block in get_blocks(plaintext, self.block_size):
-            enc_block = self.encryptor(bytes(last_block ^ block))
+        for block in get_blocks(plaintext, self.cipher.block_size):
+            enc_block = self.cipher.encrypt(bytes(last_block ^ block))
             ciphertext += enc_block
             last_block = enc_block
 
@@ -77,12 +78,12 @@ class CBC(object):
         plaintext = b''
         ciphertext = Bytes.wrap(ciphertext)
 
-        if len(ciphertext) % self.block_size != 0:
+        if len(ciphertext) % self.cipher.block_size != 0:
             raise Exception("Ciphertext is not a multiple of the block size")
 
         last_block = self.iv
-        for block in get_blocks(ciphertext, self.block_size):
-            enc_block = last_block ^ Bytes.wrap(self.decryptor(block))
+        for block in get_blocks(ciphertext, self.cipher.block_size):
+            enc_block = last_block ^ Bytes.wrap(self.cipher.decrypt(block))
             plaintext += enc_block
             last_block = block
 

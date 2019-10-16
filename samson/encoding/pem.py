@@ -62,7 +62,7 @@ def create_pem_cbc_obj(passphrase: bytes, algo: str, iv: bytes=None) -> CBC:
 
     key = derive_pem_key(passphrase, iv[:8], key_size)
     cipher_obj = cipher(key=key)
-    cbc = CBC(cipher_obj.encrypt, cipher_obj.decrypt, iv[:cipher_obj.block_size], cipher_obj.block_size)
+    cbc = CBC(cipher_obj, iv[:cipher_obj.block_size])
     return cbc
 
 

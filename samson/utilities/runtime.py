@@ -153,7 +153,7 @@ class RuntimeConfiguration(object):
 
     def register_primitive(self, cls):
         self.primitives.append(cls)
-    
+
 
     def search_primitives(self, filter_func: FunctionType=lambda primitive: True):
         return [primitive for primitive in self.primitives if filter_func(primitive)]
@@ -176,7 +176,7 @@ class RuntimeConfiguration(object):
         table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
         print(table)
 
-    
+
 
 RUNTIME = RuntimeConfiguration(use_color=(os.environ.get('USE_COLOR', 'True') == 'True'))
 register_knowns()

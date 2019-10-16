@@ -291,7 +291,7 @@ class RingElement(ABC):
         from samson.math.bit_vector_cache import BitVectorCache
         return BitVectorCache(self, start, operation, size)
 
-    
+
     def cache_mul(self, size: int) -> object:
         """
         Caches scalar multiplication (i.e. repeated addition) in a `BitVectorCache`.

@@ -2,7 +2,7 @@ from samson.constructions.feistel_network import FeistelNetwork
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import int_to_bytes, bytes_to_bitstring
 from samson.core.primitives import BlockCipher, Primitive
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import SizeType, SizeSpec, UsageType
 from samson.ace.decorators import register_primitive
 
 # https://asecuritysite.com/encryption/kasumi
@@ -138,6 +138,7 @@ class KASUMI(FeistelNetwork, BlockCipher):
 
     KEY_SIZE   = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
     BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    USAGE_TYPE = UsageType.CELLULAR
 
     def __init__(self, key: bytes):
         """

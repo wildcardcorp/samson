@@ -41,7 +41,7 @@ class BitVectorCache(object):
         for _ in range(self.size):
             vec.append(element)
             element = op(element, element)
-        
+
         self.cache = vec
 
 

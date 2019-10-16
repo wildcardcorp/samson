@@ -1,10 +1,11 @@
-import struct
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.hashes.md5 import state_to_bytes, bytes_to_state
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import Primitive
+from samson.core.metadata import SizeSpec, SizeType
 from samson.ace.decorators import register_primitive
+import struct
 
 
 def F(x,y,z):
@@ -26,8 +27,7 @@ iv = [
 
 
 def compression_func(message, state):
-    X = list( struct.unpack("<16I", message) + (None,) * (80-16) )
-    #h = [x for x in bytes_to_state(state)]
+    X = list(struct.unpack("<16I", message) + (None,) * (80-16))
     h = bytes_to_state(state)
     last_state = [x for x in h]
 
@@ -66,6 +66,8 @@ class MD4(MerkleDamgardConstruction):
     """
     Obsolete cryptographic hash function and predecessor to MD5.
     """
+
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
 
     def __init__(self, initial_state: bytes=state_to_bytes(iv)):
         """

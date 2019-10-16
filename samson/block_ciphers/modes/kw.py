@@ -1,27 +1,28 @@
-from types import FunctionType
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.ace.decorators import register_primitive
 
-class KW(object):
+@register_primitive()
+class KW(BlockCipherMode):
     """Key wrap cipher mode."""
 
+    # TODO: Err, how does this fit into PSL? These are already defined.
     RFC3394_IV = Bytes(0xA6A6A6A6A6A6A6A6)
     RFC5649_IV = Bytes(0xA65959A6)
 
-    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, iv: bytes=RFC3394_IV, block_size: int=16):
+    def __init__(self, cipher: EncryptionAlg, iv: bytes=RFC3394_IV):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
-            iv       (bytes): Bytes-like initialization vector.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Bytes-like initialization vector.
         """
-        self.encryptor = encryptor
-        self.decryptor = decryptor
-        self.iv = iv
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.iv     = iv
 
 
     def __repr__(self):
-        return f"<KW: encryptor={self.encryptor}, iv={self.iv}>"
+        return f"<KW: cipher={self.cipher}, iv={self.iv}>"
 
     def __str__(self):
         return self.__repr__()
@@ -53,11 +54,11 @@ class KW(object):
 
         # RFC5649 specific
         if n == 1:
-            return self.encryptor(iv + plaintext)
+            return self.cipher.encrypt(iv + plaintext)
 
         for j in range(6):
             for i in range(n):
-                ct = self.encryptor(A + R[i])
+                ct = self.cipher.encrypt(A + R[i])
                 A, R[i] = ct[:8], ct[8:]
                 A ^= Bytes(n * j + i + 1).zfill(len(A))
 
@@ -84,13 +85,13 @@ class KW(object):
         n = len(R)
 
         if n == 1:
-            pt = self.decryptor(ciphertext)
+            pt = self.cipher.decrypt(ciphertext)
             A, plaintext = pt[:8], pt[8:]
         else:
             for j in reversed(range(6)):
                 for i in reversed(range(n)):
                     A ^= Bytes(n * j + i + 1).zfill(len(A))
-                    ct = self.decryptor(A + R[i])
+                    ct = self.cipher.decrypt(A + R[i])
                     A, R[i] = ct[:8], ct[8:]
 
             plaintext = b''.join(R)

@@ -1,7 +1,7 @@
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import BlockCipher, Primitive
-from samson.core.metadata import SizeType, SizeSpec, ConstructionType
+from samson.core.metadata import SizeType, SizeSpec, ConstructionType, FrequencyType
 from samson.ace.decorators import register_primitive
 
 def initialize_sbox():
@@ -77,6 +77,7 @@ class Rijndael(BlockCipher):
     KEY_SIZE           = SizeSpec(size_type=SizeType.RANGE, sizes=[128, 160, 192, 224, 256], typical=[128, 256])
     BLOCK_SIZE         = SizeSpec(size_type=SizeType.RANGE, sizes=[128, 160, 192, 224, 256], typical=[128])
     CONSTRUCTION_TYPES = [ConstructionType.SUBSTITUTION_PERMUTATION_NETWORK]
+    USAGE_FREQUENCY    = FrequencyType.PROLIFIC
 
     def __init__(self, key: bytes, block_size: int=16):
         """
@@ -85,7 +86,7 @@ class Rijndael(BlockCipher):
             block_size (int): The desired block size in bytes.
         """
         Primitive.__init__(self)
-    
+
         key = Bytes.wrap(key)
         if not (len(key)) in range(16, 33, 4):
             raise Exception("Invalid key size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")

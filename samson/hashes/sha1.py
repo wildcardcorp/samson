@@ -4,6 +4,7 @@ from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.core.primitives import Primitive
+from samson.core.metadata import SizeSpec, SizeType, FrequencyType
 from samson.ace.decorators import register_primitive
 
 
@@ -76,6 +77,9 @@ class SHA1(MerkleDamgardConstruction):
     Cryptographic hash function considered to be broken but is still widely used.
     """
 
+    OUTPUT_SIZE     = SizeSpec(size_type=SizeType.SINGLE, sizes=160)
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
+
     def __init__(self, initial_state: bytes=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3D2E1F0])):
         """
         Parameters:
@@ -89,7 +93,7 @@ class SHA1(MerkleDamgardConstruction):
             compression_func=compression_func,
             digest_size=20,
         )
-        
+
         Primitive.__init__(self)
 
 

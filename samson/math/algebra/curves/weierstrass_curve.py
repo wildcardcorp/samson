@@ -76,8 +76,8 @@ class WeierstrassPoint(RingElement):
 
     def __neg__(self) -> object:
         return WeierstrassPoint(self.x, -self.y, self.curve)
-    
-    
+
+
     @left_expression_intercept
     def __add__(self, P2: object) -> object:
         if self == self.curve.POINT_AT_INFINITY:

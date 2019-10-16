@@ -1,8 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
-from samson.math.general import totient, factor
-from samson.utilities.exceptions import SearchspaceExhaustedException
-from itertools import combinations
-from functools import reduce
+from samson.math.general import totient
 
 class MultiplicativeGroupElement(RingElement):
     """

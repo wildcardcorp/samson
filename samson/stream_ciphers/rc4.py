@@ -1,35 +1,31 @@
 from samson.utilities.bytes import Bytes
-from samson.core.primitives import EncryptionAlg
+from samson.core.primitives import StreamCipher, Primitive
 from samson.ace.decorators import has_exploit
 from samson.ace.exploit import BitlevelMalleability
 from samson.attacks.rc4_prepend_attack import RC4PrependAttack
-from samson.core.metadata import PrimitiveType, SecurityProofType, CipherType, SymmetryType, UsageType, SizeType, EphemeralType
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 @has_exploit(RC4PrependAttack)
 @has_exploit(BitlevelMalleability)
 @register_primitive()
-class RC4(EncryptionAlg):
+class RC4(StreamCipher):
     """
     Rivest Cipher 4 (RC4)
 
     Broken stream ciphers with large, initial-keystream biases.
     """
 
-    PRIMITIVE_TYPE      = PrimitiveType.CIPHER
-    CIPHER_TYPE         = CipherType.STREAM_CIPHER
-    SYMMETRY_TYPE       = SymmetryType.SYMMETRIC
-    CONSTRUCTION_TYPES  = []
-    SECURITY_PROOF      = SecurityProofType.NONE
-    USAGE_TYPE          = UsageType.GENERAL
-    KEY_SIZE_TYPE       = SizeType.RANGE
-    TYPICAL_KEY_SIZES   = range(40, 2041)
+    KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=range(40, 2041))
+    USAGE_FREQUENCY = FrequencyType.UNUSUAL
+
 
     def __init__(self, key: bytes):
         """
         Parameters:
             key (bytes): Key (40-2040 bits).
         """
+        Primitive.__init__(self)
         self.key = key
         self.S = self.key_schedule(key)
         self.i = 0

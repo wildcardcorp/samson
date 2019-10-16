@@ -20,7 +20,7 @@ class CCMTestCase(unittest.TestCase):
             data = data.zfill(len(data) + 1)
             plaintext = Bytes(plaintext)
 
-            ccm = CCM(key, Rijndael, size)
+            ccm = CCM(Rijndael(key), size)
             ciphertext = ccm.encrypt(nonce, plaintext, data)
             self.assertEqual(ciphertext, Bytes(expected_ciphertext))
             self.assertEqual(ccm.decrypt(nonce, ciphertext, data), plaintext)

@@ -1,25 +1,28 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
-class CFB(object):
+@register_primitive()
+class CFB(BlockCipherMode):
     """Cipher feedback block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, iv: bytes, block_size: int):
+    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.IV, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+
+    def __init__(self, cipher: EncryptionAlg, iv: bytes):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            iv       (bytes): Bytes-like initialization vector.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Bytes-like initialization vector.
         """
-        self.encryptor = encryptor
-        self.iv = iv
-        self.block_size = block_size
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.iv     = iv
 
 
     def __repr__(self):
-        return f"<CFB: encryptor={self.encryptor}, iv={self.iv}, block_size={self.block_size}>"
-
+        return f"<CFB: cipher={self.cipher}, iv={self.iv}>"
 
     def __str__(self):
         return self.__repr__()
@@ -37,14 +40,14 @@ class CFB(object):
             Bytes: Resulting ciphertext.
         """
         ciphertext = b''
-        plaintext = Bytes.wrap(plaintext)
+        plaintext  = Bytes.wrap(plaintext)
 
         last_block = self.iv
 
-        for block in get_blocks(plaintext, self.block_size, allow_partials=True):
-            enc_block = self.encryptor(bytes(last_block))[:len(block)] ^ block
+        for block in get_blocks(plaintext, self.cipher.block_size, allow_partials=True):
+            enc_block   = self.cipher.encrypt(bytes(last_block))[:len(block)] ^ block
             ciphertext += enc_block
-            last_block = enc_block
+            last_block  = enc_block
 
         return ciphertext
 
@@ -60,13 +63,13 @@ class CFB(object):
         Returns:
             Bytes: Resulting plaintext.
         """
-        plaintext = b''
+        plaintext  = b''
         ciphertext = Bytes.wrap(ciphertext)
 
         last_block = self.iv
 
-        for block in get_blocks(ciphertext, self.block_size, allow_partials=True):
-            enc_block = self.encryptor(bytes(last_block))[:len(block)] ^ block
+        for block in get_blocks(ciphertext, self.cipher.block_size, allow_partials=True):
+            enc_block  = self.cipher.encrypt(bytes(last_block))[:len(block)] ^ block
             plaintext += enc_block
             last_block = block
 

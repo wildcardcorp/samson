@@ -3,6 +3,7 @@ from samson.math.algebra.curves.weierstrass_curve import WeierstrassPoint
 from samson.math.general import random_int
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import KeyExchangeAlg, Primitive
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 
@@ -11,6 +12,9 @@ class ECDHE(KeyExchangeAlg):
     """
     Elliptical curve Diffie-Hellman (Ephemeral).
     """
+
+    KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[192, 224, 256, 384, 521])
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, d: int=None, pub: WeierstrassPoint=None, G: WeierstrassPoint=P256.G):
         """

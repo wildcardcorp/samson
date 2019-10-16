@@ -52,7 +52,7 @@ class DocExample(object):
     def __init__(self, code: str, result: str):
         self.code   = code
         self.result = result
-    
+
     def load(self):
         from IPython import get_ipython
         get_ipython().set_next_input(self.code)

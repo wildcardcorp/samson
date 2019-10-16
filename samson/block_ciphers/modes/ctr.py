@@ -1,27 +1,32 @@
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
+from samson.ace.decorators import register_primitive
 from math import ceil
-from types import FunctionType
 
-
-class CTR(object):
+@register_primitive()
+class CTR(StreamingBlockCipherMode):
     """Counter block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, nonce: bytes, block_size: int):
+    # TODO: This nonce is a RANGE that is DEPENDENT on BLOCK_SIZE
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
+
+    def __init__(self, cipher: EncryptionAlg, nonce: bytes):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            nonce    (bytes): Bytes-like nonce.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            nonce          (bytes): Bytes-like nonce.
         """
-        self.encryptor = encryptor
-        self.nonce = Bytes.wrap(nonce)
-        self.block_size = block_size
-        self.counter = 0
+        Primitive.__init__(self)
+        self.cipher    = cipher
+        self.nonce     = Bytes.wrap(nonce)
+        self.counter   = 0
         self.byteorder = self.nonce.byteorder
 
 
     def __repr__(self):
-        return f"<CTR: encryptor={self.encryptor}, nonce={self.nonce}, counter={self.counter}, block_size={self.block_size}, byteorder={self.byteorder}>"
+        return f"<CTR: cipher={self.cipher}, nonce={self.nonce}, counter={self.counter}, byteorder={self.byteorder}>"
 
     def __str__(self):
         return self.__repr__()
@@ -41,9 +46,9 @@ class CTR(object):
         keystream = Bytes(b'')
         plaintext = Bytes.wrap(plaintext)
 
-        num_blocks = ceil(len(plaintext) / self.block_size)
+        num_blocks = ceil(len(plaintext) / self.cipher.block_size)
         for _ in range(num_blocks):
-            keystream += self.encryptor(self.nonce + self.counter.to_bytes(self.block_size - len(self.nonce), self.byteorder))
+            keystream += self.cipher.encrypt(self.nonce + self.counter.to_bytes(self.cipher.block_size - len(self.nonce), self.byteorder))
             self.counter += 1
 
         return keystream[:len(plaintext)] ^ plaintext

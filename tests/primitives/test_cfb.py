@@ -7,7 +7,7 @@ import unittest
 class CFBTestCase(unittest.TestCase):
     def _run_test(self, key, iv, plaintext, expected_ciphertext):
         rij = Rijndael(key)
-        cfb = CFB(rij.encrypt, iv, block_size=16)
+        cfb = CFB(rij, iv)
         ciphertext = cfb.encrypt(plaintext)
 
         self.assertEqual(ciphertext, expected_ciphertext)

@@ -2,7 +2,7 @@ from samson.constructions.merkle_damgard_construction import MerkleDamgardConstr
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import right_rotate, get_blocks
 from samson.core.primitives import Primitive
-from samson.core.metadata import ConstructionType
+from samson.core.metadata import ConstructionType, SizeSpec, SizeType, FrequencyType
 from samson.ace.decorators import register_primitive
 import math
 
@@ -52,6 +52,7 @@ class SHA2(MerkleDamgardConstruction):
     """
 
     CONSTRUCTION_TYPES = [ConstructionType.MERKLE_DAMGARD, ConstructionType.DAVIES_MEYER]
+    USAGE_FREQUENCY    = FrequencyType.PROLIFIC
 
     def __init__(self, initial_state: list, digest_size: int, state_size: int, block_size: int, rounds: int, rot: list, k: list):
         """
@@ -166,6 +167,9 @@ class SHA2(MerkleDamgardConstruction):
 
 @register_primitive()
 class SHA224(SHA2):
+
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=224)
+
     def __init__(self, h: list=None):
         """
         Parameters:
@@ -184,6 +188,9 @@ class SHA224(SHA2):
 
 @register_primitive()
 class SHA256(SHA2):
+
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=256)
+
     def __init__(self, h: list=None):
         """
         Parameters:
@@ -202,6 +209,9 @@ class SHA256(SHA2):
 
 @register_primitive()
 class SHA384(SHA2):
+
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=384)
+
     def __init__(self, h: list=None):
         """
         Parameters:
@@ -220,6 +230,9 @@ class SHA384(SHA2):
 
 @register_primitive()
 class SHA512(SHA2):
+
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.RANGE, sizes=range(513), typical=[512])
+
     def __init__(self, h: list=None, trunc: int=None):
         """
         Parameters:

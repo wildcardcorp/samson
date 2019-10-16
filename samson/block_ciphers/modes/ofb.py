@@ -1,26 +1,30 @@
 from samson.block_ciphers.modes.cbc import CBC
-from math import ceil
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 from samson.utilities.bytes import Bytes
+from math import ceil
 
-class OFB(object):
+@register_primitive()
+class OFB(StreamingBlockCipherMode):
     """Output feedback block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, iv: bytes, block_size: int):
+    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+
+    def __init__(self, cipher: EncryptionAlg, iv: bytes):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            iv       (bytes): Bytes-like initialization vector.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Bytes-like initialization vector.
         """
-        self.encryptor = encryptor
-        self.iv = iv
-        self.block_size = block_size
-        self.cbc = CBC(encryptor, None, iv, block_size)
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.iv     = iv
+        self.cbc    = CBC(cipher, iv)
 
 
     def __repr__(self):
-        return f"<OFB: encryptor={self.encryptor}, iv={self.iv}, block_size={self.block_size}>"
+        return f"<OFB: cipher={self.cipher}, iv={self.iv}>"
 
     def __str__(self):
         return self.__repr__()
@@ -36,10 +40,10 @@ class OFB(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext = Bytes.wrap(plaintext)
+        plaintext  = Bytes.wrap(plaintext)
 
-        num_blocks = ceil(len(plaintext) / self.block_size)
-        keystream = self.cbc.encrypt(b'\x00' * self.block_size * num_blocks, False)
+        num_blocks = ceil(len(plaintext) / self.cipher.block_size)
+        keystream  = self.cbc.encrypt(b'\x00' * self.cipher.block_size * num_blocks, False)
 
         return keystream[:len(plaintext)] ^ plaintext
 

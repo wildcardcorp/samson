@@ -1,6 +1,7 @@
 from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import MAC, Primitive
+from samson.core.metadata import FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -11,6 +12,7 @@ class Poly1305(MAC):
     """
 
     P1305 = (1 << 130) - 5
+    USAGE_FREQUENCY = FrequencyType.NORMAL
 
     def __init__(self, key: bytes, nonce: bytes, r: bytes, cipher=Rijndael):
         """

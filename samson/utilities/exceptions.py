@@ -12,7 +12,11 @@ class CoercionException(Exception):
     pass
 
 
-class InvalidPaddingException(Exception):
+class OracleException(Exception):
+    pass
+
+
+class InvalidPaddingException(OracleException):
     pass
 
 

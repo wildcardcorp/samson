@@ -1,27 +1,25 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.padding.pkcs7 import PKCS7
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.ace.decorators import register_primitive
 
-
-class ECB(object):
+@register_primitive()
+class ECB(BlockCipherMode):
     """Electronic codebook block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, block_size: int):
+    def __init__(self, cipher: EncryptionAlg):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
         """
-        self.encryptor = encryptor
-        self.decryptor = decryptor
-        self.block_size = block_size
-        self.padder = PKCS7(block_size)
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.padder = PKCS7(self.cipher.block_size)
 
 
     def __repr__(self):
-        return f"<ECB: encryptor={self.encryptor}, decryptor={self.decryptor}, block_size={self.block_size}>"
+        return f"<ECB: cipher={self.cipher}>"
 
     def __str__(self):
         return self.__repr__()
@@ -44,8 +42,8 @@ class ECB(object):
             plaintext = self.padder.pad(plaintext)
 
         ciphertext = Bytes(b'')
-        for block in get_blocks(plaintext, self.block_size):
-            ciphertext += self.encryptor(block)
+        for block in get_blocks(plaintext, self.cipher.block_size):
+            ciphertext += self.cipher.encrypt(block)
 
         return ciphertext
 
@@ -65,8 +63,8 @@ class ECB(object):
         ciphertext = Bytes.wrap(ciphertext)
 
         plaintext = Bytes(b'')
-        for block in get_blocks(ciphertext, self.block_size):
-            plaintext += self.decryptor(block)
+        for block in get_blocks(ciphertext, self.cipher.block_size):
+            plaintext += self.cipher.decrypt(block)
 
         if unpad:
             plaintext = self.padder.unpad(plaintext)

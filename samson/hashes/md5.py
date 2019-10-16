@@ -2,6 +2,7 @@ from samson.constructions.merkle_damgard_construction import MerkleDamgardConstr
 from samson.utilities.manipulation import left_rotate
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import Primitive
+from samson.core.metadata import SizeSpec, SizeType, FrequencyType
 from samson.ace.decorators import register_primitive
 import math
 
@@ -64,6 +65,9 @@ class MD5(MerkleDamgardConstruction):
     """
     Popular but completely broken cryptographic hash function.
     """
+
+    OUTPUT_SIZE     = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, initial_state: bytes=state_to_bytes([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476])):
         """

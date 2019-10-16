@@ -15,7 +15,7 @@ from samson.encoding.general import PKIEncoding
 from samson.utilities.bytes import Bytes
 from samson.core.encodable_pki import EncodablePKI
 from samson.core.primitives import Primitive, NumberTheoreticalAlg
-from samson.core.metadata import SecurityProofType
+from samson.core.metadata import SecurityProofType, FrequencyType
 from samson.ace.decorators import creates_constraint, register_primitive
 from samson.ace.constraints import RSAConstraint
 
@@ -46,7 +46,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
     X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509RSASigningAlgorithms.sha256WithRSAEncryption
 
-    SECURITY_PROOF = SecurityProofType.INTEGER_FACTORIZATION
+    SECURITY_PROOF  = SecurityProofType.INTEGER_FACTORIZATION
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, bits: int, p: int=None, q: int=None, e: int=65537):
         """

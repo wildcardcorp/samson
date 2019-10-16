@@ -3,7 +3,7 @@ from samson.math.algebra.curves.named import Curve25519
 from samson.math.general import random_int_between
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import KeyExchangeAlg, Primitive
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -12,7 +12,8 @@ class DH25519(KeyExchangeAlg):
     Elliptical curve Diffie-Hellman using Montgomery curves.
     """
 
-    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[255, 448])
+    KEY_SIZE        = SizeSpec(size_type=SizeType.ARBITRARY, typical=[255, 448])
+    USAGE_FREQUENCY = FrequencyType.OFTEN
 
     def __init__(self, d: int=None, pub: int=None, base: int=None, curve: MontgomeryCurve=Curve25519):
         """

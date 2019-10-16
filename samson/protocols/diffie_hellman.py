@@ -1,12 +1,13 @@
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import pohlig_hellman, random_int_between
-from samson.core.encodable_pki import EncodablePKI
 from samson.encoding.general import PKIEncoding
 from samson.encoding.pkcs1.pkcs1_diffie_hellman_parameters import PKCS1DiffieHellmanParameters
 from samson.encoding.pkcs8.pkcs8_diffie_hellman_private_key import PKCS8DiffieHellmanPrivateKey
 from samson.encoding.x509.x509_diffie_hellman_public_key import X509DiffieHellmanPublicKey
 from samson.encoding.x509.x509_diffie_hellman_certificate import X509DiffieHellmanCertificate
 from samson.core.primitives import KeyExchangeAlg, Primitive
+from samson.core.encodable_pki import EncodablePKI
+from samson.core.metadata import FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -24,6 +25,8 @@ class DiffieHellman(KeyExchangeAlg, EncodablePKI):
         PKIEncoding.X509: X509DiffieHellmanPublicKey,
         PKIEncoding.X509_CERT: X509DiffieHellmanCertificate,
     }
+
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
 
     # https://www.ietf.org/rfc/rfc3526.txt

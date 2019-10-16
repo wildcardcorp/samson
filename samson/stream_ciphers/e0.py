@@ -1,9 +1,9 @@
 from samson.prngs.flfsr import FLFSR
 from samson.utilities.bytes import Bytes
-from samson.core.primitives import EncryptionAlg
+from samson.core.primitives import StreamCipher, Primitive
 from samson.math.symbols import Symbol
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.core.metadata import PrimitiveType, SecurityProofType, CipherType, SymmetryType, ConstructionType, UsageType, SizeType
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
 from samson.ace.decorators import register_primitive
 
 FSM_MATRIX = [
@@ -48,22 +48,17 @@ E0_CHUNK = 5120
 POLY_SIZES = [25, 31, 33, 39]
 
 @register_primitive()
-class E0(EncryptionAlg):
+class E0(StreamCipher):
     """
     E0 stream cipher
 
     Used in Bluetooth.
     """
 
-    PRIMITIVE_TYPE     = PrimitiveType.CIPHER
-    CIPHER_TYPE        = CipherType.STREAM_CIPHER
-    SYMMETRY_TYPE      = SymmetryType.SYMMETRIC
     CONSTRUCTION_TYPES = [ConstructionType.LFSR]
-    SECURITY_PROOF     = SecurityProofType.NONE
     USAGE_TYPE         = UsageType.WIRELESS
-    KEY_SIZE_TYPE      = SizeType.SINGLE
-    KEY_SIZE           = 128
-    #EPHEMERAL_TYPE     = EphemeralType.NONCE
+    KEY_SIZE           = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
 
     def __init__(self, kc: list, addr: list, master_clk: list):
         """
@@ -72,6 +67,7 @@ class E0(EncryptionAlg):
             addr       (list): Hardware address.
             master_clk (list): Master clock values.
         """
+        Primitive.__init__(self)
         x = Symbol('x')
         _ = (ZZ/ZZ(2))[x]
         self.lfsrs = [

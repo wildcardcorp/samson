@@ -32,7 +32,7 @@ class GCMTestCase(unittest.TestCase):
             key_bytes, nonce, plaintext, expected_ciphertext, data, expected_tag = [codecs.decode(item.encode('utf-8'), 'hex_codec') for item in [key, nonce, plaintext, ciphertext, data, tag]]
 
             key = Bytes(key_bytes).zfill(len(key_bytes))
-            gcm = GCM(Rijndael(key).encrypt)
+            gcm = GCM(Rijndael(key))
             authed_ct = gcm.encrypt(Bytes(nonce), Bytes(plaintext), data)
 
             self.assertEqual(authed_ct[:-16], expected_ciphertext)

@@ -1,6 +1,7 @@
 from samson.macs.cmac import CMAC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
+from samson.core.primitives import EncryptionAlg
 from copy import deepcopy
 
 def dbl(bytestring):
@@ -17,15 +18,14 @@ class S2V(object):
     S2V KDF described in RFC5297 (https://tools.ietf.org/html/rfc5297)
     """
 
-    def __init__(self, key: bytes, cipher: object=Rijndael, iv: bytes=b'\x00'*16):
+    def __init__(self, cipher: EncryptionAlg=None, iv: bytes=b'\x00'*16):
         """
         Parameters:
-            key    (bytes): Bytes-like object to key the underlying cipher.
-            cipher (class): Instantiable class representing a block cipher.
-            iv     (bytes): Initialization vector.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Initialization vector.
         """
-        self.cmac = CMAC(key, cipher)
-        self.iv = iv
+        self.cmac = CMAC(cipher or Rijndael(Bytes.random(32)))
+        self.iv   = iv
 
 
     def __repr__(self):

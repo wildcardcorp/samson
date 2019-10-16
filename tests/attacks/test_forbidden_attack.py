@@ -8,7 +8,7 @@ import unittest
 class ForbiddenAttackTestCase(unittest.TestCase):
     def test(self):
         rij = Rijndael(Bytes.random(32))
-        gcm = GCM(rij.encrypt)
+        gcm = GCM(rij)
         nonce = Bytes.random(12)
 
         ad_a = Bytes.random(8)

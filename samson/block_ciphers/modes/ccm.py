@@ -1,31 +1,33 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
 from samson.macs.cbc_mac import CBCMAC
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import FrequencyType
+from samson.ace.decorators import register_primitive
 import hmac
 
-
-class CCM(object):
+@register_primitive()
+class CCM(StreamingBlockCipherMode):
     """Counter with CBC-MAC block cipher mode."""
 
-    def __init__(self, key: bytes, cipher: object, mac_len: int):
+    USAGE_FREQUENCY = FrequencyType.UNUSUAL
+
+    def __init__(self, cipher: EncryptionAlg, mac_len: int):
         """
         Parameters:
-            key     (bytes): Encryption key.
-            cipher (object): Instantiated cipher object.
-            mac_len   (int): Length of AMC to generate.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            mac_len          (int): Length of MAC to generate.
         """
-        self.key = key
-        self.cipher = cipher
-        self.cmac = CBCMAC(self.key, self.cipher)
+        Primitive.__init__(self)
+        self.cipher  = cipher
+        self.cmac    = CBCMAC(self.cipher)
         self.mac_len = mac_len
 
-        self.enc_obj = self.cipher(key)
-        self.ctr = CTR(self.enc_obj.encrypt, b'\x00' * 16, 16)
+        self.ctr = CTR(self.cipher, b'\x00' * 16)
 
 
     def __repr__(self):
-        return f"<CCM: enc_obj={self.enc_obj}, key={self.key}, ctr={self.ctr}>"
-
+        return f"<CCM: cipher={self.cipher}, ctr={self.ctr}>"
 
     def __str__(self):
         return self.__repr__()

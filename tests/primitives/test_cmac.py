@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.block_ciphers.rijndael import Rijndael
 from samson.macs.cmac import CMAC
 import unittest
 
@@ -9,7 +10,7 @@ PT4 = Bytes(0x6BC1BEE22E409F96E93D7E117393172AAE2D8A571E03AC9C9EB76FAC45AF8E5130
 
 class CMACTestCase(unittest.TestCase):
     def _run_test(self, key, message, expected_tag):
-        cmac = CMAC(key)
+        cmac = CMAC(Rijndael(key))
         tag = cmac.generate(message)
         self.assertEqual(tag, expected_tag)
 

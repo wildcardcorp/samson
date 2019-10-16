@@ -8,7 +8,7 @@ class XTSTestCase(unittest.TestCase):
     def _run_test(self, key1, key2, plaintext, tweak, expected_ciphertext):
         rij1 = Rijndael(key1)
         rij2 = Rijndael(key2)
-        xts = XTS(rij1.encrypt, rij1.decrypt, rij2.encrypt)
+        xts = XTS(rij1, rij2.encrypt)
 
         ciphertext = xts.encrypt(plaintext, tweak)
         self.assertEqual(ciphertext, expected_ciphertext)

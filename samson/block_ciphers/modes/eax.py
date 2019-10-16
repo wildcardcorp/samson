@@ -1,29 +1,34 @@
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.ctr import CTR
 from samson.macs.cmac import CMAC
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
-
-class EAX(object):
+@register_primitive()
+class EAX(StreamingBlockCipherMode):
     """
     EAX block cipher mode
     http://web.cs.ucdavis.edu/~rogaway/papers/eax.pdf
     """
 
-    def __init__(self, cipher_obj: object, nonce: bytes):
+    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+
+    def __init__(self, cipher: EncryptionAlg, nonce: bytes):
         """
         Parameters:
-            cipher_obj (object): Instantiated cipher object.
-            nonce       (bytes): Bytes-like nonce.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            nonce          (bytes): Bytes-like nonce.
         """
-        self.cipher_obj = cipher_obj
-        self.nonce = nonce
-        self.ctr = CTR(self.cipher_obj.encrypt, b'', self.cipher_obj.block_size)
-
-        self.cmac = CMAC(self.cipher_obj.key, self.cipher_obj.__class__)
+        Primitive.__init__(self)
+        self.cipher = cipher
+        self.nonce  = nonce
+        self.ctr    = CTR(self.cipher, b'')
+        self.cmac   = CMAC(self.cipher)
 
 
     def __repr__(self):
-        return f"<EAX: cipher_obj={self.cipher_obj}, nonce={self.nonce}>"
+        return f"<EAX: cipher={self.cipher}, nonce={self.nonce}>"
 
     def __str__(self):
         return self.__repr__()
@@ -34,8 +39,8 @@ class EAX(object):
         """
         Internal function. Generates a valid tag for the `ciphertext` and `auth_data`.
         """
-        cipher_mac = self.cmac.generate(Bytes(2).zfill(self.cipher_obj.block_size) + ciphertext)
-        tag = cipher_mac ^ self.cmac.generate(Bytes(0).zfill(self.cipher_obj.block_size) + self.nonce) ^ self.cmac.generate(Bytes(1).zfill(self.cipher_obj.block_size) + Bytes.wrap(auth_data))
+        cipher_mac = self.cmac.generate(Bytes(2).zfill(self.cipher.block_size) + ciphertext)
+        tag = cipher_mac ^ self.cmac.generate(Bytes(0).zfill(self.cipher.block_size) + self.nonce) ^ self.cmac.generate(Bytes(1).zfill(self.cipher.block_size) + Bytes.wrap(auth_data))
 
         return tag
 
@@ -51,12 +56,12 @@ class EAX(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        self.ctr.counter = self.cmac.generate(Bytes(0).zfill(self.cipher_obj.block_size) + self.nonce).int()
+        self.ctr.counter = self.cmac.generate(Bytes(0).zfill(self.cipher.block_size) + self.nonce).int()
 
         ciphertext = self.ctr.encrypt(plaintext)
         tag = self.generate_tag(ciphertext, auth_data)
 
-        return ciphertext + tag[:self.cipher_obj.block_size]
+        return ciphertext + tag[:self.cipher.block_size]
 
 
 
@@ -79,7 +84,7 @@ class EAX(object):
             assert tag == given_tag
 
 
-        self.ctr.counter = self.cmac.generate(Bytes(0).zfill(self.cipher_obj.block_size) + self.nonce).int()
+        self.ctr.counter = self.cmac.generate(Bytes(0).zfill(self.cipher.block_size) + self.nonce).int()
         plaintext = self.ctr.decrypt(ciphertext)
 
 

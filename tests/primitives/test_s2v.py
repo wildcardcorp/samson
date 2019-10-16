@@ -1,11 +1,12 @@
 from samson.kdfs.s2v import S2V
+from samson.block_ciphers.rijndael import Rijndael
 from samson.utilities.bytes import Bytes
 import unittest
 
 # https://tools.ietf.org/html/rfc5297#appendix-A
 class S2VTestCase(unittest.TestCase):
     def _run_test(self, key, strings, expected_iv):
-        s2v = S2V(key)
+        s2v = S2V(Rijndael(key))
 
         derived_iv = s2v.derive(*strings)
         self.assertEqual(derived_iv, expected_iv)

@@ -1,12 +1,13 @@
 from samson.prngs.dual_ec import DualEC
 from samson.math.algebra.curves.named import P256
-from samson.utilities.bytes import Bytes
 import unittest
 
 
 class DualECTestCase(unittest.TestCase):
     # TODO: This is too slow to run in testing! Need better performance
     # def test_generate_backdoor(self):
+    #     from samson.utilities.bytes import Bytes
+
     #     for num_next_bytes in range(1, 3):
     #         (P, Q, d) = DualEC.generate_backdoor(P256)
     #         dual_ec = DualEC(P, Q, Bytes.random(8).int())

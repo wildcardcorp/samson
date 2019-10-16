@@ -2,6 +2,7 @@ from samson.protocols.diffie_hellman import DiffieHellman
 from samson.utilities.bytes import Bytes
 from samson.math.general import mod_inv, random_int_between
 from samson.core.primitives import NumberTheoreticalAlg, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -9,6 +10,9 @@ class ElGamal(NumberTheoreticalAlg):
     """
     ElGamal public key encryption
     """
+
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda elgamal: elgamal.p.bit_length()))
+    USAGE_FREQUENCY = FrequencyType.UNUSUAL
 
     def __init__(self, g: int=2, p: int=DiffieHellman.MODP_2048, key: int=None):
         """

@@ -1,7 +1,10 @@
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.ace.decorators import register_primitive
 from types import FunctionType
 
-class XTS(object):
+@register_primitive()
+class XTS(BlockCipherMode):
     """
     Xor-encrypt-xor-based tweaked-codebook mode with ciphertext stealing.
     https://en.wikipedia.org/wiki/Disk_encryption_theory#XTS
@@ -13,21 +16,20 @@ class XTS(object):
     https://en.wikipedia.org/wiki/Disk_encryption_theory#Xor%E2%80%93encrypt%E2%80%93xor_(XEX)
     """
 
-    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, sector_encryptor: FunctionType):
+    def __init__(self, cipher: EncryptionAlg, sector_encryptor: FunctionType):
         """
         Parameters:
-            encryptor        (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor        (func): Function that takes in a ciphertext and returns a plaintext.
+            cipher  (EncryptionAlg): Instantiated encryption algorithm.
             sector_encryptor (func): Function that takes in a plaintext and returns a ciphertext.
         """
-        self.encryptor = encryptor
-        self.decryptor = decryptor
+        Primitive.__init__(self)
+        self.cipher           = cipher
         self.sector_encryptor = sector_encryptor
 
 
 
     def __repr__(self):
-        return f"<XTS: encryptor={self.encryptor}, decryptor={self.decryptor}, sector_encryptor={self.sector_encryptor}>"
+        return f"<XTS: cipher={self.cipher}, sector_encryptor={self.sector_encryptor}>"
 
     def __str__(self):
         return self.__repr__()
@@ -35,12 +37,12 @@ class XTS(object):
 
 
     def _xts(self, in_bytes: bytes, tweak: int, func: FunctionType, reverse_cts: bool=False) -> Bytes:
-        in_bytes = Bytes.wrap(in_bytes)
+        in_bytes    = Bytes.wrap(in_bytes)
         tweak_bytes = Bytes(tweak)
 
         X = self.sector_encryptor(tweak_bytes + b'\x00' * (16 - len(tweak_bytes)))[::-1].int()
 
-        out_bytes = Bytes(b'')
+        out_bytes   = Bytes(b'')
         byte_chunks = in_bytes.chunk(16, allow_partials=True)
 
         for block in byte_chunks:
@@ -90,7 +92,7 @@ class XTS(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        return self._xts(plaintext, tweak, self.encryptor, reverse_cts=False)
+        return self._xts(plaintext, tweak, self.cipher.encrypt, reverse_cts=False)
 
 
 
@@ -105,4 +107,4 @@ class XTS(object):
         Returns:
             Bytes: Resulting plaintext.
         """
-        return self._xts(ciphertext, tweak, self.decryptor, reverse_cts=True)
+        return self._xts(ciphertext, tweak, self.cipher.decrypt, reverse_cts=True)

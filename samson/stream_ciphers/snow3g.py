@@ -1,7 +1,7 @@
 from samson.block_ciphers.rijndael import SBOX as RIJ_SBOX
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import StreamCipher, Primitive
-from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 SQ = [
@@ -35,6 +35,7 @@ class SNOW3G(StreamCipher):
 
     CONSTRUCTION_TYPES = [ConstructionType.LFSR]
     USAGE_TYPE         = UsageType.CELLULAR
+    USAGE_FREQUENCY    = FrequencyType.OFTEN
     EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=128))
 
     def __init__(self, key: bytes, iv: bytes):

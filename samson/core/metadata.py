@@ -53,6 +53,14 @@ class UsageType(Enum):
 
 
 class SizeType(Enum):
+    """
+    SizeTypes determine the behavior of the SizeSpec.
+
+    SINGLE    - only accept one value. Sets "sizes" to an integer.
+    RANGE     - accept any value in "sizes". "sizes" is iterable. Can use "typical" to denote typical values.
+    ARBITRARY - accept any size. "sizes" is unused. Can use "typical" to denote typical values.
+    DEPENDENT - size is dependent on another value that can only be resolved on instantiation.
+    """
     NONE      = 0
     SINGLE    = 1
     RANGE     = 2
@@ -61,9 +69,62 @@ class SizeType(Enum):
 
 
 class EphemeralType(Enum):
+    """
+    EphemeralTypes determine the usage and consequences of ephemeral values.
+
+    IV    - reuse may result in distinguishing attacks (e.g. block A has the same plaintext as block B).
+    NONCE - reuse may result in plaintext recovery attacks.
+    KEY   - reuse may result in key recovery attacks.
+    """
     IV    = 0
     NONCE = 1
     KEY   = 2
+
+
+class IORelationType(Enum):
+    """
+    IORelationTypes determine the relation between input and output sizes.
+
+    EQUAL     - input and output size are always equal.
+    FIXED     - output size is fixed.
+    ARBITRARY - input and output size can be arbitrarily picked.
+    """
+    EQUAL     = 0
+    FIXED     = 1
+    ARBITRARY = 2
+
+
+class MalleabilityType(Enum):
+    """
+    MalleabilityTypes determine the malleability properties of the output.
+
+    NONE           - the output is not malleable.
+    BITWISE        - the output can be manipulated at a bit level.
+    ADDITION       - the output is homomorphic under addition.
+    MULTIPLICATION - the output is homomorphic under multiplication.
+    """
+    NONE           = 0
+    BITWISE        = 1
+    ADDITION       = 2
+    MULTIPLICATION = 3
+
+
+class FrequencyType(Enum):
+    """
+    FrequencyTypes determine the frequency of the value of a property.
+
+    NEGLIGIBLE - value is almost never seen.
+    UNUSUAL    - value occurs less than average.
+    NORMAL     - value occurs with average frequency.
+    OFTEN      - value occurs more than average.
+    PROLIFIC   - value is almost always seen.
+    """
+    NEGLIGIBLE = 0
+    UNUSUAL    = 1
+    NORMAL     = 2
+    OFTEN      = 3
+    PROLIFIC   = 4
+
 
 
 class SizeSpec(object):
@@ -84,23 +145,37 @@ class SizeSpec(object):
 
     def __contains__(self, item):
         if self.size_type == SizeType.ARBITRARY:
-            return True
+            result = True
 
         elif self.size_type == SizeType.RANGE:
-            return item in self.sizes
+            if type(item) is list:
+                result = all([i in self.sizes for i in item])
+            else:
+                result = item in self.sizes
 
         elif self.size_type == SizeType.SINGLE:
-            return item == self.sizes
+            result = item == self.sizes
 
         elif self.size_type == SizeType.DEPENDENT:
+            if self.parent is None:
+                return False
+
             size = self.selector(self.parent)
+
             if type(size) is SizeSpec:
-                return item in size
+                result = item in size
             else:
-                return item == size
+                result = item == size
 
         else:
             raise ValueError("This shouldn't be possible. Is 'size_type' not SizeType?")
+
+        return result
+
+
+    def __eq__(self, other):
+        return type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes
+
 
 
 class EphemeralSpec(object):
@@ -114,3 +189,25 @@ class EphemeralSpec(object):
 
     def __str__(self):
         return self.__repr__()
+
+
+    def __eq__(self, other):
+        return type(other) == type(self) and self.ephemeral_type == other.ephemeral_type and self.size == other.size
+
+
+
+class FrequencySpec(object):
+    def __init__(self, frequency_type: FrequencyType, value: object=None):
+        self.frequency_type = frequency_type
+        self.value = value
+
+
+    def __repr__(self):
+        return f"<FrequencySpec: frequency_type={self.frequency_type}, value={self.value}>"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+    def __eq__(self, other):
+        return type(other) == type(self) and self.frequency_type == other.frequency_type and self.value == other.value

@@ -1,21 +1,25 @@
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.cbc import CBC
-from types import FunctionType
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/Ciphertext_stealing
 # CTS-3
-class CBCCTS(object):
+@register_primitive()
+class CBCCTS(BlockCipherMode):
     """Cipherblock chaining with ciphertext stealing block cipher mode."""
 
-    def __init__(self, encryptor: FunctionType, decryptor: FunctionType, iv: bytes, block_size: int):
+    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.IV, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+
+    def __init__(self, cipher: EncryptionAlg, iv: bytes):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
-            iv       (bytes): Bytes-like initialization vector.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Bytes-like initialization vector.
         """
-        self.underlying_mode = CBC(encryptor, decryptor, iv, block_size)
+        Primitive.__init__(self)
+        self.underlying_mode = CBC(cipher, iv)
 
 
     def __repr__(self):
@@ -35,8 +39,8 @@ class CBCCTS(object):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext = Bytes.wrap(plaintext)
-        block_size = self.underlying_mode.block_size
+        plaintext  = Bytes.wrap(plaintext)
+        block_size = self.underlying_mode.cipher.block_size
         pt_len = len(plaintext)
         assert pt_len > block_size
 
@@ -58,13 +62,13 @@ class CBCCTS(object):
             Bytes: Resulting plaintext.
         """
         ciphertext = Bytes.wrap(ciphertext)
-        block_size = self.underlying_mode.block_size
-        ct_chunks = ciphertext.chunk(block_size, allow_partials=True)
+        block_size = self.underlying_mode.cipher.block_size
+        ct_chunks  = ciphertext.chunk(block_size, allow_partials=True)
         ct_len = len(ciphertext)
 
         padding_len = (block_size - (ct_len % block_size)) % block_size
 
-        D_n = self.underlying_mode.decryptor(ct_chunks[-2])
+        D_n = self.underlying_mode.cipher.decrypt(ct_chunks[-2])
         C_n = sum(ct_chunks[:-2]) + ct_chunks[-1] + D_n[-padding_len:][:padding_len] + ct_chunks[-2]
 
         return self.underlying_mode.decrypt(C_n, unpad=False)[:ct_len]

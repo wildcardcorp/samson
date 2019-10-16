@@ -3,7 +3,7 @@ from samson.utilities.bytes import Bytes
 from samson.encoding.general import bytes_to_bitstring
 from samson.utilities.manipulation import left_rotate
 from samson.core.primitives import BlockCipher, PrimitiveType
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/Data_Encryption_Standard
@@ -185,8 +185,9 @@ class DES(FeistelNetwork, BlockCipher):
     Block size: 64
     """
 
-    KEY_SIZE   = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
-    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    KEY_SIZE        = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    BLOCK_SIZE      = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    USAGE_FREQUENCY = FrequencyType.UNUSUAL
 
     def __init__(self, key: bytes):
         """

@@ -7,7 +7,7 @@ import unittest
 class CBCTestCase(unittest.TestCase):
     def _run_test(self, key, iv, plaintext, expected_ciphertext):
         rij = Rijndael(key)
-        cbc = CBC(rij.encrypt, rij.decrypt, block_size=rij.block_size, iv=iv)
+        cbc = CBC(rij, iv=iv)
         ciphertext = cbc.encrypt(plaintext, pad=False)
 
         self.assertEqual(ciphertext, expected_ciphertext)

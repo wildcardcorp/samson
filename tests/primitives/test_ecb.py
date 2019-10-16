@@ -8,7 +8,7 @@ import unittest
 class ECBTestCase(unittest.TestCase):
     def _run_test(self, key, plaintext, expected_ciphertext):
         rij = Rijndael(key)
-        ecb = ECB(rij.encrypt, rij.decrypt, rij.block_size)
+        ecb = ECB(rij)
         ciphertext  = ecb.encrypt(plaintext, pad=False)
 
         self.assertEqual(ciphertext, expected_ciphertext)

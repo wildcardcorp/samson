@@ -1,7 +1,7 @@
 from samson.utilities.manipulation import left_rotate, get_blocks
 from samson.utilities.bytes import Bytes
 from samson.stream_ciphers.salsa import Salsa
-from samson.core.metadata import SizeType, SizeSpec, EphemeralSpec, EphemeralType
+from samson.core.metadata import SizeType, SizeSpec, EphemeralSpec, EphemeralType, FrequencyType
 from samson.ace.decorators import register_primitive
 from copy import deepcopy
 
@@ -34,7 +34,8 @@ class ChaCha(Salsa):
     Add-rotate-xor (ARX) structure.
     """
 
-    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, key: bytes, nonce: bytes, rounds: int=20, constant: bytes=b"expand 32-byte k"):
         """

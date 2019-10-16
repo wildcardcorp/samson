@@ -1,7 +1,8 @@
 from samson.macs.cbc_mac import CBCMAC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
-from samson.core.primitives import MAC, Primitive
+from samson.core.primitives import MAC, Primitive, EncryptionAlg
+from samson.core.metadata import FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -10,24 +11,22 @@ class CMAC(MAC):
     Message authentication code scheme based off of CBCMAC.
     """
 
-    def __init__(self, key: bytes, cipher: object=Rijndael, iv: bytes=b'\x00' * 16, block_size: int=16):
+    USAGE_FREQUENCY = FrequencyType.NORMAL
+
+    def __init__(self, cipher: EncryptionAlg=None, iv: bytes=b'\x00' * 16):
         """
         Parameters:
-            key      (bytes): Bytes-like object to key the underlying cipher.
-            cipher   (class): Instantiable class representing a block cipher.
-            iv       (bytes): Initialization vector for CBC mode.
-            block_size (int): Block size of cipher.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
+            iv             (bytes): Initialization vector for CBC mode.
         """
         Primitive.__init__(self)
-        self.key = key
-        self.cipher = cipher
-        self.block_size = block_size
+        self.cipher = cipher or Rijndael(Bytes.random(32))
         self.k1, self.k2 = self.generate_subkeys()
-        self.cbc_mac = CBCMAC(key, cipher, iv)
+        self.cbc_mac = CBCMAC(cipher, iv)
 
 
     def __repr__(self):
-        return f"<CMAC: key={self.key}, cipher={self.cipher}, k1={self.k1}, k2={self.k2}>"
+        return f"<CMAC: cipher={self.cipher}, k1={self.k1}, k2={self.k2}>"
 
     def __str__(self):
         return self.__repr__()
@@ -38,7 +37,7 @@ class CMAC(MAC):
         """
         Internal function used to generate CMAC subkeys `k1` and `k2`.
         """
-        L = self.cipher(self.key).encrypt(Bytes(b'').zfill(self.block_size))
+        L = self.cipher.encrypt(Bytes(b'').zfill(self.cipher.block_size))
 
         if L.int() & 0x80000000000000000000000000000000:
             K1 = (L << 1) ^ 0x00000000000000000000000000000087
@@ -65,8 +64,8 @@ class CMAC(MAC):
         """
         message = Bytes.wrap(message)
 
-        incomplete_block = len(message) % self.block_size
-        message_chunks   = message.chunk(self.block_size, allow_partials=True)
+        incomplete_block = len(message) % self.cipher.block_size
+        message_chunks   = message.chunk(self.cipher.block_size, allow_partials=True)
 
         if len(message_chunks) == 0:
             message_chunks = [Bytes(b'')]
@@ -75,7 +74,7 @@ class CMAC(MAC):
 
         if incomplete_block or not len(message):
             M_last += b'\x80'
-            M_last  = (M_last + (b'\x00' * (self.block_size - len(M_last)))) ^ self.k2
+            M_last  = (M_last + (b'\x00' * (self.cipher.block_size - len(M_last)))) ^ self.k2
         else:
             M_last ^= self.k1
 

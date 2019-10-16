@@ -2114,7 +2114,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                         progress_update(fac)
                         n //= fac
                 except ProbabilisticFailureException:
-                    pass
+                    break
 
     except KeyboardInterrupt:
         pass

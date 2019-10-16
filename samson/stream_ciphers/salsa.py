@@ -1,7 +1,7 @@
 from samson.utilities.manipulation import left_rotate, get_blocks
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import StreamCipher, Primitive
-from samson.core.metadata import SizeType, SizeSpec, EphemeralSpec, EphemeralType, ConstructionType
+from samson.core.metadata import SizeType, SizeSpec, EphemeralSpec, EphemeralType, ConstructionType, FrequencyType
 from samson.ace.decorators import register_primitive
 from copy import deepcopy
 import math
@@ -39,6 +39,7 @@ class Salsa(StreamCipher):
 
     CONSTRUCTION_TYPES = [ConstructionType.ADD_ROTATE_XOR]
     EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    USAGE_FREQUENCY    = FrequencyType.UNUSUAL
 
     def __init__(self, key: bytes, nonce: bytes, rounds: int=20, constant: bytes=b"expand 32-byte k"):
         """
@@ -49,6 +50,14 @@ class Salsa(StreamCipher):
             constant (bytes): Constant used in generating the keystream (16 bytes).
         """
         Primitive.__init__(self)
+
+        # If key is 80 bits, zero pad it (https://cr.yp.to/snuffle/salsafamily-20071225.pdf, 4.1)
+        if len(key) == 10:
+            key = Bytes.wrap(key).zfill(16)
+
+        # If key is 128 bits, just repeat it
+        if len(key) == 16:
+            key += key
 
         self.key = key
         self.nonce = nonce
@@ -127,7 +136,7 @@ class Salsa(StreamCipher):
             generator: Keystream chunks.
         """
         for iteration in range(start_chunk, start_chunk + num_chunks):
-            yield self.full_round(iteration)
+            yield self.full_round(iteration, state=state)
 
 
 
@@ -145,6 +154,9 @@ class Salsa(StreamCipher):
         start_chunk = self.counter // 64
 
         counter_mod = self.counter % 64
+
+        if counter_mod:
+            num_chunks += 1
 
         keystream = sum(list(self.yield_state(start_chunk=start_chunk, num_chunks=num_chunks)))[counter_mod:counter_mod+length]
         self.counter += length

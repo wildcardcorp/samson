@@ -7,7 +7,7 @@ import unittest
 class ECBCTSTestCase(unittest.TestCase):
     def test_gauntlet(self):
         rij = Rijndael(Bytes(0x0).zfill(32))
-        cts = ECBCTS(rij.encrypt, rij.decrypt, 16)
+        cts = ECBCTS(rij)
 
         for _ in range(100):
             plaintext = Bytes.random(Bytes.random(1).int() + 17)
@@ -25,7 +25,7 @@ class ECBCTSTestCase(unittest.TestCase):
     # of the block size will be different. We don't test those here.
     def _run_test(self, key, plaintext, expected_ciphertext):
         bf = Blowfish(key)
-        cts = ECBCTS(bf.encrypt, bf.decrypt, block_size=8)
+        cts = ECBCTS(bf)
 
         ciphertext = cts.encrypt(plaintext)
         self.assertEqual(ciphertext, expected_ciphertext)

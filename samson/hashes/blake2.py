@@ -2,7 +2,7 @@ from samson.utilities.manipulation import right_rotate
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha2 import H_512, H_256
 from samson.core.primitives import Hash, Primitive
-from samson.core.metadata import ConstructionType
+from samson.core.metadata import ConstructionType, SizeSpec, SizeType, FrequencyType
 from samson.ace.decorators import register_primitive
 from copy import deepcopy
 
@@ -26,6 +26,7 @@ class BLAKE2(Hash):
     """
 
     CONSTRUCTION_TYPES = [ConstructionType.HASH_ITERATIVE_FRAMEWORK]
+    USAGE_FREQUENCY    = FrequencyType.UNUSUAL
 
     def __init__(self, key: bytes, desired_hash_len: int):
         """
@@ -137,6 +138,9 @@ class BLAKE2(Hash):
 
 @register_primitive()
 class BLAKE2b(BLAKE2):
+    BLOCK_SIZE  = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[512])
+
     WORD_SIZE = 64
     MASKBITS = 0xFFFFFFFFFFFFFFFF
     ROUNDS = 12
@@ -163,6 +167,9 @@ class BLAKE2b(BLAKE2):
 
 @register_primitive()
 class BLAKE2s(BLAKE2):
+    BLOCK_SIZE  = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[256])
+
     WORD_SIZE = 32
     MASKBITS = 0xFFFFFFFF
     ROUNDS = 10

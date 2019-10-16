@@ -3,8 +3,7 @@ from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.sponge_construction import SpongeConstruction
 from samson.core.primitives import Hash, Primitive
-from samson.core.metadata import ConstructionType
-from samson.ace.decorators import register_primitive
+from samson.core.metadata import ConstructionType, SizeSpec, SizeType
 
 # https://github.com/ctz/keccak/blob/master/keccak.py
 
@@ -33,6 +32,7 @@ class Keccak(SpongeConstruction, Hash):
     """
 
     CONSTRUCTION_TYPES = [ConstructionType.SPONGE]
+    OUTPUT_SIZE        = SizeSpec(size_type=SizeType.ARBITRARY, sizes=[224, 256, 384, 512])
 
     def __init__(self, r: int, c: int, digest_bit_size: int, auto_reset_state: bool=True):
         """

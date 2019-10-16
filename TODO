@@ -21,6 +21,8 @@ X   Separate key parameters from use? Explains some gaps in functions vs data
 
 
 X   Crypto fingerprinting
+    OK  Add PSL to block cipher modes
+    X   Add fingerprinter to ACE
 
 X   Timing attack framework
     OK  Build TimingOracle
@@ -29,8 +31,14 @@ X   Timing attack framework
 
 X   Document timing attack setup
 
-X   Rabbit stream cipher
-X   HC-256 stream cipher
+X   New IoT ciphers
+    X   Rabbit stream cipher
+    X   HC-256 stream cipher
+    X   NSA Simon
+    X   NSA Speck
+
+
+X   BatchGCD (https://facthacks.cr.yp.to/index.html)
 
 X   Increase performance
     X   Weierstrass curves

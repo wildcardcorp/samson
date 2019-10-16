@@ -1,7 +1,7 @@
 from samson.constructions.merkle_damgard_construction import MerkleDamgardConstruction
 from samson.constructions.miyaguchi_preneel_construction import MiyaguchiPreneelConstruction
 from samson.utilities.bytes import Bytes
-from samson.core.metadata import ConstructionType
+from samson.core.metadata import ConstructionType, SizeSpec, SizeType
 from samson.core.primitives import Primitive
 from samson.ace.decorators import register_primitive
 
@@ -661,6 +661,7 @@ class Whirlpool(MerkleDamgardConstruction):
     """
 
     CONSTRUCTION_TYPES = [ConstructionType.MERKLE_DAMGARD, ConstructionType.MIYAGUCHI_PRENEEL]
+    OUTPUT_SIZE        = SizeSpec(size_type=SizeType.SINGLE, sizes=512)
 
     def __init__(self, initial_state: bytes=Bytes(b'').zfill(64)):
         """

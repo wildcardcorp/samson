@@ -1,7 +1,7 @@
 from samson.block_ciphers.des import DES
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import BlockCipher, Primitive
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -14,8 +14,9 @@ class TDES(BlockCipher):
     Block size: 64 bits
     """
 
-    KEY_SIZE   = SizeSpec(size_type=SizeType.RANGE, sizes=[64, 128, 192], typical=[128, 192])
-    BLOCK_SIZE = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[64, 128, 192], typical=[128, 192])
+    BLOCK_SIZE      = SizeSpec(size_type=SizeType.SINGLE, sizes=64)
+    USAGE_FREQUENCY = FrequencyType.NORMAL
 
 
     def __init__(self, key: bytes):

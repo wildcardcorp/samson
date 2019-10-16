@@ -1,7 +1,7 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
 from samson.core.metadata import ConstructionType
-from samson.core.primitives import Hash, Primitive
+from samson.core.primitives import Hash
 from types import FunctionType
 from copy import deepcopy
 

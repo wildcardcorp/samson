@@ -1,7 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.core.primitives import StreamCipher, Primitive
-from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
+from samson.core.metadata import ConstructionType, UsageType, SizeType, SizeSpec, EphemeralType, EphemeralSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 import math
 
@@ -76,6 +76,7 @@ class ZUC(StreamCipher):
 
     CONSTRUCTION_TYPES = [ConstructionType.LFSR]
     USAGE_TYPE         = UsageType.CELLULAR
+    USAGE_FREQUENCY    = FrequencyType.OFTEN
     KEY_SIZE           = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
     EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=128))
 

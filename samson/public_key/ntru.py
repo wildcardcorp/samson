@@ -7,7 +7,7 @@ from samson.utilities.general import shuffle
 from samson.math.general import is_power_of_two, is_prime, mod_inv
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import NumberTheoreticalAlg, Primitive
-from samson.core.metadata import SizeType, SizeSpec, SecurityProofType
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, SecurityProofType, FrequencyType
 from samson.ace.decorators import register_primitive
 import math
 
@@ -135,8 +135,10 @@ class NTRU(NumberTheoreticalAlg):
     Nth-degree TRUncated polynomial ring
     """
 
-    SECURITY_PROOF = SecurityProofType.SHORTEST_VECTOR
-    KEY_SIZE       = SizeSpec(size_type=SizeType.ARBITRARY, typical=[167, 251, 347, 503])
+    SECURITY_PROOF  = SecurityProofType.SHORTEST_VECTOR
+    KEY_SIZE        = SizeSpec(size_type=SizeType.ARBITRARY, typical=[167, 251, 347, 503])
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda ntru: ntru.N))
+    USAGE_FREQUENCY = FrequencyType.UNUSUAL
 
     def __init__(self, N: int, p: int=3, q: int=128, f_poly: Polynomial=None, g_poly: Polynomial=None):
         """

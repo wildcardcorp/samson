@@ -7,7 +7,7 @@ import unittest
 class CBCCTSTestCase(unittest.TestCase):
     def test_gauntlet(self):
         rij = Rijndael(Bytes(0x0).zfill(32))
-        cts = CBCCTS(rij.encrypt, rij.decrypt, block_size=16, iv=b'\x00' * 16)
+        cts = CBCCTS(rij, iv=b'\x00' * 16)
 
         for _ in range(100):
             plaintext = Bytes.random(Bytes.random(1).int() + 17)
@@ -21,7 +21,7 @@ class CBCCTSTestCase(unittest.TestCase):
 
     def _run_test(self, plaintext, expected_ciphertext):
         rij = Rijndael(0x636869636b656e207465726979616b69)
-        cts = CBCCTS(rij.encrypt, rij.decrypt, block_size=16, iv=b'\x00' * 16)
+        cts = CBCCTS(rij, iv=b'\x00' * 16)
 
         ciphertext = cts.encrypt(plaintext)
         self.assertEqual(ciphertext, expected_ciphertext)

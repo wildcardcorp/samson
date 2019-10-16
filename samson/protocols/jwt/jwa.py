@@ -116,7 +116,7 @@ class JWA_ACBC_HS(object):
         mac_key, enc_key = key.chunk(self.chunk_size)
 
         rij = Rijndael(enc_key)
-        cbc = CBC(rij.encrypt, rij.decrypt, iv=iv, block_size=rij.block_size)
+        cbc = CBC(rij, iv=iv)
 
         ciphertext = cbc.encrypt(plaintext)
         hmac       = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.chunk_size]
@@ -133,7 +133,7 @@ class JWA_ACBC_HS(object):
         assert hmac == auth_tag
 
         rij = Rijndael(enc_key)
-        cbc = CBC(rij.encrypt, rij.decrypt, iv=iv, block_size=rij.block_size)
+        cbc = CBC(rij, iv=iv)
 
         return cbc.decrypt(ciphertext)
 
@@ -150,7 +150,7 @@ class JWA_AGCM(object):
 
     def encrypt_and_auth(self, key: bytes, iv: bytes, plaintext: bytes, auth_data: bytes) -> (Bytes, Bytes):
         rij = Rijndael(key)
-        gcm = GCM(rij.encrypt)
+        gcm = GCM(rij)
 
         ct_and_tag = gcm.encrypt(iv, plaintext, auth_data)
 
@@ -159,7 +159,7 @@ class JWA_AGCM(object):
 
     def decrypt(self, key: bytes, iv: bytes, ciphertext: bytes, auth_data: bytes, auth_tag: bytes) -> Bytes:
         rij = Rijndael(key)
-        gcm = GCM(rij.encrypt)
+        gcm = GCM(rij)
 
         return gcm.decrypt(iv, ciphertext + auth_tag, auth_data)
 
@@ -174,14 +174,14 @@ class JWAKeyEncryptionImplementation(object):
 class JWA_AKW(JWAKeyEncryptionImplementation):
     def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        kw  = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
+        kw  = KW(rij, iv=KW.RFC3394_IV)
 
         return kw.encrypt(cek)
 
 
     def decrypt(self, kek: bytes, encrypted_key: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        kw  = KW(rij.encrypt, rij.decrypt, iv=KW.RFC3394_IV, block_size=rij.block_size)
+        kw  = KW(rij, iv=KW.RFC3394_IV)
 
         return kw.decrypt(encrypted_key)
 
@@ -233,7 +233,7 @@ class JWA_AGCMKW(JWAKeyEncryptionImplementation):
 
     def encrypt(self, kek: bytes, cek: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        gcm = GCM(rij.encrypt)
+        gcm = GCM(rij)
 
         ct_and_tag    = gcm.encrypt(url_b64_decode(header['iv'].encode('utf-8')), cek, b'')
         header['tag'] = url_b64_encode(ct_and_tag[-16:]).decode()
@@ -243,7 +243,7 @@ class JWA_AGCMKW(JWAKeyEncryptionImplementation):
 
     def decrypt(self, kek: bytes, encrypted_key: bytes, header: dict) -> Bytes:
         rij = Rijndael(kek)
-        gcm = GCM(rij.encrypt)
+        gcm = GCM(rij)
 
         return gcm.decrypt(url_b64_decode(header['iv'].encode('utf-8')), encrypted_key + url_b64_decode(header['tag'].encode('utf-8')), b'')
 

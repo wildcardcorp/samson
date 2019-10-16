@@ -11,6 +11,7 @@ from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DS
 from samson.encoding.general import PKIEncoding
 from samson.core.encodable_pki import EncodablePKI
 from samson.core.primitives import SignatureAlg, Primitive
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 from samson.hashes.sha2 import SHA256
 
@@ -36,6 +37,9 @@ class DSA(EncodablePKI, SignatureAlg):
 
     X509_SIGNING_ALGORITHMS = X509DSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509DSASigningAlgorithms.id_dsa_with_sha256
+
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda dsa: dsa.q.bit_length()))
+    USAGE_FREQUENCY = FrequencyType.OFTEN
 
     def __init__(self, hash_obj: object=SHA256(), p: int=None, q: int=None, g: int=None, x: int=None, L: int=2048, N: int=256):
         """

@@ -1,19 +1,21 @@
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.ecb import ECB
+from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.ace.decorators import register_primitive
 
 # https://en.wikipedia.org/wiki/Ciphertext_stealing
 # CTS-3
-class ECBCTS(object):
+@register_primitive()
+class ECBCTS(BlockCipherMode):
     """Electronic codebook with ciphertext stealing block cipher mode."""
 
-    def __init__(self, encryptor, decryptor, block_size):
+    def __init__(self, cipher: EncryptionAlg):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            decryptor (func): Function that takes in a ciphertext and returns a plaintext.
-            block_size (int): Block size of the underlying encryption algorithm.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
         """
-        self.underlying_mode = ECB(encryptor, decryptor, block_size)
+        Primitive.__init__(self)
+        self.underlying_mode = ECB(cipher)
 
 
     def __repr__(self):
@@ -35,7 +37,7 @@ class ECBCTS(object):
             Bytes: Resulting ciphertext.
         """
         plaintext = Bytes.wrap(plaintext)
-        block_size = self.underlying_mode.block_size
+        block_size = self.underlying_mode.cipher.block_size
         pt_len = len(plaintext)
 
         assert pt_len > block_size
@@ -62,7 +64,7 @@ class ECBCTS(object):
             Bytes: Resulting plaintext.
         """
         ciphertext = Bytes.wrap(ciphertext)
-        block_size = self.underlying_mode.block_size
+        block_size = self.underlying_mode.cipher.block_size
         ct_len = len(ciphertext)
         ct_chunks = ciphertext.chunk(block_size, allow_partials=True)
 

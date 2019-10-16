@@ -14,7 +14,7 @@ from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
 from samson.encoding.general import PKIEncoding
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.core.primitives import Primitive
 from samson.ace.decorators import register_primitive
 import math
@@ -45,7 +45,10 @@ class ECDSA(DSA):
     X509_SIGNING_ALGORITHMS = X509ECDSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509ECDSASigningAlgorithms.ecdsa_with_SHA256
 
-    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[192, 224, 256, 384, 521])
+    KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[192, 224, 256, 384, 521])
+    OUTPUT_SIZE     = SizeSpec(size_type=SizeType.RANGE, typical=[384, 448, 512, 768, 1042])
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda dsa: dsa.q.bit_length()))
+    USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, G: WeierstrassCurve, hash_obj: object=SHA256(), d: int=None):
         """

@@ -54,7 +54,7 @@ KEYS_256 = [
 # https://github.com/contiki-os/contiki/blob/master/examples/cc2538-common/crypto/cbc-mac-test.c
 class CBCMACTestCase(unittest.TestCase):
     def _run_test(self, key, message, expected_mac):
-        mac = CBCMAC(Bytes(key), Rijndael)
+        mac = CBCMAC(Rijndael(Bytes(key)))
         self.assertEqual(mac.generate(message, pad=False), expected_mac)
 
 

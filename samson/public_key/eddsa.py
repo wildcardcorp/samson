@@ -13,7 +13,7 @@ from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.encoding.general import PKIEncoding
 from samson.core.primitives import Primitive
-from samson.core.metadata import SizeType, SizeSpec
+from samson.core.metadata import SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
 # Originally (reverse?)-engineered from: https://ed25519.cr.yp.to/python/ed25519.py
@@ -39,7 +39,9 @@ class EdDSA(DSA):
         PKIEncoding.JWK: JWKEdDSAPublicKey
     }
 
-    KEY_SIZE = SizeSpec(size_type=SizeType.ARBITRARY, typical=[255, 448])
+    KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[255, 448])
+    OUTPUT_SIZE     = SizeSpec(size_type=SizeType.RANGE, sizes=[510, 896])
+    USAGE_FREQUENCY = FrequencyType.OFTEN
 
     def __init__(self, curve: TwistedEdwardsCurve=EdwardsCurve25519, hash_obj: object=SHA512(), d: int=None, A: TwistedEdwardsPoint=None, a: int=None, h: bytes=None, clamp: bool=True):
         """
