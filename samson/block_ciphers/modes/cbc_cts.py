@@ -41,7 +41,7 @@ class CBCCTS(BlockCipherMode):
         """
         plaintext  = Bytes.wrap(plaintext)
         block_size = self.underlying_mode.cipher.block_size
-        pt_len = len(plaintext)
+        pt_len     = len(plaintext)
         assert pt_len > block_size
 
         padding_len = (block_size - (pt_len % block_size)) % block_size
@@ -64,7 +64,7 @@ class CBCCTS(BlockCipherMode):
         ciphertext = Bytes.wrap(ciphertext)
         block_size = self.underlying_mode.cipher.block_size
         ct_chunks  = ciphertext.chunk(block_size, allow_partials=True)
-        ct_len = len(ciphertext)
+        ct_len     = len(ciphertext)
 
         padding_len = (block_size - (ct_len % block_size)) % block_size
 

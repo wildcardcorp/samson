@@ -49,13 +49,14 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
     SECURITY_PROOF  = SecurityProofType.INTEGER_FACTORIZATION
     USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
-    def __init__(self, bits: int, p: int=None, q: int=None, e: int=65537):
+    def __init__(self, bits: int=None, p: int=None, q: int=None, e: int=65537, n :int=None):
         """
         Parameters:
             bits (int): Number of bits for strength and capacity.
             p    (int): Secret prime modulus.
             q    (int): Secret prime modulus.
             e    (int): Public exponent.
+            n    (int): Public modulus.
         """
         Primitive.__init__(self)
 
@@ -70,6 +71,10 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
 
             bits = p.bit_length() + q.bit_length()
+        
+        elif n:
+            self.n = n
+
         else:
             next_p = p
             next_q = q
@@ -86,18 +91,22 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             q = next_q
             self.n = p * q
 
-        self.p = p
-        self.q = q
+        self.p   = p
+        self.q   = q
+        self.phi = phi
 
         self.bits = bits
 
-        self.phi   = phi
-        self.d     = mod_inv(self.e, phi)
-        self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
+        if self.p and self.q:
+            self.d     = mod_inv(self.e, phi)
+            self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
 
-        self.dP = self.d % (self.p-1)
-        self.dQ = self.d % (self.q-1)
-        self.Qi = mod_inv(self.q, self.p)
+            self.dP = self.d % (self.p-1)
+            self.dQ = self.d % (self.q-1)
+            self.Qi = mod_inv(self.q, self.p)
+        else:
+            self.d     = None
+            self.alt_d = None
 
         self.pub  = (self.e, self.n)
         self.priv = (self.d, self.n)

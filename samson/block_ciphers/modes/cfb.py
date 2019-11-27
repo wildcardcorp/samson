@@ -1,14 +1,14 @@
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.bytes import Bytes
-from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
-class CFB(BlockCipherMode):
+class CFB(StreamingBlockCipherMode):
     """Cipher feedback block cipher mode."""
 
-    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.IV, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE, typical=[128]))
 
     def __init__(self, cipher: EncryptionAlg, iv: bytes):
         """

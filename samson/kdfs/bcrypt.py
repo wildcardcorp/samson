@@ -132,7 +132,7 @@ class Bcrypt(object):
         bf = self.eks_blowfish_setup(salt, password)
 
         ciphertext = self.constant
-        ecb = ECB(bf.encrypt, bf.decrypt, bf.block_size)
+        ecb = ECB(bf)
 
         for _ in range(64):
             ciphertext = ecb.encrypt(ciphertext)

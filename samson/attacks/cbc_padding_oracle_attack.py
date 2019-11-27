@@ -32,10 +32,10 @@ class CBCPaddingOracleAttack(object):
                                     to crack.
             block_size       (int): Block size of the block cipher being used.
         """
-        self.oracle = oracle
-        self.iv = Bytes.wrap(iv)
+        self.oracle     = oracle
+        self.iv         = Bytes.wrap(iv)
         self.block_size = block_size
-        self.alphabet = alphabet
+        self.alphabet   = alphabet
         self.batch_requests = batch_requests
 
 
@@ -66,19 +66,19 @@ class CBCPaddingOracleAttack(object):
 
             for _ in RUNTIME.report_progress(range(len(block)), desc='Bytes cracked', unit='bytes'):
                 last_working_char = None
-                exploit_blocks = {}
+                exploit_blocks    = {}
 
                 # Generate candidate blocks
                 for possible_char in self.alphabet:
                     test_byte = struct.pack('B', possible_char)
-                    payload = test_byte + plaintext
-                    prefix = b'\x00' * (self.block_size - len(payload))
+                    payload   = test_byte + plaintext
+                    prefix    = b'\x00' * (self.block_size - len(payload))
 
                     padding = (struct.pack('B', len(payload)) * (len(payload))) ^ payload
 
-                    fake_block = prefix + padding
+                    fake_block    = prefix + padding
                     exploit_block = fake_block ^ preceding_block
-                    new_cipher = bytes(exploit_block + block)
+                    new_cipher    = bytes(exploit_block + block)
 
                     exploit_blocks[new_cipher] = test_byte
 

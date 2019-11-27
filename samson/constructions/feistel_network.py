@@ -15,7 +15,7 @@ class FeistelNetwork(object):
             round_func   (func): The Feistel function that takes in a state and subkey and returns a new state. Does not need to be invertible.
             key_schedule (func): Function that takes in a key and returns a list or generator of subkeys.
         """
-        self.round_func = round_func
+        self.round_func   = round_func
         self.key_schedule = key_schedule
 
 
@@ -40,7 +40,7 @@ class FeistelNetwork(object):
         """
         half = len(plaintext) // 2
         plaintext = Bytes.wrap(plaintext)
-        L_i, R_i = plaintext[:half], plaintext[half:]
+        L_i, R_i  = plaintext[:half], plaintext[half:]
 
         round_keys = list(self.key_schedule(key))
 
@@ -63,7 +63,7 @@ class FeistelNetwork(object):
         """
         half = len(ciphertext) // 2
         ciphertext = Bytes.wrap(ciphertext)
-        R_i, L_i = ciphertext[:half], ciphertext[half:]
+        R_i, L_i   = ciphertext[:half], ciphertext[half:]
 
         round_keys = list(self.key_schedule(key))[::-1]
 

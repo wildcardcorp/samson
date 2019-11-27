@@ -20,7 +20,8 @@ def reverse_bits(int32: int) -> int:
 class GCM(StreamingBlockCipherMode):
     """Galois counter mode (GCM) block cipher mode"""
 
-    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
+    AUTH_TAG_SIZE   = SizeSpec(size_type=SizeType.SINGLE, sizes=128)
     USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, cipher: EncryptionAlg):
@@ -64,7 +65,7 @@ class GCM(StreamingBlockCipherMode):
 
 
 
-    def encrypt(self, nonce: bytes, plaintext: bytes, data: bytes) -> Bytes:
+    def encrypt(self, nonce: bytes, plaintext: bytes, data: bytes=b'') -> Bytes:
         """
         Encrypts `plaintext`.
 
@@ -86,7 +87,7 @@ class GCM(StreamingBlockCipherMode):
 
 
 
-    def decrypt(self, nonce: bytes, authed_ciphertext: bytes, data: bytes) -> Bytes:
+    def decrypt(self, nonce: bytes, authed_ciphertext: bytes, data: bytes=b'') -> Bytes:
         """
         Decrypts `ciphertext`.
 
@@ -105,7 +106,7 @@ class GCM(StreamingBlockCipherMode):
         data     = Bytes.wrap(data)
         tag      = self.auth(ciphertext, data, tag_mask)
 
-        # Do I care about constant time?
+        # TODO: Do I care about constant time?
         if tag != orig_tag:
             raise Exception('Tag mismatch: authentication failed!')
 

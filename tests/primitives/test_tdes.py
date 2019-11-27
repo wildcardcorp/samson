@@ -9,8 +9,8 @@ import unittest
 class TDESTestCase(unittest.TestCase):
     def _run_cbc_test(self, key, iv, plaintext, expected_ciphertext):
         tdes = TDES(key)
-        cbc = CBC(tdes.encrypt, tdes.decrypt, iv, tdes.block_size)
-        ciphertext  = cbc.encrypt(plaintext, pad=False)
+        cbc  = CBC(tdes, iv)
+        ciphertext = cbc.encrypt(plaintext, pad=False)
 
         self.assertEqual(ciphertext, expected_ciphertext)
         self.assertEqual(cbc.decrypt(ciphertext, unpad=False), plaintext)
@@ -18,7 +18,7 @@ class TDESTestCase(unittest.TestCase):
 
     def _run_ecb_test(self, key, plaintext, expected_ciphertext):
         tdes = TDES(key)
-        ecb = ECB(tdes.encrypt, tdes.decrypt, tdes.block_size)
+        ecb  = ECB(tdes)
         ciphertext = ecb.encrypt(plaintext, pad=False)
 
         self.assertEqual(ciphertext, expected_ciphertext)

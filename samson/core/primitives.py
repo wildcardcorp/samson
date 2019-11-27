@@ -1,4 +1,3 @@
-
 from samson.core.metadata import SizeSpec, SizeType, SymmetryType, EphemeralType, EphemeralSpec, SecurityProofType, UsageType, ConstructionType, PrimitiveType, CipherType, IORelationType, FrequencyType
 from samson.ace.decorators import has_exploit, creates_constraint
 from samson.ace.exploit import KeyPossession, PlaintextPossession

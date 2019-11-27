@@ -12,7 +12,8 @@ class EAX(StreamingBlockCipherMode):
     http://web.cs.ucdavis.edu/~rogaway/papers/eax.pdf
     """
 
-    EPHEMERAL = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    EPHEMERAL     = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    AUTH_TAG_SIZE = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE)
 
     def __init__(self, cipher: EncryptionAlg, nonce: bytes):
         """

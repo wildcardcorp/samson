@@ -15,7 +15,7 @@ iv = key
 
 
 aes = Rijndael(key)
-cbc = CBC(aes.encrypt, aes.decrypt, iv, 16)
+cbc = CBC(aes, iv)
 
 def sender_encrypt(data):
     return cbc.encrypt(data)
@@ -37,7 +37,7 @@ class CBCIVEquivalenceTestCase(unittest.TestCase):
         key_iv = bytes(attack.execute(ciphertext))
 
         self.assertEqual(key_iv, key)
-        recovered_plaintext = CBC(None, Rijndael(key).decrypt, key_iv, 16).decrypt(bytes(ciphertext))
+        recovered_plaintext = CBC(Rijndael(key), key_iv).decrypt(bytes(ciphertext))
 
         print(recovered_plaintext)
         self.assertEqual(plaintext, recovered_plaintext)

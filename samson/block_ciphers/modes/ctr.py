@@ -9,7 +9,7 @@ class CTR(StreamingBlockCipherMode):
     """Counter block cipher mode."""
 
     # TODO: This nonce is a RANGE that is DEPENDENT on BLOCK_SIZE
-    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE))
+    EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE, typical=[96]))
     USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
     def __init__(self, cipher: EncryptionAlg, nonce: bytes):

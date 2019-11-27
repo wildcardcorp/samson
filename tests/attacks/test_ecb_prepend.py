@@ -21,7 +21,7 @@ unknown_string = base64.b64decode('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wI
 
 def encrypt_rand_ecb(message):
     mod_plain = message + unknown_string
-    return ECB(Rijndael(key).encrypt, None, block_size).encrypt(mod_plain)
+    return ECB(Rijndael(key)).encrypt(mod_plain)
 
 
 class ECBPrependAttackTestCase(unittest.TestCase):

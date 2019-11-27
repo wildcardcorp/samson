@@ -73,8 +73,8 @@ class EphemeralType(Enum):
     EphemeralTypes determine the usage and consequences of ephemeral values.
 
     IV    - reuse may result in distinguishing attacks (e.g. block A has the same plaintext as block B).
-    NONCE - reuse may result in plaintext recovery attacks.
-    KEY   - reuse may result in key recovery attacks.
+    NONCE - reuse may result in plaintext recovery attacks or potentially worse.
+    KEY   - ephemeral is secret and reuse may result in key recovery attacks.
     """
     IV    = 0
     NONCE = 1
@@ -175,6 +175,30 @@ class SizeSpec(object):
 
     def __eq__(self, other):
         return type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes
+
+
+    def __lt__(self, other):
+        if type(other) is int:
+            if self.size_type == SizeType.ARBITRARY:
+                result = False
+
+            elif self.size_type == SizeType.RANGE:
+                result = other > sorted(self.sizes)[-1]
+
+            elif self.size_type == SizeType.SINGLE:
+                result = other > self.sizes
+
+            elif self.size_type == SizeType.DEPENDENT:
+                if self.parent is None:
+                    return False
+                
+                size   = self.selector(self.parent)
+                result = other > size
+            
+            return result
+        else:
+            raise NotImplementedError()
+
 
 
 

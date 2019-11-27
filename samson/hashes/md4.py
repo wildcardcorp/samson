@@ -36,7 +36,7 @@ def compression_func(message, state):
     for r in range(16):
         i = (16-r)%4
         k = r
-        h[i] = left_rotate( (h[i] + F(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k]) % 2**32, s[r%4] )
+        h[i] = left_rotate((h[i] + F(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k]) % 2**32, s[r%4])
 
 
     # Round 2
@@ -44,7 +44,7 @@ def compression_func(message, state):
     for r in range(16):
         i = (16-r)%4
         k = 4*(r%4) + r//4
-        h[i] = left_rotate( (h[i] + G(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k] + 0x5a827999) % 2**32, s[r%4] )
+        h[i] = left_rotate((h[i] + G(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k] + 0x5a827999) % 2**32, s[r%4])
 
 
     # Round 3
@@ -52,7 +52,7 @@ def compression_func(message, state):
     k = (0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15)
     for r in range(16):
         i = (16-r)%4
-        h[i] = left_rotate( (h[i] + H(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k[r]] + 0x6ed9eba1) % 2**32, s[r%4] )
+        h[i] = left_rotate((h[i] + H(h[(i+1)%4], h[(i+2)%4], h[(i+3)%4]) + X[k[r]] + 0x6ed9eba1) % 2**32, s[r%4])
 
     new_state = []
     for i,v in enumerate(h):

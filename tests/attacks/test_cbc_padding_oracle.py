@@ -19,7 +19,7 @@ key = rand_bytes(key_size)
 iv = rand_bytes(block_size)
 
 aes = Rijndael(key)
-cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+cbc = CBC(aes, iv)
 padder = PKCS7(block_size)
 
 plaintext_strings = [

@@ -11,7 +11,7 @@ block_size = 16
 key = rand_bytes(key_size)
 
 aes = Rijndael(key)
-ecb = ECB(aes.encrypt, aes.decrypt, block_size)
+ecb = ECB(aes)
 
 def parse_user(user):
     # Prevent dictionary randomization

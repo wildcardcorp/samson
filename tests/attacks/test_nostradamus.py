@@ -17,7 +17,7 @@ block_size = 16
 
 
 def compressor(message, state):
-    return bytes(ECB(Rijndael(stretch_key(state, key_size)).encrypt, None, block_size).encrypt(message)[:hash_size])
+    return bytes(ECB(Rijndael(stretch_key(state, key_size))).encrypt(message)[:hash_size])
 
 
 def padder(message):

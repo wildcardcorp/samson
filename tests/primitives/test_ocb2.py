@@ -7,7 +7,7 @@ import unittest
 class OCB2TestCase(unittest.TestCase):
     def _run_test(self, key, plaintext, nonce, auth_data, expected_tag, expected_ciphertext):
         rij  = Rijndael(key)
-        ocb2 = OCB2(rij.encrypt, rij.decrypt, block_size=rij.block_size)
+        ocb2 = OCB2(rij)
         ciphertext = ocb2.encrypt(nonce, plaintext, auth_data)
 
         self.assertEqual(ciphertext, (expected_tag, expected_ciphertext))

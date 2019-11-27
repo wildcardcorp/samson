@@ -36,9 +36,9 @@ class ECBCTS(BlockCipherMode):
         Returns:
             Bytes: Resulting ciphertext.
         """
-        plaintext = Bytes.wrap(plaintext)
+        plaintext  = Bytes.wrap(plaintext)
         block_size = self.underlying_mode.cipher.block_size
-        pt_len = len(plaintext)
+        pt_len     = len(plaintext)
 
         assert pt_len > block_size
         pt_chunks = plaintext.chunk(block_size, allow_partials=True)
@@ -65,8 +65,8 @@ class ECBCTS(BlockCipherMode):
         """
         ciphertext = Bytes.wrap(ciphertext)
         block_size = self.underlying_mode.cipher.block_size
-        ct_len = len(ciphertext)
-        ct_chunks = ciphertext.chunk(block_size, allow_partials=True)
+        ct_len     = len(ciphertext)
+        ct_chunks  = ciphertext.chunk(block_size, allow_partials=True)
 
         padding_len = (block_size - (ct_len % block_size)) % block_size
         D_n = self.underlying_mode.decrypt(ct_chunks[-2], unpad=False)

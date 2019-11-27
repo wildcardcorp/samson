@@ -17,7 +17,7 @@ iv = rand_bytes(block_size)
 nonce = rand_bytes(block_size // 2)
 
 aes = Rijndael(key)
-cbc = CBC(aes.encrypt, aes.decrypt, iv, block_size)
+cbc = CBC(aes, iv)
 
 def format_data(data):
     return ("comment1=cooking%20MCs;userdata=" + urllib.parse.quote(data.decode()) + ";comment2=%20like%20a%20pound%20of%20bacon").encode()
@@ -35,11 +35,11 @@ def login_cbc(ciphertext):
 
 # CTR Functions
 def encrypt_data_ctr(data):
-    return CTR(aes.encrypt, nonce, block_size).encrypt(format_data(data))
+    return CTR(aes, nonce).encrypt(format_data(data))
 
 
 def login_ctr(ciphertext):
-    return b';admin=true;' in CTR(aes.encrypt, nonce, block_size).encrypt(ciphertext)
+    return b';admin=true;' in CTR(aes, nonce).encrypt(ciphertext)
 
 
 class XORBitFlipTestCase(unittest.TestCase):

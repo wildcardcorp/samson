@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
-from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.metadata import SizeType, SizeSpec, EphemeralType, EphemeralSpec
 from samson.ace.decorators import register_primitive
 
 def triple(bytestring):
@@ -8,11 +9,14 @@ def triple(bytestring):
 
 
 @register_primitive()
-class OCB2(BlockCipherMode):
+class OCB2(StreamingBlockCipherMode):
     """
     Offset codebook version 2 block cipher mode.
     http://web.cs.ucdavis.edu/~rogaway/papers/draft-krovetz-ocb-00.txt
     """
+
+    EPHEMERAL     = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE, typical=[128]))
+    AUTH_TAG_SIZE = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda block_mode: block_mode.cipher.BLOCK_SIZE, typical=[128])
 
     def __init__(self, cipher: EncryptionAlg):
         """
@@ -96,15 +100,15 @@ class OCB2(BlockCipherMode):
 
         offset = dbl(offset)
 
-        M_last = message_chunks[-1]
+        M_last   = message_chunks[-1]
         last_len = len(M_last)
-        padding = self.cipher.encrypt(Bytes(last_len * 8).zfill(self.cipher.block_size) ^ offset)
+        padding  = self.cipher.encrypt(Bytes(last_len * 8).zfill(self.cipher.block_size) ^ offset)
 
         ciphertext += M_last ^ padding[:last_len]
-        checksum ^= M_last + padding[last_len:]
+        checksum   ^= M_last + padding[last_len:]
 
         offset = triple(offset)
-        tag = self.cipher.encrypt(checksum ^ offset)
+        tag    = self.cipher.encrypt(checksum ^ offset)
 
         if auth_data:
             tag ^= self.internal_pmac(auth_data)
@@ -127,7 +131,7 @@ class OCB2(BlockCipherMode):
         ciphertext = Bytes.wrap(ciphertext)
 
         message_chunks = ciphertext.chunk(self.cipher.block_size, allow_partials=True)
-        offset = self.cipher.encrypt(nonce)
+        offset   = self.cipher.encrypt(nonce)
         checksum = Bytes(b'').zfill(self.cipher.block_size)
 
         if not message_chunks:
@@ -136,23 +140,23 @@ class OCB2(BlockCipherMode):
         plaintext = Bytes(b'')
 
         for i in range(len(message_chunks) - 1):
-            offset = dbl(offset)
-            pt_chunk = self.cipher.decrypt(offset ^ message_chunks[i]) ^ offset
-            checksum ^= pt_chunk
+            offset     = dbl(offset)
+            pt_chunk   = self.cipher.decrypt(offset ^ message_chunks[i]) ^ offset
+            checksum  ^= pt_chunk
             plaintext += pt_chunk
 
-        offset = dbl(offset)
+        offset  = dbl(offset)
 
-        M_last = message_chunks[-1]
+        M_last   = message_chunks[-1]
         last_len = len(M_last)
-        padding = self.cipher.encrypt(Bytes(last_len * 8).zfill(self.cipher.block_size) ^ offset)
+        padding  = self.cipher.encrypt(Bytes(last_len * 8).zfill(self.cipher.block_size) ^ offset)
 
-        M_last ^= padding[:last_len]
+        M_last    ^= padding[:last_len]
         plaintext += M_last
-        checksum ^= M_last + padding[last_len:]
+        checksum  ^= M_last + padding[last_len:]
 
         offset = triple(offset)
-        tag = self.cipher.encrypt(checksum ^ offset)
+        tag    = self.cipher.encrypt(checksum ^ offset)
 
         if auth_data:
             tag ^= self.internal_pmac(auth_data)

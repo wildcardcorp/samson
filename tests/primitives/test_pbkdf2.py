@@ -1,7 +1,7 @@
 from samson.macs.hmac import HMAC
 from samson.kdfs.pbkdf2 import PBKDF2
 
-from samson.hashes.sha3 import SHA3
+from samson.hashes.sha3 import SHA3_224, SHA3_256, SHA3_384, SHA3_512
 from samson.hashes.md5 import MD5
 from samson.hashes.md4 import MD4
 from samson.hashes.sha1 import SHA1
@@ -55,5 +55,5 @@ class PBKDF2TestCase(unittest.TestCase):
 
 
     def test_sha3(self):
-        for hash_type, reference_method in [(SHA3.K224, 'sha3_224'), (SHA3.K256, 'sha3_256'), (SHA3.K384, 'sha3_384'), (SHA3.K512, 'sha3_512')]:
+        for hash_type, reference_method in [(SHA3_224, 'sha3_224'), (SHA3_256, 'sha3_256'), (SHA3_384, 'sha3_384'), (SHA3_512, 'sha3_512')]:
             self._run_tests(hash_type, reference_method)

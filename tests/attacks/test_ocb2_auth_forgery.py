@@ -13,7 +13,7 @@ class OCB2AuthForgeryTestCase(unittest.TestCase):
             plaintext = Bytes.random(16)
 
             rij = Rijndael(Bytes.random(16))
-            ocb = OCB2(rij.encrypt, rij.decrypt, rij.block_size)
+            ocb = OCB2(rij)
             nonce = Bytes.random(16)
 
             def oracle_func(plaintext, data):

@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.core.metadata import UsageType
 from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
 from samson.ace.decorators import register_primitive
 from types import FunctionType
@@ -15,6 +16,8 @@ class XTS(BlockCipherMode):
 
     https://en.wikipedia.org/wiki/Disk_encryption_theory#Xor%E2%80%93encrypt%E2%80%93xor_(XEX)
     """
+
+    USAGE_TYPE = UsageType.OTHER
 
     def __init__(self, cipher: EncryptionAlg, sector_encryptor: FunctionType):
         """
