@@ -78,12 +78,26 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         else:
             next_p = p
             next_q = q
+
+            # Take into account the bits needed to complete `bits` if `p` or `q` are already defined
+            if p:
+                q_bits = bits - p.bit_length()
+            else:
+                q_bits = bits // 2
+
+            if q:
+                p_bits = bits - q.bit_length()
+            else:
+                p_bits = bits // 2
+
+
+            # Find the primes
             while gcd(self.e, phi) != 1 or next_p == next_q:
                 if not p:
-                    next_p = find_prime(bits // 2)
+                    next_p = find_prime(p_bits)
 
                 if not q:
-                    next_q = find_prime(bits // 2)
+                    next_q = find_prime(q_bits)
 
                 phi = lcm(next_p - 1, next_q - 1)
 

@@ -68,7 +68,7 @@ def untemper(y):
 
 
 # Implementation of MT19937
-class MT19937:
+class MT19937(object):
     """
     Mersenne Twister 19937
     """

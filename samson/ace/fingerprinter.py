@@ -154,7 +154,7 @@ class Fingerprinter(object):
             max_is_prime = is_prime(end_idx)
             byte_aligned = not end_idx % 8
 
-            q,r = divmod(end_idx-1, 2)
+            q, r = divmod(end_idx-1, 2)
             is_safe_prime = not r and is_prime(q) and max_is_prime
             is_well_known = end_idx in WELL_KNOWN_GROUPS
 

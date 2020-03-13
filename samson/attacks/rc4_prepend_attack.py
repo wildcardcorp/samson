@@ -1,5 +1,5 @@
 from samson.utilities.analysis import generate_rc4_bias_map, RC4_BIAS_MAP
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.bytes import Bytes
 from samson.ace.decorators import define_exploit
@@ -19,7 +19,7 @@ class RC4PrependAttack(object):
     """
     Performs a plaintext recovery attack.
 
-    The RC4PrependAttack uses an EncryptionOracle that prepends the payload and then encrypts the whole message with a randomly generated key.
+    The RC4PrependAttack uses an ChosenPlaintextOracle that prepends the payload and then encrypts the whole message with a randomly generated key.
     The attack uses specific byte biases found in the RC4 keystream and feeds the plaintext into these locations. Using the law of large numbers,
     the keystream bias will surface, and we can XOR it with the ciphertext to return the plaintext. This specific implementation uses several optmizations.
     The first is concurrency/parallelism and is self-explanatory. The second is the use of concurrent biases. We first determine which biases we can still use
@@ -34,10 +34,10 @@ class RC4PrependAttack(object):
         * The user-controlled plaintext is prepended to the secret
     """
 
-    def __init__(self, oracle: EncryptionOracle):
+    def __init__(self, oracle: ChosenPlaintextOracle):
         """
         Parameters:
-            oracle (EncryptionOracle): An oracle that takes in arbitrary plaintext bytes and returns its encryption under a random key.
+            oracle (ChosenPlaintextOracle): An oracle that takes in arbitrary plaintext bytes and returns its encryption under a random key.
         """
         self.oracle = oracle
         self.strongest_biases = [1, 15, 31]

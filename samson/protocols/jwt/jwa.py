@@ -17,6 +17,7 @@ from samson.block_ciphers.modes.gcm import GCM
 from samson.block_ciphers.modes.kw import KW
 from samson.math.algebra.curves.named import P256, P384, P521
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+from samson.utilities.runtime import RUNTIME
 from enum import Enum
 import hashlib
 import json
@@ -129,8 +130,7 @@ class JWA_ACBC_HS(object):
 
         hmac = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.chunk_size]
 
-        # TODO: Constant time?
-        assert hmac == auth_tag
+        assert RUNTIME.compare_bytes(hmac, auth_tag)
 
         rij = Rijndael(enc_key)
         cbc = CBC(rij, iv=iv)

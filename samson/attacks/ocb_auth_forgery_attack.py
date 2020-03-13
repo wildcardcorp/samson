@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 
 class OCBAuthForgeryAttack(object):
     """
@@ -10,11 +10,11 @@ class OCBAuthForgeryAttack(object):
         * The user has access to an oracle that accepts arbitrary plaintext and returns the ciphertext
     """
 
-    def __init__(self, oracle: EncryptionOracle, block_size: int=16):
+    def __init__(self, oracle: ChosenPlaintextOracle, block_size: int=16):
         """
         Parameters:
-            oracle (EncryptionOracle): An oracle that takes in a bytes-like object and returns its decryption.
-            block_size          (int): The block size of the block cipher in bytes.
+            oracle (ChosenPlaintextOracle): An oracle that takes in a bytes-like object and returns its decryption.
+            block_size               (int): The block size of the block cipher in bytes.
         """
         self.oracle = oracle
         self.block_size = block_size

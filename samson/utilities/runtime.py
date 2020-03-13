@@ -175,6 +175,12 @@ class RuntimeConfiguration(object):
 
         table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
         print(table)
+    
+
+    def compare_bytes(self, a: bytes, b: bytes) -> bool:
+        from hmac import compare_digest
+        return compare_digest(a, b)
+
 
 
 

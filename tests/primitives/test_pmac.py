@@ -7,7 +7,7 @@ import unittest
 class PMACTestCase(unittest.TestCase):
     def _run_test(self, key, plaintext, expected_tag):
         rij  = Rijndael(key)
-        pmac = PMAC(rij.encrypt)
+        pmac = PMAC(rij)
         tag  = pmac.generate(plaintext)
 
         self.assertEqual(tag, expected_tag)

@@ -6,7 +6,7 @@ from samson.block_ciphers.modes.cbc import CBC
 from samson.block_ciphers.modes.ctr import CTR
 
 from samson.attacks.xor_bitflipping_attack import XORBitflippingAttack
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 import unittest
 
 key_size = 16
@@ -44,7 +44,7 @@ def login_ctr(ciphertext):
 
 class XORBitFlipTestCase(unittest.TestCase):
     def test_bitflip(self):
-        oracle = EncryptionOracle(encrypt_data_cbc)
+        oracle = ChosenPlaintextOracle(encrypt_data_cbc)
         attack = XORBitflippingAttack(oracle, block_size=block_size)
         forged_request = attack.execute(b'hiya;admin=true;' * (block_size // 16), 16)
 
@@ -55,7 +55,7 @@ class XORBitFlipTestCase(unittest.TestCase):
 
 
     def test_ctr_bitflip(self):
-        oracle = EncryptionOracle(encrypt_data_ctr)
+        oracle = ChosenPlaintextOracle(encrypt_data_ctr)
         attack = XORBitflippingAttack(oracle, block_size=block_size)
         forged_request = attack.execute(b'hiya;admin=true;' * (block_size // 16), 32)
 

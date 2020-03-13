@@ -6,7 +6,9 @@ from samson.block_ciphers.all import *
 from samson.block_ciphers.modes.all import *
 from samson.classical.all import *
 from samson.constructions.all import *
+from samson.core.attack_model import AttackModel
 from samson.core.metadata import *
+from samson.core.prng import PRNG
 from samson.hashes.all import *
 from samson.kdfs.all import *
 from samson.macs.all import *

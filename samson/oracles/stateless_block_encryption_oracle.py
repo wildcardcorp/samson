@@ -1,6 +1,6 @@
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 
-class StatelessBlockEncryptionOracle(EncryptionOracle):
+class StatelessBlockEncryptionOracle(ChosenPlaintextOracle):
     """
     Oracle that provides an interface to a chosen-plaintext attack on a stateless block encryption.
     """

@@ -10,23 +10,25 @@ class LCG(object):
     Linear congruential generator of the form `(a*X + c) mod m`.
     """
 
-    def __init__(self, X: int, a: int, c: int, m: int):
+    def __init__(self, X: int, a: int, c: int, m: int, trunc: int=0):
         """
         Parameters:
-            X (int): Initial state.
-            a (int): Multiplier.
-            c (int): Increment.
-            m (int): Modulus.
+            X     (int): Initial state.
+            a     (int): Multiplier.
+            c     (int): Increment.
+            m     (int): Modulus.
+            trunc (int): Number of bits to truncate on output
         """
         self.a = a
         self.c = c
         self.m = m
+        self.trunc = trunc
 
         self.X = X
 
 
     def __repr__(self):
-        return f"<LCG: X={self.X}, a={self.a}, c={self.c}, m={self.m}>"
+        return f"<LCG: X={self.X}, a={self.a}, c={self.c}, m={self.m}, trunc={self.trunc}>"
 
 
     def __str__(self):
@@ -41,7 +43,7 @@ class LCG(object):
             int: Next pseudorandom output.
         """
         self.X = (self.a * self.X + self.c) % self.m
-        return self.X
+        return self.X >> self.trunc
 
 
     def check_full_period(self) -> bool:
@@ -79,16 +81,30 @@ class LCG(object):
 
 
 
+    def __getattribute__(self, name):
+        from functools import partial
+
+        if name == "crack":
+            if self.trunc:
+                return partial(LCG.crack_truncated, outputs_to_predict=None, multiplier=self.a, increment=self.c, modulus=self.m, trunc_amount=self.trunc)
+            else:
+                return partial(LCG.crack, multiplier=self.a, increment=self.c, modulus=self.m)
+        else:
+            return object.__getattribute__(self, name)
+
+
+
     @staticmethod
-    def crack(states: list, multiplier: int=None, increment: int=None, modulus: int=None):
+    def crack(states: list, multiplier: int=None, increment: int=None, modulus: int=None, sanity_check: bool=True):
         """
         Given a few full states (probably under ten) and any (or even none) of the parameters of an LCG, returns a replica LCG.
 
         Parameters:
-            states    (list): List of full-state outputs (in order).
-            multiplier (int): (Optional) The LCG's multiplier.
-            increment  (int): (Optional) The LCG's increment.
-            modulus    (int): (Optional) The LCG's modulus.
+            states       (list): List of full-state outputs (in order).
+            multiplier    (int): (Optional) The LCG's multiplier.
+            increment     (int): (Optional) The LCG's increment.
+            modulus       (int): (Optional) The LCG's modulus.
+            sanity_check (bool): Whether to tests the generated LCG against the provided states.
         
         Returns:
             LCG: Replica LCG that predicts all future outputs of the original.
@@ -108,6 +124,14 @@ class LCG(object):
 
         if not increment:
             increment = (states[1] - states[0] * multiplier) % modulus
+        
+
+        # Sanity test
+        lcg = LCG(states[0], multiplier, increment, modulus)
+        num_tests = min(3, len(states) - 1)
+
+        if sanity_check and [lcg.generate() for _ in range(num_tests)] != states[1:1 + num_tests]:
+            raise RuntimeError("Generated LCG does not match 'states'. Are you sure this came from an untruncated LCG?")
 
         return LCG(states[-1], multiplier, increment, modulus)
 
@@ -124,20 +148,24 @@ class LCG(object):
             multiplier          (int): The LCG's multiplier.
             increment           (int): The LCG's increment.
             modulus             (int): The LCG's modulus.
-        
+
         Returns:
             LCG: Replica LCG that predicts all future outputs of the original.
-        
+
         References:
             https://github.com/mariuslp/PCG_attack
             "Reconstructing Truncated Integer Variables Satisfying Linear Congruences" (https://www.math.cmu.edu/~af1p/Texfiles/RECONTRUNC.pdf)
         """
+        if not outputs_to_predict:
+            outputs_to_predict = outputs[-2:]
+            outputs = outputs[:-2]
+
         # Trivial case
         if increment == 0:
             computed_seed = LCG.solve_tlcg(outputs + outputs_to_predict, multiplier, modulus, trunc_amount)
 
             # Here we take the second to last seed since our implementation edits the state BEFORE it returns
-            return LCG((multiplier * computed_seed[-2]) % modulus, multiplier, increment, modulus)
+            return LCG((multiplier * computed_seed[-2]) % modulus, multiplier, increment, modulus, trunc=trunc_amount)
 
         else:
             diffs      = [o2 - o1 for o1, o2 in zip(outputs, outputs[1:])]
@@ -164,9 +192,9 @@ class LCG(object):
                     # The accuracy of `predicted_lcg` is dependent on the size of `outputs_to_predict` and the
                     # parameters of the LCG.
                     predicted_seed = (multiplier * computed_seeds[-2] + computed_c) % modulus
-                    predicted_lcg  = LCG(X=int(predicted_seed), a=multiplier, c=int(computed_c), m=modulus)
+                    predicted_lcg  = LCG(X=int(predicted_seed), a=multiplier, c=int(computed_c), m=modulus, trunc=trunc_amount)
 
-                    if [predicted_lcg.generate() >> trunc_amount for _ in range(len(outputs_to_predict))] == outputs_to_predict:
+                    if [predicted_lcg.generate() for _ in range(len(outputs_to_predict))] == outputs_to_predict:
                         return predicted_lcg
 
             raise SearchspaceExhaustedException('Seedspace exhausted')

@@ -1,7 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
-from types import FunctionType
-from samson.core.primitives import MAC, Primitive
+from samson.core.primitives import MAC, Primitive, EncryptionAlg
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -11,17 +10,15 @@ class PMAC(MAC):
     http://web.cs.ucdavis.edu/~rogaway/ocb/pmac-bak.htm
     """
 
-    def __init__(self, encryptor: FunctionType, block_size: int=16):
+    def __init__(self, cipher: EncryptionAlg):
         """
         Parameters:
-            encryptor (func): Function that takes in a plaintext and returns a ciphertext.
-            block_size (int): Block size of cipher.
+            cipher (EncryptionAlg): Instantiated encryption algorithm.
         """
         Primitive.__init__(self)
 
-        self.encryptor = encryptor
-        self.block_size = block_size
-        self.L = [self.encryptor(Bytes(b'').zfill(self.block_size))]
+        self.cipher = cipher
+        self.L      = [self.cipher.encrypt(Bytes(b'').zfill(self.cipher.block_size))]
 
         result = (self.L[0].int() >> 1)
         if self.L[0].int() & 1:
@@ -35,7 +32,7 @@ class PMAC(MAC):
 
 
     def __repr__(self):
-        return f"<PMAC: encryptor={self.encryptor}, block_size={self.block_size}, L={self.L}>"
+        return f"<PMAC: cipher={self.cipher}, L={self.L}>"
 
     def __str__(self):
         return self.__repr__()
@@ -58,10 +55,11 @@ class PMAC(MAC):
         """
         message = Bytes.wrap(message)
 
-        incomplete_block = len(message) % self.block_size
-        message_chunks = message.chunk(self.block_size, allow_partials=True)
-        offset = offset or Bytes(0x0).zfill(self.block_size)
-        sigma  = Bytes(0x0).zfill(self.block_size)
+        incomplete_block = len(message) % self.cipher.block_size
+        message_chunks   = message.chunk(self.cipher.block_size, allow_partials=True)
+
+        offset = offset or Bytes(0x0).zfill(self.cipher.block_size)
+        sigma  = Bytes(0x0).zfill(self.cipher.block_size)
 
         if not message_chunks:
             message_chunks = [message]
@@ -69,18 +67,18 @@ class PMAC(MAC):
 
         for i in range(len(message_chunks) - 1):
             offset ^= self.L[self.ntz(i+1)]
-            sigma  ^= self.encryptor(offset ^ message_chunks[i])
+            sigma  ^= self.cipher.encrypt(offset ^ message_chunks[i])
 
 
         M_last = message_chunks[-1]
 
         if incomplete_block or not len(message):
             M_last += b'\x80'
-            M_last  = (M_last + (b'\x00' * (self.block_size - len(M_last))))
+            M_last  = (M_last + (b'\x00' * (self.cipher.block_size - len(M_last))))
 
         sigma ^= M_last
 
-        if len(message) % self.block_size == 0:
+        if len(message) % self.cipher.block_size == 0:
             sigma ^= self.L_inv
 
-        return self.encryptor(sigma)
+        return self.cipher.encrypt(sigma)

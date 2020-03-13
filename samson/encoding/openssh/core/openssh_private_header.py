@@ -11,7 +11,7 @@ from samson.kdfs.bcrypt_pbkdf import BcryptPBKDF
 
 def init_aes256_ctr(key_iv):
     key, iv = key_iv[:32], key_iv[32:]
-    ctr = CTR(Rijndael(key).encrypt, nonce=b'', block_size=16)
+    ctr = CTR(Rijndael(key), nonce=b'')
     ctr.counter = iv.int()
 
     return ctr

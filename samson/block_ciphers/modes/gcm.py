@@ -99,6 +99,8 @@ class GCM(StreamingBlockCipherMode):
         Returns:
             Bytes: Resulting plaintext.
         """
+        from samson.utilities.runtime import RUNTIME
+
         authed_ciphertext    = Bytes.wrap(authed_ciphertext)
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
 
@@ -106,8 +108,7 @@ class GCM(StreamingBlockCipherMode):
         data     = Bytes.wrap(data)
         tag      = self.auth(ciphertext, data, tag_mask)
 
-        # TODO: Do I care about constant time?
-        if tag != orig_tag:
+        if not RUNTIME.compare_bytes(tag, orig_tag):
             raise Exception('Tag mismatch: authentication failed!')
 
         return self.ctr.decrypt(ciphertext)

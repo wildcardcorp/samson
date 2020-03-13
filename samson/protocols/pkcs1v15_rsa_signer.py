@@ -57,6 +57,8 @@ class PKCS1v15RSASigner(object):
         Returns:
             bool: Whether or not the signature passed verification.
         """
+        from samson.utilities.runtime import RUNTIME
+
         try:
             padded      = Bytes(self.rsa.encrypt(signature))
             der_encoded = self.padder.unpad(padded)
@@ -69,7 +71,7 @@ class PKCS1v15RSASigner(object):
 
             hashed_value = Bytes(items[1])
 
-            # TODO: constant time?
-            return hashed_value == hash_obj.hash(plaintext)
+
+            return RUNTIME.compare_bytes(hashed_value, hash_obj.hash(plaintext))
         except Exception as _:
             return False

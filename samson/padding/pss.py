@@ -83,6 +83,8 @@ class PSS(object):
         Returns:
             bool: Whether or not the plaintext is verified.
         """
+        from samson.utilities.runtime import RUNTIME
+
         plaintext = Bytes.wrap(plaintext)
         signature = Bytes.wrap(signature).zfill((self.modulus_len + 7) // 8)
         mHash     = self.hash_obj.hash(plaintext)
@@ -125,5 +127,4 @@ class PSS(object):
         m_prime = b'\x00' * 8 + mHash + salt
         h_prime = self.hash_obj.hash(m_prime)
 
-        # TODO: Constant time?
-        return h_prime == H
+        return RUNTIME.compare_bytes(h_prime, H)

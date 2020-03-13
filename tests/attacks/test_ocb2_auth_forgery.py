@@ -1,7 +1,7 @@
 
 from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ocb2 import OCB2
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.attacks.ocb_auth_forgery_attack import OCBAuthForgeryAttack
 from samson.utilities.bytes import Bytes
 import unittest
@@ -20,7 +20,7 @@ class OCB2AuthForgeryTestCase(unittest.TestCase):
                 return ocb.encrypt(nonce, plaintext, data)
 
 
-            attack = OCBAuthForgeryAttack(EncryptionOracle(oracle_func))
+            attack = OCBAuthForgeryAttack(ChosenPlaintextOracle(oracle_func))
             tag, ct = attack.execute(plaintext)
 
             # OCB2 will automatically verify and throw an AssertException if the tag is incorrect

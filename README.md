@@ -187,9 +187,9 @@ KzxOGlBrUMD0vXbjp0wpDnpynBxYXNZxHIrERMolw1wJBS72VR5m4ubujrW2ynM5p9hoc3
 
 
 ## Testing Environment
-* **Runtime**: PyPy 7.0.0 (Python 3.5.3)
-* **Architecture**: Linux 5.1.18-300.fc30.x86_64_64 #1 SMP
-* **OS**: Fedora Security Lab (Fedora release 30)
+* **Runtime**: PyPy 7.3.0 (Python 3.6.9)
+* **Architecture**: Linux 5.5.8-200.fc31.x86_64 #1 SMP
+* **OS**: Fedora Security Lab (Fedora release 31)
 
 
 ## Installation

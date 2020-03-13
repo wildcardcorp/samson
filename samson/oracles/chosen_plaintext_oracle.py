@@ -1,6 +1,6 @@
 from types import FunctionType
 
-class EncryptionOracle(object):
+class ChosenPlaintextOracle(object):
     """
     Oracle that provides an interface to a chosen-plaintext attack.
     """

@@ -1,4 +1,4 @@
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.utilities.bytes import Bytes
 
 
@@ -34,13 +34,13 @@ class XORBitflippingAttack(object):
         * The user has access to an oracle that allows encryption of arbitrary plaintext and returns the ciphertext.
     """
 
-    def __init__(self, oracle: EncryptionOracle, block_size: int=16):
+    def __init__(self, oracle: ChosenPlaintextOracle, block_size: int=16):
         """
         Parameters:
-            oracle (EncryptionOracle): An oracle that takes in arbitrary plaintext and returns the ciphertext.
-            block_size          (int): Block size of the underlying block cipher.
+            oracle (ChosenPlaintextOracle): An oracle that takes in arbitrary plaintext and returns the ciphertext.
+            block_size               (int): Block size of the underlying block cipher.
         """
-        self.oracle = oracle
+        self.oracle     = oracle
         self.block_size = block_size
 
 

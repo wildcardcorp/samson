@@ -1,5 +1,5 @@
 from samson.attacks.rc4_prepend_attack import RC4PrependAttack
-from samson.oracles.encryption_oracle import EncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.utilities.general import rand_bytes
 from samson.stream_ciphers.rc4 import RC4
 #import base64
@@ -23,7 +23,7 @@ def random_encrypt(data):
 
 class RC4PrependAttackTestCase(unittest.TestCase):
     def test_prepend_attack(self):
-        oracle = EncryptionOracle(random_encrypt)
+        oracle = ChosenPlaintextOracle(random_encrypt)
         attack = RC4PrependAttack(oracle)
 
         result = attack.execute(len(secret))
