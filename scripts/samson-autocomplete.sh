@@ -16,9 +16,10 @@ _samson_completions()
     if [ "${COMP_WORDS[1]}" == "pki" ]; then
         if [[ "${COMP_WORDS[-2]}" == "pki" ]]; then
             local reply=($(compgen -W "generate parse" "${COMP_WORDS[2]}"))
-        elif [[ "${COMP_WORDS[-2]}" == "generate" || "${COMP_WORDS[-2]}" == "parse" ]]; then
-        #if [ ${#COMP_WORDS[@]} -eq 4 ]; then
-            local reply=($(compgen -W "rsa dsa ecdsa eddsa auto" "${COMP_WORDS[3]}"))
+        elif [[ "${COMP_WORDS[-2]}" == "parse" ]]; then
+            local reply=($(compgen -W "dh rsa dsa ecdsa eddsa auto" "${COMP_WORDS[3]}"))
+        elif [[ "${COMP_WORDS[-2]}" == "generate" ]]; then
+            local reply=($(compgen -W "dh rsa dsa ecdsa eddsa" "${COMP_WORDS[3]}"))
         elif [ ${#COMP_WORDS[@]} -gt 4 ]; then
             local reply=($(compgen -W "filename --args --pub --encoding --encoding-args" "${COMP_WORDS[5]}"))
         fi

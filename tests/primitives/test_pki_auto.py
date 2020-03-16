@@ -23,6 +23,13 @@ class PKIAutoTestCase(unittest.TestCase):
             print(expected_type)
             raise e
 
+
+        if type(parsed) != expected_type:
+            print("PKI PARSE FAILURE")
+            print((key, passphrase))
+            print(expected_type)
+
+
         self.assertEqual(type(parsed), expected_type)
 
 

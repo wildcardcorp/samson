@@ -1,5 +1,5 @@
 from samson.auxiliary.genetic_algorithm import GeneticAlgorithm
-from samson.utilities.analysis import str_hamming_distance
+from samson.analysis.general import str_hamming_distance
 from samson.utilities.bytes import Bytes
 import random
 import string

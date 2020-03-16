@@ -1,4 +1,4 @@
-from samson.utilities.analysis import chisquare, count_items
+from samson.analysis.general import chisquare, count_items
 from samson.utilities.bytes import Bytes
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 import string

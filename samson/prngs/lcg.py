@@ -30,7 +30,6 @@ class LCG(object):
     def __repr__(self):
         return f"<LCG: X={self.X}, a={self.a}, c={self.c}, m={self.m}, trunc={self.trunc}>"
 
-
     def __str__(self):
         return self.__repr__()
 

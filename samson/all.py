@@ -1,4 +1,5 @@
 from samson.ace.fingerprinter import Fingerprinter
+from samson.analysis.all import *
 from samson.analyzers.all import *
 from samson.attacks.all import *
 from samson.auxiliary.all import *

@@ -75,6 +75,10 @@ class X509Certificate(PEMEncodable):
 
         # Signature algorithm
         signing_key = kwargs.get('signing_key') or pki_key
+
+        if not (kwargs.get('signing_alg') or hasattr(signing_key, "X509_SIGNING_DEFAULT")):
+            raise ValueError("'signing_alg' not specified and 'signing_key' has no default algorithm")
+
         signing_alg = (kwargs.get('signing_alg') or signing_key.X509_SIGNING_DEFAULT).value
 
         signature_alg = rfc2459.AlgorithmIdentifier()

@@ -26,11 +26,11 @@ class CTRTestCase(unittest.TestCase):
 
             key = Bytes(key_bytes).zfill(ceil(len(key_bytes) / 16) * 16)
 
-            ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
+            ctr = CTR(Rijndael(key), nonce[:15])
             ctr.counter = 1
             ciphertext = ctr.encrypt(plaintext)
 
-            ctr = CTR(Rijndael(key).encrypt, nonce[:15], 16)
+            ctr = CTR(Rijndael(key), nonce[:15])
             ctr.counter = 1
             self.assertEqual(ciphertext, expected_ciphertext)
             self.assertEqual(plaintext, ctr.decrypt(ciphertext))

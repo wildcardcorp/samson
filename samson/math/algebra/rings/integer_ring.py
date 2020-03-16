@@ -22,8 +22,8 @@ class IntegerElement(RingElement):
         return f"<IntegerElement: val={self.val}, ring={self.ring}>"
 
 
-    def factor(self) -> list:
-        return factor(self.val)
+    def factor(self, **kwargs) -> list:
+        return factor(self.val, **kwargs)
 
     def is_prime(self) -> list:
         return is_prime(self.val)

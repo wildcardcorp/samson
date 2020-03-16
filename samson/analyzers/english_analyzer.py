@@ -1,5 +1,5 @@
 from samson.analyzers.analyzer import Analyzer
-from samson.utilities.analysis import chisquare
+from samson.analysis.general import chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
 from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS, CHAR_FREQ, ENGLISH_ONE_GRAMS

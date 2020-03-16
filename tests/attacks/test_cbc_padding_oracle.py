@@ -48,13 +48,12 @@ def decrypt_data(data):
         return True
     except InvalidPaddingException as e:
         return False
-        raise e
 
 
 class CBCPaddingOracleTestCase(unittest.TestCase):
     def test_paddingattack(self):
         ciphertext = encrypt_data()
-        assert decrypt_data(ciphertext) == True
+        assert decrypt_data(ciphertext)
 
         attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv, block_size=block_size)
         recovered_plaintext = attack.execute(bytes(ciphertext))
@@ -68,7 +67,7 @@ class CBCPaddingOracleTestCase(unittest.TestCase):
 
     def test_paddingattack_batch(self):
         ciphertext = encrypt_data()
-        assert decrypt_data(ciphertext) == True
+        assert decrypt_data(ciphertext)
 
         def decrypt_batch(blocks):
             working_blocks = []

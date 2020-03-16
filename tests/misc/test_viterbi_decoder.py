@@ -1,5 +1,5 @@
 from samson.auxiliary.viterbi_decoder import ViterbiDecoder
-from samson.utilities.analysis import levenshtein_distance
+from samson.analysis.general import levenshtein_distance
 import unittest
 
 SUPPOSED_ENGLISH = [

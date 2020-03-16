@@ -2162,3 +2162,136 @@ def is_primitive_root(a: int, p: int) -> bool:
     a_star = Z_star(a)
 
     return gcd(a, p) == 1 and a_star*Z_star.order == Z_star.one() and a_star.order == Z_star.order
+
+
+
+def product(elem_list: list, return_tree=False) -> object:
+    """
+    Calculates the product of all elements in `elem_list`.
+
+    Parameters:
+        elem_list   (list): List of RingElements.
+        return_tree (bool): Whether or not to return the intermediate tree results.
+    
+    Returns:
+        RingElement: Product of all RingElements.
+    
+    Examples:
+        >>> from samson.math.general import product
+        >>> product([ZZ(1), ZZ(2), ZZ(3)])
+        <IntegerElement: val=6, ring=ZZ>
+
+        >>> product([ZZ(1), ZZ(2), ZZ(3)], True)
+        [[<IntegerElement: val=1, ring=ZZ>, <IntegerElement: val=2, ring=ZZ>, <IntegerElement: val=3, ring=ZZ>, <IntegerElement: val=1, ring=ZZ>], [<IntegerElement: val=2, ring=ZZ>, <IntegerElement: val=3, ring=ZZ>], [<IntegerElement: val=6, ring=ZZ>]]
+
+    References:
+        https://facthacks.cr.yp.to/product.html
+    """
+    X = list(elem_list)
+    if len(X) == 0: return 1
+    X_type = type(X[0])
+
+    tree = [X]
+    one  = 1 if X_type is int else X[0].ring.one()
+
+    while len(X) > 1:
+        if len(X) % 2:
+            X.append(one)
+
+        X = [X_type.__mul__(*X[i*2:(i+1)*2]) for i in range(len(X) // 2)]
+
+        if return_tree:
+            tree.append(X)
+
+    return tree if return_tree else X[0]
+
+
+
+def batch_gcd(elem_list: list) -> list:
+    """
+    Calculates the greatest common denominators of any two elements in `elem_list`.
+
+    Parameters:
+        elem_list (list): List of RingElements.
+    
+    Returns:
+        list: Greatest common denominators of any two elements.
+    
+    Examples:
+        >>> from samson.math.general import batch_gcd
+        >>> batch_gcd([1909, 2923, 291, 205, 989, 62, 451, 1943, 1079, 2419])
+        [1909, 1, 1, 41, 23, 1, 41, 1, 83, 41]
+
+    References:
+        https://facthacks.cr.yp.to/batchgcd.html
+    """
+    prods = product(elem_list, True)
+    R = prods.pop()
+    while prods:
+        elem_list = prods.pop()
+        R         = [R[i // 2] % elem_list[i]**2 for i in range(len(elem_list))]
+
+    return [gcd(r // n, n) for r, n in zip(R, elem_list)]
+
+
+
+def smoothness(n: int, factors: dict=None, **factor_kwargs) -> float:
+    """
+    Calculates the smoothness of an integer `n` as a ratio of the number of non-trivial factors to the number of bits.
+    Thus, primes are 0% smooth and 2**n is 100% smooth.
+
+    Parameters:
+        n        (int): Integer to analyze.
+        factors (dict): Factors of `n`.
+    
+    Returns:
+        float: Smoothness ratio.
+    
+    Examples:
+        >>> from samson.math.general import smoothness, is_prime
+        >>> p = 211
+        >>> assert is_prime(p)
+        >>> smoothness(p)
+        0.0
+
+        >>> smoothness(p-1)
+        0.5185212203629948
+
+    """
+    if not factors:
+        if not factor_kwargs:
+            factor_kwargs = {"use_rho": False}
+
+        factors = factor(n, **factor_kwargs)
+
+    # 'factors' will return {n: 1} if `n` is prime
+    # Just early-out since there will be zero non-trivials anyway
+    if n in factors:
+        return 0.0
+
+    return (sum(factors.values())) / math.log(n, 2)
+
+
+
+def is_sophie_germain_prime(p: int) -> bool:
+    """
+    Determines if `p` is a Sophie Germain prime (safe prime).
+
+    Parameters:
+        p (int): Prime to analyze.
+    
+    Returns:
+        bool: Whether `p` is a Sophie Germain prime.
+    
+    Examples:
+        >>> from samson.math.general import is_sophie_germain_prime
+        >>> from samson.protocols.diffie_hellman import DiffieHellman
+        >>> is_sophie_germain_prime(DiffieHellman.MODP_2048)
+        True
+
+    """
+    q, r = divmod(p-1, 2)
+    return not r and is_prime(q) and is_prime(p)
+
+
+is_safe_prime = is_sophie_germain_prime

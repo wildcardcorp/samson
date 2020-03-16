@@ -4,14 +4,14 @@ from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ecb import ECB
 from samson.padding.pkcs7 import PKCS7
 from samson.utilities.general import rand_bytes
-from samson.oracles.stateless_block_encryption_oracle import StatelessBlockEncryptionOracle
+from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.attacks.ecb_prepend_attack import ECBPrependAttack
 import unittest
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
 
-key_size = 16
+key_size   = 16
 block_size = 16
 
 
@@ -26,7 +26,7 @@ def encrypt_rand_ecb(message):
 
 class ECBPrependAttackTestCase(unittest.TestCase):
     def test_prepend_attack(self):
-        attack = ECBPrependAttack(StatelessBlockEncryptionOracle(encrypt_rand_ecb))
+        attack = ECBPrependAttack(ChosenPlaintextOracle(encrypt_rand_ecb))
         recovered_plaintext = attack.execute()
 
         padder = PKCS7(block_size)

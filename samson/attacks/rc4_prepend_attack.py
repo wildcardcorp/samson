@@ -1,4 +1,4 @@
-from samson.utilities.analysis import generate_rc4_bias_map, RC4_BIAS_MAP
+from samson.analysis.general import generate_rc4_bias_map, RC4_BIAS_MAP
 from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.bytes import Bytes

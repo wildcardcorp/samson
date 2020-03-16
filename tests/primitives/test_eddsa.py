@@ -3,7 +3,7 @@ from samson.encoding.general import PKIEncoding
 from samson.public_key.eddsa import EdDSA
 from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448
 from samson.hashes.sha2 import SHA512
-from samson.hashes.sha3 import SHA3
+from samson.hashes.sha3 import SHAKE256
 import unittest
 
 TEST_SSH_PRIV = b"""-----BEGIN OPENSSH PRIVATE KEY-----
@@ -191,7 +191,7 @@ class EdDSATestCase(unittest.TestCase):
 
     def _run_448_test(self, message, d, expected_public_key=None, expected_sig=None):
         curve    = EdwardsCurve448
-        hash_alg = SHA3.SHAKE256(912)
+        hash_alg = SHAKE256(912)
         self._run_test(message, d, curve, hash_alg, expected_public_key, expected_sig)
 
 

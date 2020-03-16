@@ -38,7 +38,6 @@ X   New IoT ciphers
     X   NSA Speck
 
 
-X   BatchGCD (https://facthacks.cr.yp.to/index.html)
 
 X   Increase performance
     X   Weierstrass curves
@@ -84,12 +83,15 @@ X   More protocols
     X   AKA (Authentication and Key Agreement)
     X   Kerberos
     X   NTLMv2
+    X   RADIUS
 
 
 X   OCB3
 X   Fermat pseudoprime generation
 X   Lucas pseudoprime generation
 X   Unify Diffie-Hellmans
+
+X   Payload generators (RegEx gen)
 
 
 

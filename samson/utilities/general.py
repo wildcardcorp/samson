@@ -69,6 +69,7 @@ def de_bruijn(k: list, n: int) -> str:
     return "".join(alphabet[i] for i in sequence)
 
 
+
 def binary_search(in_list: list, value: object, key: FunctionType=lambda item: item, fuzzy: bool=False) -> int:
     """
     Performs binary search for `value` on a sorted `in_list` with key selector `key`.
@@ -137,3 +138,26 @@ def add_or_increment(dictionary: dict, key: object, value: int=1):
         dictionary[key] += value
     else:
         dictionary[key] = value
+
+
+def crc24(data: bytes) -> int:
+    """
+    Calculates the CRC-24 checksum of `data`
+
+    Parameters:
+        data (bytes): Data to be checksummed.
+    
+    Returns:
+        int: Checksum.
+    """
+    crc  = 0xB704CE
+    poly = 0x1864CFB
+
+    for byte in data:
+        crc ^= byte << 16
+        for _ in range(8):
+            crc <<= 1
+            if crc & 0x1000000:
+                crc ^= poly
+    
+    return crc & 0xFFFFFF

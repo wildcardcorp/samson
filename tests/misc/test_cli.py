@@ -1,5 +1,7 @@
-from samson.utilities.cli import HASHES, PKI
+from samson.utilities.cli import HASHES, PKI, ENCODING_MAPPING
+from samson.encoding.general import PKIEncoding
 from subprocess import check_output
+from tempfile import NamedTemporaryFile
 import unittest
 
 HASH_PARAMS = {
@@ -10,10 +12,9 @@ HASH_PARAMS = {
 
 PKI_PARAMS = {
     'rsa': 'bits=1024',
-    'ecdsa': 'curve=nistp192'
+    'ecdsa': 'curve=nistp192',
 }
 
-ENCODING_PARAMS = [[], ['--encoding=OpenSSH'], ['--encoding=PKCS1'], ['--pub'], ['--pub', '--encoding=ssh2'], ['--encoding=jwk'], ['--encoding=jwk', '--pub']]
 
 class CLITestCase(unittest.TestCase):
     def test_hashes(self):
@@ -26,19 +27,28 @@ class CLITestCase(unittest.TestCase):
 
 
     def test_pki(self):
-        for pki_name in PKI:
-            params = [pki_name]
-            if pki_name in PKI_PARAMS:
-                params += [f"--args={PKI_PARAMS[pki_name]}"]
+        with NamedTemporaryFile() as temp_file:
+            # We need a signing key for the DH cert
+            check_output(f"samson pki generate rsa --args=bits=1024 > {temp_file.name}", shell=True)
 
-            for encoding in ENCODING_PARAMS:
-                if pki_name == 'eddsa' and len(encoding) == 1 and 'PKCS1' in encoding[0]:
-                    continue
-                elif pki_name not in ['rsa', 'ecdsa'] and len(encoding) > 0 and 'jwk' in encoding[0]:
-                    continue
-                elif pki_name == 'auto':
-                    continue
-                elif pki_name == 'dh' and len(encoding) > 0 and ('OpenSSH' in encoding[0] or 'ssh2' in encoding[1] or 'jwk' in encoding[0]):
+            for pki_name, pki_class in PKI.items():
+                if pki_name == "auto":
                     continue
 
-                check_output(["samson", "pki", "generate", *params] + encoding)
+                params = [pki_name]
+
+                if pki_name in PKI_PARAMS:
+                    params += [f"--args={PKI_PARAMS[pki_name]}"]
+                
+                if pki_name == "dh":
+                    params += [f"--encoding-args=signing_key={temp_file.name}"]
+                
+
+                for key, encoding in ENCODING_MAPPING.items():
+                    enc_key = [f"--encoding={key}"]
+
+                    if encoding in pki_class.PRIV_ENCODINGS:
+                        check_output(["samson", "pki", "generate", *params] + enc_key)
+
+                    if encoding in pki_class.PUB_ENCODINGS:
+                        check_output(["samson", "pki", "generate", *params] + enc_key + ["--pub"])

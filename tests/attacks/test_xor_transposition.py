@@ -3,7 +3,7 @@ from samson.block_ciphers.rijndael import Rijndael
 from samson.block_ciphers.modes.ctr import CTR
 
 from samson.utilities.general import rand_bytes
-from samson.utilities.analysis import levenshtein_distance
+from samson.analysis.general import levenshtein_distance
 from samson.attacks.xor_transposition_attack import XORTranspositionAttack
 from samson.analyzers.english_analyzer import EnglishAnalyzer
 from samson.stream_ciphers.rc4 import RC4
@@ -18,7 +18,7 @@ block_size = 16
 key = rand_bytes(key_size)
 
 def encrypt_ctr(secret):
-    return CTR(Rijndael(key).encrypt, int.to_bytes(0, block_size // 2, 'big'), block_size).encrypt(secret)
+    return CTR(Rijndael(key), int.to_bytes(0, block_size // 2, 'big')).encrypt(secret)
 
 
 def encrypt_rc4(secret):
