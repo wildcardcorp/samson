@@ -72,6 +72,10 @@ class Symbol(Polynomial):
 
     def __bool__(self) -> bool:
         return True
+    
+    def __pow__(self, power):
+        return self.var._create_poly({power: self.ring.ring.one()})
+
 
     def build(self, ring):
         from samson.math.polynomial import Polynomial

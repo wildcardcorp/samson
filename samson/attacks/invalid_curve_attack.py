@@ -2,7 +2,7 @@ from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, Weier
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import crt, factor as factorint
 from samson.utilities.runtime import RUNTIME
-from samson.oracles.default_oracle import DefaultOracle
+from samson.oracles.oracle import Oracle
 from typing import List
 import itertools
 
@@ -25,10 +25,10 @@ class InvalidCurveAttack(object):
     * The user has access to an oracle that accepts arbitrary public keys and returns the residue
     """
 
-    def __init__(self, oracle: DefaultOracle, curve: WeierstrassCurve):
+    def __init__(self, oracle: Oracle, curve: WeierstrassCurve):
         """
         Parameters:
-            oracle   (DefaultOracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
+            oracle   (Oracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
             curve (WeierstrassCurve): Curve that the victim is using.
         """
         self.oracle = oracle

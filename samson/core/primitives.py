@@ -3,6 +3,7 @@ from samson.ace.decorators import has_exploit, creates_constraint
 from samson.ace.exploit import KeyPossession, PlaintextPossession
 from samson.ace.constraints import EncryptedConstraint
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import CiphertextLengthException, InvalidMACException
 from copy import deepcopy
 from abc import abstractmethod
 
@@ -70,7 +71,8 @@ class MAC(Primitive):
         pass
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        return self.generate(message) == signature
+        from samson.utilities.runtime import RUNTIME
+        return RUNTIME.compare_bytes(self.generate(message), signature)
 
 
 
@@ -175,8 +177,20 @@ class BlockCipherMode(EncryptionAlg):
     OUTPUT_SIZE      = SizeSpec(size_type=SizeType.ARBITRARY)
     BLOCK_SIZE       = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda mode: mode.cipher.BLOCK_SIZE)
     IO_RELATION_TYPE = IORelationType.EQUAL
+    
+    def check_ciphertext_length(self, ciphertext: bytes):
+        if not len(ciphertext) or len(ciphertext) % self.cipher.block_size != 0:
+            raise CiphertextLengthException("Ciphertext is not a multiple of the block size")
 
 
 class StreamingBlockCipherMode(BlockCipherMode):
     CIPHER_TYPE = CipherType.STREAM_CIPHER
     BLOCK_SIZE  = SizeSpec(size_type=SizeType.SINGLE, sizes=8)
+
+
+class AuthenticatedCipher(EncryptionAlg):
+    def verify_tag(self, tag: bytes, given_tag: bytes):
+        from samson.utilities.runtime import RUNTIME
+
+        if not RUNTIME.compare_bytes(tag, given_tag):
+            raise InvalidMACException('Tag mismatch: authentication failed!')

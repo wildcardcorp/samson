@@ -75,11 +75,10 @@ class CBC(BlockCipherMode):
         Returns:
             Bytes: Resulting plaintext.
         """
-        plaintext = b''
+        plaintext  = b''
         ciphertext = Bytes.wrap(ciphertext)
-
-        if len(ciphertext) % self.cipher.block_size != 0:
-            raise Exception("Ciphertext is not a multiple of the block size")
+        
+        self.check_ciphertext_length(ciphertext)
 
         last_block = self.iv
         for block in get_blocks(ciphertext, self.cipher.block_size):

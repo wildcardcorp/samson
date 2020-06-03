@@ -1,6 +1,7 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
-from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.utilities.exceptions import InvalidMACException
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
 
@@ -17,7 +18,7 @@ def reverse_bits(int32: int) -> int:
 
 
 @register_primitive()
-class GCM(StreamingBlockCipherMode):
+class GCM(StreamingBlockCipherMode, AuthenticatedCipher):
     """Galois counter mode (GCM) block cipher mode"""
 
     EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=96))
@@ -108,8 +109,7 @@ class GCM(StreamingBlockCipherMode):
         data     = Bytes.wrap(data)
         tag      = self.auth(ciphertext, data, tag_mask)
 
-        if not RUNTIME.compare_bytes(tag, orig_tag):
-            raise Exception('Tag mismatch: authentication failed!')
+        self.verify_tag(tag, orig_tag)
 
         return self.ctr.decrypt(ciphertext)
 

@@ -44,7 +44,7 @@ class RC4PrependAttack(object):
 
 
     def _encrypt_chunk(self, payload: bytes, chunk_size: int):
-        return [bytearray(self.oracle.encrypt(payload)) for _ in range(chunk_size)]
+        return [bytearray(self.oracle.request(payload)) for _ in range(chunk_size)]
 
 
     @RUNTIME.report

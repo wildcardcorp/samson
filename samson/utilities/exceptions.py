@@ -1,3 +1,5 @@
+from enum import Enum
+
 class NotInvertibleException(Exception):
     def __init__(self, msg: str, parameters: dict):
         self.parameters = parameters
@@ -12,13 +14,49 @@ class CoercionException(Exception):
     pass
 
 
+class ProbabilisticFailureException(Exception):
+    pass
+
+
 class OracleException(Exception):
     pass
 
 
-class InvalidPaddingException(OracleException):
-    pass
+class DecryptionValidationStep(Enum):
+    CIPHERTEXT = 0
+    MAC        = 1
+    PADDING    = 2
+    PLAINTEXT  = 3
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __ge__(self, other):
+        return self.value >= other.value
 
 
-class ProbabilisticFailureException(Exception):
-    pass
+
+class DecryptionException(OracleException):
+    DECRYPT_STEP = None
+
+
+class CiphertextLengthException(DecryptionException):
+    DECRYPT_STEP = DecryptionValidationStep.CIPHERTEXT
+
+
+class InvalidMACException(DecryptionException):
+    DECRYPT_STEP = DecryptionValidationStep.MAC
+
+
+class InvalidPaddingException(DecryptionException):
+    DECRYPT_STEP = DecryptionValidationStep.PADDING
+
+
+class InvalidPlaintextException(DecryptionException):
+    DECRYPT_STEP = DecryptionValidationStep.PLAINTEXT

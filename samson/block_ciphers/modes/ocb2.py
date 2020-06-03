@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.kdfs.s2v import dbl
-from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import SizeType, SizeSpec, EphemeralType, EphemeralSpec
 from samson.ace.decorators import register_primitive
 
@@ -9,7 +9,7 @@ def triple(bytestring):
 
 
 @register_primitive()
-class OCB2(StreamingBlockCipherMode):
+class OCB2(StreamingBlockCipherMode, AuthenticatedCipher):
     """
     Offset codebook version 2 block cipher mode.
     http://web.cs.ucdavis.edu/~rogaway/papers/draft-krovetz-ocb-00.txt
@@ -163,6 +163,6 @@ class OCB2(StreamingBlockCipherMode):
 
 
         if verify:
-            assert tag == given_tag
+            self.verify_tag(tag, given_tag)
 
         return plaintext

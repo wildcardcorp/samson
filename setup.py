@@ -46,6 +46,7 @@ setup(name='samson-crypto',
       packages=[
           "samson",
           "samson/ace",
+          "samson/analysis",
           "samson/analyzers",
           "samson/attacks",
           "samson/auxiliary",

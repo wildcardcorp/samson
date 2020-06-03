@@ -2,7 +2,7 @@
 from samson.attacks.diffie_hellman_subgroup_confinement_attack import DiffieHellmanSubgroupConfinementAttack
 from samson.utilities.bytes import Bytes
 from samson.protocols.diffie_hellman import DiffieHellman
-from samson.oracles.default_oracle import DefaultOracle
+from samson.oracles.oracle import Oracle
 from samson.hashes.sha2 import SHA256
 from samson.macs.hmac import HMAC
 import unittest
@@ -25,7 +25,7 @@ class DiffieHellmanSubgroupConfinementAttackTestCase(unittest.TestCase):
                     return i
 
 
-        oracle        = DefaultOracle(oracle_func)
+        oracle        = Oracle(oracle_func)
         dhsgc         = DiffieHellmanSubgroupConfinementAttack(oracle, p, g, order=q)
         recovered_key = dhsgc.execute(bob_key.get_challenge())
 

@@ -148,7 +148,7 @@ def frobenius_map(f: object, g: object, bases: list=None) -> object:
 
 def gcd(a: int, b: int) -> int:
     """
-    Recursively computes the greatest common denominator.
+    Iteratively computes the greatest common denominator.
 
     Parameters:
         a (int): First integer.
@@ -963,6 +963,7 @@ def random_int(n: int) -> int:
     max_bit = 2**n.bit_length()
     q = max_bit // n
     max_num = n * q - 1
+
     while True:
         attempt = int.from_bytes(rand_bytes(byte_length), 'big') % max_bit
         if attempt <= max_num:
@@ -1922,6 +1923,9 @@ def is_prime(n: int) -> bool:
     References:
         https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
     """
+    if n < 0:
+        return False
+
     if n in PRIMES_UNDER_1000:
         return True
 

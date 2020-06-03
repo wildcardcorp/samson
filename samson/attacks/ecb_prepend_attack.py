@@ -39,7 +39,7 @@ class ECBPrependAttack(object):
         Returns:
             Bytes: The recovered plaintext.
         """
-        baseline   = len(self.oracle.encrypt(b''))
+        baseline   = len(self.oracle.request(b''))
         block_size = self.oracle.test_io_relation()['block_size']
 
         plaintexts = []
@@ -53,11 +53,11 @@ class ECBPrependAttack(object):
                 else:
                     payload = plaintexts[-1][curr_byte + 1:]
 
-                one_byte_short = get_blocks(self.oracle.encrypt(payload), block_size=block_size)[curr_block]
+                one_byte_short = get_blocks(self.oracle.request(payload), block_size=block_size)[curr_block]
 
                 for i in range(256):
                     curr_byte  = struct.pack('B', i)
-                    ciphertext = self.oracle.encrypt(payload + plaintext + curr_byte)
+                    ciphertext = self.oracle.request(payload + plaintext + curr_byte)
 
                     # We're always editing the first block to look like block 'curr_block'
                     if get_blocks(ciphertext, block_size=block_size)[0] == one_byte_short:

@@ -70,8 +70,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             if gcd(self.e, phi) != 1:
                 raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
 
-            bits = p.bit_length() + q.bit_length()
-        
+            bits = self.n.bit_length()
+
         elif n:
             self.n = n
 

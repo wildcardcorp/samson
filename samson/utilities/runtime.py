@@ -9,6 +9,11 @@ import os
 
 URANDOM = open("/dev/urandom", "rb")
 
+
+def default_poly_fft_heuristic(p1, p2):
+    return p1.coeffs.sparsity * p2.coeffs.sparsity > (1000 // p1.ring.structure_depth)
+
+
 class RuntimeConfiguration(object):
     """
     Global runtime configuration. Allows for the dynamic configuration of existing samson code.
@@ -55,6 +60,7 @@ class RuntimeConfiguration(object):
 
 
         self.random = lambda size: URANDOM.read(size)
+        self.poly_fft_heuristic = default_poly_fft_heuristic
 
 
         # Initialize exploit mappings

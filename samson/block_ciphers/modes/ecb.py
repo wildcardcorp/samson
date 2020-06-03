@@ -62,6 +62,8 @@ class ECB(BlockCipherMode):
         """
         ciphertext = Bytes.wrap(ciphertext)
 
+        self.check_ciphertext_length(ciphertext)
+
         plaintext = Bytes(b'')
         for block in get_blocks(ciphertext, self.cipher.block_size):
             plaintext += self.cipher.decrypt(block)

@@ -1,4 +1,4 @@
-from samson.oracles.default_oracle import DefaultOracle
+from samson.oracles.oracle import Oracle
 from samson.utilities.bytes import Bytes
 import struct
 import string
@@ -22,10 +22,10 @@ class CRIMEAttack(object):
         * The user has access to a length oracle that takes in arbitrary bytes and outputs the compressed length.
     """
 
-    def __init__(self, oracle: DefaultOracle, alphabet: bytes=alphabet, padding_chars: bytes=padding_chars):
+    def __init__(self, oracle: Oracle, alphabet: bytes=alphabet, padding_chars: bytes=padding_chars):
         """
         Parameters:
-            oracle (DefaultOracle): A length oracle that takes in arbitrary bytes and outputs the compressed length.
+            oracle (Oracle): A length oracle that takes in arbitrary bytes and outputs the compressed length.
             alphabet       (bytes): Allowed characters to try.
             padding_chars  (bytes): Characters not likely to show up and can be used as "padding."
         """

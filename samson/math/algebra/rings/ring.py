@@ -59,6 +59,15 @@ class Ring(ABC):
     def one(self):
         pass
 
+
+    @property
+    def structure_depth(self):
+        if hasattr(self, 'ring'):
+            return self.ring.structure_depth+1
+        else:
+            return 1
+
+
     def random(self, size: object) -> object:
         """
         Generate a random element.

@@ -1,13 +1,14 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidMACException
 from samson.macs.cbc_mac import CBCMAC
-from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import FrequencyType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
 from samson.ace.decorators import register_primitive
 import hmac
 
 @register_primitive()
-class CCM(StreamingBlockCipherMode):
+class CCM(StreamingBlockCipherMode, AuthenticatedCipher):
     """
     Counter with CBC-MAC block cipher mode.
 
@@ -116,6 +117,8 @@ class CCM(StreamingBlockCipherMode):
         Returns:
             Bytes: Resulting plaintext.
         """
+        from samson.utilities.runtime import RUNTIME
+
         _data_len, q, _flags, _b_0 = self._calculate_formatting_params(nonce, ciphertext, data)
 
         keystream = self._generate_keystream(nonce, q, len(ciphertext) + (16 - self.mac_len))
@@ -125,7 +128,6 @@ class CCM(StreamingBlockCipherMode):
 
         T = self._generate_mac(nonce, plaintext, data)[:self.mac_len]
 
-        if not hmac.compare_digest(T, mac):
-            raise Exception("Authentication of data failed: MACs not equal")
+        self.verify_tag(T, mac)
 
         return plaintext

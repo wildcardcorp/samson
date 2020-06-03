@@ -174,7 +174,7 @@ class Fingerprinter(object):
             bc_modes = [prim for prim in filtered if issubclass(prim, BlockCipherMode) and not issubclass(prim, StreamingBlockCipherMode)]
 
             # Check for ECB
-            if self.oracle.test_stateless(block_size):
+            if self.oracle.test_stateless_blocks(block_size):
                 log.info(f'Stateless blocks detected')
                 bc_modes = [ECB]
 

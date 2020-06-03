@@ -1,12 +1,12 @@
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.modes.ctr import CTR
 from samson.macs.cmac import CMAC
-from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
-class EAX(StreamingBlockCipherMode):
+class EAX(StreamingBlockCipherMode, AuthenticatedCipher):
     """
     EAX block cipher mode
     http://web.cs.ucdavis.edu/~rogaway/papers/eax.pdf
@@ -78,11 +78,13 @@ class EAX(StreamingBlockCipherMode):
         Returns:
             Bytes: Resulting plaintext.
         """
+        from samson.utilities.runtime import RUNTIME
+
         ciphertext, given_tag = ciphertext[:-16], ciphertext[-16:]
         tag = self.generate_tag(ciphertext, auth_data)
 
         if verify:
-            assert tag == given_tag
+            self.verify_tag(tag, given_tag)
 
 
         self.ctr.counter = self.cmac.generate(Bytes(0).zfill(self.cipher.block_size) + self.nonce).int()

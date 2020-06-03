@@ -56,7 +56,7 @@ class XORBitflippingAttack(object):
             Bytes: The manipulated ciphertext.
         """
         payload = b'a' * self.block_size
-        ciphertext = self.oracle.encrypt(payload)
+        ciphertext = self.oracle.request(payload)
 
         end_of_block = index + self.block_size
         edited_cipher = Bytes(ciphertext)

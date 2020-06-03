@@ -2,8 +2,10 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import square_and_mul, gcd, factor as factor_int
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
+from types import FunctionType
 
 class Polynomial(RingElement):
+
     def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: object=None, ring: Ring=None):
         """
         Parameters:
@@ -15,17 +17,19 @@ class Polynomial(RingElement):
         from samson.math.symbols import Symbol
 
         self.coeff_ring = coeff_ring or coeffs[0].ring
+        c_type = type(coeffs)
 
-        if type(coeffs) is list or type(coeffs) is tuple or type(coeffs) is dict:
-            if type(coeffs) is dict or (len(coeffs) > 0 and type(coeffs[0]) is tuple):
+        if c_type in [list, tuple, dict]:
+            if c_type is dict or (len(coeffs) > 0 and type(coeffs[0]) is tuple):
                 vec = coeffs
             else:
                 vec = [self.coeff_ring.coerce(coeff) for coeff in coeffs]
 
-            self.coeffs = SparseVector(vec, self.coeff_ring.zero())
+            self.coeffs = self._create_sparse(vec)
 
-        elif type(coeffs) is SparseVector:
+        elif c_type is SparseVector:
             self.coeffs = coeffs
+            self.coeffs.trim()
 
         else:
             raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
@@ -35,7 +39,7 @@ class Polynomial(RingElement):
         self.ring   = ring or self.coeff_ring[self.symbol]
 
         if len(self.coeffs.values) == 0:
-            self.coeffs = SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())
+            self.coeffs = self._create_sparse([self.coeff_ring.zero()])
 
 
 
@@ -94,7 +98,7 @@ class Polynomial(RingElement):
             RingElement: Coefficient of the highest degree.
         """
         try:
-            return self.coeffs[-1]
+            return self.coeffs[self.coeffs.last()]
         except IndexError:
             return self.coeff_ring.zero()
 
@@ -118,6 +122,18 @@ class Polynomial(RingElement):
             last_idx = idx
 
         return c0
+    
+
+    def _create_sparse(self, vec):
+        return SparseVector(vec, self.coeff_ring.zero(), allow_virtual_len=True)
+
+
+    def _create_poly(self, vec):
+        return Polynomial(vec, coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)
+
+
+    def map_coeffs(self, func: FunctionType) -> 'Polynomial':
+        return self._create_poly(self.coeffs.map(func))
 
 
     def monic(self) -> object:
@@ -127,7 +143,7 @@ class Polynomial(RingElement):
         Returns:
             Polynomial: Monic representation of self.
         """
-        return Polynomial([(idx, coeff / self.coeffs[-1]) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
+        return self._create_poly([(idx, coeff / self.coeffs[-1]) for idx, coeff in self.coeffs])
 
 
     def is_monic(self) -> bool:
@@ -147,7 +163,7 @@ class Polynomial(RingElement):
         Returns:
             Polynomial: Derivative of self.
         """
-        return Polynomial([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0], self.coeff_ring, self.symbol)
+        return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0])
 
 
     def trunc_kth_root(self, k: int) -> object:
@@ -169,7 +185,7 @@ class Polynomial(RingElement):
             <Polynomial: x**2 + ZZ(2)*x, coeff_ring=ZZ>
 
         """
-        return Polynomial([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k], self.coeff_ring, self.symbol)
+        return self._create_poly([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k])
 
 
     def trunc(self, mod: RingElement) -> object:
@@ -191,7 +207,7 @@ class Polynomial(RingElement):
             <Polynomial: ZZ(2)*x**5 + x**4 + ZZ(2)*x**2 + x + ZZ(1), coeff_ring=ZZ>
 
         """
-        return Polynomial([(idx, coeff % mod) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
+        return self._create_poly([(idx, coeff % mod) for idx, coeff in self.coeffs])
 
 
     def square_free_decomposition(self) -> list:
@@ -530,11 +546,11 @@ class Polynomial(RingElement):
         if n > self.degree():
             return self.ring.zero(), self
 
-        dividend = SparseVector([c for c in self.coeffs], self.coeff_ring.zero())
+        dividend = self._create_sparse([c for c in self.coeffs])
         divisor  = other.coeffs
 
         n = other.degree()
-        quotient = SparseVector([], self.coeff_ring.zero())
+        quotient = self._create_sparse([])
 
         for k in reversed(range(self.degree() - n + 1)):
             quotient[k] = dividend[k+n] / divisor[n]
@@ -544,13 +560,13 @@ class Polynomial(RingElement):
 
         remainder = dividend[:n]
 
-        return (Polynomial(quotient, coeff_ring=self.coeff_ring, symbol=self.symbol), Polynomial(remainder, coeff_ring=self.coeff_ring, symbol=self.symbol))
+        return (self._create_poly(quotient), self._create_poly(remainder))
 
 
     def __add__(self, other: object) -> object:
         other = self.ring.coerce(other)
 
-        vec = SparseVector([], self.coeff_ring.zero())
+        vec = self._create_sparse([])
         for idx, coeff in self.coeffs:
             vec[idx] = coeff + other.coeffs[idx]
 
@@ -558,13 +574,13 @@ class Polynomial(RingElement):
             if not idx in self.coeffs:
                 vec[idx] = coeff
 
-        return Polynomial(vec, self.coeff_ring, self.symbol)
+        return self._create_poly(vec)
 
 
     def __sub__(self, other: object) -> object:
         other = self.ring.coerce(other)
 
-        vec = SparseVector([], self.coeff_ring.zero())
+        vec = self._create_sparse([])
         for idx, coeff in self.coeffs:
             vec[idx] = coeff - other.coeffs[idx]
 
@@ -572,23 +588,67 @@ class Polynomial(RingElement):
             if not idx in self.coeffs:
                 vec[idx] = -coeff
 
-        return Polynomial(vec, self.coeff_ring, self.symbol)
+        return self._create_poly(vec)
 
 
     def __mul__(self, other: object) -> object:
+        from samson.utilities.runtime import RUNTIME
+
         gmul = self.ground_mul(other)
         if gmul:
             return gmul
 
         other = self.ring.coerce(other)
 
-        new_coeffs = SparseVector([], self.coeff_ring.zero())
+        if RUNTIME.poly_fft_heuristic(self, other):
+            # Naive convolution
+            new_coeffs = self._create_sparse([])
 
-        for i, coeff_h in self.coeffs:
-            for j, coeff_g in other.coeffs:
-                new_coeffs[i+j] += coeff_h*coeff_g
+            for i, coeff_h in self.coeffs:
+                for j, coeff_g in other.coeffs:
+                    new_coeffs[i+j] += coeff_h*coeff_g
+            
+            poly = self._create_poly(new_coeffs)
 
-        return Polynomial(new_coeffs, self.coeff_ring, self.symbol)
+        else:
+            # FFT conv
+            from samson.math.general import gcd
+            from samson.math.fft import _convolution
+
+            self_powers  = list(self.coeffs.values.keys())
+            other_powers = list(other.coeffs.values.keys())
+
+            # Remove consistent sparsity (GCD)
+            denom = min(self_powers[0], other_powers[0])
+            for power in self_powers + other_powers:
+                if denom == 1:
+                    break
+
+                denom = gcd(power, denom)
+
+            small_self  = self
+            small_other = other
+
+            if denom > 1:
+                small_self  = small_self.map_coeffs(lambda idx, val: (idx // denom, val))
+                small_other = small_other.map_coeffs(lambda idx, val: (idx // denom, val))
+
+
+            # Shit polys to lowest power
+            self_smallest_pow  = small_self.coeffs.values.keys()[0]
+            other_smallest_pow = small_other.coeffs.values.keys()[0]
+
+            small_self  = small_self >> self_smallest_pow
+            small_other = small_other >> other_smallest_pow
+
+
+            # Convolve and reconstruct
+            poly = self._create_poly(_convolution(small_self.coeffs, small_other.coeffs)) << (self_smallest_pow+other_smallest_pow)
+
+            if denom > 1:
+                poly.coeffs = poly.coeffs.map(lambda idx, val: (idx*denom, val))
+
+        return poly
 
 
     def __rmul__(self, other: int) -> object:
@@ -596,7 +656,7 @@ class Polynomial(RingElement):
 
 
     def __neg__(self) -> object:
-        return Polynomial([(idx, -coeff) for idx, coeff in self.coeffs], self.coeff_ring, self.symbol)
+        return self._create_poly([(idx, -coeff) for idx, coeff in self.coeffs])
 
 
     def __truediv__(self, other: object) -> object:
@@ -632,14 +692,16 @@ class Polynomial(RingElement):
 
 
     def __bool__(self) -> bool:
-        return self.coeffs != SparseVector([self.coeff_ring.zero()], self.coeff_ring.zero())
+        return self.coeffs != self._create_sparse([self.coeff_ring.zero()])
 
 
     def __lshift__(self, num: int):
-        return Polynomial(SparseVector([(idx+num, coeff) for idx, coeff in self.coeffs], self.coeff_ring.zero()), coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)
+        return self._create_poly(self._create_sparse([(idx+num, coeff) for idx, coeff in self.coeffs]))
 
+
+    # Note: SparseVector automatically shifts the indices down to remain transparent with lists
     def __rshift__(self, num: int):
-        return Polynomial(SparseVector([(idx-num, coeff) for idx, coeff in self.coeffs[num:]], self.coeff_ring.zero()), coeff_ring=self.coeff_ring, ring=self.ring, symbol=self.symbol)
+        return self._create_poly(self.coeffs[num:])
 
 
     def is_invertible(self) -> bool:

@@ -69,8 +69,33 @@ def de_bruijn(k: list, n: int) -> str:
     return "".join(alphabet[i] for i in sequence)
 
 
+def binary_search(func: FunctionType, max_int: int):
+    """
+    Performs binary search using `func` between 0 and `max_int`.
+    `func` should return True if the argument is less than the hidden number.
 
-def binary_search(in_list: list, value: object, key: FunctionType=lambda item: item, fuzzy: bool=False) -> int:
+    Parameters:
+        func   (func): Function to compare the current value against the hidden value.
+        max_int (int): Maximum integer to try.
+    
+    Returns:
+        int: Hidden value.
+    """
+    start_idx = 0
+    end_idx   = max_int
+
+    while end_idx - 1 != start_idx:
+        current = (end_idx + start_idx) // 2
+
+        if func(current):
+            start_idx = current
+        else:
+            end_idx = current
+    
+    return end_idx
+
+
+def binary_search_list(in_list: list, value: object, key: FunctionType=lambda item: item, fuzzy: bool=False) -> int:
     """
     Performs binary search for `value` on a sorted `in_list` with key selector `key`.
 

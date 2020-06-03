@@ -1,5 +1,5 @@
 from samson.utilities.bytes import Bytes
-from samson.oracles.default_oracle import DefaultOracle
+from samson.oracles.oracle import Oracle
 
 class CBCIVKeyEquivalenceAttack(object):
     """
@@ -15,10 +15,10 @@ class CBCIVKeyEquivalenceAttack(object):
         * The user has access to an oracle that returns the decrypted plaintext
     """
 
-    def __init__(self, oracle: DefaultOracle, block_size: int=16):
+    def __init__(self, oracle: Oracle, block_size: int=16):
         """
         Parameters:
-            oracle (DefaultOracle): An oracle that takes in a bytes-like object and returns its decryption.
+            oracle (Oracle): An oracle that takes in a bytes-like object and returns its decryption.
             block_size       (int): The block size of the block cipher in bytes.
         """
         self.oracle = oracle

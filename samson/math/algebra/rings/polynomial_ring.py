@@ -80,13 +80,15 @@ class PolynomialRing(Ring):
         Returns:
             Polynomial: Coerced element.
         """
+        from samson.math.sparse_vector import SparseVector
+
         # Handle grounds
         type_o = type(other)
         if type_o is int or hasattr(other, 'ring') and other.ring == self.ring:
             other  = [other]
             type_o = type(other)
 
-        if type_o is list or type_o is dict:
+        if type_o is list or type_o is dict or type_o is SparseVector:
             return Polynomial(other, coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
         elif type_o is Polynomial and other.ring == self:

@@ -1,11 +1,12 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.kdfs.s2v import S2V
 from samson.utilities.bytes import Bytes
-from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive
+from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
+from samson.utilities.exceptions import InvalidMACException
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
-class SIV(StreamingBlockCipherMode):
+class SIV(StreamingBlockCipherMode, AuthenticatedCipher):
     """
     SIV cipher mode, RFC5297 (https://tools.ietf.org/html/rfc5297)
     """
@@ -57,6 +58,8 @@ class SIV(StreamingBlockCipherMode):
         Returns:
             Bytes: Resulting plaintext.
         """
+        from samson.utilities.runtime import RUNTIME
+
         ciphertext = Bytes.wrap(ciphertext)
         iv, ct = ciphertext[:16], ciphertext[16:]
 
@@ -67,6 +70,7 @@ class SIV(StreamingBlockCipherMode):
 
         if verify:
             tag = S2V(self.cipher.__class__(self.s2v_key)).derive(*additional_data, plaintext)
-            assert iv == tag
+
+            self.verify_tag(iv, tag)
 
         return plaintext

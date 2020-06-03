@@ -1,7 +1,7 @@
 from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv, factor as factorint
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
-from samson.oracles.default_oracle import DefaultOracle
+from samson.oracles.oracle import Oracle
 from functools import reduce
 import math
 
@@ -22,10 +22,10 @@ class DiffieHellmanSubgroupConfinementAttack(object):
     * The left over key space is small enough to solve DLP
     """
 
-    def __init__(self, oracle: DefaultOracle, p: int, g: int, order: int):
+    def __init__(self, oracle: Oracle, p: int, g: int, order: int):
         """
         Parameters:
-            oracle (DefaultOracle): Oracle that accepts (public_key: int, factor: int) and returns (residue: int).
+            oracle (Oracle): Oracle that accepts (public_key: int, factor: int) and returns (residue: int).
             p                (int): Prime modulus.
             g                (int): Generator.
             order            (int): Order of multiplicative group.

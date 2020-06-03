@@ -31,7 +31,7 @@ class OCBAuthForgeryAttack(object):
             (Bytes, Bytes): The key to the cipher.
         """
         encoded_length = Bytes(128).zfill(16)
-        _tag, ciphertext = self.oracle.encrypt(encoded_length + plaintext, b'')
+        _tag, ciphertext = self.oracle.request(encoded_length + plaintext, b'')
 
         new_ciphertext = ciphertext[:16] ^ encoded_length
         new_tag = plaintext ^ ciphertext[16:]
