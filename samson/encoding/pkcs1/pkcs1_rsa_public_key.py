@@ -7,7 +7,7 @@ class PKCS1RSAPublicKey(PEMEncodable):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 2
@@ -16,14 +16,14 @@ class PKCS1RSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
         encoded = export_der([rsa_key.n, rsa_key.e])
         encoded = PKCS1RSAPublicKey.transport_encode(encoded, **kwargs)
         return encoded
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         from samson.public_key.rsa import RSA
         items = bytes_to_der_sequence(buffer)
         items = [int(item) for item in items]

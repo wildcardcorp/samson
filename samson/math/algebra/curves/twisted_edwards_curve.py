@@ -47,7 +47,7 @@ class TwistedEdwardsCurve(Ring):
         return f"<TwistedEdwardsCurve: b={self.b}, q={self.q}, l={self.l}>"
 
 
-    def zero(self) -> object:
+    def zero(self) -> 'TwistedEdwardsPoint':
         """
         Returns:
             TwistedEdwardsCurve: '0' element of the algebra.
@@ -55,7 +55,7 @@ class TwistedEdwardsCurve(Ring):
         return TwistedEdwardsPoint(0, 1, self)
 
 
-    def one(self) -> object:
+    def one(self) -> 'TwistedEdwardsPoint':
         """
         Returns:
             TwistedEdwardsCurve: '1' element of the algebra.
@@ -63,7 +63,7 @@ class TwistedEdwardsCurve(Ring):
         return self.B
 
 
-    def random(self, size: int=None) -> object:
+    def random(self, size: int=None) -> 'TwistedEdwardsPoint':
         """
         Generate a random element.
 
@@ -81,7 +81,7 @@ class TwistedEdwardsCurve(Ring):
         return int(self.ring.quotient)
 
 
-    def element_at(self, x: int) -> object:
+    def element_at(self, x: int) -> 'TwistedEdwardsPoint':
         """
         Returns the `x`-th element w.r.t to the generator.
 
@@ -142,7 +142,7 @@ class TwistedEdwardsCurve(Ring):
 
 
 
-    def recover_point_from_y(self, y: int) -> object:
+    def recover_point_from_y(self, y: int) -> 'TwistedEdwardsPoint':
         """
         Recovers the full TwistedEdwardsPoint from the y-coordinate.
 
@@ -211,15 +211,15 @@ class TwistedEdwardsPoint(RingElement):
         return self.curve
 
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: 'TwistedEdwardsPoint') -> bool:
         return self.x == other.x and self.y == other.y and self.curve == other.curve
 
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'TwistedEdwardsPoint':
         return TwistedEdwardsPoint(self.x, -self.y, self.curve)
 
 
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'TwistedEdwardsPoint') -> 'TwistedEdwardsPoint':
         if type(other) != TwistedEdwardsPoint:
             raise TypeError(f"TwistedEdwardsPoint addition only defined between points. Type {type(other)} given.")
 
@@ -235,7 +235,7 @@ class TwistedEdwardsPoint(RingElement):
         return TwistedEdwardsPoint(x3, y3, self.curve)
 
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'TwistedEdwardsPoint') -> 'TwistedEdwardsPoint':
         if type(other) != TwistedEdwardsPoint:
             raise TypeError("TwistedEdwardsPoint subtraction only defined between points.")
 

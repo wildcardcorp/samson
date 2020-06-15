@@ -1,6 +1,7 @@
 from samson.core.metadata import IORelationType
 from samson.utilities.bytes import Bytes
 from samson.oracles.oracle import Oracle
+from samson.analysis.general import count_items
 from types import FunctionType
 
 import logging
@@ -29,14 +30,24 @@ class ChosenPlaintextOracle(Oracle):
         io_diff = []
 
         log.debug(f'Starting block size/output size testing')
-        while base_len == new_len and i < 64:
+        while base_len == new_len and i < 64 or i < 32:
             sample  = self.request(b'a'*i)
             new_len = len(sample)
-            io_diff.append(new_len - base_len)
+            io_diff.append(new_len)
             i += 1
 
+        
+        size_counts = sorted(count_items(io_diff).values())
+
         # Determine IO relation
-        if any(io_diff):
+
+        # This heuristic takes into account random size fluctuations
+        # in number theoretical algorithms like RSA. There's a
+        # 1 in 5,961,809 chance of getting five or more size differences
+        # in a FIXED algorithm.
+
+        # `probability_of_at_least_x_occurences(32, 5, 1/256)`
+        if sum(size_counts[:-1]) > 4:
             io_relation = IORelationType.EQUAL
         else:
             io_relation = IORelationType.FIXED

@@ -33,7 +33,7 @@ class JWKRSAPublicKey(object):
 
 
     @staticmethod
-    def build_pub(rsa_key: object) -> dict:
+    def build_pub(rsa_key: 'RSA') -> dict:
         """
         Formats the public parameters of the key as a `dict`.
 
@@ -53,7 +53,7 @@ class JWKRSAPublicKey(object):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs) -> str:
+    def encode(rsa_key: 'RSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -68,7 +68,7 @@ class JWKRSAPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         """
         Decodes a JWK JSON string into an RSA object.
 

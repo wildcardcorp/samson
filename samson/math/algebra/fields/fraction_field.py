@@ -42,23 +42,23 @@ class FractionFieldElement(FieldElement):
     def __hash__(self):
         return hash((self.numerator, self.denominator, self.field))
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: 'FractionFieldElement'):
         return type(self) == type(other) and self.numerator * other.denominator == self.denominator * other.numerator
 
 
     @left_expression_intercept
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         other = self.ring.coerce(other)
         return FractionFieldElement(self.numerator * other.denominator + self.denominator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
     @left_expression_intercept
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         other = self.ring.coerce(other)
         return self + (-other)
 
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         gmul = self.ground_mul(other)
         if gmul:
             return gmul
@@ -67,15 +67,15 @@ class FractionFieldElement(FieldElement):
         return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
     @left_expression_intercept
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         return self * (~self.ring.coerce(other))
 
     __floordiv__ = __truediv__
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'FractionFieldElement':
         return FractionFieldElement(-self.numerator, self.denominator, self.ring)
 
-    def __invert__(self) -> object:
+    def __invert__(self) -> 'FractionFieldElement':
         if not self:
             raise ZeroDivisionError
 
@@ -89,7 +89,7 @@ class FractionFieldElement(FieldElement):
         return int(self.numerator) // int(self.denominator)
 
 
-    def __lt__(self, other: object) -> bool:
+    def __lt__(self, other: 'FractionFieldElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
@@ -97,7 +97,7 @@ class FractionFieldElement(FieldElement):
         return self.numerator * other.denominator < other.numerator * self.denominator
 
 
-    def __gt__(self, other: object) -> bool:
+    def __gt__(self, other: 'FractionFieldElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
@@ -134,7 +134,7 @@ class FractionField(Field):
         return hash((self.ring, self.__class__))
 
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: 'FractionField'):
         return type(self) == type(other) and self.ring == other.ring
 
     @property

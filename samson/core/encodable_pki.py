@@ -8,7 +8,7 @@ class EncodablePKI(object):
     PRIV_ENCODINGS = {}
 
     @classmethod
-    def import_key(cls, buffer: bytes, passphrase: bytes=None) -> object:
+    def import_key(cls, buffer: bytes, passphrase: bytes=None) -> 'EncodablePKI':
         """
         Builds a PKI instance from DER and/or PEM-encoded bytes.
 

@@ -30,12 +30,12 @@ class DSAPublicKey(object):
 
 
     @staticmethod
-    def pack(value: object) -> Bytes:
+    def pack(value: 'DSAPublicKey') -> Bytes:
         """
         Packs a public key into an OpenSSH-compliant encoding.
 
         Parameters:
-            value (bytes): Value to encode.
+            value (DSAPublicKey): Value to encode.
         
         Returns:
             Bytes: Packed bytes.
@@ -47,7 +47,7 @@ class DSAPublicKey(object):
 
 
     @staticmethod
-    def unpack(encoded_bytes: bytes, already_unpacked: bool=False) -> (object, bytes):
+    def unpack(encoded_bytes: bytes, already_unpacked: bool=False) -> ('DSAPublicKey', bytes):
         """
         Unpacks bytes into an DSAPublicKey object.
 

@@ -6,7 +6,7 @@ from pyasn1.codec.der import decoder, encoder
 class PKCS8DSAPrivateKey(PKCS8Base):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0]) == '1.2.840.10040.4.1'
@@ -15,7 +15,7 @@ class PKCS8DSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def encode(dsa_key: object, **kwargs):
+    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
         dss_params = SequenceOf()
         dss_params.setComponentByPosition(0, Integer(dsa_key.p))
         dss_params.setComponentByPosition(1, Integer(dsa_key.q))
@@ -38,7 +38,7 @@ class PKCS8DSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'DSA':
         from samson.public_key.dsa import DSA
         items = bytes_to_der_sequence(buffer)
 

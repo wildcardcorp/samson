@@ -50,16 +50,16 @@ class IntegerElement(RingElement):
         return self.val
 
     @left_expression_intercept
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'IntegerElement') -> 'IntegerElement':
         other = self.ring.coerce(other)
         return IntegerElement(self.val + other.val, self.ring)
 
     @left_expression_intercept
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'IntegerElement') -> 'IntegerElement':
         other = self.ring.coerce(other)
         return IntegerElement(self.val - other.val, self.ring)
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'IntegerElement') -> 'IntegerElement':
         gmul = self.ground_mul(other)
         if gmul:
             return gmul
@@ -69,25 +69,25 @@ class IntegerElement(RingElement):
 
 
     @left_expression_intercept
-    def __divmod__(self, other: object) -> (object, object):
+    def __divmod__(self, other: 'IntegerElement') -> ('IntegerElement', 'IntegerElement'):
         other = self.ring.coerce(other)
         q, r = divmod(self.val, other.val)
         return IntegerElement(q, self.ring), IntegerElement(r, self.ring)
 
     @left_expression_intercept
-    def __mod__(self, other: object) -> object:
+    def __mod__(self, other: 'IntegerElement') -> 'IntegerElement':
         return divmod(self, other)[1]
 
     @left_expression_intercept
-    def __floordiv__(self, other: object) -> object:
+    def __floordiv__(self, other: 'IntegerElement') -> 'IntegerElement':
         return divmod(self, other)[0]
 
     __truediv__ = __floordiv__
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'IntegerElement':
         return IntegerElement(-self.val, self.ring)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'IntegerElement') -> bool:
         if other is IntegerElement:
             other = other.val
 
@@ -171,7 +171,7 @@ class IntegerRing(Ring):
         raise CoercionException('Coercion failed')
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'IntegerRing') -> bool:
         return type(self) == type(other)
 
 

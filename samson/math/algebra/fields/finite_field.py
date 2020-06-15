@@ -38,11 +38,11 @@ class FiniteFieldElement(FieldElement):
 
 
     @left_expression_intercept
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val + other.val, self.field)
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         gmul = self.ground_mul(other)
         if gmul:
             return gmul
@@ -51,28 +51,28 @@ class FiniteFieldElement(FieldElement):
         return FiniteFieldElement(self.val * other.val, self.field)
 
     @left_expression_intercept
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val - other.val, self.field)
 
     @left_expression_intercept
-    def __mod__(self, other: object) -> object:
+    def __mod__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val % other.val, self.field)
 
-    def __invert__(self) -> object:
+    def __invert__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(~self.val, self.field)
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(-self.val, self.field)
 
     @left_expression_intercept
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return self * ~other
 
     @left_expression_intercept
-    def __floordiv__(self, other: object) -> object:
+    def __floordiv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         return self.__truediv__(other)
 
 
@@ -176,7 +176,7 @@ class FiniteField(Field):
         return other
 
 
-    def element_at(self, x: int) -> object:
+    def element_at(self, x: int) -> FiniteFieldElement:
         """
         Returns the `x`-th element of the set.
 
@@ -189,5 +189,5 @@ class FiniteField(Field):
         return FiniteFieldElement(self.internal_field.element_at(x), self)
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'FiniteField') -> bool:
         return type(self) == type(other) and self.p == other.p and self.n == other.n

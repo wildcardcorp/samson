@@ -34,7 +34,7 @@ class JWKECPrivateKey(object):
 
 
     @staticmethod
-    def encode(ec_key: object, **kwargs) -> str:
+    def encode(ec_key: 'ECDSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -51,7 +51,7 @@ class JWKECPrivateKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         """
         Decodes a JWK JSON string into an ECDSA object.
 

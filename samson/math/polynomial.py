@@ -82,7 +82,7 @@ class Polynomial(RingElement):
         return self.__repr__()
 
 
-    def __call__(self, x: int) -> object:
+    def __call__(self, x: int) -> RingElement:
         return self.evaluate(x)
 
 
@@ -103,12 +103,12 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero()
 
 
-    def evaluate(self, x: object) -> RingElement:
+    def evaluate(self, x: 'RingElement') -> RingElement:
         """
         Evaluates the `Polynomial` at `x` using Horner's method.
         
         Parameters:
-            x (object): Point to evaluate at.
+            x (RingElement): Point to evaluate at.
         
         Returns:
             RingElement: Evaluation at `x`.
@@ -136,7 +136,7 @@ class Polynomial(RingElement):
         return self._create_poly(self.coeffs.map(func))
 
 
-    def monic(self) -> object:
+    def monic(self) -> 'Polynomial':
         """
         Returns the Polynomial in its monic representation (leading coefficient is 1).
 
@@ -156,7 +156,7 @@ class Polynomial(RingElement):
         return self.LC() == self.coeff_ring.one()
 
 
-    def derivative(self) -> object:
+    def derivative(self) -> 'Polynomial':
         """
         Returns the derivative of the Polynomial.
 
@@ -166,7 +166,7 @@ class Polynomial(RingElement):
         return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0])
 
 
-    def trunc_kth_root(self, k: int) -> object:
+    def trunc_kth_root(self, k: int) -> 'Polynomial':
         """
         Calculates an inexact `k`-th root.
 
@@ -188,7 +188,7 @@ class Polynomial(RingElement):
         return self._create_poly([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k])
 
 
-    def trunc(self, mod: RingElement) -> object:
+    def trunc(self, mod: RingElement) -> 'Polynomial':
         """
         Reduces (modulo) the Polynomial's coefficients by `mod`.
 
@@ -497,7 +497,7 @@ class Polynomial(RingElement):
         return int(self)
 
 
-    def embed_coeffs(self, ring: Ring) -> object:
+    def embed_coeffs(self, ring: Ring) -> 'Polynomial':
         """
         Returns a new Polynomial with the coefficients coerced into `ring`.
 
@@ -519,7 +519,7 @@ class Polynomial(RingElement):
         return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs})
 
 
-    def peel_coeffs(self) -> object:
+    def peel_coeffs(self) -> 'Polynomial':
         """
         Returns a new Polynomial with the coefficients peeled from their ring.
 
@@ -538,7 +538,7 @@ class Polynomial(RingElement):
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs})
 
 
-    def __divmod__(self, other: object) -> (object, object):
+    def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
         other = self.ring.coerce(other)
         assert other != self.ring.zero()
 
@@ -563,7 +563,7 @@ class Polynomial(RingElement):
         return (self._create_poly(quotient), self._create_poly(remainder))
 
 
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'Polynomial') -> 'Polynomial':
         other = self.ring.coerce(other)
 
         vec = self._create_sparse([])
@@ -577,7 +577,7 @@ class Polynomial(RingElement):
         return self._create_poly(vec)
 
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'Polynomial') -> 'Polynomial':
         other = self.ring.coerce(other)
 
         vec = self._create_sparse([])
@@ -651,7 +651,7 @@ class Polynomial(RingElement):
         return poly
 
 
-    def __rmul__(self, other: int) -> object:
+    def __rmul__(self, other: int) -> 'Polynomial':
         return self * other
 
 
@@ -659,18 +659,18 @@ class Polynomial(RingElement):
         return self._create_poly([(idx, -coeff) for idx, coeff in self.coeffs])
 
 
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'Polynomial') -> 'Polynomial':
         return self.__divmod__(other)[0]
 
 
     __floordiv__ = __truediv__
 
 
-    def __mod__(self, other: object) -> object:
+    def __mod__(self, other: 'Polynomial') -> 'Polynomial':
         return self.__divmod__(other)[1]
 
 
-    def __pow__(self, exponent: int) -> object:
+    def __pow__(self, exponent: int) -> 'Polynomial':
         return square_and_mul(self, exponent, self.ring.one())
 
 
@@ -679,15 +679,15 @@ class Polynomial(RingElement):
         return poly_to_int(self)
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'Polynomial') -> bool:
         return type(self) == type(other) and self.coeffs == other.coeffs
 
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Polynomial') -> bool:
         return self.ordinality() < other.ordinality()
 
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'Polynomial') -> bool:
         return self.ordinality() > other.ordinality()
 
 

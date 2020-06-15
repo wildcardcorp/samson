@@ -11,7 +11,7 @@ class SSH2DSAPublicKey(OpenSSHDSAPublicKey):
 
 
     @staticmethod
-    def encode(dsa_key: object, **kwargs):
+    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
         public_key = DSAPublicKey('public_key', dsa_key.p, dsa_key.q, dsa_key.g, dsa_key.y)
         encoded = generate_openssh_public_key_params(PKIEncoding.SSH2, SSH_PUBLIC_HEADER, public_key)
 

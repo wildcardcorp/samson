@@ -44,7 +44,7 @@ class JWE(object):
 
 
     @staticmethod
-    def parse(token: bytes) -> object:
+    def parse(token: bytes) -> 'JWE':
         """
         Parses a compact bytestring `token` into a JWE object.
 
@@ -59,7 +59,7 @@ class JWE(object):
 
 
     @staticmethod
-    def generate_cek(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, key: object, header: dict, cek: bytes=None, iv: bytes=None):
+    def generate_cek(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, key: object, header: dict, cek: bytes=None, iv: bytes=None) -> (object, bytes):
         generated_params = JWA_ALG_MAP[enc].generate_encryption_params()
 
         if alg == JWAKeyEncryptionAlg.dir:
@@ -72,7 +72,7 @@ class JWE(object):
 
 
     @staticmethod
-    def create(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, body: bytes, key: object, cek: bytes=None, iv: bytes=None, aad: bytes=None, **additional_headers) -> object:
+    def create(alg: JWAKeyEncryptionAlg, enc: JWAContentEncryptionAlg, body: bytes, key: object, cek: bytes=None, iv: bytes=None, aad: bytes=None, **additional_headers) -> 'JWE':
         """
         Convenience method to create (and encrypt) a JWE.
 
@@ -178,7 +178,7 @@ class JWESet(object):
 
 
     @staticmethod
-    def create(enc: JWAContentEncryptionAlg, payload: bytes, cek: bytes=None, iv: bytes=None, aad: bytes=None, additional_protected_headers: dict=None, unprotected_header: dict=None) -> object:
+    def create(enc: JWAContentEncryptionAlg, payload: bytes, cek: bytes=None, iv: bytes=None, aad: bytes=None, additional_protected_headers: dict=None, unprotected_header: dict=None) -> 'JWESet':
         """
         Creates a new JWESet.
 
@@ -278,7 +278,7 @@ class JWESet(object):
 
 
     @staticmethod
-    def parse(token: bytes) -> object:
+    def parse(token: bytes) -> 'JWESet':
         """
         Parses a JSON bytestring `token` into a JWESet object.
 

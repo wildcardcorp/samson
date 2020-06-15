@@ -62,7 +62,7 @@ class PolynomialRing(Ring):
         return f'{self.ring.shorthand()}[{self.symbol}]'
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'PolynomialRing') -> bool:
         return type(self) == type(other) and self.ring == other.ring
 
 
@@ -124,7 +124,7 @@ class PolynomialRing(Ring):
             return self([x])
 
 
-    def find_gen(self) -> object:
+    def find_gen(self) -> 'Polynomial':
         """
         Finds a generator of the `Ring`.
 

@@ -67,7 +67,7 @@ class Symbol(Polynomial):
     def __hash__(self):
         return hash(self.var)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'Symbol') -> bool:
         return type(self) == type(other) and self.repr == other.repr and self.ring == other.ring
 
     def __bool__(self) -> bool:

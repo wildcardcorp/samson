@@ -19,12 +19,12 @@ class X509ECDSAExplicitCertificate(object):
 
 
     @staticmethod
-    def encode(rsa_key: object):
+    def encode(ecdsa_key: 'ECDSA') -> 'X509ECDSAExplicitCertificate':
         pass
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes) -> 'ECDSA':
         from samson.public_key.ecdsa import ECDSA
 
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())

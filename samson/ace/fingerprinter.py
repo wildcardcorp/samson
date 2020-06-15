@@ -9,6 +9,7 @@ from samson.core.primitives import BlockCipher, BlockCipherMode, StreamingBlockC
 from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.analysis.integer_analysis import IntegerAnalysis
 from itertools import groupby
+from types import FunctionType
 import math
 
 import logging
@@ -66,7 +67,7 @@ class Fingerprinter(object):
 
 
     @RUNTIME.report
-    def execute(self, initial_filter=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
+    def execute(self, initial_filter: FunctionType=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
         sample   = self.oracle.encrypt(b'a'*min_input_len)
         base_len = len(sample)
         filtered = RUNTIME.search_primitives(initial_filter)

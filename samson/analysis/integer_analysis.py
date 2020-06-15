@@ -32,7 +32,7 @@ class IntegerAnalysis(object):
 
 
     @staticmethod
-    def analyze(n: int) -> object:
+    def analyze(n: int) -> 'IntegerAnalysis':
         n_is_prime   = is_prime(n)
         byte_aligned = not n % 8
 

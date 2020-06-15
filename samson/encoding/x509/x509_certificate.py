@@ -24,7 +24,7 @@ class X509Certificate(PEMEncodable):
 
 
     @classmethod
-    def check(cls, buffer: bytes, **kwargs):
+    def check(cls, buffer: bytes, **kwargs) -> bool:
         try:
             cert, _ = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
             return str(cert['tbsCertificate']['subjectPublicKeyInfo']['algorithm']['algorithm']) == cls.ALG_OID
@@ -33,7 +33,7 @@ class X509Certificate(PEMEncodable):
 
 
     @classmethod
-    def encode(cls, pki_key: object, **kwargs):
+    def encode(cls, pki_key: object, **kwargs) -> bytes:
         # Algorithm ID
         alg_oid = cls.ALG_OID if type(cls.ALG_OID) is str else cls.ALG_OID(pki_key)
 
@@ -165,7 +165,7 @@ class X509Certificate(PEMEncodable):
 
 
     @classmethod
-    def decode(cls, buffer: bytes, **kwargs):
+    def decode(cls, buffer: bytes, **kwargs) -> object:
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
         buffer = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
         return cls.PUB_KEY_DECODER.decode(buffer)

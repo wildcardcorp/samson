@@ -56,7 +56,7 @@ class Matrix(RingElement):
         return len(self.rows[0])
 
 
-    def transpose(self) -> object:
+    def transpose(self) -> 'Matrix':
         """
         Transposes the `Matrix` i.e. flips it along its diagonal.
 
@@ -76,7 +76,7 @@ class Matrix(RingElement):
 
 
     @property
-    def T(self) -> object:
+    def T(self) -> 'Matrix':
         return self.transpose()
 
 
@@ -91,7 +91,7 @@ class Matrix(RingElement):
 
 
     @staticmethod
-    def identity(size: int, coeff_ring: Ring=None, ring: Ring=None) -> object:
+    def identity(size: int, coeff_ring: Ring=None, ring: Ring=None) -> 'Matrix':
         """
         Creates the identity `Matrix` of `size`.
 
@@ -107,16 +107,16 @@ class Matrix(RingElement):
 
 
     @staticmethod
-    def fill(value: object, rows: int, cols: int=None, coeff_ring: Ring=None, ring: Ring=None) -> object:
+    def fill(value: 'RingElement', rows: int, cols: int=None, coeff_ring: Ring=None, ring: Ring=None) -> 'Matrix':
         """
         Fills a `Matrix` with `value`.
 
         Parameters:
-            value    (object): Value every element should be.
-            rows        (int): Number of rows.
-            cols        (int): Number of columns.
-            coeff_ring (Ring): Ring elements will be in.
-            ring       (Ring): Parent ring.
+            value (RingElement): Value every element should be.
+            rows          (int): Number of rows.
+            cols          (int): Number of columns.
+            coeff_ring   (Ring): Ring elements will be in.
+            ring         (Ring): Parent ring.
         
         Returns:
             Matrix: `Matrix` filled with `value`.
@@ -133,7 +133,7 @@ class Matrix(RingElement):
         return Matrix([[value for c in range(cols or rows)] for r in range(rows)], coeff_ring=coeff_ring, ring=ring)
 
 
-    def apply_elementwise(self, func: FunctionType) -> object:
+    def apply_elementwise(self, func: FunctionType) -> 'Matrix':
         """
         Applies a function to each element and returns a `Matrix` of the results.
 
@@ -155,7 +155,7 @@ class Matrix(RingElement):
         return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
 
 
-    def row_join(self, other: object) -> object:
+    def row_join(self, other: 'Matrix') -> 'Matrix':
         """
         Extends `self`'s rows with `others`.
 
@@ -183,7 +183,7 @@ class Matrix(RingElement):
         return Matrix([row_a + row_b for row_a, row_b in zip(self.rows, cols)], coeff_ring=self.coeff_ring, ring=self.ring)
 
 
-    def col_join(self, other: object) -> object:
+    def col_join(self, other: 'Matrix') -> 'Matrix':
         """
         Extends `self`'s columns with `others`.
 
@@ -213,7 +213,7 @@ class Matrix(RingElement):
         return Matrix(self.rows + rows, coeff_ring=self.coeff_ring, ring=self.ring)
 
 
-    def LLL(self, delta: float=0.75) -> object:
+    def LLL(self, delta: float=0.75) -> 'Matrix':
         """
         Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
 
@@ -236,7 +236,7 @@ class Matrix(RingElement):
         return lll(self, delta)
 
 
-    def gram_schmidt(self, normalize: bool=True) -> object:
+    def gram_schmidt(self, normalize: bool=True) -> 'Matrix':
         """
         Performs Gram-Schmidt orthonormalization.
 
@@ -264,7 +264,7 @@ class Matrix(RingElement):
 
     # Python's floating-point arithmetic will automatically truncate irrational numbers to 53 bits, however, `Frac(ZZ)` will use arbitrary-precision integers
     # to represent the numerator and denominator, resulting in an infinite expansion.
-    def normalize(self) -> object:
+    def normalize(self) -> 'Matrix':
         """
         Normalizes the `Matrix` by dividing all elements by its magnitude.
 
@@ -287,7 +287,7 @@ class Matrix(RingElement):
         return self * ~magnitude
 
 
-    def LUsolve(self, rhs: object) -> object:
+    def LUsolve(self, rhs: 'Matrix') -> 'Matrix':
         """
         Solves `Ax = b` for `x` where `A` is `self` and `b` is `rhs`.
 
@@ -310,7 +310,7 @@ class Matrix(RingElement):
         return gaussian_elimination(self, rhs)
 
 
-    def __getitem__(self, idx) -> object:
+    def __getitem__(self, idx: object) -> 'RingElement':
         if type(idx) is tuple:
             if type(idx[0]) is slice:
                 return [row[idx[1]] for row in self.rows[idx[0]]]
@@ -320,7 +320,7 @@ class Matrix(RingElement):
             return self.rows[idx]
 
 
-    def __setitem__(self, idx, value) -> object:
+    def __setitem__(self, idx, value):
         if type(idx) is int:
             self.rows[idx] = value
         elif type(idx) is tuple:
@@ -330,25 +330,25 @@ class Matrix(RingElement):
     def __len__(self) -> int:
         return len(self.rows)
 
-    def __or__(self, other: object) -> object:
+    def __or__(self, other: 'Matrix') -> 'Matrix':
         return self.col_join(other)
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'Matrix':
         return self.apply_elementwise(lambda elem: -elem)
 
 
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'Matrix') -> 'Matrix':
         if type(other) == type(self):
             return Matrix([[self.rows[r][c] + other.rows[r][c] for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
         else:
             raise ValueError("other type not addible")
 
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'Matrix') -> 'Matrix':
         return self + -other
 
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'Matrix') -> 'Matrix':
         if type(other) is Matrix:
             s_rows = self.num_rows
             s_cols = self.num_cols
@@ -374,18 +374,18 @@ class Matrix(RingElement):
             return self.apply_elementwise(lambda elem: elem * other)
 
 
-    def __invert__(self) -> object:
+    def __invert__(self) -> 'Matrix':
         return gaussian_elimination(self, Matrix.identity(len(self), coeff_ring=self.coeff_ring, ring=self.ring))
 
 
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'Matrix') -> 'Matrix':
         other = self.ring.coerce(other)
         return self * ~other
 
 
-    def __floordiv__(self, other: object) -> object:
+    def __floordiv__(self, other: 'Matrix') -> 'Matrix':
         return self / other
 
 
-    def __eq__(self, other: object) -> object:
+    def __eq__(self, other: 'Matrix') -> bool:
         return type(self) == type(other) and self.rows == other.rows

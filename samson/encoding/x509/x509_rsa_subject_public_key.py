@@ -6,7 +6,7 @@ import math
 class X509RSASubjectPublicKey(object):
 
     @staticmethod
-    def encode(rsa_key: object):
+    def encode(rsa_key: 'RSA') -> BitString:
         param_seq = SequenceOf()
         param_seq.append(Integer(rsa_key.n))
         param_seq.append(Integer(rsa_key.e))
@@ -19,5 +19,5 @@ class X509RSASubjectPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes) -> 'RSA':
         pass

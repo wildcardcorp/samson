@@ -35,18 +35,18 @@ class QuotientElement(RingElement):
 
 
     @left_expression_intercept
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return QuotientElement((self.val + other.val) % self.ring.quotient, self.ring)
 
 
     @left_expression_intercept
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return QuotientElement((self.val - other.val) % self.ring.quotient, self.ring)
 
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'QuotientElement') -> 'QuotientElement':
         gmul = self.ground_mul(other)
         if gmul:
             return gmul
@@ -56,30 +56,30 @@ class QuotientElement(RingElement):
 
 
     @left_expression_intercept
-    def __mod__(self, other: object) -> object:
+    def __mod__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return QuotientElement((self.val % other.val) % self.ring.quotient, self.ring)
 
-    def __invert__(self) -> object:
+    def __invert__(self) -> 'QuotientElement':
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
 
 
     @left_expression_intercept
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return self * ~other
 
 
     @left_expression_intercept
-    def __floordiv__(self, other: object) -> object:
+    def __floordiv__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return QuotientElement((self.val // other.val) % self.ring.quotient, self.ring)
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'QuotientElement':
         return QuotientElement((-self.val) % self.ring.quotient, self.ring)
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'QuotientElement') -> bool:
         if type(other) is int:
             return self.val == other
 
@@ -224,7 +224,7 @@ class QuotientRing(Ring):
         return self(self.ring.element_at(x))
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'QuotientElement') -> bool:
         return type(self) == type(other) and self.ring == other.ring and self.quotient == other.quotient
 
     def __hash__(self) -> int:

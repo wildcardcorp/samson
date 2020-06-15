@@ -6,7 +6,7 @@ from pyasn1.codec.der import encoder
 
 class PKCS8RSAPrivateKey(PKCS8Base):
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0]) == '1.2.840.113549.1.1.1'
@@ -15,7 +15,7 @@ class PKCS8RSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
         alg_id.setComponentByPosition(1, Null())
@@ -33,6 +33,6 @@ class PKCS8RSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         items = bytes_to_der_sequence(buffer)
         return PKCS1RSAPrivateKey.decode(bytes(items[2]))

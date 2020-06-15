@@ -40,7 +40,7 @@ class JWS(object):
 
 
     @staticmethod
-    def parse(token: bytes) -> object:
+    def parse(token: bytes) -> 'JWS':
         """
         Parses a compact bytestring `token` into a JWS object.
 
@@ -55,7 +55,7 @@ class JWS(object):
 
 
     @staticmethod
-    def create(alg: JWASignatureAlg, body: bytes, key: object, **additional_headers) -> object:
+    def create(alg: JWASignatureAlg, body: bytes, key: object, **additional_headers) -> 'JWS':
         """
         Convenience method to create (and sign) a JWS.
 
@@ -176,7 +176,7 @@ class JWSSet(object):
 
 
     @staticmethod
-    def parse(token: bytes) -> object:
+    def parse(token: bytes) -> 'JWSSet':
         """
         Parses a JSON bytestring `token` into a JWSSet object.
 

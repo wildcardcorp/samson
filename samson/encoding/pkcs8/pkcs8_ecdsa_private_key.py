@@ -12,7 +12,7 @@ import math
 class PKCS8ECDSAPrivateKey(PKCS8Base):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0]) == '1.2.840.10045.2.1'
@@ -21,7 +21,7 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def encode(ecdsa_key: object, **kwargs):
+    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
         alg_id = SequenceOf()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10045, 2, 1]))
         alg_id.setComponentByPosition(1, ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(ecdsa_key.G.curve.oid)]) + ecdsa_key.G.curve.oid)[0].asTuple()))
@@ -46,7 +46,7 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 

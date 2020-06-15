@@ -33,7 +33,7 @@ class JWKEdDSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs) -> str:
+    def encode(eddsa_key: 'EdDSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -50,7 +50,7 @@ class JWKEdDSAPrivateKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'EdDSA':
         """
         Decodes a JWK JSON string into an EdDSA object.
 

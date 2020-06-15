@@ -18,7 +18,7 @@ class OpenSSHDSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(dsa_key: object, **kwargs):
+    def encode(dsa_key: 'DSA', **kwargs):
         user = kwargs.get('user')
         if user and type(user) is str:
             user = user.encode('utf-8')

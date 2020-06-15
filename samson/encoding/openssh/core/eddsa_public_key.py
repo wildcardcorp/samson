@@ -24,12 +24,12 @@ class EdDSAPublicKey(object):
 
 
     @staticmethod
-    def pack(value: object) -> Bytes:
+    def pack(value: 'EdDSAPublicKey') -> Bytes:
         """
         Packs a public key into an OpenSSH-compliant encoding.
 
         Parameters:
-            value (bytes): Value to encode.
+            value (EdDSAPublicKey): Value to encode.
         
         Returns:
             Bytes: Packed bytes.
@@ -41,7 +41,7 @@ class EdDSAPublicKey(object):
 
 
     @staticmethod
-    def unpack(encoded_bytes: bytes, already_unpacked: bool=False) -> (object, bytes):
+    def unpack(encoded_bytes: bytes, already_unpacked: bool=False) -> ('EdDSAPublicKey', bytes):
         """
         Unpacks bytes into an EdDSAPublicKey object.
 

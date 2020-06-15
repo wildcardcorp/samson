@@ -30,14 +30,14 @@ class CurvePolynomialElement(RingElement):
     def __hash__(self):
         return hash((self.x_poly, self.y_poly, self.ring))
 
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         other = self.ring.coerce(other)
         return CurvePolynomialElement(self.x_poly + other.x_poly, self.y_poly + other.y_poly, self.ring)
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         return CurvePolynomialElement(self.x_poly - other.x_poly, self.y_poly - other.y_poly, self.ring)
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         if type(other) is int:
             return super().__mul__(other)
 
@@ -56,7 +56,7 @@ class CurvePolynomialElement(RingElement):
         return CurvePolynomialElement(nx, y, self.ring)
 
 
-    def __divmod__(self, other: object) -> object:
+    def __divmod__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         if not other:
             raise ZeroDivisionError
 
@@ -77,21 +77,21 @@ class CurvePolynomialElement(RingElement):
         return (CurvePolynomialElement(qx, qy, self.ring), CurvePolynomialElement(rx, ry, self.ring))
 
 
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         other = self.ring.coerce(other)
         return self.__divmod__(other)[0]
 
     __floordiv__ = __truediv__
 
-    def __mod__(self, other: object) -> object:
+    def __mod__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         other = self.ring.coerce(other)
         return self.__divmod__(other)[1]
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'CurvePolynomialElement':
         return CurvePolynomialElement(-self.x_poly, -self.y_poly, self.ring)
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'CurvePolynomialElement') -> bool:
         return type(self) == type(other) and self.x_poly == other.x_poly and self.y_poly == other.y_poly and self.ring == other.ring
 
 
@@ -99,11 +99,11 @@ class CurvePolynomialElement(RingElement):
         return bool(self.x_poly) or bool(self.y_poly)
 
 
-    def __lt__(self, other: object) -> bool:
+    def __lt__(self, other: 'CurvePolynomialElement') -> bool:
         raise NotImplementedError()
 
 
-    def __gt__(self, other: object) -> bool:
+    def __gt__(self, other: 'CurvePolynomialElement') -> bool:
         raise NotImplementedError()
 
 
@@ -125,7 +125,7 @@ class CurvePolynomialRing(Ring):
 
 
     @property
-    def characteristic(self):
+    def characteristic(self) -> int:
         return self.poly_ring.ring.characteristic
 
 
@@ -165,7 +165,7 @@ class CurvePolynomialRing(Ring):
     def shorthand(self) -> str:
         return f'{self.poly_ring.shorthand()}[y]'
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: CurvePolynomialElement) -> bool:
         return type(self) == type(other) and self.poly_ring == other.poly_ring and self.a == other.a and self.b == other.b
 
 

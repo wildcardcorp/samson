@@ -45,7 +45,7 @@ class JWKECPublicKey(object):
 
 
     @staticmethod
-    def build_pub(ec_key: object) -> dict:
+    def build_pub(ec_key: 'ECDSA') -> dict:
         """
         Formats the public parameters of the key as a `dict`.
 
@@ -66,7 +66,7 @@ class JWKECPublicKey(object):
 
 
     @staticmethod
-    def encode(ec_key: object, **kwargs) -> str:
+    def encode(ec_key: 'ECDSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -81,7 +81,7 @@ class JWKECPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         """
         Decodes a JWK JSON string into an ECDSA object.
 

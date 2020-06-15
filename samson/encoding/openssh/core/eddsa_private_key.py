@@ -34,14 +34,14 @@ class EdDSAPrivateKey(object):
 
 
     @staticmethod
-    def pack(value: object, encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
+    def pack(value: 'EdDSAPrivateKey', encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
         """
         Packs a private key into an OpenSSH-compliant encoding.
 
         Parameters:
-            value      (bytes): Value to encode.
-            encryptor   (func): (Optional) Function to use as the encryptor.
-            padding_size (int): The block size to pad to. Usually 8 unless you're encrypting.
+            value (EdDSAPrivateKey): Value to encode.
+            encryptor        (func): (Optional) Function to use as the encryptor.
+            padding_size      (int): The block size to pad to. Usually 8 unless you're encrypting.
         
         Returns:
             Bytes: Packed bytes.
@@ -61,7 +61,7 @@ class EdDSAPrivateKey(object):
 
 
     @staticmethod
-    def unpack(encoded_bytes: bytes, decryptor: FunctionType=None, already_unpacked: bool=False) -> (object, bytes):
+    def unpack(encoded_bytes: bytes, decryptor: FunctionType=None, already_unpacked: bool=False) -> ('EdDSAPrivateKey', bytes):
         """
         Unpacks bytes into an EdDSAPrivateKey object.
 

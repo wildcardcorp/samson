@@ -12,12 +12,12 @@ class OpenSSHEdDSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         return SSH_PUBLIC_HEADER in buffer and not OpenSSHEdDSAPrivateKey.check(buffer)
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs):
+    def encode(eddsa_key: 'EdDSA', **kwargs) -> bytes:
         public_key = EdDSAPublicKey('public_key', eddsa_key.a)
         encoded = generate_openssh_public_key_params(PKIEncoding.OpenSSH, SSH_PUBLIC_HEADER, public_key, user=kwargs.get('user'))
 
@@ -25,7 +25,7 @@ class OpenSSHEdDSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'EdDSA':
         from samson.public_key.eddsa import EdDSA
         from samson.math.algebra.curves.named import EdwardsCurve25519
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, EdDSAPublicKey, EdDSAPrivateKey, None)

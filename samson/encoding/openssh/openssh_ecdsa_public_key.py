@@ -12,12 +12,12 @@ class OpenSSHECDSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         return SSH_PUBLIC_HEADER in buffer and not OpenSSHECDSAPrivateKey.check(buffer)
 
 
     @staticmethod
-    def encode(ecdsa_key: object, **kwargs):
+    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
         curve, x_y_bytes = serialize_public_point(ecdsa_key)
         public_key = ECDSAPublicKey('public_key', curve, x_y_bytes)
         encoded = generate_openssh_public_key_params(PKIEncoding.OpenSSH, b'ecdsa-sha2-' + curve, public_key, user=kwargs.get('user'))
@@ -27,7 +27,7 @@ class OpenSSHECDSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         from samson.public_key.ecdsa import ECDSA
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, ECDSAPublicKey, ECDSAPrivateKey, None)
 

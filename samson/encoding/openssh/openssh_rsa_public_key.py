@@ -12,12 +12,12 @@ class OpenSSHRSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         return SSH_PUBLIC_HEADER in buffer and not OpenSSHRSAPrivateKey.check(buffer)
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
         public_key = RSAPublicKey('public_key', rsa_key.n, rsa_key.e)
         encoded = generate_openssh_public_key_params(PKIEncoding.OpenSSH, SSH_PUBLIC_HEADER, public_key, user=kwargs.get('user'))
 
@@ -25,7 +25,7 @@ class OpenSSHRSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         from samson.public_key.rsa import RSA
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, RSAPublicKey, RSAPrivateKey, None)
 

@@ -6,7 +6,7 @@ import math
 class X509DSASubjectPublicKey(object):
 
     @staticmethod
-    def encode(dsa_key: object):
+    def encode(dsa_key: 'DSA') -> BitString:
         y_bits = bin(Bytes(encoder.encode(Integer(dsa_key.y))).int())[2:]
         y_bits = y_bits.zfill(math.ceil(len(y_bits) / 8) * 8)
         y_bits = BitString(y_bits)
@@ -15,5 +15,5 @@ class X509DSASubjectPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes):
+    def decode(buffer: bytes) -> 'DSA':
         pass

@@ -10,7 +10,7 @@ from pyasn1.codec.der import encoder, decoder
 class X509DiffieHellmanPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8DiffieHellmanPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.113549.1.3.1'
@@ -19,7 +19,7 @@ class X509DiffieHellmanPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def encode(dh_key: object, **kwargs):
+    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
         dh_params = X509DiffieHellmanParams.encode(dh_key)
 
         seq = Sequence()
@@ -37,7 +37,7 @@ class X509DiffieHellmanPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'DiffieHellman':
         from samson.protocols.diffie_hellman import DiffieHellman
         items = bytes_to_der_sequence(buffer)
 

@@ -27,7 +27,7 @@ class KDFParams(object):
 
 
     @staticmethod
-    def pack(value: object) -> Bytes:
+    def pack(value: 'KDFParams') -> Bytes:
         """
         Packs a KDFParams object into bytes.
 
@@ -41,7 +41,7 @@ class KDFParams(object):
 
 
     @staticmethod
-    def unpack(encoded_bytes: bytes) -> (object, bytes):
+    def unpack(encoded_bytes: bytes) -> ('KDFParams', bytes):
         """
         Unpacks bytes into a KDFParams object.
 

@@ -11,12 +11,12 @@ class OpenSSHDSAPublicKey(PEMEncodable):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         return SSH_PUBLIC_HEADER in buffer and not OpenSSHDSAPrivateKey.check(buffer)
 
 
     @staticmethod
-    def encode(dsa_key: object, **kwargs):
+    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
         public_key = DSAPublicKey('public_key', dsa_key.p, dsa_key.q, dsa_key.g, dsa_key.y)
         encoded = generate_openssh_public_key_params(PKIEncoding.OpenSSH, SSH_PUBLIC_HEADER, public_key, user=kwargs.get('user'))
 
@@ -24,7 +24,7 @@ class OpenSSHDSAPublicKey(PEMEncodable):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'DSA':
         from samson.public_key.dsa import DSA
         _, pub = parse_openssh_key(buffer, SSH_PUBLIC_HEADER, DSAPublicKey, DSAPrivateKey, None)
 

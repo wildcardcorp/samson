@@ -17,7 +17,7 @@ SSH_CURVE_NAME_LOOKUP = {
 
 SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
 
-def serialize_public_point(ecdsa_key: object):
+def serialize_public_point(ecdsa_key: 'ECDSA'):
     curve = SSH_CURVE_NAME_LOOKUP[ecdsa_key.G.curve]
     zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
     x_y_bytes = b'\x04' + (Bytes(int(ecdsa_key.Q.x)).zfill(zero_fill) + Bytes(int(ecdsa_key.Q.y)).zfill(zero_fill))
@@ -40,7 +40,7 @@ class OpenSSHECDSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(ecdsa_key: object, **kwargs):
+    def encode(ecdsa_key: 'ECDSA', **kwargs):
         curve, x_y_bytes = serialize_public_point(ecdsa_key)
 
         user = kwargs.get('user')

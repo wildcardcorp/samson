@@ -9,7 +9,7 @@ class WeierstrassPoint(RingElement):
     Point on a Weierstrass curve.
     """
 
-    def __init__(self, x: int, y: int, curve: object):
+    def __init__(self, x: int, y: int, curve: 'WeierstrassCurve'):
         self.x     = curve.ring.coerce(x)
         self.y     = curve.ring.coerce(y)
         self.curve = curve
@@ -54,11 +54,11 @@ class WeierstrassPoint(RingElement):
         return int(self.x)
 
 
-    def __eq__(self, P2: object) -> bool:
+    def __eq__(self, P2: 'WeierstrassPoint') -> bool:
         return self.curve == P2.curve and self.x == P2.x and self.y == P2.y
 
 
-    def __lt__(self, other: object) -> bool:
+    def __lt__(self, other: 'WeierstrassPoint') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
@@ -66,7 +66,7 @@ class WeierstrassPoint(RingElement):
         return self.x < other.x
 
 
-    def __gt__(self, other: object) -> bool:
+    def __gt__(self, other: 'WeierstrassPoint') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
@@ -74,12 +74,12 @@ class WeierstrassPoint(RingElement):
         return self.x > other.x
 
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'WeierstrassPoint':
         return WeierstrassPoint(self.x, -self.y, self.curve)
 
 
     @left_expression_intercept
-    def __add__(self, P2: object) -> object:
+    def __add__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if self == self.curve.POINT_AT_INFINITY:
             return P2
 
@@ -100,18 +100,18 @@ class WeierstrassPoint(RingElement):
         return WeierstrassPoint(x, y, self.curve)
 
 
-    def __radd__(self, P2: object) -> object:
+    def __radd__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self.__add__(P2)
 
     @left_expression_intercept
-    def __sub__(self, P2: object) -> object:
+    def __sub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self + (-P2)
 
-    def __rsub__(self, P2: object) -> object:
+    def __rsub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return -self + P2
 
     @left_expression_intercept
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
         from samson.math.general import pohlig_hellman
 
         g = self.ring.coerce(other)
@@ -191,14 +191,14 @@ class WeierstrassCurve(Ring):
             return super().__getitem__(args)
 
 
-    def __call__(self, x: object, y: object=None) -> WeierstrassPoint:
+    def __call__(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
         if y:
             return WeierstrassPoint(x, y, self)
         else:
             return self.recover_point_from_x(x)
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'WeierstrassCurve') -> bool:
         return type(other) == type(self) and self.a == other.a and self.b == other.b
 
 

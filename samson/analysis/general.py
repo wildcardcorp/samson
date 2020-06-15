@@ -250,6 +250,39 @@ def num_expected_collisions(bits: int, num_inputs: int) -> float:
     return 2**(-bits)*ncr(num_inputs, 2)
 
 
+
+def probability_of_x_occurences(n: int, x: int, p: float) -> float:
+    """
+    Calculates the probability of an event with probability `p` occuring exactly `x` times in `n` trials.
+
+    Parameters:
+        n (int): Number of trials.
+        x (int): Number of times for event to occur.
+        p (int): Probability event will occur.
+    
+    Returns:
+        float: Probability of total event.
+    """
+    return p**x*(1-p)**(n-x)
+
+
+
+def probability_of_at_least_x_occurences(n: int, x: int, p: float) -> float:
+    """
+    Calculates the probability of an event with probability `p` occuring at least `x` times in `n` trials.
+
+    Parameters:
+        n (int): Number of trials.
+        x (int): Number of times for event to occur.
+        p (int): Probability event will occur.
+    
+    Returns:
+        float: Probability of total event.
+    """
+    return sum(ncr(n, k)*p**k*(1-p)**(n-k) for k in range(x,n))
+
+
+
 def generate_rc4_bias_map(ciphertexts):
     bias_map = [{} for i in range(256)]
 

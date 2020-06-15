@@ -21,28 +21,28 @@ class MultiplicativeGroupElement(RingElement):
 
 
     @left_expression_intercept
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val * other.val, self.ring)
 
     @left_expression_intercept
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val / other.val, self.ring)
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = int(other)
         if self.ring.order_cache:
             other %= self.ring.order_cache
 
         return MultiplicativeGroupElement(self.val ** other, self.ring)
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'MultiplicativeGroupElement':
         return MultiplicativeGroupElement(~self.val, self.ring)
 
 
     @left_expression_intercept
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         from samson.math.general import pohlig_hellman
 
         g = self.ring.coerce(other)
@@ -183,7 +183,7 @@ class MultiplicativeGroup(Ring):
         """
         return self(self.ring[x+1])
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'MultiplicativeGroup') -> bool:
         return type(self) == type(other) and self.ring == other.ring
 
 

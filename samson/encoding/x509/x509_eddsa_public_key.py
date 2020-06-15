@@ -10,7 +10,7 @@ from pyasn1.codec.der import encoder
 class X509EdDSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8EdDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0])[:7] == '1.3.101'
@@ -19,7 +19,7 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs):
+    def encode(eddsa_key: 'EdDSA', **kwargs) -> bytes:
         alg_id = SequenceOf()
         alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
 
@@ -32,7 +32,7 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'EdDSA':
         from samson.public_key.eddsa import EdDSA
         items = bytes_to_der_sequence(buffer)
 

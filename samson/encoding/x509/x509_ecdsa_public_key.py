@@ -9,7 +9,7 @@ from pyasn1.codec.der import encoder
 class X509ECDSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS1ECDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1'
@@ -18,7 +18,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def encode(ecdsa_key: object, **kwargs):
+    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
         curve_seq = [
             ObjectIdentifier([1, 2, 840, 10045, 2, 1]),
             X509ECDSAParams.encode(ecdsa_key)
@@ -36,7 +36,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 

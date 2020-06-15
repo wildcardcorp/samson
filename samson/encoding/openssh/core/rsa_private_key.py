@@ -41,14 +41,14 @@ class RSAPrivateKey(object):
 
 
     @staticmethod
-    def pack(value: object, encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
+    def pack(value: 'RSAPrivateKey', encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
         """
         Packs a private key into an OpenSSH-compliant encoding.
 
         Parameters:
-            value      (bytes): Value to encode.
-            encryptor   (func): (Optional) Function to use as the encryptor.
-            padding_size (int): The block size to pad to. Usually 8 unless you're encrypting.
+            value (RSAPrivateKey): Value to encode.
+            encryptor      (func): (Optional) Function to use as the encryptor.
+            padding_size    (int): The block size to pad to. Usually 8 unless you're encrypting.
         
         Returns:
             Bytes: Packed bytes.
@@ -73,7 +73,7 @@ class RSAPrivateKey(object):
 
 
     @staticmethod
-    def unpack(encoded_bytes: bytes, decryptor: FunctionType=None) -> (object, bytes):
+    def unpack(encoded_bytes: bytes, decryptor: FunctionType=None) -> ('RSAPrivateKey', bytes):
         """
         Unpacks bytes into an RSAPrivateKey object.
 

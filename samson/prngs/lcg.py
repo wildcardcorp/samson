@@ -137,7 +137,7 @@ class LCG(object):
 
     @classmethod
     @RUNTIME.report
-    def crack_truncated(cls: object, outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int) -> object:
+    def crack_truncated(cls: object, outputs: list, outputs_to_predict: list, multiplier: int, increment: int, modulus: int, trunc_amount: int) -> 'LCG':
         """
         Given a decent number of truncated states (about 200 when there's only 3-bit outputs), returns a replica LCG.
 

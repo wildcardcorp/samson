@@ -41,7 +41,7 @@ class DSAPrivateKey(object):
 
 
     @staticmethod
-    def pack(value: object, encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
+    def pack(value: bytes, encryptor: FunctionType=None, padding_size: int=8) -> Bytes:
         """
         Packs a private key into an OpenSSH-compliant encoding.
 

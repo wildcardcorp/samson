@@ -6,7 +6,7 @@ from copy import deepcopy
 from enum import Enum
 import math
 
-def int_to_poly(integer: int, modulus: int=2) -> object:
+def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
     Encodes an integer as a polynomial.
 
@@ -37,7 +37,7 @@ def int_to_poly(integer: int, modulus: int=2) -> object:
     return Polynomial(base_coeffs, ZZ/ZZ(modulus))
 
 
-def poly_to_int(poly: object) -> int:
+def poly_to_int(poly: 'Polynomial') -> int:
     """
     Encodes an polynomial as a integer.
 
@@ -65,7 +65,7 @@ def poly_to_int(poly: object) -> int:
     return value
 
 
-def frobenius_monomial_base(poly: object) -> list:
+def frobenius_monomial_base(poly: 'Polynomial') -> list:
     """
     Generates a list of monomials of x**(i*p) % g for range(poly.degrees()). Used with Frobenius map.
 
@@ -108,7 +108,7 @@ def frobenius_monomial_base(poly: object) -> list:
     return bases
 
 
-def frobenius_map(f: object, g: object, bases: list=None) -> object:
+def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polynomial':
     """
     Computes f**p % g using the Frobenius map.
     
@@ -694,7 +694,7 @@ def tonelli_q(a: int, p: int, q: int) -> int:
 
 
 
-def gaussian_elimination(system_matrix: object, rhs: object) -> object:
+def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     """
     Solves `Ax = b` for `x` where `A` is `system_matrix` and `b` is `rhs`.
 
@@ -762,7 +762,7 @@ def gaussian_elimination(system_matrix: object, rhs: object) -> object:
 
 
 
-def gram_schmidt(matrix: object, normalize: bool=True) -> object:
+def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
     """
     Performs Gram-Schmidt orthonormalization.
 
@@ -810,7 +810,7 @@ def gram_schmidt(matrix: object, normalize: bool=True) -> object:
 
 
 
-def lll(in_basis: list, delta: float=0.75) -> object:
+def lll(in_basis: list, delta: float=0.75) -> 'Matrix':
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
 
@@ -1045,7 +1045,7 @@ def next_prime(start_int: int) -> int:
 
 
 
-def berlekamp_massey(output_list: list) -> object:
+def berlekamp_massey(output_list: list) -> 'Polynomial':
     """
     Performs the Berlekamp-Massey algorithm to find the shortest LFSR for a binary output sequence.
 
@@ -1148,13 +1148,13 @@ def totient(n: int, factors: dict=None) -> int:
     return t
 
 
-def pollards_kangaroo(g: object, y: object, a: int, b: int, iterations: int=30, f: FunctionType=None, apply_reduction: bool=True) -> int:
+def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterations: int=30, f: FunctionType=None, apply_reduction: bool=True) -> int:
     """
     Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
 
     Parameters:
-        g             (object): Generator.
-        y             (object): Number to find the discrete logarithm of.
+        g        (RingElement): Generator.
+        y        (RingElement): Number to find the discrete logarithm of.
         a                (int): Interval start.
         b                (int): Interval end.
         iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
@@ -1327,7 +1327,7 @@ def primes_product(n: int, blacklist: list=None) -> list:
 
 
 
-def find_representative(quotient_element: object, valid_range: list) -> int:
+def find_representative(quotient_element: 'QuotientElement', valid_range: list) -> int:
     """
     Finds the representative element of `quotient_element` within `valid_range`.
 
@@ -1379,7 +1379,7 @@ def frobenius_endomorphism(point: object, q: int) -> object:
 
 
 
-def frobenius_trace_mod_l(curve: object, l: int) -> object:
+def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     """
     Finds the Frobenius trace modulo `l` for faster computation.
 
@@ -1510,16 +1510,16 @@ def schoofs_algorithm(curve: object) -> int:
     return curve.p + 1 - frobenius_trace(curve)
 
 
-def bsgs(g: object, h: object, end: int, e: object=None, start: int=0) -> int:
+def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, start: int=0) -> int:
     """
     Performs Baby-step Giant-step with an arbitrary finite cyclic group.
 
     Parameters:
-        g  (object): Generator/base.
-        h  (object): The result to find the discrete logarithm of.
-        end   (int): End of the search range.
-        e  (object): Starting point of the aggregator.
-        start (int): Start of the search range.
+        g  (RingElement): Generator/base.
+        h  (RingElement): The result to find the discrete logarithm of.
+        end        (int): End of the search range.
+        e  (RingElement): Starting point of the aggregator.
+        start      (int): Start of the search range.
 
     Returns:
         int: The discrete logarithm of `h` given `g`.
@@ -1568,15 +1568,15 @@ def bsgs(g: object, h: object, end: int, e: object=None, start: int=0) -> int:
 
 
 
-def pohlig_hellman(g: object, h: object, n: int, factors: dict=None) -> int:
+def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int, factors: dict=None) -> int:
     """
     Computes the discrete logarithm for finite abelian groups with a smooth order.
 
     Parameters:
-        g     (object): Generator element.
-        h     (object): Result to find discrete logarithm of.
-        n        (int): Order of the group.
-        factors (dict): `n`'s factorization.
+        g (RingElement): Generator element.
+        h (RingElement): Result to find discrete logarithm of.
+        n         (int): Order of the group.
+        factors  (dict): `n`'s factorization.
 
     Returns:
         int: The discrete logarithm of `h` given `g`.

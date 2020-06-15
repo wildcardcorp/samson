@@ -10,7 +10,7 @@ from pyasn1.codec.der import encoder, decoder
 class X509DSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8DSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.10040.4.1'
@@ -19,7 +19,7 @@ class X509DSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def encode(dsa_key: object, **kwargs):
+    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
         dsa_params = X509DSAParams.encode(dsa_key)
 
         seq = Sequence()
@@ -37,7 +37,7 @@ class X509DSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'DSA':
         from samson.public_key.dsa import DSA
         items = bytes_to_der_sequence(buffer)
 

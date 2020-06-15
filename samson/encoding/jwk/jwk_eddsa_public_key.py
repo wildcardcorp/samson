@@ -44,7 +44,7 @@ class JWKEdDSAPublicKey(object):
 
 
     @staticmethod
-    def build_pub(eddsa_key: object) -> dict:
+    def build_pub(eddsa_key: 'EdDSA') -> dict:
         """
         Formats the public parameters of the key as a `dict`.
 
@@ -64,7 +64,7 @@ class JWKEdDSAPublicKey(object):
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs) -> str:
+    def encode(eddsa_key: 'EdDSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -79,7 +79,7 @@ class JWKEdDSAPublicKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'EdDSA':
         """
         Decodes a JWK JSON string into EdDSA parameters.
 

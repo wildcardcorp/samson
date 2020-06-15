@@ -11,20 +11,20 @@ class PKCS1DiffieHellmanParameters(PEMEncodable):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         items = bytes_to_der_sequence(buffer)
         return len(items) == 2 and int(items[0]) != 0
 
 
     @staticmethod
-    def encode(dh_key: object, **kwargs):
+    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
         encoded = export_der([dh_key.p, dh_key.g])
         encoded = PKCS1DiffieHellmanParameters.transport_encode(encoded, **kwargs)
         return encoded
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'DiffieHellman':
         from samson.protocols.diffie_hellman import DiffieHellman
         items = bytes_to_der_sequence(buffer)
 

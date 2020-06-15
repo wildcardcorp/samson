@@ -26,22 +26,22 @@ class FieldElement(RingElement):
         return self.field
 
     @abstractmethod
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'FieldElement') -> 'FieldElement':
         pass
 
     @abstractmethod
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'FieldElement') -> 'FieldElement':
         pass
 
     @abstractmethod
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: 'FieldElement') -> 'FieldElement':
         pass
 
     @abstractmethod
-    def __truediv__(self, other: object) -> object:
+    def __truediv__(self, other: 'FieldElement') -> 'FieldElement':
         pass
 
-    def __floordiv__(self, other: object) -> object:
+    def __floordiv__(self, other: 'FieldElement') -> 'FieldElement':
         return self.__truediv__(other)
 
     def is_invertible(self) -> bool:

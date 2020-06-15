@@ -148,11 +148,11 @@ class SparseVector(object):
 
 
 
-    def __contains__(self, item: object):
+    def __contains__(self, item: 'RingElement') -> bool:
         return item in self.values
 
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'SparseVector') -> bool:
         return self.values == other.values
 
 

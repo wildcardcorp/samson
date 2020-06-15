@@ -60,7 +60,7 @@ class DaviesMeyerConstruction(object):
 
 
     @staticmethod
-    def generate_fixed_point(block_cipher: object, message: bytes, block_size: int):
+    def generate_fixed_point(block_cipher: type, message: bytes, block_size: int) -> 'DaviesMeyerConstruction':
         """
         Generates a Davies-Meyer fixed point. A fixed point is a state in which its output matches
         its input, and, therefore, infinitely produces itself.

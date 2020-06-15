@@ -19,7 +19,7 @@ class OpenSSHRSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs):
         user = kwargs.get('user')
         if user and type(user) is str:
             user = user.encode('utf-8')

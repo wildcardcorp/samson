@@ -47,7 +47,7 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
     USE_RFC_4716 = False
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 4 and int(items[0]) == 1
@@ -56,7 +56,7 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
 
 
     @staticmethod
-    def encode(ecdsa_key: object, **kwargs):
+    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
         zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
         encoded = export_der([1, Bytes(ecdsa_key.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(ecdsa_key.G.curve.oid)]) + ecdsa_key.G.curve.oid)[0].asTuple(), ecdsa_key.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
         encoded = PKCS1ECDSAPrivateKey.transport_encode(encoded, **kwargs)
@@ -64,7 +64,7 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'ECDSA':
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 

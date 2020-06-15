@@ -20,7 +20,7 @@ class IterativePRNG(object):
         return result
 
 
-    def crack(self, outputs: list) -> object:
+    def crack(self, outputs: list) -> 'IterativePRNG':
         """
         Cracks the PRNG's internal state using `outputs`.
 

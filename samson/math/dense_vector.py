@@ -13,20 +13,20 @@ class DenseVector(object):
     def __hash__(self) -> int:
         return hash(self.values)
 
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'DenseVector') -> 'DenseVector':
         return DenseVector([a+b for a,b in zip(self.values, other.values)])
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'DenseVector') -> 'DenseVector':
         return DenseVector([a-b for a,b in zip(self.values, other.values)])
 
-    def __neg__(self) -> object:
+    def __neg__(self) -> 'DenseVector':
         return DenseVector([-a for a in self.values])
 
-    def __mul__(self, other: object) -> object:
+    def __mul__(self, other: object) -> 'DenseVector':
         return DenseVector([a*other for a in self.values])
 
 
-    def dot(self, other: object) -> object:
+    def dot(self, other: 'DenseVector') -> object:
         if hasattr(self.values[0], 'ring'):
             zero = self.values[0].ring.zero()
         else:

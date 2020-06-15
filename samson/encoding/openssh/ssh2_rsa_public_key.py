@@ -10,7 +10,7 @@ class SSH2RSAPublicKey(OpenSSHRSAPublicKey):
     USE_RFC_4716 = True
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
         public_key = RSAPublicKey('public_key', rsa_key.n, rsa_key.e)
         encoded = generate_openssh_public_key_params(PKIEncoding.SSH2, SSH_PUBLIC_HEADER, public_key)
 

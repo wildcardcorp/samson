@@ -9,7 +9,7 @@ import math
 # https://tools.ietf.org/html/rfc8410
 class PKCS8EdDSAPrivateKey(PKCS8Base):
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0])[:7] == '1.3.101'
@@ -18,7 +18,7 @@ class PKCS8EdDSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs):
+    def encode(eddsa_key: 'EdDSA', **kwargs) -> bytes:
         alg_id = SequenceOf()
         alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
 
@@ -36,7 +36,7 @@ class PKCS8EdDSAPrivateKey(PKCS8Base):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'EdDSA':
         from samson.public_key.eddsa import EdDSA
         items = bytes_to_der_sequence(buffer)
 

@@ -56,7 +56,7 @@ class MontgomeryCurve(Ring):
         return f'MontgomeryCurve{{A={self.A}, U={self.U}, V={self.V}}}'
 
 
-    def zero(self) -> object:
+    def zero(self) -> 'MontgomeryPoint':
         """
         Returns:
             MontgomeryPoint: '0' element of the algebra.
@@ -64,7 +64,7 @@ class MontgomeryCurve(Ring):
         return MontgomeryPoint(0, self)
 
 
-    def one(self) -> object:
+    def one(self) -> 'MontgomeryPoint':
         """
         Returns:
             MontgomeryPoint: '1' element of the algebra.
@@ -72,7 +72,7 @@ class MontgomeryCurve(Ring):
         return self.G
 
 
-    def random(self, size: int=None) -> object:
+    def random(self, size: int=None) -> 'MontgomeryPoint':
         """
         Generate a random element.
 
@@ -90,16 +90,16 @@ class MontgomeryCurve(Ring):
 
 
     @property
-    def p(self):
+    def p(self) -> int:
         return int(self.ring.quotient)
 
 
     @property
-    def G(self):
+    def G(self) -> 'MontgomeryPoint':
         return MontgomeryPoint(self.U, self)
 
 
-    def element_at(self, x: int) -> object:
+    def element_at(self, x: int) -> 'MontgomeryPoint':
         """
         Returns the `x`-th element w.r.t to the generator.
 
@@ -145,14 +145,14 @@ class MontgomeryPoint(RingElement):
         return self.curve
 
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: '') -> bool:
         return self.x == other.x and self.curve == other.curve
 
 
-    def __add__(self, P2: object) -> object:
+    def __add__(self, P2: 'MontgomeryPoint') -> 'MontgomeryPoint':
         raise NotImplementedError()
 
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'MontgomeryPoint') -> 'MontgomeryPoint':
         raise NotImplementedError()
 
     # https://tools.ietf.org/html/rfc7748#section-5

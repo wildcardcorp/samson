@@ -86,7 +86,7 @@ class Ring(ABC):
             return self[random_int(size.ordinality())]
 
 
-    def coerce(self, other: object) -> object:
+    def coerce(self, other: object) -> 'RingElement':
         """
         Attempts to coerce other into an element of the algebra.
 
@@ -99,7 +99,7 @@ class Ring(ABC):
         return other
 
 
-    def mul_group(self) -> object:
+    def mul_group(self) -> 'MultiplicativeGroup':
         """
         Returns the `MultiplicativeGroup` of `self`.
         """
@@ -108,11 +108,11 @@ class Ring(ABC):
 
 
 
-    def __call__(self, args) -> object:
+    def __call__(self, args) -> 'RingElement':
         return self.coerce(args)
 
 
-    def element_at(self, x: int) -> object:
+    def element_at(self, x: int) -> 'RingElement':
         """
         Returns the `x`-th element of the set.
 
@@ -130,7 +130,7 @@ class Ring(ABC):
         raise NotImplementedError()
 
 
-    def find_gen(self) -> object:
+    def find_gen(self) -> 'RingElement':
         """
         Finds a generator of the `Ring`.
 
@@ -152,7 +152,7 @@ class Ring(ABC):
 
 
 
-    def __truediv__(self, element):
+    def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         if element.ring != self:
             raise RuntimeError(f"'element' must be an element of the ring")
@@ -160,7 +160,7 @@ class Ring(ABC):
         return QuotientRing(element, self)
 
 
-    def __getitem__(self, x: int):
+    def __getitem__(self, x: int) -> 'RingElement':
         from samson.math.algebra.rings.polynomial_ring import PolynomialRing
         from samson.math.symbols import Symbol
 
@@ -186,67 +186,67 @@ class RingElement(ABC):
         return hash((self.ring, self.val))
 
     @abstractmethod
-    def __add__(self, other: object) -> object:
+    def __add__(self, other: 'RingElement') -> 'RingElement':
         pass
 
-    def __radd__(self, other: object) -> object:
+    def __radd__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) + self
 
     @abstractmethod
-    def __sub__(self, other: object) -> object:
+    def __sub__(self, other: 'RingElement') -> 'RingElement':
         pass
 
-    def __rsub__(self, other: object) -> object:
+    def __rsub__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) - self
 
     __mul__ = fast_mul
     __pow__ = square_and_mul
 
-    def __rmul__(self, other: int) -> object:
+    def __rmul__(self, other: int) -> 'RingElement':
         if type(other) is int:
             return self * other
 
         return self.ring.coerce(other) * self
 
 
-    def __rmod__(self, other: object) -> object:
+    def __rmod__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) % self
 
-    def __rdivmod__(self, other: object) -> object:
+    def __rdivmod__(self, other: 'RingElement') -> 'RingElement':
         return divmod(self.ring.coerce(other), self)
 
 
-    def __rtruediv__(self, other: object) -> object:
+    def __rtruediv__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) / self
 
-    def __rfloordiv__(self, other: object) -> object:
+    def __rfloordiv__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) / self
 
     def __bool__(self) -> bool:
         return self != self.ring.zero()
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         return self.val == other.val and self.ring == other.ring
 
-    def __lt__(self, other: object) -> bool:
+    def __lt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val < other.val
 
-    def __le__(self, other):
+    def __le__(self, other: 'RingElement') -> bool:
         return self < other or self == other
 
-    def __gt__(self, other: object) -> bool:
+    def __gt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
 
-    def __ge__(self, other):
+    def __ge__(self, other: 'RingElement') -> bool:
         return self > other or self == other
 
 
@@ -255,7 +255,7 @@ class RingElement(ABC):
 
 
 
-    def ground_mul(self, other: object) -> object:
+    def ground_mul(self, other: 'RingElement') -> 'RingElement':
         """
         Tries "special" multiplications first.
 
@@ -285,7 +285,7 @@ class RingElement(ABC):
         return False
 
 
-    def cache_op(self, start: object, operation: FunctionType, size: int) -> object:
+    def cache_op(self, start: 'RingElement', operation: FunctionType, size: int) -> 'BitVectorCache':
         """
         Caches a repeated `operation` in a `BitVectorCache`.
 
@@ -301,7 +301,7 @@ class RingElement(ABC):
         return BitVectorCache(self, start, operation, size)
 
 
-    def cache_mul(self, size: int) -> object:
+    def cache_mul(self, size: int) -> 'BitVectorCache':
         """
         Caches scalar multiplication (i.e. repeated addition) in a `BitVectorCache`.
 
@@ -314,7 +314,7 @@ class RingElement(ABC):
         return self.cache_op(self.ring.zero(), self.__class__.__add__, size)
 
 
-    def cache_pow(self, size: int) -> object:
+    def cache_pow(self, size: int) -> 'BitVectorCache':
         """
         Caches exponentiation (i.e. repeated multiplication) in a `BitVectorCache`.
 
@@ -327,7 +327,7 @@ class RingElement(ABC):
         return self.cache_op(self.ring.one(), self.__class__.__mul__, size)
 
 
-    def get_ground(self) -> object:
+    def get_ground(self) -> 'RingElement':
         """
         Gets the "ground" value (i.e. IntegerElement or Polynomial). Useful for traversing complex
         algebras.

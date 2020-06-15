@@ -34,7 +34,7 @@ class JWKRSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs) -> str:
+    def encode(rsa_key: 'RSA', **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -57,7 +57,7 @@ class JWKRSAPrivateKey(object):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs) -> object:
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         """
         Decodes a JWK JSON string into an RSA object.
 

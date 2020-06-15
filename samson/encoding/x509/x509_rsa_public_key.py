@@ -9,7 +9,7 @@ from pyasn1.codec.der import encoder, decoder
 class X509RSAPublicKey(X509PublicKeyBase):
 
     @staticmethod
-    def check(buffer: bytes, **kwargs):
+    def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8RSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.113549.1.1.1'
@@ -18,7 +18,7 @@ class X509RSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def encode(rsa_key: object, **kwargs):
+    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
         seq.setComponentByPosition(1, Null())
@@ -34,7 +34,7 @@ class X509RSAPublicKey(X509PublicKeyBase):
 
 
     @staticmethod
-    def decode(buffer: bytes, **kwargs):
+    def decode(buffer: bytes, **kwargs) -> 'RSA':
         from samson.public_key.rsa import RSA
         items = bytes_to_der_sequence(buffer)
 

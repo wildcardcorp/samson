@@ -18,7 +18,7 @@ class OpenSSHEdDSAPrivateKey(object):
 
 
     @staticmethod
-    def encode(eddsa_key: object, **kwargs):
+    def encode(eddsa_key: 'EdDSA', **kwargs):
         user = kwargs.get('user')
         if user and type(user) is str:
             user = user.encode('utf-8')
