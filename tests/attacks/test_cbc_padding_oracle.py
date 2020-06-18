@@ -46,7 +46,7 @@ def decrypt_data(data):
     try:
         _ = cbc.decrypt(bytes(data))
         return True
-    except InvalidPaddingException as e:
+    except InvalidPaddingException as _:
         return False
 
 

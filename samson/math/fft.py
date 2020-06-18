@@ -1,49 +1,29 @@
 from samson.math.sparse_vector import SparseVector
-import math
+from math import ceil, log
+
 
 def _split(v, m, k):
     K      = 1<< (k-1)
     zero   = v[0].ring.zero()
     zeroes = [zero] * K
-    #return [v[i:i+K] for i in range(0, K << m, K)]
     return [v[i:i+K] + zeroes for i in range(0, K << m, K)]
 
 
 def _combine(L, m, k):
-   r"""
-   Assumes L is a list of length `2^m`, each entry a list of
-   length `2^k`. Combines together into a single list,
-   effectively inverting ``_split()``, but overlaying
-   coefficients, i.e. list #i gets added in starting at position
-   `2^{k-1} i`. Note that the second half of the last list is
-   ignored.
-   """
-   M = 1 << m
-   half_K = 1 << (k-1)
-   return SparseVector.wrap(L[0][:half_K] + \
-       [L[i+1][j] + L[i][j+half_K] \
-           for i in range(M-1) for j in range(half_K)])
-#    return L[0][:half_K] + \
-#           [L[i+1][j] + L[i][j+half_K] \
-#            for i in range(M-1) for j in range(half_K)]
-
+    M = 1 << m
+    half_K = 1 << (k-1)
+    return SparseVector.wrap(L[0][:half_K] + \
+        [L[i+1][j] + L[i][j+half_K] \
+            for i in range(M-1) for j in range(half_K)])
 
 
 def _nega_combine(L, m, k):
-   r"""
-   Same as ``_combine()``, but doesn't ignore the second
-   half of the last list; instead it makes that piece wrap around
-   negacyclically.
-   """
-   M = 1 << m
-   half_K = 1 << (k-1)
-   return SparseVector.wrap([L[0][j] - L[M-1][j+half_K] for j in range(half_K)] + \
-          [L[i+1][j] + L[i][j+half_K] \
-           for i in range(M-1) for j in range(half_K)])
+    M = 1 << m
+    half_K = 1 << (k-1)
+    return SparseVector.wrap([L[0][j] - L[M-1][j+half_K] for j in range(half_K)] + \
+        [L[i+1][j] + L[i][j+half_K] \
+            for i in range(M-1) for j in range(half_K)])
 
-
-
-from math import ceil, log
 
 
 def _forward_butterfly(L1, L2, r):
@@ -73,16 +53,6 @@ def _forward_butterfly(L1, L2, r):
 
     return v1, v2
 
-    # return SparseVector([L1[i] - L2[i+K-r] for i in range(r)] + \
-    #     [L1[i] + L2[i-r] for i in range(r, K)]), \
-    #     SparseVector([L1[i] + L2[i+K-r] for i in range(r)] + \
-    #     [L1[i] - L2[i-r] for i in range(r, K)])
-
-#    return [L1[i] - L2[i+K-r] for i in range(r)] + \
-#           [L1[i] + L2[i-r] for i in range(r, K)], \
-#           [L1[i] + L2[i+K-r] for i in range(r)] + \
-#           [L1[i] - L2[i-r] for i in range(r, K)]
-
 
 
 def _inverse_butterfly(L1, L2, r):
@@ -90,6 +60,9 @@ def _inverse_butterfly(L1, L2, r):
     assert 0 <= r <= len(L1)
 
     K = len(L1)
+    # print('K', K)
+    # print('L1', L1.sparsity)
+    # print()
 
     # zero = L1[0].ring.zero()
     # v1 = SparseVector([], zero)
@@ -124,18 +97,9 @@ def _inverse_butterfly(L1, L2, r):
     return old_v1, old_v2
 
 
-    # return SparseVector.wrap([L1[i] + L2[i] for i in range(K)]), \
-    #     SparseVector.wrap([L1[i] - L2[i] for i in range(r, K)] + \
-    #     [L2[i] - L1[i] for i in range(r)])
-
-#    return [L1[i] + L2[i] for i in range(K)], \
-#           [L1[i] - L2[i] for i in range(r, K)] + \
-#           [L2[i] - L1[i] for i in range(r)]
-
-
 
 def _fft(L, K, start, depth, root):
-    half = 1 << (depth - 1)
+    half   = 1 << (depth - 1)
     start2 = start + half
 
     # reduce mod (x^(D/2) - y^root) and mod (x^(D/2) + y^root)
@@ -152,7 +116,7 @@ def _fft(L, K, start, depth, root):
 
 
 def _ifft(L, K, start, depth, root):
-    half = 1 << (depth - 1)
+    half   = 1 << (depth - 1)
     start2 = start + half
 
     # recurse into each half
@@ -182,14 +146,6 @@ def _convolution_naive(L1, L2):
             new_coeffs[i+j] += coeff_h*coeff_g
 
     return new_coeffs
-    # return SparseVector.wrap([sum([L1[i] * L2[k-i] \
-    # for i in range(max(0, k-m2+1), min(k+1, m1))]) \
-    #     for k in range(m1 + m2 - 1)])
-
-#    return [sum([L1[i] * L2[k-i] \
-#            for i in range(max(0, k-m2+1), min(k+1, m1))]) \
-#            for k in range(m1 + m2 - 1)]
-
 
 
 def _negaconvolution_naive(L1, L2):
@@ -208,7 +164,7 @@ def _negaconvolution_naive(L1, L2):
     #             total += c
     #         else:
     #             total -=c
-        
+
     #     new_coeffs[j] = total
 
     # for i, coeff_h in L1:
@@ -249,13 +205,6 @@ def _negaconvolution_naive(L1, L2):
     #return new_coeffs
 
 
-    # return SparseVector.wrap([sum([L1[i] * L2[j-i] for i in range(j+1)]) - \
-    #     sum([L1[i] * L2[N+j-i] for i in range(j+1, N)]) for j in range(N)])
-
-#    return [sum([L1[i] * L2[j-i] for i in range(j+1)]) - \
-#            sum([L1[i] * L2[N+j-i] for i in range(j+1, N)]) for j in range(N)]
-
-
 def _negaconvolution(L1, L2, n):
     if n <= 3: # arbitrary cutoff
         return _negaconvolution_naive(L1, L2)
@@ -294,7 +243,7 @@ def _negaconvolution_fft(L1, L2, n):
 
     # normalise
     return L3.map(lambda idx, val: (idx, R(val / M)))
-    #return [R(x / M) for x in L3]
+
 
 
 # TODO: Currently, this is all heavily ripped out of Sage. Will require a complete rework.
@@ -312,7 +261,7 @@ def _convolution(L1, L2):
     len1 = len(L1)
     len2 = len(L2)
     outlen = len1 + len2 - 1
-    n = int(ceil(log(outlen) / log(2.0)))
+    n = int(ceil(log(outlen, 2)))
 
     # split into 2^m pieces of 2^(k-1) coefficients each, with k as small
     # as possible, subject to m <= k + 1 (so that the ring of Fourier
@@ -326,8 +275,8 @@ def _convolution(L1, L2):
 
     # zero pad inputs up to length N
     zero = R.zero()
-    L1 = L1 + [zero] * (N - len(L1))
-    L2 = L2 + [zero] * (N - len(L2))
+    L1 += [zero] * (N - len1)
+    L2 += [zero] * (N - len2)
 
     # split inputs into polynomials
     L1 = _split(L1, m, k)
@@ -348,4 +297,3 @@ def _convolution(L1, L2):
 
     # normalise, and truncate to correct length
     return L3.map(lambda idx, val: (idx, R(val / M)))
-    #return [R(L3[i] / M) for i in range(outlen)]

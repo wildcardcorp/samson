@@ -32,6 +32,11 @@ class SparseVector(object):
         else:
             raise Exception("'items' must be dict or list")
 
+        for key in self.values.keys():
+            if not type(key) is int:
+                raise ValueError('idx must be an integer')
+
+
         self.zero = zero
         self.allow_virtual_len = allow_virtual_len
         self.virtual_len = len(items)#self.last()+1 if self.values else 0
@@ -46,7 +51,7 @@ class SparseVector(object):
 
     def __hash__(self) -> int:
         return hash(tuple([_ for _ in self.values.items()]))
-    
+
 
     @staticmethod
     def wrap(items, *args, **kwargs):
@@ -65,7 +70,7 @@ class SparseVector(object):
 
 
     def trim(self):
-        self.virtual_len = self.last() + 1
+        self.virtual_len = self.last() + 1 if self.sparsity else 0
 
 
     def last(self) -> int:
@@ -87,7 +92,7 @@ class SparseVector(object):
     def map(self, func):
         vec = SparseVector([func(idx, val) for idx, val in self], zero=self.zero, allow_virtual_len=self.allow_virtual_len)
         vec.virtual_len = max(self.virtual_len, vec.last()+1)
-        return vec 
+        return vec
 
 
     def __getitem__(self, idx: int) -> object:
@@ -115,7 +120,7 @@ class SparseVector(object):
                 req_start = idx.start or 0
                 req_stop  = len(self) if idx.stop is None else idx.stop
                 selected_items = [(i-req_start, val) for i,val in selected_items]
-    
+
                 new_vec = SparseVector(selected_items, self.zero, allow_virtual_len=self.allow_virtual_len)
 
 
@@ -136,6 +141,9 @@ class SparseVector(object):
 
 
     def __setitem__(self, idx: int, obj: object) -> object:
+        if not type(idx) is int:
+            raise ValueError('idx must be an integer')
+
         if obj == self.zero:
             if idx in self.values:
                 del self.values[idx]
@@ -158,11 +166,11 @@ class SparseVector(object):
 
     def __len__(self) -> int:
         return self.len()
-    
+
 
     def append(self, item):
         self[self.len()] = item
-    
+
 
     @property
     def sparsity(self):
@@ -180,7 +188,7 @@ class SparseVector(object):
         else:
             for item in other:
                 new_self.append(item)
-            
+
         return new_self
 
 

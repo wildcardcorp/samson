@@ -67,8 +67,8 @@ class Fingerprinter(object):
 
 
     @RUNTIME.report
-    def execute(self, initial_filter: FunctionType=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
-        sample   = self.oracle.encrypt(b'a'*min_input_len)
+    def execute(self, initial_filter=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
+        sample   = self.oracle.request(b'a'*min_input_len)
         base_len = len(sample)
         filtered = RUNTIME.search_primitives(initial_filter)
 
@@ -115,7 +115,7 @@ class Fingerprinter(object):
         def calculate_min_size(size):
             min_size     = 0
             typical_size = 0
-    
+
             sizes = size.sizes
             if type(sizes) is int:
                 min_size     += sizes

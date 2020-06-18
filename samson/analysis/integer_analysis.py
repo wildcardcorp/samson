@@ -22,7 +22,7 @@ class IntegerAnalysis(object):
         self.percent_one = percent_one
         self.is_uniform = is_uniform
         self.small_factors = small_factors
-    
+
 
     def __repr__(self):
         return f"<IntegerAnalysis: is_prime={self.is_prime}, smoothness_ratio={self.smoothness_ratio}, byte_aligned={self.byte_aligned}, is_safe_prime={self.is_safe_prime}, prime_name='{self.prime_name}', percent_one={self.percent_one}, is_uniform={self.is_uniform}, small_factors={self.small_factors}>"

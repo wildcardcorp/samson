@@ -2,7 +2,6 @@ from samson.block_ciphers.modes.ctr import CTR
 from samson.kdfs.s2v import S2V
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
-from samson.utilities.exceptions import InvalidMACException
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -58,8 +57,6 @@ class SIV(StreamingBlockCipherMode, AuthenticatedCipher):
         Returns:
             Bytes: Resulting plaintext.
         """
-        from samson.utilities.runtime import RUNTIME
-
         ciphertext = Bytes.wrap(ciphertext)
         iv, ct = ciphertext[:16], ciphertext[16:]
 

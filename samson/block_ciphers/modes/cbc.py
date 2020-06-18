@@ -77,7 +77,7 @@ class CBC(BlockCipherMode):
         """
         plaintext  = b''
         ciphertext = Bytes.wrap(ciphertext)
-        
+
         self.check_ciphertext_length(ciphertext)
 
         last_block = self.iv

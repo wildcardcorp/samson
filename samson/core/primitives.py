@@ -177,7 +177,7 @@ class BlockCipherMode(EncryptionAlg):
     OUTPUT_SIZE      = SizeSpec(size_type=SizeType.ARBITRARY)
     BLOCK_SIZE       = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda mode: mode.cipher.BLOCK_SIZE)
     IO_RELATION_TYPE = IORelationType.EQUAL
-    
+
     def check_ciphertext_length(self, ciphertext: bytes):
         if not len(ciphertext) or len(ciphertext) % self.cipher.block_size != 0:
             raise CiphertextLengthException("Ciphertext is not a multiple of the block size")

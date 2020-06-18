@@ -1,6 +1,5 @@
 from samson.utilities.bytes import Bytes
 from samson.math.sparse_vector import SparseVector
-from samson.math.algebra.rings.integer_ring import ZZ
 import unittest
 
 class SparseVectorTestCase(unittest.TestCase):
@@ -11,9 +10,7 @@ class SparseVectorTestCase(unittest.TestCase):
         """
         for trial in range(100000):
             num    = Bytes.random(1).int()
-            # values = [ZZ(Bytes.random(1).int() % 64) for _ in range(num)]
             values = [Bytes.random(1).int() % 64 for _ in range(num)]
-            #vec    = SparseVector(values, ZZ(0))
             vec    = SparseVector(values, 0)
 
             assert len(vec) == len(values)

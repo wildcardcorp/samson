@@ -3,7 +3,6 @@ from samson.prngs.xoroshiro import Xoroshiro116Plus
 from samson.prngs.mt19937 import MT19937
 from samson.prngs.lcg import LCG
 from samson.core.iterative_prng import IterativePRNG
-from samson.utilities.exceptions import SearchspaceExhaustedException
 
 _mt19937 = lambda state: MT19937(state)
 _xor128p = lambda state: Xorshift128Plus(state)
@@ -55,5 +54,5 @@ class PRNG(object):
                 candidates.append(instance.crack(outputs))
             except Exception:
                 pass
-        
+
         return candidates

@@ -191,10 +191,10 @@ class SizeSpec(object):
             elif self.size_type == SizeType.DEPENDENT:
                 if self.parent is None:
                     return False
-                
+
                 size   = self.selector(self.parent)
                 result = other > size
-            
+
             return result
         else:
             raise NotImplementedError()

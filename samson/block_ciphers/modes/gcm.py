@@ -1,6 +1,5 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
-from samson.utilities.exceptions import InvalidMACException
 from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.ace.decorators import register_primitive
@@ -100,8 +99,6 @@ class GCM(StreamingBlockCipherMode, AuthenticatedCipher):
         Returns:
             Bytes: Resulting plaintext.
         """
-        from samson.utilities.runtime import RUNTIME
-
         authed_ciphertext    = Bytes.wrap(authed_ciphertext)
         ciphertext, orig_tag = authed_ciphertext[:-16], authed_ciphertext[-16:]
 

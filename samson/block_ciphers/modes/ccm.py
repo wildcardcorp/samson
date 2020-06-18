@@ -1,6 +1,5 @@
 from samson.block_ciphers.modes.ctr import CTR
 from samson.utilities.bytes import Bytes
-from samson.utilities.exceptions import InvalidMACException
 from samson.macs.cbc_mac import CBCMAC
 from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import FrequencyType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
@@ -117,8 +116,6 @@ class CCM(StreamingBlockCipherMode, AuthenticatedCipher):
         Returns:
             Bytes: Resulting plaintext.
         """
-        from samson.utilities.runtime import RUNTIME
-
         _data_len, q, _flags, _b_0 = self._calculate_formatting_params(nonce, ciphertext, data)
 
         keystream = self._generate_keystream(nonce, q, len(ciphertext) + (16 - self.mac_len))

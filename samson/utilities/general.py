@@ -91,7 +91,7 @@ def binary_search(func: FunctionType, max_int: int):
             start_idx = current
         else:
             end_idx = current
-    
+
     return end_idx
 
 
@@ -184,5 +184,5 @@ def crc24(data: bytes) -> int:
             crc <<= 1
             if crc & 0x1000000:
                 crc ^= poly
-    
+
     return crc & 0xFFFFFF

@@ -78,8 +78,6 @@ class EAX(StreamingBlockCipherMode, AuthenticatedCipher):
         Returns:
             Bytes: Resulting plaintext.
         """
-        from samson.utilities.runtime import RUNTIME
-
         ciphertext, given_tag = ciphertext[:-16], ciphertext[-16:]
         tag = self.generate_tag(ciphertext, auth_data)
 

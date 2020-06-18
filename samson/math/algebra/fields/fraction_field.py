@@ -46,6 +46,15 @@ class FractionFieldElement(FieldElement):
         return type(self) == type(other) and self.numerator * other.denominator == self.denominator * other.numerator
 
 
+    def valuation(self, p: int) -> int:
+        from samson.math.symbols import oo
+
+        if not self:
+            return oo
+        
+        return self.numerator.valuation(p) - self.denominator.valuation(p)
+
+
     @left_expression_intercept
     def __add__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         other = self.ring.coerce(other)

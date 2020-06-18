@@ -29,7 +29,6 @@ class Polynomial(RingElement):
 
         elif c_type is SparseVector:
             self.coeffs = coeffs
-            self.coeffs.trim()
 
         else:
             raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
@@ -37,6 +36,7 @@ class Polynomial(RingElement):
 
         self.symbol = symbol or Symbol('x')
         self.ring   = ring or self.coeff_ring[self.symbol]
+        self.coeffs.trim()
 
         if len(self.coeffs.values) == 0:
             self.coeffs = self._create_sparse([self.coeff_ring.zero()])
@@ -103,7 +103,7 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero()
 
 
-    def evaluate(self, x: 'RingElement') -> RingElement:
+    def evaluate(self, x: RingElement) -> RingElement:
         """
         Evaluates the `Polynomial` at `x` using Horner's method.
         
@@ -116,13 +116,58 @@ class Polynomial(RingElement):
         coeffs   = self.coeffs
         c0       = coeffs[-1]
         last_idx = coeffs.last()
+        idx      = None
 
         for idx, coeff in self.coeffs.values.items()[:-1][::-1]:
             c0 = coeff + c0*x**(last_idx-idx)
             last_idx = idx
 
+    
+        # Handle the case where there's only one coeff
+        if idx is None:
+            c0 *= x**last_idx
+
         return c0
     
+
+    def valuation(self):
+        from samson.math.algebra.symbols import oo
+
+        if not self.coeffs:
+            return oo
+        
+        return min(self.coeffs)
+    
+
+
+    def hensel_lift(self, p, a):
+        a_eval   = self(a)
+        f_prime  = self.derivative()
+        der_eval = f_prime(a)
+
+        if a_eval.valuation(p) < 2*der_eval.valuation(p):
+            raise ValueError('a is not close enough to a root')
+
+        b = ~der_eval
+
+        while True:
+            na = a - a_eval*b
+
+            if na == a:
+                return a
+
+            a        = na
+            a_eval   = self(a)
+            der_eval = f_prime(a)
+            b       *= 2 - der_eval*b
+
+            print('a', a)
+            print('a_eval', a_eval)
+            print('der_eval', der_eval)
+            print('b', b)
+            print()
+
+
 
     def _create_sparse(self, vec):
         return SparseVector(vec, self.coeff_ring.zero(), allow_virtual_len=True)
@@ -246,10 +291,12 @@ class Polynomial(RingElement):
             w, c, i = y, c / y, i + 1
 
         if c != self.ring.one():
-            c        = c.trunc_kth_root(self.coeff_ring.characteristic)
+            if self.coeff_ring.characteristic:
+                c = c.trunc_kth_root(self.coeff_ring.characteristic)
+
             new_facs = c.square_free_decomposition()
             for new_fac in new_facs:
-                add_or_increment(factors, new_fac, self.coeff_ring.characteristic)
+                add_or_increment(factors, new_fac, self.coeff_ring.characteristic or 1)
 
         return factors
 
@@ -350,6 +397,10 @@ class Polynomial(RingElement):
         if n < d or self.is_irreducible():
             return S
 
+        # We check here and not above because it's possible the poly is already irreducible
+        if self.coeff_ring.order == oo:
+            raise NotImplementedError('Currently can\'t factor polynomials in rings of infinite order')
+
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
                 h = f.ring.random(f)
@@ -399,20 +450,44 @@ class Polynomial(RingElement):
 
         https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
         https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+        https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
 
         Returns:
             bool: Whether or not the Polynomial is irreducible over its ring.
         """
-        from samson.math.general import frobenius_map, frobenius_monomial_base
+        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime
+        from samson.math.algebra.rings.integer_ring import ZZ
 
         n = self.degree()
 
         if n <= 1:
             return True
 
-        x = self.symbol
-        f = self.monic()
-        P = self.ring
+        # If dealing with the integers, we can convert into FF.
+        #   From Wikipedia:
+        #   "The irreducibility of a polynomial over the integers Z
+        #   is related to that over the field F_p of `p` elements
+        #   (for a prime `p`). In particular, if a univariate polynomial `f` over Z
+        #   is irreducible over F_p for some prime `p` that does not
+        #   divide the leading coefficient of `f` (the coefficient of the highest power of the variable),
+        #   then f is irreducible over Z."
+        if self.coeff_ring == ZZ:
+            lc = int(self.LC())
+            p = 2
+            if lc != 1:
+                p = find_coprime(lc, range(1, lc**2))
+
+
+            field = ZZ/ZZ(p)
+            poly  = self.embed_coeffs(field)
+        else:
+            poly = self
+            
+
+        x = poly.symbol
+        f = poly.monic()
+        P = poly.ring
+        
 
         subgroups = {n // fac for fac in factor_int(n)}
 
@@ -591,6 +666,7 @@ class Polynomial(RingElement):
         return self._create_poly(vec)
 
 
+
     def __mul__(self, other: object) -> object:
         from samson.utilities.runtime import RUNTIME
 
@@ -600,14 +676,14 @@ class Polynomial(RingElement):
 
         other = self.ring.coerce(other)
 
-        if RUNTIME.poly_fft_heuristic(self, other):
+        if not RUNTIME.poly_fft_heuristic(self, other):
             # Naive convolution
             new_coeffs = self._create_sparse([])
 
             for i, coeff_h in self.coeffs:
                 for j, coeff_g in other.coeffs:
                     new_coeffs[i+j] += coeff_h*coeff_g
-            
+
             poly = self._create_poly(new_coeffs)
 
         else:

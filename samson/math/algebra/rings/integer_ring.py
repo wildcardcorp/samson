@@ -29,6 +29,22 @@ class IntegerElement(RingElement):
         return is_prime(self.val)
 
 
+    def valuation(self, p: int) -> int:
+        from samson.math.symbols import oo
+
+        if not self:
+            return oo
+
+        v = -1
+        r = 0
+        int_self = int(self)
+        while not r:
+            v += 1
+            int_self, r = divmod(int_self, p)
+        
+        return v
+
+
     @property
     def order(self) -> int:
         """

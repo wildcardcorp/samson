@@ -13,14 +13,14 @@ class RADIUS(object):
             key (bytes): Encryption key.
         """
         self.key = key
-    
+
 
     def __repr__(self):
         return f"<RADIUS: key={self.key}>"
 
     def __str__(self):
         return self.__repr__()
-    
+
 
 
     def encrypt(self, authenticator: bytes, password: bytes) -> Bytes:
@@ -44,7 +44,7 @@ class RADIUS(object):
         for chunk in password.chunk(16):
             result += md5.hash(self.key + last) ^ chunk
             last    = result[-16:]
-        
+
         return result
 
 

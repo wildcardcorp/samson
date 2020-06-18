@@ -116,10 +116,10 @@ def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polyno
         f (Polynomial): Base.
         g (Polynomial): Modulus.
         bases   (list): Frobenius monomial bases. Will generate if not provided.
-    
+
     Returns:
         Polynomial: f**p % g
-    
+
     References:
         https://en.wikipedia.org/wiki/Finite_field#Frobenius_automorphism_and_Galois_theory
     """
@@ -423,7 +423,7 @@ def kth_root(n: int, k: int) -> int:
     return lb
 
 
-def crt(residues: list, moduli: list=None) -> (object, object):
+def crt(residues: list) -> (object, object):
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
 
@@ -810,13 +810,13 @@ def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
 
 
 
-def lll(in_basis: list, delta: float=0.75) -> 'Matrix':
+def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
 
     Parameters:
-        in_basis (list): List of Matrix objects representing the original basis.
-        delta   (float): Minimum optimality of the reduced basis.
+        in_basis (Matrix): Matrix representing the original basis.
+        delta     (float): Minimum optimality of the reduced basis.
 
     Returns:
         Matrix: Reduced basis.

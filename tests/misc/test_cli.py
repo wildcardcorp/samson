@@ -1,5 +1,4 @@
 from samson.utilities.cli import HASHES, PKI, ENCODING_MAPPING
-from samson.encoding.general import PKIEncoding
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 import unittest
@@ -39,10 +38,10 @@ class CLITestCase(unittest.TestCase):
 
                 if pki_name in PKI_PARAMS:
                     params += [f"--args={PKI_PARAMS[pki_name]}"]
-                
+
                 if pki_name == "dh":
                     params += [f"--encoding-args=signing_key={temp_file.name}"]
-                
+
 
                 for key, encoding in ENCODING_MAPPING.items():
                     enc_key = [f"--encoding={key}"]

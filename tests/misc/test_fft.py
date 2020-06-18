@@ -1,4 +1,5 @@
-from samson.all import *
+from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.symbols import Symbol
 from samson.math.fft import _convolution
 import unittest
 

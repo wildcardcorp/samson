@@ -18,7 +18,7 @@ class PGPLength(object):
     def encode(self) -> bytes:
         if self.length < 192:
             return Bytes(self.length)
-        
+
         elif self.length < 8383:
             # The constant was calculated algebraically from the respective two-byte decode function
             return Bytes(self.length + 48960)
@@ -40,7 +40,7 @@ class PGPLength(object):
 
         else:
             length = (len_bytes[1] << 24) + (len_bytes[2] << 16) + (len_bytes[3] << 8) + len_bytes[4]
-        
+
         return PGPLength(length)
 
 
@@ -100,7 +100,7 @@ class PGPRSAPublicKeyPacket(PGPPublicKeyPacket):
 
     def __str__(self):
         return self.__repr__()
-    
+
 
     def encode(self) -> bytes:
 

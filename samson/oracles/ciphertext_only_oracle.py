@@ -20,7 +20,6 @@ class CiphertextOnlyOracle(object):
     def downconvert(self, attack_model: AttackModel):
         if attack_model == self.ATTACK_MODEL:
             return self
-                    
+
         else:
             raise ValueError(f"{self.ATTACK_MODEL} cannot be downconverted to {attack_model}")
-

@@ -123,7 +123,7 @@ class LCG(object):
 
         if not increment:
             increment = (states[1] - states[0] * multiplier) % modulus
-        
+
 
         # Sanity test
         lcg = LCG(states[0], multiplier, increment, modulus)

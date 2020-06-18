@@ -42,7 +42,7 @@ class Oracle(object):
                 max_int = kth_root(max_int, 2)
                 log.warning(f'Oracle returned ValueError. Reducing MAX_TEST_INPUT to 2^{int(math.log(max_int, 2))}')
                 continue
-            
+
             log.info(f'Oracle seems to take in arbitrary-sized inputs')
             break
 
@@ -61,7 +61,7 @@ class Oracle(object):
 
                 except CiphertextLengthException:
                     return False
-                
+
                 except DecryptionException:
                     pass
 

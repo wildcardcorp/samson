@@ -56,7 +56,7 @@ class ChosenCiphertextOracle(Oracle):
 
                 except DecryptionException:
                     pass
-                
+
                 break
 
             return size
@@ -107,5 +107,3 @@ class ChosenCiphertextOracle(Oracle):
             io_relation = IORelationType.FIXED
 
         return {"io_relation": io_relation, "block_size": block_size}
-
-

@@ -3,6 +3,9 @@ from samson.math.polynomial import Polynomial
 class Infinity(object):
     def __repr__(self):
         return '∞'
+    
+    def __eq__(self, other):
+        return type(self) == type(other)
 
     def __str__(self):
         return self.__repr__()
@@ -43,10 +46,10 @@ class NegativeInfinity(Infinity):
         return self.__repr__()
 
     def __lt__(self, other):
-        return False
+        return self != other
 
     def __gt__(self, other):
-        return self != other
+        return False
 
     def __neg__(self):
         return Infinity()
@@ -72,7 +75,7 @@ class Symbol(Polynomial):
 
     def __bool__(self) -> bool:
         return True
-    
+
     def __pow__(self, power):
         return self.var._create_poly({power: self.ring.ring.one()})
 

@@ -11,7 +11,7 @@ URANDOM = open("/dev/urandom", "rb")
 
 
 def default_poly_fft_heuristic(p1, p2):
-    return p1.coeffs.sparsity * p2.coeffs.sparsity > (1000 // p1.ring.structure_depth)
+    return p1.coeffs.sparsity * p2.coeffs.sparsity > (2**24 // p1.ring.structure_depth**2)
 
 
 class RuntimeConfiguration(object):
@@ -181,7 +181,7 @@ class RuntimeConfiguration(object):
 
         table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
         print(table)
-    
+
 
     def compare_bytes(self, a: bytes, b: bytes) -> bool:
         from hmac import compare_digest
