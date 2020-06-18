@@ -23,10 +23,15 @@ class IntegerElement(RingElement):
 
 
     def factor(self, **kwargs) -> list:
-        return factor(self.val, **kwargs)
+        return {ZZ(k):v for k,v in factor(self.val, **kwargs).items()}
 
-    def is_prime(self) -> list:
+
+    def is_prime(self) -> bool:
         return is_prime(self.val)
+    
+
+    def is_irreducible(self) -> bool:
+        return self.is_prime()
 
 
     @property
@@ -49,15 +54,18 @@ class IntegerElement(RingElement):
         """
         return self.val
 
+
     @left_expression_intercept
     def __add__(self, other: 'IntegerElement') -> 'IntegerElement':
         other = self.ring.coerce(other)
         return IntegerElement(self.val + other.val, self.ring)
 
+
     @left_expression_intercept
     def __sub__(self, other: 'IntegerElement') -> 'IntegerElement':
         other = self.ring.coerce(other)
         return IntegerElement(self.val - other.val, self.ring)
+
 
     def __mul__(self, other: 'IntegerElement') -> 'IntegerElement':
         gmul = self.ground_mul(other)
@@ -74,24 +82,30 @@ class IntegerElement(RingElement):
         q, r = divmod(self.val, other.val)
         return IntegerElement(q, self.ring), IntegerElement(r, self.ring)
 
+
     @left_expression_intercept
     def __mod__(self, other: 'IntegerElement') -> 'IntegerElement':
         return divmod(self, other)[1]
+
 
     @left_expression_intercept
     def __floordiv__(self, other: 'IntegerElement') -> 'IntegerElement':
         return divmod(self, other)[0]
 
+
     __truediv__ = __floordiv__
+
 
     def __neg__(self) -> 'IntegerElement':
         return IntegerElement(-self.val, self.ring)
+
 
     def __eq__(self, other: 'IntegerElement') -> bool:
         if other is IntegerElement:
             other = other.val
 
         return self.val == other
+
 
     def __hash__(self):
         return super().__hash__()

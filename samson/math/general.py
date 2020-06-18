@@ -6,6 +6,7 @@ from copy import deepcopy
 from enum import Enum
 import math
 
+
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
     Encodes an integer as a polynomial.
@@ -1978,7 +1979,7 @@ def pollards_rho(n: int) -> int:
     return factor
 
 
-def ecm(n: int, attempts: int=None) -> int:
+def ecm(n: int, attempts: int=100) -> int:
     """
     Uses Lenstra's Elliptic Curve Method to probabilistically find a factor of `n`.
 
@@ -1995,18 +1996,24 @@ def ecm(n: int, attempts: int=None) -> int:
         2
 
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+    from samson.math.polynomial import Polynomial
+    from samson.math.algebra.rings.integer_ring import ZZ
 
-    if not attempts:
-        attempts = max(kth_root(n, 4), 10)
+    # For convenience
+    peel_ring = False
+    if type(n) is int:
+        peel_ring = True
+        n = ZZ(n)
 
-    ring = ZZ/ZZ(n)
+    R = n.ring
+    ring = R/n
+    is_poly = type(n) is Polynomial
     for a in range(attempts):
         while True:
-            x = random_int(n)
-            y = random_int(n)
-            a = random_int(n)
+            x = R.random(n)
+            y = R.random(n)
+            a = R.random(n)
             b = (y**2 - x**3 - (a * x)) % n
 
             g = gcd(4 * a**3 - 27 * b**2, n)
@@ -2014,7 +2021,7 @@ def ecm(n: int, attempts: int=None) -> int:
                 break
 
         # Free factor!
-        if g > 1:
+        if is_poly and g.is_monic() and g > R.one() or not is_poly and g > R.one():
             return g
 
         curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
@@ -2023,7 +2030,12 @@ def ecm(n: int, attempts: int=None) -> int:
             try:
                 curr *= fac
             except NotInvertibleException as e:
-                return int(gcd(e.parameters['a'], n))
+                res = gcd(e.parameters['a'], n)
+                if res != R.one() and (not is_poly or res.is_monic()):
+                    if peel_ring:
+                        res = res.val
+
+                    return res
 
     raise ProbabilisticFailureException("Factor not found")
 
@@ -2117,6 +2129,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                         add_or_increment(factors, fac)
                         progress_update(fac)
                         n //= fac
+
                 except ProbabilisticFailureException:
                     break
 

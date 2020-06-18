@@ -34,7 +34,7 @@ class SparseVector(object):
 
         self.zero = zero
         self.allow_virtual_len = allow_virtual_len
-        self.virtual_len = len(items)#self.last()+1 if self.values else 0
+        self.virtual_len = self.last()+1 if self.values else 0
 
 
     def __repr__(self):
@@ -65,7 +65,10 @@ class SparseVector(object):
 
 
     def trim(self):
-        self.virtual_len = self.last() + 1
+        if self.values:
+            self.virtual_len = self.last() + 1
+        else:
+            self.virtual_len = 0
 
 
     def last(self) -> int:

@@ -103,7 +103,7 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero()
 
 
-    def evaluate(self, x: 'RingElement') -> RingElement:
+    def evaluate(self, x: RingElement) -> RingElement:
         """
         Evaluates the `Polynomial` at `x` using Horner's method.
         
@@ -116,10 +116,16 @@ class Polynomial(RingElement):
         coeffs   = self.coeffs
         c0       = coeffs[-1]
         last_idx = coeffs.last()
+        idx      = None
 
         for idx, coeff in self.coeffs.values.items()[:-1][::-1]:
             c0 = coeff + c0*x**(last_idx-idx)
             last_idx = idx
+
+    
+        # Handle the case where there's only one coeff
+        if idx is None:
+            c0 *= x**last_idx
 
         return c0
     
@@ -600,7 +606,7 @@ class Polynomial(RingElement):
 
         other = self.ring.coerce(other)
 
-        if RUNTIME.poly_fft_heuristic(self, other):
+        if not RUNTIME.poly_fft_heuristic(self, other):
             # Naive convolution
             new_coeffs = self._create_sparse([])
 
@@ -684,11 +690,23 @@ class Polynomial(RingElement):
 
 
     def __lt__(self, other: 'Polynomial') -> bool:
-        return self.ordinality() < other.ordinality()
+        if self.degree() < other.degree():
+            return True
+
+        elif self.degree() > other.degree():
+            return False
+        
+        for idx, coeff in self.coeffs.values.items()[::-1]:
+            other_coeff = other.coeffs[idx]
+
+            if other_coeff != coeff:
+                return coeff < other_coeff
+
+        return False
 
 
     def __gt__(self, other: 'Polynomial') -> bool:
-        return self.ordinality() > other.ordinality()
+        return self != other and not self < other
 
 
     def __bool__(self) -> bool:

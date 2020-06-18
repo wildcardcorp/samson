@@ -132,3 +132,22 @@ class PolynomialRing(Ring):
             RingElement: A generator element.
         """
         return self.symbol
+
+
+    def random(self, size: object) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int/RingElement): The maximum ordinality/element (non-inclusive).
+    
+        Returns:
+            RingElement: Random element of the algebra.
+        """
+        if self.characteristic:
+            return super().random(size)
+        
+        else:
+            deg = size.degree() - 1
+            max_val = max(size.coeffs.values.values()) + self.ring.one()
+            return self([self.ring.random(max_val) for _ in range(deg)])
