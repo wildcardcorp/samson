@@ -17,7 +17,7 @@ class Matrix(RingElement):
         """
         from samson.math.algebra.rings.matrix_ring import MatrixRing
 
-        is_coerced      = hasattr(rows[0][0], 'ring')
+        is_coerced      = hasattr(rows[0][0], 'ring') if rows[0] else True
         self.coeff_ring = coeff_ring or (rows[0][0].ring if is_coerced else ZZ)
         row_lens        = [len(row) for row in rows]
 
@@ -37,13 +37,25 @@ class Matrix(RingElement):
         self.ring = ring
 
 
-    def __repr__(self):
-        max_elem_size = max([len(elem.shorthand()) for row in self.rows for elem in row])
-        base_adjust   = min(max_elem_size, get_terminal_size().columns - 10)
-        return f'<Matrix: rows={"".join([NEWLINE + "[" + ", ".join(([elem.shorthand().rjust(base_adjust) for elem in row])) + "]" for row in self.rows])}>'
 
-    def __str__(self):
-        return self.__repr__()
+    def shorthand(self, tinyhand: bool=False) -> str:
+        if tinyhand:
+            str_meth = lambda elem: elem.tinyhand()
+        else:
+            str_meth = lambda elem: elem.shorthand()
+
+        max_elem_size = max([len(str_meth(elem)) for row in self.rows for elem in row])
+        base_adjust   = min(max_elem_size, get_terminal_size().columns - 10)
+        return "".join([NEWLINE + "[" + ", ".join(([str_meth(elem).rjust(base_adjust) for elem in row])) + "]" for row in self.rows])
+
+
+    def tinyhand(self) -> str:
+        return self.shorthand(True)
+
+
+    def __repr__(self):
+        from samson.utilities.runtime import RUNTIME
+        return f'<Matrix: rows={RUNTIME.default_short_printer(self)}>'
 
 
     @property
@@ -54,6 +66,11 @@ class Matrix(RingElement):
     @property
     def num_cols(self) -> int:
         return len(self.rows[0])
+    
+
+    @property
+    def cols(self) -> list:
+        return self.T.rows
 
 
     def transpose(self) -> 'Matrix':
@@ -236,7 +253,7 @@ class Matrix(RingElement):
         return lll(self, delta)
 
 
-    def gram_schmidt(self, normalize: bool=True) -> 'Matrix':
+    def gram_schmidt(self, normalize: bool=True, full: bool=False) -> 'Matrix':
         """
         Performs Gram-Schmidt orthonormalization.
 
@@ -254,7 +271,7 @@ class Matrix(RingElement):
             [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
 
         """
-        return gram_schmidt(self, normalize)
+        return gram_schmidt(self, normalize, full)
 
 
     # TODO: This only works with QQ since we're letting Python's `sqrt` function coerce it into a Python float.
@@ -283,7 +300,8 @@ class Matrix(RingElement):
         """
         from math import sqrt
 
-        magnitude = self.coeff_ring(sqrt((self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0][0]))
+        magnitude = (self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0,0].sqrt()
+        #magnitude = self.coeff_ring(sqrt((self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0][0]))
         return self * ~magnitude
 
 
@@ -362,7 +380,7 @@ class Matrix(RingElement):
             for row in range(s_rows):
                 ans.append([])
                 for o_col in range(o_cols):
-                    col_total = 0
+                    col_total = self.coeff_ring.zero()
                     for col in range(s_cols):
                         col_total += self.rows[row][col] * other.rows[col][o_col]
 

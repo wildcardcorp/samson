@@ -1,5 +1,6 @@
 from samson.prngs.lcg import LCG
 from samson.utilities.bytes import Bytes
+from tqdm import tqdm
 import unittest
 
 
@@ -23,7 +24,7 @@ class LCGTestCase(unittest.TestCase):
 
 
     def test_truncated_crack(self):
-        for trunc_amount in range(1, 20, 2):
+        for trunc_amount in tqdm(range(1, 10, 2)):
             seed = Bytes.random(16).int() % 2**31
 
             ref_lcg    = LCG(X=seed, a=1103515245, c=12345, m=2**31, trunc=trunc_amount)

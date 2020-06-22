@@ -39,6 +39,10 @@ class FractionFieldElement(FieldElement):
         return f'{self.field.shorthand()}({self.numerator}/{self.denominator})'
 
 
+    def tinyhand(self) -> str:
+        return f'{self.numerator.tinyhand()}{"/" + str(self.denominator.tinyhand()) if self.denominator != self.ring.ring.one() else ""}'
+
+
     def __hash__(self):
         return hash((self.numerator, self.denominator, self.field))
 
@@ -53,6 +57,10 @@ class FractionFieldElement(FieldElement):
             return oo
         
         return self.numerator.valuation(p) - self.denominator.valuation(p)
+
+
+    def sqrt(self) -> 'RingElement':
+        return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
 
 
     @left_expression_intercept
@@ -96,6 +104,12 @@ class FractionFieldElement(FieldElement):
 
     def __int__(self):
         return int(self.numerator) // int(self.denominator)
+    
+    def __round__(self):
+        q,r = divmod(self.numerator, self.denominator)
+        R = self.ring.ring
+        return q + (R.one() if r*2 >= self.denominator else R.zero())
+
 
 
     def __lt__(self, other: 'FractionFieldElement') -> bool:

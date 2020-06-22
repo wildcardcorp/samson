@@ -134,7 +134,6 @@ class PolynomialRing(Ring):
         return self.symbol
 
 
-
     def random(self, size: object) -> object:
         """
         Generate a random element.

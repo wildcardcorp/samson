@@ -48,8 +48,14 @@ class Ring(ABC):
     def shorthand(self) -> str:
         pass
 
+
+    def tinyhand(self) -> str:
+        return ""
+
+
     def __str__(self):
         return self.shorthand()
+
 
     @abstractmethod
     def zero(self):
@@ -179,8 +185,14 @@ class RingElement(ABC):
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}({str(self.val)})'
 
+
+    def tinyhand(self) -> str:
+        return f'{self.val.tinyhand()}'
+
+
     def __str__(self):
-        return self.shorthand()
+        from samson.utilities.runtime import RUNTIME
+        return RUNTIME.default_short_printer(self)
 
     def __hash__(self) -> int:
         return hash((self.ring, self.val))
@@ -252,7 +264,10 @@ class RingElement(ABC):
 
     def __int__(self) -> int:
         return int(self.val)
+    
 
+    def __abs__(self) -> 'RingElement':
+        return self if self >= self.ring.zero() else -self
 
 
     def ground_mul(self, other: 'RingElement') -> 'RingElement':
@@ -344,11 +359,12 @@ class RingElement(ABC):
 
         """
         from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.algebra.fields.fraction_field import FractionFieldElement
         from samson.math.polynomial import Polynomial
 
-        if type(self) in [IntegerElement, Polynomial]:
+        if type(self) in [IntegerElement, Polynomial, FractionFieldElement]:
             return self
-
+        
         else:
             return self.val.get_ground()
 
@@ -379,3 +395,62 @@ class RingElement(ABC):
                     all_orders.append(product)
 
         return min(all_orders)
+
+
+
+    def is_irreducible(self) -> bool:
+        """
+        Determines if the element is irreducible by trial by division.
+
+        Returns:
+            bool: Whether or not the element is irreducible.
+        """
+        from samson.math.general import kth_root
+
+        sord = self.ordinality()
+        stop = kth_root(sord, 2)+1
+        stop = min(stop, sord)
+
+        for i in range(2, stop):
+            if not self % self.ring[i]:
+                return False
+
+        return True
+
+
+
+    def factor(self, attempts: int=1000) -> dict:
+        """
+        Factors the element.
+
+        Parameters:
+            attempts (int): Number of ECM attempts before failure.
+
+        Returns:
+            dict: Dictionary of factors.
+        """
+        from samson.math.general import ecm
+        from samson.analysis.general import count_items
+
+        factors = []
+        n       = self
+
+        try:
+            while not n.is_irreducible():
+                q = ecm(n, attempts)
+                n /= q
+                q_facs = [[k for _ in range(v)] for k,v in q.factor().items()]
+                factors.extend([item for sublist in q_facs for item in sublist])
+
+        except KeyboardInterrupt:
+            pass
+        
+        if n != self.ring.one():
+            factors.append(n)
+
+        return count_items(factors)
+
+
+    def sqrt(self) -> 'RingElement':
+        from samson.math.general import kth_root
+        return self.ring(kth_root(int(self.val), 2))

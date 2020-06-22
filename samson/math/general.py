@@ -6,6 +6,7 @@ from copy import deepcopy
 from enum import Enum
 import math
 
+
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
     Encodes an integer as a polynomial.
@@ -760,19 +761,17 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     return Matrix(A[:, rhs_cols:m], coeff_ring=R, ring=A.ring)
 
 
-
-
-def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
+def gram_schmidt(matrix: 'Matrix', normalize: bool=True, full: bool=False) -> 'Matrix':
     """
     Performs Gram-Schmidt orthonormalization.
 
     Parameters:
         matrix  (Matrix): Matrix of row vectors.
         normalize (bool): Whether or not to normalize the vectors.
-    
+
     Returns:
         Matrix: Orthonormalized row vectors.
-    
+
     Examples:
         >>> from samson.math.all import QQ
         >>> from samson.math.matrix import Matrix
@@ -783,30 +782,252 @@ def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
 
     References:
         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
+        https://github.com/sagemath/sage/blob/1d465c7e3c82110d39034f3ca7d9d120f435511e/src/sage/matrix/matrix2.pyx
+
     """
     from samson.math.matrix import Matrix
     from functools import reduce
 
     R = matrix.coeff_ring
     n = matrix.num_rows
+    #n = matrix.num_cols
     A = [Matrix([row], coeff_ring=R) for row in deepcopy(matrix).rows]
-    A_star = [deepcopy(A[0])]
-
-    if normalize:
-        A_star[0] = A_star[0].normalize()
+    A_star = []
 
     mu = Matrix([[R.zero() for _ in range(n)] for _ in range(n)])
-    for j in range(1,n):
-        for k in range(j):
-            mu[j][k] = (A[j] * A_star[k].T)[0][0] / (A_star[k] * A_star[k].T)[0][0]
 
-        fac = sum([A_star[k]*mu[j][k] for k in range(j)], Matrix([[R.zero() for _ in range(matrix.num_cols)]]))
-        A_star.append(A[j] - fac)
+    # Number of non-zero rows
+    nnz = 0
+    zeroes = []
 
-        if normalize:
-            A_star[j] = A_star[j].normalize()
+    for j in range(n):
+        ortho = A[j]
 
-    return reduce(Matrix.col_join, A_star[1:], A_star[0])
+        for k in range(nnz):
+            mu[j,k] = (A_star[k] * A[j].T)[0,0] / (A_star[k] * A_star[k].T)[0,0]
+            ortho  -= A_star[k]*mu[j,k]
+
+        if (ortho*ortho.T)[0,0] != R.zero():
+            A_star.append(ortho)
+            mu[j ,nnz] = R.one()
+            nnz += 1
+
+            # if normalize and any(A_star[nnz][0]):
+            #     A_star[nnz] = A_star[nnz].normalize()
+        else:
+            zeroes.append(j+len(zeroes))
+
+    if not full:
+        mu = Matrix([row for row in mu.T if any(row)]).T
+        #mu = Matrix(mu.T[:nnz]).T
+
+    # if not A_star:
+    #     A_star = Matrix([[]]*n, R)
+
+    if full:
+        zero = [Matrix([[R.zero() for _ in range(n-len(zeroes))]])]
+        for j in zeroes:
+            A_star = A_star[:j] + zero + A_star[j:]
+
+    return reduce(Matrix.col_join, A_star[1:], A_star[0]), mu
+
+
+# def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
+#     """
+#     Performs Gram-Schmidt orthonormalization.
+
+#     Parameters:
+#         matrix  (Matrix): Matrix of row vectors.
+#         normalize (bool): Whether or not to normalize the vectors.
+
+#     Returns:
+#         Matrix: Orthonormalized row vectors.
+
+#     Examples:
+#         >>> from samson.math.all import QQ
+#         >>> from samson.math.matrix import Matrix
+#         >>> from samson.math.general import gram_schmidt
+#         >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
+#         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
+#         [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
+
+#     References:
+#         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
+#         https://github.com/sagemath/sage/blob/1d465c7e3c82110d39034f3ca7d9d120f435511e/src/sage/matrix/matrix2.pyx
+
+#     """
+#     from samson.math.matrix import Matrix
+#     from samson.math.dense_vector import DenseVector
+#     from functools import reduce
+
+#     def vecs_to_matrix(vecs):
+#         return Matrix([vec.values for vec in vecs])
+
+#     F = matrix.coeff_ring
+#     m = matrix.num_rows
+#     n = matrix.num_cols
+
+#     R = Matrix.fill(F.zero(), m, n, F)
+#     V = [DenseVector(v) for v in matrix.cols]
+#     Q = []
+#     row = 0
+
+#     for i in range(n):
+#         v   = V[i]
+#         hip = v.sdot()
+
+#         if hip:
+#             scale = hip.sqrt()
+#             q = v * ~scale
+#             Q.append(q)
+#             R[row, i] = scale
+
+#             for j in range(i+1, n):
+#                 R[row, j] = q.dot(V[j])
+#                 V[j] -= q * R[row, j]
+            
+#             row += 1
+    
+#     R = R[0:len(Q), 0:n]
+
+#     return vecs_to_matrix(Q), Matrix(R)
+
+
+# def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
+#     """
+#     Performs Gram-Schmidt orthonormalization.
+
+#     Parameters:
+#         matrix  (Matrix): Matrix of row vectors.
+#         normalize (bool): Whether or not to normalize the vectors.
+    
+#     Returns:
+#         Matrix: Orthonormalized row vectors.
+    
+#     Examples:
+#         >>> from samson.math.all import QQ
+#         >>> from samson.math.matrix import Matrix
+#         >>> from samson.math.general import gram_schmidt
+#         >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
+#         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
+#         [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
+
+#     References:
+#         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
+#     """
+#     from samson.math.matrix import Matrix
+#     from functools import reduce
+
+#     R = matrix.coeff_ring
+#     n = matrix.num_rows
+#     A = [Matrix([row], coeff_ring=R) for row in deepcopy(matrix).rows]
+#     A_star = [deepcopy(A[0])]
+
+#     if normalize:
+#         A_star[0] = A_star[0].normalize()
+
+#     mu = Matrix([[R.zero() for _ in range(n)] for _ in range(n)])
+#     for j in range(1,n):
+#         for k in range(j):
+#             mu[j][k] = (A[j] * A_star[k].T)[0][0] / (A_star[k] * A_star[k].T)[0][0]
+
+#         fac = sum([A_star[k]*mu[j][k] for k in range(j)], Matrix([[R.zero() for _ in range(matrix.num_cols)]]))
+#         A_star.append(A[j] - fac)
+
+#         if normalize:
+#             A_star[j] = A_star[j].normalize()
+
+#     return reduce(Matrix.col_join, A_star[1:], A_star[0]), mu
+
+
+# def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
+#     """
+#     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
+
+#     Parameters:
+#         in_basis (Matrix): Matrix representing the original basis.
+#         delta     (float): Minimum optimality of the reduced basis.
+
+#     Returns:
+#         Matrix: Reduced basis.
+
+#     Examples:
+#         >>> from samson.math.general import lll
+#         >>> from samson.math.matrix import Matrix
+#         >>> from samson.math.all import QQ
+#         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
+#         >>> lll(m)
+#         <Matrix: rows=
+#         [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
+#         [Frac(ZZ)(ZZ(-2)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(4)/ZZ(1))]>
+
+#     References:
+#         https://github.com/orisano/olll/blob/master/olll.py
+#         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
+#     """
+#     from samson.utilities.exceptions import CoercionException
+#     from samson.math.all import QQ
+#     from samson.math.matrix import Matrix
+#     from samson.math.dense_vector import DenseVector
+#     from samson.math.algebra.fields.fraction_field import FractionField
+
+#     def matrix_to_vecs(matrix):
+#         return [DenseVector(row) for row in matrix.rows]
+
+#     def vecs_to_matrix(vecs):
+#         return Matrix([vec.values for vec in vecs])
+
+#     #gram_schmidt = gram_schmidt
+
+
+#     # Prepare ring and basis
+#     if type(in_basis.coeff_ring) is not FractionField:
+#         R = FractionField(in_basis.coeff_ring)
+#         in_basis = Matrix([[R(elem) for elem in row] for row in in_basis.rows], coeff_ring=R)
+
+#     R     = in_basis.coeff_ring
+#     basis = deepcopy(in_basis)
+#     n     = len(basis)
+#     basis = matrix_to_vecs(basis)
+
+#     ortho, _mu = gram_schmidt(in_basis, False)
+
+#     # Prepare parameters
+#     half  = R((R.ring.one(), R.ring.one()*2))
+#     delta = QQ(delta)
+#     d_num = int(delta.numerator)
+#     d_den = int(delta.denominator)
+
+#     def mu(i, j):
+#         o_j = DenseVector(ortho[j])
+#         return o_j.dot(basis[i]) / o_j.sdot()
+
+
+#     # Perform LLL
+#     k = 1
+#     while k < n:
+#         for j in reversed(range(k)):
+#             #mu_kj = mu[k, j]
+#             mu_kj = mu(k, j)
+#             if abs(mu_kj) > half:
+#                 scalar    = round(mu_kj)
+#                 basis[k] -= basis[j] * scalar
+#                 ortho, _mu = gram_schmidt(vecs_to_matrix(basis), False)
+
+
+#         M_k  = Matrix([ortho[k]])
+#         M_k1 = Matrix([ortho[k-1]])
+#         O    = (M_k1 * M_k1.T)[0,0]
+
+#         # if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu[k, k-1]**2 * O:
+#         if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu(k, k-1)**2 * O:
+#             k += 1
+#         else:
+#             basis[k], basis[k-1] = deepcopy(basis[k-1]), deepcopy(basis[k])
+#             ortho, _mu = gram_schmidt(vecs_to_matrix(basis), False)
+#             k = max(k-1, 1)
+
+#     return vecs_to_matrix(basis)
 
 
 
@@ -836,6 +1057,7 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
     """
     from samson.utilities.exceptions import CoercionException
+    from samson.math.all import QQ
     from samson.math.matrix import Matrix
     from samson.math.dense_vector import DenseVector
     from samson.math.algebra.fields.fraction_field import FractionField
@@ -846,8 +1068,10 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     def vecs_to_matrix(vecs):
         return Matrix([vec.values for vec in vecs])
 
+    #gram_schmidt = gram_schmidt
 
 
+    # Prepare ring and basis
     if type(in_basis.coeff_ring) is not FractionField:
         R = FractionField(in_basis.coeff_ring)
         in_basis = Matrix([[R(elem) for elem in row] for row in in_basis.rows], coeff_ring=R)
@@ -856,36 +1080,47 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     basis = deepcopy(in_basis)
     n     = len(basis)
     basis = matrix_to_vecs(basis)
-    ortho = gram_schmidt(in_basis, False)
-    ortho = matrix_to_vecs(ortho)
 
-    def mu(i, j):
-        return float(ortho[j].dot(basis[i]) / ortho[j].dot(ortho[j]))
+    ortho, mu = gram_schmidt(in_basis, False)
+    #ortho = ortho.T
 
+    # Prepare parameters
+    half  = R((R.ring.one(), R.ring.one()*2))
+    delta = QQ(delta)
+    d_num = int(delta.numerator)
+    d_den = int(delta.denominator)
+
+    # def mu(i, j):
+    #     o_j = DenseVector(ortho[j])
+    #     return o_j.dot(basis[i]) / o_j.sdot()
+
+
+    # Perform LLL
     k = 1
     while k < n:
         for j in reversed(range(k)):
-            mu_kj = mu(k, j)
-            if abs(mu_kj) > 0.5:
-                scalar = round(mu_kj)
-
-                # Attempt coercion for ring-specific speed-ups
-                try:
-                    scalar = R(scalar)
-                except CoercionException:
-                    pass
-
+            mu_kj = mu[k, j]
+            #mu_kj = mu(k, j)
+            if abs(mu_kj) > half:
+                scalar    = round(mu_kj)
                 basis[k] -= basis[j] * scalar
-                ortho = gram_schmidt(vecs_to_matrix(basis), False)
-                ortho = matrix_to_vecs(ortho)
+                ortho, mu = gram_schmidt(vecs_to_matrix(basis), False)
+                #ortho = ortho.T
 
-        if ortho[k].dot(ortho[k]) >= (delta - mu(k, k - 1)**2) * (ortho[k - 1].dot(ortho[k - 1])):
+
+        M_k  = Matrix([ortho[k]]) if len(ortho) >= k+1 else Matrix([[R.zero()*in_basis.num_cols]])
+        #M_k  = Matrix([ortho[k]])
+        M_k1 = Matrix([ortho[k-1]])
+        O    = (M_k1 * M_k1.T)[0,0]
+
+        if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu[k, k-1]**2 * O:
+        #if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu(k, k-1)**2 * O:
             k += 1
         else:
-            basis[k], basis[k - 1] = deepcopy(basis[k - 1]), deepcopy(basis[k])
-            ortho = gram_schmidt(vecs_to_matrix(basis), False)
-            ortho = matrix_to_vecs(ortho)
-            k = max(k - 1, 1)
+            basis[k], basis[k-1] = deepcopy(basis[k-1]), deepcopy(basis[k])
+            ortho, mu = gram_schmidt(vecs_to_matrix(basis), False)
+            #ortho = ortho.T
+            k = max(k-1, 1)
 
     return vecs_to_matrix(basis)
 
@@ -1978,7 +2213,7 @@ def pollards_rho(n: int) -> int:
     return factor
 
 
-def ecm(n: int, attempts: int=None) -> int:
+def ecm(n: int, attempts: int=100) -> int:
     """
     Uses Lenstra's Elliptic Curve Method to probabilistically find a factor of `n`.
 
@@ -1995,18 +2230,24 @@ def ecm(n: int, attempts: int=None) -> int:
         2
 
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+    from samson.math.polynomial import Polynomial
+    from samson.math.algebra.rings.integer_ring import ZZ
 
-    if not attempts:
-        attempts = max(kth_root(n, 4), 10)
+    # For convenience
+    peel_ring = False
+    if type(n) is int:
+        peel_ring = True
+        n = ZZ(n)
 
-    ring = ZZ/ZZ(n)
+    R = n.ring
+    ring = R/n
+    is_poly = type(n) is Polynomial
     for a in range(attempts):
         while True:
-            x = random_int(n)
-            y = random_int(n)
-            a = random_int(n)
+            x = R.random(n)
+            y = R.random(n)
+            a = R.random(n)
             b = (y**2 - x**3 - (a * x)) % n
 
             g = gcd(4 * a**3 - 27 * b**2, n)
@@ -2014,7 +2255,7 @@ def ecm(n: int, attempts: int=None) -> int:
                 break
 
         # Free factor!
-        if g > 1:
+        if is_poly and g.is_monic() and g > R.one() or not is_poly and g > R.one():
             return g
 
         curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
@@ -2023,7 +2264,12 @@ def ecm(n: int, attempts: int=None) -> int:
             try:
                 curr *= fac
             except NotInvertibleException as e:
-                return int(gcd(e.parameters['a'], n))
+                res = gcd(e.parameters['a'], n)
+                if res != R.one() and (not is_poly or res.is_monic()):
+                    if peel_ring:
+                        res = res.val
+
+                    return res
 
     raise ProbabilisticFailureException("Factor not found")
 
@@ -2117,6 +2363,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                         add_or_increment(factors, fac)
                         progress_update(fac)
                         n //= fac
+
                 except ProbabilisticFailureException:
                     break
 

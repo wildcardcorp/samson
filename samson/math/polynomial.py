@@ -43,7 +43,7 @@ class Polynomial(RingElement):
 
 
 
-    def shorthand(self) -> str:
+    def shorthand(self, tinyhand: bool=False) -> str:
         poly_repr   = []
         poly_coeffs = type(self.LC().get_ground()) is Polynomial
 
@@ -55,7 +55,11 @@ class Polynomial(RingElement):
                 if coeff == coeff.ring.one() and idx != 0:
                     coeff_short_mul = ''
                 else:
-                    shorthand = coeff.shorthand()
+                    if tinyhand:
+                        shorthand = coeff.tinyhand()
+                    else:
+                        shorthand = coeff.shorthand()
+
                     if poly_coeffs and idx != 0:
                         shorthand = f'({shorthand})'
 
@@ -75,11 +79,18 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero().shorthand()
 
 
+
+    def tinyhand(self) -> str:
+        return self.shorthand(True)
+
+
     def __repr__(self):
-        return f"<Polynomial: {self.shorthand()}, coeff_ring={self.coeff_ring}>"
+        from samson.utilities.runtime import RUNTIME
+        return f"<Polynomial: {RUNTIME.default_short_printer(self)}, coeff_ring={self.coeff_ring}>"
 
     def __str__(self):
-        return self.__repr__()
+        from samson.utilities.runtime import RUNTIME
+        return RUNTIME.default_short_printer(self)
 
 
     def __call__(self, x: int) -> RingElement:
@@ -760,11 +771,23 @@ class Polynomial(RingElement):
 
 
     def __lt__(self, other: 'Polynomial') -> bool:
-        return self.ordinality() < other.ordinality()
+        if self.degree() < other.degree():
+            return True
+
+        elif self.degree() > other.degree():
+            return False
+        
+        for idx, coeff in self.coeffs.values.items()[::-1]:
+            other_coeff = other.coeffs[idx]
+
+            if other_coeff != coeff:
+                return coeff < other_coeff
+
+        return False
 
 
     def __gt__(self, other: 'Polynomial') -> bool:
-        return self.ordinality() > other.ordinality()
+        return self != other and not self < other
 
 
     def __bool__(self) -> bool:

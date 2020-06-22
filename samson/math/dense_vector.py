@@ -33,3 +33,15 @@ class DenseVector(object):
             zero = 0
 
         return sum([a*b for a,b in zip(self.values, other.values)], zero)
+
+
+    def sdot(self) -> object:
+        return self.dot(self)
+
+
+    def prof_coeff(self, other: 'DenseVector') -> object:
+        return self.dot(other) / self.sdot()
+
+
+    def project(self, other: 'DenseVector') -> 'DenseVector':
+        return self.prof_coeff(other) * self

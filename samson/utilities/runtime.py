@@ -61,6 +61,7 @@ class RuntimeConfiguration(object):
 
         self.random = lambda size: URANDOM.read(size)
         self.poly_fft_heuristic = default_poly_fft_heuristic
+        self.default_short_printer = lambda elem: elem.tinyhand()
 
 
         # Initialize exploit mappings
