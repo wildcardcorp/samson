@@ -2,6 +2,7 @@ from samson.core.metadata import IORelationType
 from samson.utilities.bytes import Bytes
 from samson.oracles.oracle import Oracle
 from samson.analysis.general import count_items
+from samson.math.general import gcd
 from types import FunctionType
 
 import logging
@@ -36,7 +37,7 @@ class ChosenPlaintextOracle(Oracle):
             io_diff.append(new_len)
             i += 1
 
-        
+
         size_counts = sorted(count_items(io_diff).values())
 
         # Determine IO relation
@@ -53,7 +54,7 @@ class ChosenPlaintextOracle(Oracle):
             io_relation = IORelationType.FIXED
 
 
-        return {"io_relation": io_relation, "block_size": (new_len - base_len) or base_len}
+        return {"io_relation": io_relation, "block_size": gcd(new_len, base_len)}
 
 
 

@@ -27,6 +27,9 @@ class PolynomialRing(Ring):
         self.symbol = symbol or Symbol('x')
         self.symbol.build(self)
 
+        self.zero = Polynomial([self.ring.zero], coeff_ring=self.ring, ring=self, symbol=self.symbol)
+        self.one  = Polynomial([self.ring.one], coeff_ring=self.ring, ring=self, symbol=self.symbol)
+
 
     @property
     def characteristic(self):
@@ -37,21 +40,6 @@ class PolynomialRing(Ring):
     def order(self) -> int:
         from samson.math.symbols import oo
         return oo
-
-    def zero(self) -> Polynomial:
-        """
-        Returns:
-            Polynomial: '0' element of the algebra.
-        """
-        return Polynomial([self.ring.zero()], coeff_ring=self.ring, ring=self, symbol=self.symbol)
-
-
-    def one(self) -> Polynomial:
-        """
-        Returns:
-            Polynomial: '1' element of the algebra.
-        """
-        return Polynomial([self.ring.one()], coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
 
     def __repr__(self):
@@ -149,5 +137,5 @@ class PolynomialRing(Ring):
         
         else:
             deg = size.degree() - 1
-            max_val = max(size.coeffs.values.values()) + self.ring.one()
+            max_val = max(size.coeffs.values.values()) + self.ring.one
             return self([self.ring.random(max_val) for _ in range(deg)])

@@ -98,7 +98,7 @@ class QuotientElement(RingElement):
             bool: Whether the element is invertible.
         """
         from samson.math.general import gcd
-        return gcd(self.val, self.ring.quotient) == self.ring.ring.one()
+        return gcd(self.val, self.ring.quotient) == self.ring.ring.one
 
 
 class QuotientRing(Ring):
@@ -122,6 +122,9 @@ class QuotientRing(Ring):
         assert(quotient.ring == ring)
         self.ring     = ring
         self.quotient = quotient
+
+        self.zero = QuotientElement(self.ring.zero, self)
+        self.one  = QuotientElement(self.ring.one, self)
 
 
     def __repr__(self):
@@ -169,21 +172,6 @@ class QuotientRing(Ring):
         else:
             raise NotImplementedError
 
-
-    def zero(self) -> QuotientElement:
-        """
-        Returns:
-            QuotientElement: '0' element of the algebra.
-        """
-        return QuotientElement(self.ring.zero(), self)
-
-
-    def one(self) -> QuotientElement:
-        """
-        Returns:
-            QuotientElement: '1' element of the algebra.
-        """
-        return QuotientElement(self.ring.one(), self)
 
 
     def shorthand(self) -> str:

@@ -88,6 +88,9 @@ class MultiplicativeGroup(Ring):
         self.ring        = ring
         self.order_cache = None
 
+        self.zero = MultiplicativeGroupElement(self.ring.one, self)
+        self.one  = self.zero
+
 
     @property
     def characteristic(self) -> int:
@@ -126,21 +129,6 @@ class MultiplicativeGroup(Ring):
 
         return self.order_cache
 
-
-    def zero(self) -> MultiplicativeGroupElement:
-        """
-        Returns:
-            MultiplicativeGroupElement: '0' element of the algebra.
-        """
-        return MultiplicativeGroupElement(self.ring.one(), self)
-
-
-    def one(self) -> MultiplicativeGroupElement:
-        """
-        Returns:
-            MultiplicativeGroupElement: '1' element of the algebra.
-        """
-        return self.zero()
 
 
     def __repr__(self):

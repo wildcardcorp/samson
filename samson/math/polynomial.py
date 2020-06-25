@@ -39,7 +39,7 @@ class Polynomial(RingElement):
         self.coeffs.trim()
 
         if len(self.coeffs.values) == 0:
-            self.coeffs = self._create_sparse([self.coeff_ring.zero()])
+            self.coeffs = self._create_sparse([self.coeff_ring.zero])
 
 
 
@@ -49,10 +49,10 @@ class Polynomial(RingElement):
 
         if self.LC():
             for idx, coeff in self.coeffs.values.items():
-                if coeff == coeff.ring.zero() and not len(self.coeffs) == 1:
+                if coeff == coeff.ring.zero and not len(self.coeffs) == 1:
                     continue
 
-                if coeff == coeff.ring.one() and idx != 0:
+                if coeff == coeff.ring.one and idx != 0:
                     coeff_short_mul = ''
                 else:
                     if tinyhand:
@@ -76,7 +76,7 @@ class Polynomial(RingElement):
 
             return ' + '.join(poly_repr[::-1])
         else:
-            return self.coeff_ring.zero().shorthand()
+            return self.coeff_ring.zero.shorthand()
 
 
 
@@ -111,7 +111,7 @@ class Polynomial(RingElement):
         try:
             return self.coeffs[self.coeffs.last()]
         except IndexError:
-            return self.coeff_ring.zero()
+            return self.coeff_ring.zero
 
 
     def evaluate(self, x: RingElement) -> RingElement:
@@ -181,7 +181,7 @@ class Polynomial(RingElement):
 
 
     def _create_sparse(self, vec):
-        return SparseVector(vec, self.coeff_ring.zero(), allow_virtual_len=True)
+        return SparseVector(vec, self.coeff_ring.zero, allow_virtual_len=True)
 
 
     def _create_poly(self, vec):
@@ -209,7 +209,7 @@ class Polynomial(RingElement):
         Returns:
             bool: Whether or not the Polynomial is monic
         """
-        return self.LC() == self.coeff_ring.one()
+        return self.LC() == self.coeff_ring.one
 
 
     def derivative(self) -> 'Polynomial':
@@ -292,16 +292,16 @@ class Polynomial(RingElement):
         factors = {}
 
         i = 1
-        while w != self.ring.one():
+        while w != self.ring.one:
             y = gcd(w, c).monic()
             fac = (w / y).monic()
 
-            if fac != self.ring.one():
+            if fac != self.ring.one:
                 add_or_increment(factors, fac, i)
 
             w, c, i = y, c / y, i + 1
 
-        if c != self.ring.one():
+        if c != self.ring.one:
             if self.coeff_ring.characteristic:
                 c = c.trunc_kth_root(self.coeff_ring.characteristic)
 
@@ -351,13 +351,13 @@ class Polynomial(RingElement):
 
             g = gcd(f_star, h - x_poly).monic()
 
-            if g != self.ring.one():
+            if g != self.ring.one:
                 S.append((g, i))
                 f_star /= g
 
             i += 1
 
-        if f_star != self.ring.one():
+        if f_star != self.ring.one:
             S.append((f_star, f_star.degree()))
 
         if not S:
@@ -400,7 +400,7 @@ class Polynomial(RingElement):
 
             exponent = (q - 1) // subgroup_divisor
 
-        one   = self.ring.one()
+        one   = self.ring.one
         bases = frobenius_monomial_base(f)
 
         irreducibility_cache = {}
@@ -459,12 +459,13 @@ class Polynomial(RingElement):
         """
         Determines if a Polynomial is irreducible over its ring.
 
-        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
-        https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
-        https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
-
         Returns:
             bool: Whether or not the Polynomial is irreducible over its ring.
+        
+        References:
+            https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
+            https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
+            https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime
         from samson.math.algebra.rings.integer_ring import ZZ
@@ -484,28 +485,27 @@ class Polynomial(RingElement):
         #   then f is irreducible over Z."
         if self.coeff_ring == ZZ:
             lc = int(self.LC())
-            p = 2
+            p  = 2
+
             if lc != 1:
                 p = find_coprime(lc, range(1, lc**2))
-
 
             field = ZZ/ZZ(p)
             poly  = self.embed_coeffs(field)
         else:
             poly = self
-            
+
 
         x = poly.symbol
         f = poly.monic()
         P = poly.ring
-        
 
         subgroups = {n // fac for fac in factor_int(n)}
 
         bases  = frobenius_monomial_base(f)
         h      = bases[1]
         x_poly = P(x)
-        one    = P.one()
+        one    = P.one
 
         for idx in range(1, n):
             if idx in subgroups:
@@ -554,7 +554,7 @@ class Polynomial(RingElement):
         distinct_degrees = [(factor, num) for poly, num in self.sff().items() for factor in poly.ddf()]
         for (poly, _), num in distinct_degrees:
             for factor in poly.edf(d, subgroup_divisor):
-                if factor != self.ring.one():
+                if factor != self.ring.one:
                     add_or_increment(factors, factor, num)
 
         return factors
@@ -626,11 +626,11 @@ class Polynomial(RingElement):
 
     def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
         other = self.ring.coerce(other)
-        assert other != self.ring.zero()
+        assert other != self.ring.zero
 
         n = other.degree()
         if n > self.degree():
-            return self.ring.zero(), self
+            return self.ring.zero, self
 
         dividend = self._create_sparse([c for c in self.coeffs])
         divisor  = other.coeffs
@@ -758,7 +758,7 @@ class Polynomial(RingElement):
 
 
     def __pow__(self, exponent: int) -> 'Polynomial':
-        return square_and_mul(self, exponent, self.ring.one())
+        return square_and_mul(self, exponent, self.ring.one)
 
 
     def __int__(self) -> int:
@@ -791,7 +791,7 @@ class Polynomial(RingElement):
 
 
     def __bool__(self) -> bool:
-        return self.coeffs != self._create_sparse([self.coeff_ring.zero()])
+        return self.coeffs != self._create_sparse([self.coeff_ring.zero])
 
 
     def __lshift__(self, num: int):
@@ -810,4 +810,4 @@ class Polynomial(RingElement):
         Returns:
             bool: Whether the element is invertible.
         """
-        return self != self.ring.zero() and all([coeff.is_invertible() for _, coeff in self.coeffs])
+        return self != self.ring.zero and all([coeff.is_invertible() for _, coeff in self.coeffs])

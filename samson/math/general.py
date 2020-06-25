@@ -88,7 +88,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
     P = poly.ring
     q = poly.coeff_ring.order if poly.coeff_ring.order != oo else poly.coeff_ring.characteristic
     bases = [None]*n
-    bases[0] = P.one()
+    bases[0] = P.one
 
     if q < n:
         for i in range(1, n):
@@ -216,7 +216,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
     R = a.ring
 
     # Generic xgcd
-    prevx, x = R.one(), R.zero(); prevy, y = R.zero(), R.one()
+    prevx, x = R.one, R.zero; prevy, y = R.zero, R.one
     while b:
         q = a // b
         x, prevx = prevx - q*x, x
@@ -299,10 +299,10 @@ def mod_inv(a: int, n: int) -> int:
     _, x, _ = xgcd(a, n)
     R = a.ring
 
-    if (a * x) % n != R.one():
+    if (a * x) % n != R.one:
         raise NotInvertibleException("'a' is not invertible", parameters={'a': a, 'x': x, 'n': n})
 
-    if x < R.zero():
+    if x < R.zero:
         x = x + n
 
     if peel_ring:
@@ -341,7 +341,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         invert = True
         u = -u
 
-    s = s or g.ring.one()
+    s = s or g.ring.one
     while u != 0:
         if u & 1:
             s = (s * g)
@@ -378,7 +378,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         <Polynomial: ZZ(5)*x + ZZ(25), coeff_ring=ZZ/ZZ(127)>
 
     """
-    s = s if s is not None else a.ring.zero()
+    s = s if s is not None else a.ring.zero
     if b < 0:
         b = -b
         a = -a
@@ -422,6 +422,53 @@ def kth_root(n: int, k: int) -> int:
             ub = guess
 
     return lb
+
+
+def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
+    """
+    Calculates the `k`-th rational root of `n` to `precision` bits of precision.
+
+    Parameters:
+        n      (int/QQ): Integer.
+        k         (int): Root (e.g. 2).
+        precision (int): Bits of precision.
+    
+    Returns:
+        FractionFieldElement: `k`-th rational root of `n
+    
+    Examples:
+        >>> from samson.math.general import kth_root_qq
+        >>> kth_root_qq(2, 2, 32)
+        <FractionFieldElement: numerator=759250125, denominator=536870912, ring=Frac(ZZ)>
+
+        >>> diff = abs(float(kth_root_qq(2, 2, 32)) - 2**(0.5))
+
+        >>> diff < 1/2**32
+        True
+
+        >>> diff < 1/2**64
+        False
+
+    References:
+        https://stackoverflow.com/a/39802349
+    """
+    from samson.math.all import QQ
+
+    n  = QQ(n)
+    lb = QQ.zero
+    ub = n
+    precision = QQ((1, 2**precision))
+
+    while True:
+        mid = (lb+ub)/2
+        mid_k = mid**k
+
+        if abs(mid_k-n) < precision:
+            return mid
+        elif mid_k < n:
+            lb = mid
+        else:
+            ub = mid
 
 
 def crt(residues: list) -> (object, object):
@@ -486,6 +533,65 @@ def crt(residues: list) -> (object, object):
     return x, Nx
 
 
+def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
+    """
+    Imitates the Chinese Remainder Theorem using LLL and returns the computed `x`.
+    Unlike CRT, this does not require the moduli be coprime. However, this method only
+    returns a representative since the solution isn't unique.
+
+    Parameters:
+        residues         (list): Residues of `x` as QuotientElements.
+        remove_redundant (bool): Whether or not to remove redundant subgroups to minimize the result.
+
+    Returns:
+        QuotientElement: Computed `x` over composite modulus.
+    
+    Examples:
+        >>> from samson.math.general import crt_lll
+        >>> from samson.math.all import ZZ
+        >>> x = 684250860
+        >>> rings = [ZZ/ZZ(quotient) for quotient in [229, 246, 93, 22, 408]]
+        >>> crt_lll([r(x) for r in rings])
+        <QuotientElement: val=684250860, ring=ZZ/ZZ(1306272792)>
+
+    """
+    from samson.math.all import QQ, ZZ, Matrix
+    from functools import reduce
+
+    # Calculate composite modulus
+    L = reduce(int.__mul__, [int(r.ring.quotient) for r in residues], 1)
+
+
+    # Remove redundant subgroups to minimize result
+    if remove_redundant:
+        redundant_subgroup_residues = {}
+
+        for r in residues:
+            for fac in factor(r.ring.quotient.val):
+                add_or_increment(redundant_subgroup_residues, ((r.val % fac, fac)))
+
+
+        # Divide out all but one
+        for (_res, mod), count in redundant_subgroup_residues.items():
+            L //= mod**(count-1)
+
+
+    # Build the problem matrix
+    r_len = len(residues)
+
+    A = Matrix([
+        [1 for r in residues] + [QQ((1, L)), 0],
+        *[[0]*idx + [int(r.ring.quotient)] + [0]*(1+r_len-idx) for idx, r in enumerate(residues)],
+        [0 for r in residues] + [QQ.one, 0],
+        [-(int(r.val)) for r in residues] + [0, L]
+    ], QQ)
+
+
+    B = A.LLL(0.99)
+ 
+    return (ZZ/ZZ(L))((B[-1, -2] * L).numerator)
+
+
 class ResidueSymbol(Enum):
     EXISTS = 1
     DOES_NOT_EXIST = -1
@@ -527,7 +633,7 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
         a (int): Possible `k`-th residue.
         k (int): Root to take.
         p (int): Modulus.
-    
+
     Returns:
         ResidueSymbol: Legendre symbol (basically).
 
@@ -761,7 +867,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     return Matrix(A[:, rhs_cols:m], coeff_ring=R, ring=A.ring)
 
 
-def gram_schmidt(matrix: 'Matrix', normalize: bool=True, full: bool=False) -> 'Matrix':
+def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
     """
     Performs Gram-Schmidt orthonormalization.
 
@@ -786,249 +892,47 @@ def gram_schmidt(matrix: 'Matrix', normalize: bool=True, full: bool=False) -> 'M
 
     """
     from samson.math.matrix import Matrix
+    from samson.math.dense_vector import DenseVector
     from functools import reduce
 
     R = matrix.coeff_ring
     n = matrix.num_rows
-    #n = matrix.num_cols
-    A = [Matrix([row], coeff_ring=R) for row in deepcopy(matrix).rows]
+    A = [DenseVector(row) for row in matrix.rows]
     A_star = []
 
-    mu = Matrix([[R.zero() for _ in range(n)] for _ in range(n)])
+    mu = Matrix([[R.zero for _ in range(n)] for _ in range(n)])
 
     # Number of non-zero rows
     nnz = 0
     zeroes = []
 
+    # Orthogonalization
     for j in range(n):
         ortho = A[j]
 
         for k in range(nnz):
-            mu[j,k] = (A_star[k] * A[j].T)[0,0] / (A_star[k] * A_star[k].T)[0,0]
+            mu[j,k] = A_star[k].dot(A[j]) / A_star[k].sdot()
             ortho  -= A_star[k]*mu[j,k]
 
-        if (ortho*ortho.T)[0,0] != R.zero():
+        if ortho.sdot() != R.zero:
             A_star.append(ortho)
-            mu[j ,nnz] = R.one()
+            mu[j ,nnz] = R.one
             nnz += 1
-
-            # if normalize and any(A_star[nnz][0]):
-            #     A_star[nnz] = A_star[nnz].normalize()
         else:
             zeroes.append(j+len(zeroes))
 
+
+    # Manipulating result matrices with zero vectors
     if not full:
         mu = Matrix([row for row in mu.T if any(row)]).T
-        #mu = Matrix(mu.T[:nnz]).T
-
-    # if not A_star:
-    #     A_star = Matrix([[]]*n, R)
 
     if full:
-        zero = [Matrix([[R.zero() for _ in range(n-len(zeroes))]])]
+        zero = [DenseVector([R.zero for _ in range(n-len(zeroes))])]
         for j in zeroes:
             A_star = A_star[:j] + zero + A_star[j:]
 
-    return reduce(Matrix.col_join, A_star[1:], A_star[0]), mu
-
-
-# def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
-#     """
-#     Performs Gram-Schmidt orthonormalization.
-
-#     Parameters:
-#         matrix  (Matrix): Matrix of row vectors.
-#         normalize (bool): Whether or not to normalize the vectors.
-
-#     Returns:
-#         Matrix: Orthonormalized row vectors.
-
-#     Examples:
-#         >>> from samson.math.all import QQ
-#         >>> from samson.math.matrix import Matrix
-#         >>> from samson.math.general import gram_schmidt
-#         >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
-#         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-#         [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
-
-#     References:
-#         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
-#         https://github.com/sagemath/sage/blob/1d465c7e3c82110d39034f3ca7d9d120f435511e/src/sage/matrix/matrix2.pyx
-
-#     """
-#     from samson.math.matrix import Matrix
-#     from samson.math.dense_vector import DenseVector
-#     from functools import reduce
-
-#     def vecs_to_matrix(vecs):
-#         return Matrix([vec.values for vec in vecs])
-
-#     F = matrix.coeff_ring
-#     m = matrix.num_rows
-#     n = matrix.num_cols
-
-#     R = Matrix.fill(F.zero(), m, n, F)
-#     V = [DenseVector(v) for v in matrix.cols]
-#     Q = []
-#     row = 0
-
-#     for i in range(n):
-#         v   = V[i]
-#         hip = v.sdot()
-
-#         if hip:
-#             scale = hip.sqrt()
-#             q = v * ~scale
-#             Q.append(q)
-#             R[row, i] = scale
-
-#             for j in range(i+1, n):
-#                 R[row, j] = q.dot(V[j])
-#                 V[j] -= q * R[row, j]
-            
-#             row += 1
-    
-#     R = R[0:len(Q), 0:n]
-
-#     return vecs_to_matrix(Q), Matrix(R)
-
-
-# def gram_schmidt(matrix: 'Matrix', normalize: bool=True) -> 'Matrix':
-#     """
-#     Performs Gram-Schmidt orthonormalization.
-
-#     Parameters:
-#         matrix  (Matrix): Matrix of row vectors.
-#         normalize (bool): Whether or not to normalize the vectors.
-    
-#     Returns:
-#         Matrix: Orthonormalized row vectors.
-    
-#     Examples:
-#         >>> from samson.math.all import QQ
-#         >>> from samson.math.matrix import Matrix
-#         >>> from samson.math.general import gram_schmidt
-#         >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
-#         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-#         [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
-
-#     References:
-#         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
-#     """
-#     from samson.math.matrix import Matrix
-#     from functools import reduce
-
-#     R = matrix.coeff_ring
-#     n = matrix.num_rows
-#     A = [Matrix([row], coeff_ring=R) for row in deepcopy(matrix).rows]
-#     A_star = [deepcopy(A[0])]
-
-#     if normalize:
-#         A_star[0] = A_star[0].normalize()
-
-#     mu = Matrix([[R.zero() for _ in range(n)] for _ in range(n)])
-#     for j in range(1,n):
-#         for k in range(j):
-#             mu[j][k] = (A[j] * A_star[k].T)[0][0] / (A_star[k] * A_star[k].T)[0][0]
-
-#         fac = sum([A_star[k]*mu[j][k] for k in range(j)], Matrix([[R.zero() for _ in range(matrix.num_cols)]]))
-#         A_star.append(A[j] - fac)
-
-#         if normalize:
-#             A_star[j] = A_star[j].normalize()
-
-#     return reduce(Matrix.col_join, A_star[1:], A_star[0]), mu
-
-
-# def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
-#     """
-#     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
-
-#     Parameters:
-#         in_basis (Matrix): Matrix representing the original basis.
-#         delta     (float): Minimum optimality of the reduced basis.
-
-#     Returns:
-#         Matrix: Reduced basis.
-
-#     Examples:
-#         >>> from samson.math.general import lll
-#         >>> from samson.math.matrix import Matrix
-#         >>> from samson.math.all import QQ
-#         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
-#         >>> lll(m)
-#         <Matrix: rows=
-#         [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
-#         [Frac(ZZ)(ZZ(-2)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(4)/ZZ(1))]>
-
-#     References:
-#         https://github.com/orisano/olll/blob/master/olll.py
-#         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
-#     """
-#     from samson.utilities.exceptions import CoercionException
-#     from samson.math.all import QQ
-#     from samson.math.matrix import Matrix
-#     from samson.math.dense_vector import DenseVector
-#     from samson.math.algebra.fields.fraction_field import FractionField
-
-#     def matrix_to_vecs(matrix):
-#         return [DenseVector(row) for row in matrix.rows]
-
-#     def vecs_to_matrix(vecs):
-#         return Matrix([vec.values for vec in vecs])
-
-#     #gram_schmidt = gram_schmidt
-
-
-#     # Prepare ring and basis
-#     if type(in_basis.coeff_ring) is not FractionField:
-#         R = FractionField(in_basis.coeff_ring)
-#         in_basis = Matrix([[R(elem) for elem in row] for row in in_basis.rows], coeff_ring=R)
-
-#     R     = in_basis.coeff_ring
-#     basis = deepcopy(in_basis)
-#     n     = len(basis)
-#     basis = matrix_to_vecs(basis)
-
-#     ortho, _mu = gram_schmidt(in_basis, False)
-
-#     # Prepare parameters
-#     half  = R((R.ring.one(), R.ring.one()*2))
-#     delta = QQ(delta)
-#     d_num = int(delta.numerator)
-#     d_den = int(delta.denominator)
-
-#     def mu(i, j):
-#         o_j = DenseVector(ortho[j])
-#         return o_j.dot(basis[i]) / o_j.sdot()
-
-
-#     # Perform LLL
-#     k = 1
-#     while k < n:
-#         for j in reversed(range(k)):
-#             #mu_kj = mu[k, j]
-#             mu_kj = mu(k, j)
-#             if abs(mu_kj) > half:
-#                 scalar    = round(mu_kj)
-#                 basis[k] -= basis[j] * scalar
-#                 ortho, _mu = gram_schmidt(vecs_to_matrix(basis), False)
-
-
-#         M_k  = Matrix([ortho[k]])
-#         M_k1 = Matrix([ortho[k-1]])
-#         O    = (M_k1 * M_k1.T)[0,0]
-
-#         # if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu[k, k-1]**2 * O:
-#         if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu(k, k-1)**2 * O:
-#             k += 1
-#         else:
-#             basis[k], basis[k-1] = deepcopy(basis[k-1]), deepcopy(basis[k])
-#             ortho, _mu = gram_schmidt(vecs_to_matrix(basis), False)
-#             k = max(k-1, 1)
-
-#     return vecs_to_matrix(basis)
-
+    Q = Matrix([v.values for v in A_star])
+    return Q, mu
 
 
 def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
@@ -1068,8 +972,6 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     def vecs_to_matrix(vecs):
         return Matrix([vec.values for vec in vecs])
 
-    #gram_schmidt = gram_schmidt
-
 
     # Prepare ring and basis
     if type(in_basis.coeff_ring) is not FractionField:
@@ -1081,18 +983,14 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     n     = len(basis)
     basis = matrix_to_vecs(basis)
 
-    ortho, mu = gram_schmidt(in_basis, False)
-    #ortho = ortho.T
+    ortho, mu = gram_schmidt(in_basis)
+
 
     # Prepare parameters
-    half  = R((R.ring.one(), R.ring.one()*2))
+    half  = R((R.ring.one, R.ring.one*2))
     delta = QQ(delta)
     d_num = int(delta.numerator)
     d_den = int(delta.denominator)
-
-    # def mu(i, j):
-    #     o_j = DenseVector(ortho[j])
-    #     return o_j.dot(basis[i]) / o_j.sdot()
 
 
     # Perform LLL
@@ -1100,26 +998,26 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     while k < n:
         for j in reversed(range(k)):
             mu_kj = mu[k, j]
-            #mu_kj = mu(k, j)
+
             if abs(mu_kj) > half:
                 scalar    = round(mu_kj)
                 basis[k] -= basis[j] * scalar
-                ortho, mu = gram_schmidt(vecs_to_matrix(basis), False)
-                #ortho = ortho.T
+                ortho, mu = gram_schmidt(vecs_to_matrix(basis))
 
 
-        M_k  = Matrix([ortho[k]]) if len(ortho) >= k+1 else Matrix([[R.zero()*in_basis.num_cols]])
-        #M_k  = Matrix([ortho[k]])
+        # Prepare only needed vectors
+        # 'o_k' needs to be specially handled since 'gram_schmidt' can remove vectors
+        o_k  = ortho[k] if len(ortho) >= k+1 else [R.zero * in_basis.num_cols]
+        M_k  = Matrix([o_k])
         M_k1 = Matrix([ortho[k-1]])
         O    = (M_k1 * M_k1.T)[0,0]
 
+        # This should be ring-agnostic
         if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu[k, k-1]**2 * O:
-        #if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu(k, k-1)**2 * O:
             k += 1
         else:
             basis[k], basis[k-1] = deepcopy(basis[k-1]), deepcopy(basis[k])
-            ortho, mu = gram_schmidt(vecs_to_matrix(basis), False)
-            #ortho = ortho.T
+            ortho, mu = gram_schmidt(vecs_to_matrix(basis))
             k = max(k-1, 1)
 
     return vecs_to_matrix(basis)
@@ -1416,7 +1314,7 @@ def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterat
         >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
         >>> start, end = hasse_frobenius_trace_interval(curve.p)
         >>> dlog = pollards_kangaroo(g=curve.G, y=curve.POINT_AT_INFINITY, a=start + curve.p, b=end + curve.p)
-        >>> curve.G * dlog == curve.zero()
+        >>> curve.G * dlog == curve.zero
         True
 
     References:
@@ -1493,13 +1391,13 @@ def hasse_frobenius_trace_interval(p: int) -> (int, int):
 def sieve_of_eratosthenes(n: int) -> list:
     """
     Finds all primes up to `n`.
-
+ 
     Parameters:
         n (int): Limit.
-    
+
     Returns:
         list: List of prime numbers.
-    
+
     Examples:
         >>> from samson.math.general import sieve_of_eratosthenes
         >>> sieve_of_eratosthenes(100)
@@ -1528,10 +1426,10 @@ def primes_product(n: int, blacklist: list=None) -> list:
     Parameters:
         n          (int): Product to find.
         blacklist (list): Primes to skip.
-    
+
     Returns:
         list: List of primes.
-    
+
     Examples:
         >>> from samson.math.general import primes_product
         >>> primes_product(100, [2])
@@ -1569,10 +1467,10 @@ def find_representative(quotient_element: 'QuotientElement', valid_range: list) 
     Parameters:
         quotient_element (QuotientElement): Element to search for.
         valid_range                 (list): Range to search in.
-    
+
     Returns:
         int: Representative element.
-    
+
     Examples:
         >>> from samson.math.all import *
         >>> find_representative((ZZ/ZZ(11))(3), range(11, 22))
@@ -1606,7 +1504,7 @@ def frobenius_endomorphism(point: object, q: int) -> object:
     Parameters:
         point (object): Original point.
         q        (int): Power to raise to.
-    
+
     Returns:
         object: Resultant point.
     """
@@ -1676,10 +1574,10 @@ def frobenius_trace(curve: object) -> int:
 
     Parameters:
         curve (object): Elliptic curve.
-    
+
     Returns:
         int: Frobenius trace.
-    
+
     Examples:
         >>> from samson.math.general import frobenius_trace
         >>> from samson.math.algebra.all import *
@@ -1728,10 +1626,10 @@ def schoofs_algorithm(curve: object) -> int:
 
     Parameters:
         curve (object): Elliptic curve to find cardinality of.
-    
+
     Returns:
         int: Curve cardinality.
-    
+
     Examples:
         >>> from samson.math.general import schoofs_algorithm
         >>> from samson.math.algebra.all import *
@@ -1783,7 +1681,7 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
     m            = kth_root(search_range, 2)
 
     if not e:
-        e = g.ring.zero()
+        e = g.ring.zero
 
     for i in range(m):
         table[e] = i
@@ -1872,7 +1770,7 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     Parameters:
         n (int): Number to determine if probably prime.
         k (int): Number of iterations to run.
-    
+
     Returns:
         bool: Whether `n` is probably prime.
 
@@ -1929,7 +1827,7 @@ def is_square(n: int) -> bool:
 
     Returns:
         bool: Whether or not `n` is a square.
-    
+
     Examples:
         >>> from samson.math.general import is_square
         >>> p = 18431211066281663581
@@ -2255,7 +2153,7 @@ def ecm(n: int, attempts: int=100) -> int:
                 break
 
         # Free factor!
-        if is_poly and g.is_monic() and g > R.one() or not is_poly and g > R.one():
+        if is_poly and g.is_monic() and g > R.one or not is_poly and g > R.one:
             return g
 
         curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
@@ -2265,7 +2163,7 @@ def ecm(n: int, attempts: int=100) -> int:
                 curr *= fac
             except NotInvertibleException as e:
                 res = gcd(e.parameters['a'], n)
-                if res != R.one() and (not is_poly or res.is_monic()):
+                if res != R.one and (not is_poly or res.is_monic()):
                     if peel_ring:
                         res = res.val
 
@@ -2273,6 +2171,97 @@ def ecm(n: int, attempts: int=100) -> int:
 
     raise ProbabilisticFailureException("Factor not found")
 
+
+def is_perfect_power(n: int, precision: float=0.6) -> (bool, int, int):
+    """
+    Determines if `n` is a perfect power. If it is, the root and exponent are returned.
+    This only works for composite roots. See 'is_prime_power' for prime roots.
+
+    Parameters:
+        n           (int): Possible perfect power.
+        precision (float): Required precision of natural comprime bases.
+    
+    Returns:
+        (bool, int, int): Formatted as (is_perfect_power, root, exponent).
+    
+    Examples:
+        >>> from samson.math.general import is_perfect_power
+        >>> is_perfect_power(1806031142**10*2)
+        (False, None, 0)
+
+        >>> is_perfect_power(325221983058579206406111588123469551600**8)
+        (True, 325221983058579206406111588123469551600, 8)
+
+    References:
+        "DETECTING PERFECT POWERS BY FACTORING INTO COPRIMES" (http://cr.yp.to/lineartime/powers2-20050509.pdf)
+    """
+    rs = []
+    r  = 2
+    while True:
+        root = n**(1/r)
+        if root < 2:
+            break
+
+        if abs(n - root**r) / n < precision:
+            rs.append(r)
+
+        r += 1
+
+    bases = {item for sublist in [factor(r).keys() for r in rs] for item in sublist}
+    curr = n
+    factors = {}
+    for base in bases:
+        factors[base] = 0
+        while not curr % base:
+            factors[base] += 1
+            curr //= base
+
+    d = 0
+
+    for e in [val for val in factors.values() if val]:
+        d = gcd(d, e)
+
+    if d < 2:
+        return False, None, 0
+
+    root = kth_root(n, d)
+    return root**d == n, root, d
+
+
+def is_prime_power(n: int) -> (bool, int, int):
+    """
+    Determines if `n` is a prime power. If it is, the root and exponent are returned.
+    This only works for prime roots. See 'is_perfect_power' for composite roots.
+
+    Parameters:
+        n (int): Possible prime power.
+    
+    Returns:
+        (bool, int, int): Formatted as (is_prime_power, root, exponent).
+    
+    Examples:
+        >>> from samson.math.general import is_prime_power
+        >>> p = 322061084716023110461357635858544836091
+        >>> is_prime_power(p**17)
+        (True, 322061084716023110461357635858544836091, 17)
+
+    References:
+        https://mathoverflow.net/a/106316
+    """
+    if is_power_of_two(n):
+        return True, 2, int(math.log(n, 2))
+
+    for k in range(2, n.bit_length()):
+        root = kth_root(n, k)
+
+        if root**k == n:
+            if is_prime(root):
+                return True, root, k
+            else:
+                ipp, p, k2 = is_prime_power(root)
+                return ipp, p, k*k2
+
+    return False, None, 0
 
 
 def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, limit: int=1000, visual: bool=False) -> list:
@@ -2315,6 +2304,37 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
     def calc_prog(x):
         return round(math.log(x, 2), 2)
 
+    def is_factored(n):
+        return (n == 1 or is_prime(n))
+
+    # We want to check for perfect powers after every found factor
+    # It's relatively cheap and can instantly factor the rest
+    def check_perfect_powers(n):
+        if not is_factored(n):
+            ipp, root, k = is_prime_power(n)
+            if ipp:
+                add_or_increment(factors, root, k)
+                r_k = root**k
+                progress_update(r_k)
+                n //= r_k
+
+            else:
+                try:
+                    ipp, root, k = is_perfect_power(n)
+                    if ipp:
+                        for fac, exponent in factor(root).items():
+                            e_k = exponent*k
+                            add_or_increment(factors, fac, e_k)
+
+                            rek = root**e_k
+                            progress_update(rek)
+                            n //= rek
+                except OverflowError:
+                    pass
+
+        return n
+
+    # Set up visual updates
     if visual:
         progress = tqdm(None, total=calc_prog(n), unit='bit')
         def progress_update(x):
@@ -2331,6 +2351,8 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         def progress_finish():
             pass
 
+
+    # Actual factorization
     try:
         if use_trial:
             # Trial division
@@ -2340,10 +2362,12 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                     progress_update(prime)
                     n //= prime
 
+            n = check_perfect_powers(n)
 
-        if use_rho and not (n == 1 or is_prime(n)):
+
+        if use_rho:
             # Pollard's rho
-            while not is_prime(n):
+            while not is_factored(n):
                 n_fac = pollards_rho(n)
                 if n_fac == n:
                     break
@@ -2351,18 +2375,23 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                 add_or_increment(factors, n_fac)
                 progress_update(n_fac)
                 n //= n_fac
+            
+                n = check_perfect_powers(n)
 
-        if use_ecm and not (n == 1 or is_prime(n)):
+
+        if use_ecm:
             # Lenstra's ECM
-            while not is_prime(n):
+            while not is_factored(n):
                 try:
                     n_fac = ecm(n, attempts=ecm_attempts)
 
                     # ECM will give a factor, but not necessarily a prime
-                    for fac in factor(n_fac):
-                        add_or_increment(factors, fac)
-                        progress_update(fac)
-                        n //= fac
+                    for fac, exponent in factor(n_fac).items():
+                        add_or_increment(factors, fac, exponent)
+                        progress_update(fac**exponent)
+                        n //= fac**exponent
+
+                    n = check_perfect_powers(n)
 
                 except ProbabilisticFailureException:
                     break
@@ -2412,7 +2441,7 @@ def is_primitive_root(a: int, p: int) -> bool:
     Z_star = (ZZ/ZZ(p)).mul_group()
     a_star = Z_star(a)
 
-    return gcd(a, p) == 1 and a_star*Z_star.order == Z_star.one() and a_star.order == Z_star.order
+    return gcd(a, p) == 1 and a_star*Z_star.order == Z_star.one and a_star.order == Z_star.order
 
 
 
@@ -2443,7 +2472,7 @@ def product(elem_list: list, return_tree=False) -> object:
     X_type = type(X[0])
 
     tree = [X]
-    one  = 1 if X_type is int else X[0].ring.one()
+    one  = 1 if X_type is int else X[0].ring.one
 
     while len(X) > 1:
         if len(X) % 2:
@@ -2546,3 +2575,4 @@ def is_sophie_germain_prime(p: int) -> bool:
 
 
 is_safe_prime = is_sophie_germain_prime
+

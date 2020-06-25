@@ -137,14 +137,14 @@ def fft_op(v1, v2, operation: FFTOp=FFTOp.CONVOLVE):
 #     max_value = max(chain(v1, v2))
 #     orig_ring = v1[0].ring
 
-#     # min_mod   = int(max_value**2 * vec_len + orig_ring.one())
+#     # min_mod   = int(max_value**2 * vec_len + orig_ring.one)
 #     #char_zero = orig_ring.characteristic == 0
 #     finite_order = orig_ring.order != oo
 #     if finite_order:
 #         orig_ring = orig_ring.ring
 #         max_value = max_value.val
 
-#     one = orig_ring.one()
+#     one = orig_ring.one
 
 
 #     #print((max_value**2).ordinality())
@@ -181,7 +181,7 @@ def fft_op(v1, v2, operation: FFTOp=FFTOp.CONVOLVE):
 #     # for possible_gen in range(1, modulus):
 #     for possible_gen in range(2, new_ring.order):
 #         possible_gen = new_ring[possible_gen]
-#         if possible_gen**totient == new_ring.one() and all([possible_gen**(totient // f) != new_ring.one() for f in factors]):
+#         if possible_gen**totient == new_ring.one and all([possible_gen**(totient // f) != new_ring.one for f in factors]):
 #             gen = possible_gen
 #             break
 
@@ -203,7 +203,7 @@ def generate_arbitrary_ntt_params(v1, v2):
         orig_ring = orig_ring.ring
         max_value = max_value.val
 
-    one     = orig_ring.one()
+    one     = orig_ring.one
     min_mod = (max_value**2).ordinality() * vec_len + 1
 
     vec_len_elem = orig_ring[vec_len]
@@ -233,16 +233,16 @@ def prepare_arbitrary_fft(v1, v2):
     # Pad vectors for radix-2 FFT
     max_len = max(v1_len, v2_len)
     vec_len = 2**math.ceil(math.log(max_len*2, 2))
-    v1 = v1 + [orig_ring.zero()]*(vec_len - v1_len)
-    v2 = v2 + [orig_ring.zero()]*(vec_len - v2_len)
+    v1 = v1 + [orig_ring.zero]*(vec_len - v1_len)
+    v2 = v2 + [orig_ring.zero]*(vec_len - v2_len)
 
     # Prepare NTT twiddle factors
     root, ring       = generate_arbitrary_ntt_params(v1, v2)
     twiddle_factors  = []
     inv_twid_factors = []
 
-    twiddle  = ring.one()
-    inv_twid = ring.one()
+    twiddle  = ring.one
+    inv_twid = ring.one
     inv_root = ~root
 
     for _ in range(vec_len // 2):

@@ -144,7 +144,7 @@ class WeierstrassCurve(Ring):
         self.ring = ring or self.a.ring
 
         if check_singularity:
-            if (4 * a**3 - 27 * b**2) == self.ring.zero():
+            if (4 * a**3 - 27 * b**2) == self.ring.zero:
                 raise ValueError("Elliptic curve can't be singular")
 
         if base_tuple:
@@ -157,26 +157,14 @@ class WeierstrassCurve(Ring):
         self.cardinality_cache = cardinality
         self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
+        self.zero = WeierstrassPoint(0, 0, self)
+        self.one  = self.G
+
 
 
     def __repr__(self):
         return f"<WeierstrassCurve: a={self.a}, b={self.b}, cardinality={self.cardinality_cache}, ring={self.ring}, G={(str(self.G_cache.x), str(self.G_cache.y)) if self.G_cache else self.G_cache}>"
-
-
-    def zero(self) -> WeierstrassPoint:
-        """
-        Returns:
-            WeierstrassPoint: '0' element of the algebra.
-        """
-        return WeierstrassPoint(0, 0, self)
-
-
-    def one(self) -> WeierstrassPoint:
-        """
-        Returns:
-            WeierstrassPoint: '1' element of the algebra.
-        """
-        return self.G
+ 
 
 
     def shorthand(self) -> str:
@@ -275,7 +263,7 @@ class WeierstrassCurve(Ring):
     @property
     def POINT_AT_INFINITY(self) -> WeierstrassPoint:
         if not self.PAF_cache:
-            self.PAF_cache = self.zero()
+            self.PAF_cache = self.zero
 
         return self.PAF_cache
 

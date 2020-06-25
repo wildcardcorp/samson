@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.utilities.exceptions import CoercionException
-from samson.math.general import is_prime, factor
+from samson.math.general import is_prime, factor, kth_root
 from samson.math.symbols import oo
 
 class IntegerElement(RingElement):
@@ -36,6 +36,10 @@ class IntegerElement(RingElement):
 
     def is_irreducible(self) -> bool:
         return self.is_prime()
+    
+
+    def kth_root(self, k: int):
+        return ZZ(kth_root(int(self), k))
 
 
     def valuation(self, p: int) -> int:
@@ -136,6 +140,11 @@ class IntegerRing(Ring):
     The ring of integers, Z.
     """
 
+    def __init__(self):
+        self.zero = IntegerElement(0, self)
+        self.one  = IntegerElement(1, self)
+
+
     @property
     def characteristic(self):
         return 0
@@ -147,22 +156,6 @@ class IntegerRing(Ring):
 
     def __hash__(self) -> int:
         return hash(self.__class__)
-
-
-    def zero(self) -> IntegerElement:
-        """
-        Returns:
-            IntegerElement: '0' element of the algebra.
-        """
-        return IntegerElement(0, self)
-
-
-    def one(self) -> IntegerElement:
-        """
-        Returns:
-            IntegerElement: '1' element of the algebra.
-        """
-        return IntegerElement(1, self)
 
 
     def element_at(self, x: int) -> IntegerElement:

@@ -23,7 +23,7 @@ class FractionFieldElement(FieldElement):
             except Exception:
                 pass
 
-        if denominator == field.ring.zero():
+        if denominator == field.ring.zero:
             raise ZeroDivisionError
 
         self.numerator   = numerator
@@ -40,7 +40,7 @@ class FractionFieldElement(FieldElement):
 
 
     def tinyhand(self) -> str:
-        return f'{self.numerator.tinyhand()}{"/" + str(self.denominator.tinyhand()) if self.denominator != self.ring.ring.one() else ""}'
+        return f'{self.numerator.tinyhand()}{"/" + str(self.denominator.tinyhand()) if self.denominator != self.ring.ring.one else ""}'
 
 
     def __hash__(self):
@@ -108,7 +108,7 @@ class FractionFieldElement(FieldElement):
     def __round__(self):
         q,r = divmod(self.numerator, self.denominator)
         R = self.ring.ring
-        return q + (R.one() if r*2 >= self.denominator else R.zero())
+        return q + (R.one if r*2 >= self.denominator else R.zero)
 
 
 
@@ -135,7 +135,7 @@ class FractionField(Field):
     Examples:
         >>> from samson.math.algebra.rings.integer_ring import IntegerRing
         >>> QQ = FractionField(IntegerRing())
-        >>> assert QQ(5) * QQ((1, 5)) == QQ.one()
+        >>> assert QQ(5) * QQ((1, 5)) == QQ.one
 
     """
 
@@ -147,6 +147,9 @@ class FractionField(Field):
         """
         self.ring     = ring
         self.simplify = simplify
+
+        self.zero = FractionFieldElement(self.ring.zero, self.ring.one, self)
+        self.one  = FractionFieldElement(self.ring.one, self.ring.one, self)
 
 
     def __repr__(self):
@@ -170,22 +173,6 @@ class FractionField(Field):
         return self.ring.order**2
 
 
-    def zero(self) -> FractionFieldElement:
-        """
-        Returns:
-            FractionFieldElement: '0' element of the algebra.
-        """
-        return FractionFieldElement(self.ring.zero(), self.ring.one(), self)
-
-
-    def one(self) -> FractionFieldElement:
-        """
-        Returns:
-            FractionFieldElement: '1' element of the algebra.
-        """
-        return FractionFieldElement(self.ring.one(), self.ring.one(), self)
-
-
     def random(self, size: int=None) -> FractionFieldElement:
         """
         Generate a random element.
@@ -203,7 +190,7 @@ class FractionField(Field):
             numerator   = size.numerator
             denominator = size.denominator
 
-        return FractionFieldElement(self.ring.random(numerator), max(self.ring.one(), self.ring.random(denominator)), self)
+        return FractionFieldElement(self.ring.random(numerator), max(self.ring.one, self.ring.random(denominator)), self)
 
 
     def shorthand(self) -> str:
@@ -230,13 +217,13 @@ class FractionField(Field):
 
         elif type(other) is tuple:
             if len(other) < 2:
-                denom = self.ring.one()
+                denom = self.ring.one
             else:
                 denom = self.ring.coerce(other[1])
 
             result = (self.ring.coerce(other[0]), denom)
         else:
-            result = (self.ring.coerce(other), self.ring.one())
+            result = (self.ring.coerce(other), self.ring.one)
 
 
         return FractionFieldElement(*result, self)

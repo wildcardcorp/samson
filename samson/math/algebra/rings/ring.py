@@ -1,6 +1,7 @@
 from samson.math.general import fast_mul, square_and_mul
 from types import FunctionType
 from abc import ABC, abstractmethod
+from samson.utilities.runtime import RUNTIME
 
 
 def try_poly_first(element: object, other: object, func: FunctionType) -> object:
@@ -23,19 +24,20 @@ def left_expression_intercept(func: FunctionType) -> object:
     """
     Intercepts "left" operators to give Polynomials precedence so elements from the coefficient ring can be coerced.
     """
-    from samson.math.polynomial import Polynomial
 
     def poly_build(*args, **kwargs):
-        try:
-            name = func.__name__
-            name = '__r' + name[2:]
-            poly_res = try_poly_first(*args, **kwargs, func=getattr(Polynomial, name))
+        if RUNTIME.enable_poly_intercept:
+            from samson.math.polynomial import Polynomial
+            try:
+                name = func.__name__
+                name = '__r' + name[2:]
+                poly_res = try_poly_first(*args, **kwargs, func=getattr(Polynomial, name))
 
-            if poly_res is not None:
-                return poly_res
+                if poly_res is not None:
+                    return poly_res
 
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         return func(*args, **kwargs)
 
@@ -55,15 +57,6 @@ class Ring(ABC):
 
     def __str__(self):
         return self.shorthand()
-
-
-    @abstractmethod
-    def zero(self):
-        pass
-
-    @abstractmethod
-    def one(self):
-        pass
 
 
     @property
@@ -147,11 +140,11 @@ class Ring(ABC):
         from samson.math.symbols import oo
 
         if self.order == oo:
-            return self.one()
+            return self.one
 
         for i in range(1, self.order):
             possible_gen = self[i]
-            if possible_gen * self.order == self.zero() and possible_gen.order == self.order:
+            if possible_gen * self.order == self.zero and possible_gen.order == self.order:
                 return possible_gen
 
         raise SearchspaceExhaustedException("Unable to find generator")
@@ -235,7 +228,7 @@ class RingElement(ABC):
         return self.ring.coerce(other) / self
 
     def __bool__(self) -> bool:
-        return self != self.ring.zero()
+        return self != self.ring.zero
 
     def __eq__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
@@ -267,7 +260,7 @@ class RingElement(ABC):
     
 
     def __abs__(self) -> 'RingElement':
-        return self if self >= self.ring.zero() else -self
+        return self if self >= self.ring.zero else -self
 
 
     def ground_mul(self, other: 'RingElement') -> 'RingElement':
@@ -280,13 +273,14 @@ class RingElement(ABC):
         Returns:
             RingElement/None: Returns the special __mul__ if possible.
         """
-        from samson.math.polynomial import Polynomial
         type_o = type(other)
 
         if type_o is int:
             return fast_mul(self, other)
 
-        else:
+        # This is like a bajillion times faster than importing Poly at the top
+        elif type_o.__name__ in ['Polynomial', 'Symbol']:
+            from samson.math.polynomial import Polynomial
             return try_poly_first(self, other, Polynomial.__rmul__)
 
 
@@ -326,7 +320,7 @@ class RingElement(ABC):
         Returns:
             BitVectorCache: Cached vector.
         """
-        return self.cache_op(self.ring.zero(), self.__class__.__add__, size)
+        return self.cache_op(self.ring.zero, self.__class__.__add__, size)
 
 
     def cache_pow(self, size: int) -> 'BitVectorCache':
@@ -339,7 +333,7 @@ class RingElement(ABC):
         Returns:
             BitVectorCache: Cached vector.
         """
-        return self.cache_op(self.ring.one(), self.__class__.__mul__, size)
+        return self.cache_op(self.ring.one, self.__class__.__mul__, size)
 
 
     def get_ground(self) -> 'RingElement':
@@ -391,7 +385,7 @@ class RingElement(ABC):
         for product_size in range(1, len(expanded_factors)+1):
             for combination in set(combinations(expanded_factors, product_size)):
                 product = reduce(int.__mul__, combination, 1)
-                if self*product == self.ring.zero():
+                if self*product == self.ring.zero:
                     all_orders.append(product)
 
         return min(all_orders)
@@ -445,10 +439,11 @@ class RingElement(ABC):
         except KeyboardInterrupt:
             pass
         
-        if n != self.ring.one():
+        if n != self.ring.one:
             factors.append(n)
 
         return count_items(factors)
+
 
 
     def sqrt(self) -> 'RingElement':

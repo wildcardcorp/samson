@@ -9,7 +9,7 @@ class MatrixRing(Ring):
     Examples:
         >>> from samson.math.all import *
         >>> M = MatrixRing(3, ZZ)
-        >>> M.one() * 5
+        >>> M.one * 5
         <Matrix: rows=
         [ZZ(5), ZZ(0), ZZ(0)]
         [ZZ(0), ZZ(5), ZZ(0)]
@@ -27,6 +27,9 @@ class MatrixRing(Ring):
         self.ring        = ring
         self.order_cache = None
 
+        self.zero = Matrix.fill(self.ring.zero, self.size, coeff_ring=self.ring, ring=self)
+        self.one  = Matrix.identity(self.size, coeff_ring=self.ring, ring=self)
+
 
     @property
     def characteristic(self) -> int:
@@ -36,22 +39,6 @@ class MatrixRing(Ring):
     @property
     def order(self) -> int:
         raise NotImplementedError()
-
-
-    def zero(self) -> Matrix:
-        """
-        Returns:
-            Matrix: '0' element of the algebra.
-        """
-        return Matrix.fill(self.ring.zeros(), self.size, coeff_ring=self.ring, ring=self)
-
-
-    def one(self) -> Matrix:
-        """
-        Returns:
-            Matrix: '1' element of the algebra.
-        """
-        return Matrix.identity(self.size, coeff_ring=self.ring, ring=self)
 
 
     def __repr__(self):

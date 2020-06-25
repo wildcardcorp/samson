@@ -22,7 +22,7 @@ class TimingOracleTestCase(unittest.TestCase):
         answer = ''
         for _ in tqdm(range(11)):
             results = [(char, oracle.get_timing(answer + char + 'z'*(10 - len(answer)), **args)) for char in string.ascii_lowercase]
-            answer += sorted(results, lambda item: item[1][0], reverse=True)[0][0]
+            answer += sorted(results, key=lambda item: item[1][0], reverse=True)[0][0]
 
 
         self.assertEqual(answer, SECRET)

@@ -28,7 +28,7 @@ class DenseVector(object):
 
     def dot(self, other: 'DenseVector') -> object:
         if hasattr(self.values[0], 'ring'):
-            zero = self.values[0].ring.zero()
+            zero = self.values[0].ring.zero
         else:
             zero = 0
 

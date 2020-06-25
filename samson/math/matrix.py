@@ -15,9 +15,7 @@ class Matrix(RingElement):
             coeff_ring (Ring): Ring elements will be in.
             ring       (Ring): Parent ring.
         """
-        from samson.math.algebra.rings.matrix_ring import MatrixRing
-
-        is_coerced      = hasattr(rows[0][0], 'ring') if rows[0] else True
+        is_coerced      = hasattr(rows[0][0], 'ring')
         self.coeff_ring = coeff_ring or (rows[0][0].ring if is_coerced else ZZ)
         row_lens        = [len(row) for row in rows]
 
@@ -32,7 +30,8 @@ class Matrix(RingElement):
         self.rows = rows
 
         if not ring and r_len == c_len:
-            ring = MatrixRing(size=r_len, ring=ring)
+            from samson.math.algebra.rings.matrix_ring import MatrixRing
+            ring = MatrixRing(size=r_len, ring=self.coeff_ring)
 
         self.ring = ring
 
@@ -120,7 +119,7 @@ class Matrix(RingElement):
         Returns:
             Matrix: Identity matrix.
         """
-        return Matrix([[coeff_ring.one() if r == c else coeff_ring.zero() for r in range(size)] for c in range(size)], coeff_ring=coeff_ring, ring=ring)
+        return Matrix([[coeff_ring.one if r == c else coeff_ring.zero for r in range(size)] for c in range(size)], coeff_ring=coeff_ring, ring=ring)
 
 
     @staticmethod
@@ -140,7 +139,7 @@ class Matrix(RingElement):
         
         Examples:
             >>> from samson.math.all import Matrix, ZZ
-            >>> Matrix.fill(ZZ.zero(), 3, 4)
+            >>> Matrix.fill(ZZ.zero, 3, 4)
             <Matrix: rows=
             [ZZ(0), ZZ(0), ZZ(0), ZZ(0)]
             [ZZ(0), ZZ(0), ZZ(0), ZZ(0)]
@@ -253,7 +252,7 @@ class Matrix(RingElement):
         return lll(self, delta)
 
 
-    def gram_schmidt(self, normalize: bool=True, full: bool=False) -> 'Matrix':
+    def gram_schmidt(self, full: bool=False) -> 'Matrix':
         """
         Performs Gram-Schmidt orthonormalization.
 
@@ -271,7 +270,7 @@ class Matrix(RingElement):
             [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
 
         """
-        return gram_schmidt(self, normalize, full)
+        return gram_schmidt(self, full)
 
 
     # TODO: This only works with QQ since we're letting Python's `sqrt` function coerce it into a Python float.
@@ -300,8 +299,7 @@ class Matrix(RingElement):
         """
         from math import sqrt
 
-        magnitude = (self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0,0].sqrt()
-        #magnitude = self.coeff_ring(sqrt((self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one(), rows=self.num_cols, cols=1))[0][0]))
+        magnitude = (self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one, rows=self.num_cols, cols=1))[0,0].sqrt()
         return self * ~magnitude
 
 
@@ -380,7 +378,7 @@ class Matrix(RingElement):
             for row in range(s_rows):
                 ans.append([])
                 for o_col in range(o_cols):
-                    col_total = self.coeff_ring.zero()
+                    col_total = self.coeff_ring.zero
                     for col in range(s_cols):
                         col_total += self.rows[row][col] * other.rows[col][o_col]
 

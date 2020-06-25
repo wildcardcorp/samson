@@ -47,6 +47,9 @@ class MontgomeryCurve(Ring):
         self.oid = oid
         self.ring = ring or A.ring
 
+        self.zero = MontgomeryPoint(0, self)
+        self.one  = self.G
+
 
     def __repr__(self):
         return f"<MontgomeryCurve: p={self.p}, A={self.A}, U={self.U}, V={self.V}>"
@@ -55,21 +58,6 @@ class MontgomeryCurve(Ring):
     def shorthand(self) -> str:
         return f'MontgomeryCurve{{A={self.A}, U={self.U}, V={self.V}}}'
 
-
-    def zero(self) -> 'MontgomeryPoint':
-        """
-        Returns:
-            MontgomeryPoint: '0' element of the algebra.
-        """
-        return MontgomeryPoint(0, self)
-
-
-    def one(self) -> 'MontgomeryPoint':
-        """
-        Returns:
-            MontgomeryPoint: '1' element of the algebra.
-        """
-        return self.G
 
 
     def random(self, size: int=None) -> 'MontgomeryPoint':

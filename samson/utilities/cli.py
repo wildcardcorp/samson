@@ -1,12 +1,13 @@
 start_exec = """
+import logging
+logging.getLogger().setLevel(logging.WARNING)
+logging.getLogger("samson").setLevel(logging.DEBUG)
+
 from samson.all import *
 x = Symbol('x')
 y = Symbol('y')
 z = Symbol('z')
 
-import logging
-logging.getLogger().setLevel(logging.WARNING)
-logging.getLogger("samson").setLevel(logging.DEBUG)
 logger = logging.getLogger("samson.repl")
 """
 
@@ -29,6 +30,7 @@ def start_repl():
     import IPython
     import sys
     from samson import VERSION
+    from samson.utilities.runtime import RUNTIME
     from traitlets.config import Config
 
     banner = f"""

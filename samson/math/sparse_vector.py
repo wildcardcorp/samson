@@ -15,7 +15,7 @@ class SparseVector(object):
         """
         if zero is None:
             if hasattr(items[0], 'ring'):
-                zero = items[0].ring.zero()
+                zero = items[0].ring.zero
             else:
                 zero = 0
 

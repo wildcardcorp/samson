@@ -430,7 +430,7 @@ JWA_ALG_MAP = {
     JWASignatureAlg.PS384: JWA_PS(SHA384()),
     JWASignatureAlg.PS512: JWA_PS(SHA512()),
     JWASignatureAlg.EdDSA: JWA_EdDSA(),
-    JWASignatureAlg.none: JWA_none(),
+    JWASignatureAlg.none: JWA_none,
 
     # JWE Content-Encryption Algorithms
     JWAContentEncryptionAlg.A128CBC_HS256: JWA_ACBC_HS(SHA256()),

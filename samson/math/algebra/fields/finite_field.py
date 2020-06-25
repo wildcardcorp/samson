@@ -121,6 +121,9 @@ class FiniteField(Field):
         poly_ring           = self.reducing_poly.ring
         self.internal_field = poly_ring/poly_ring(reducing_poly)
 
+        self.zero = self.coerce(0)
+        self.one  = self.coerce(1)
+
 
     def __repr__(self):
         return f"<FiniteField: p={self.p}, n={self.n}, reducing_poly={self.reducing_poly}>"
@@ -128,22 +131,6 @@ class FiniteField(Field):
 
     def __hash__(self) -> int:
         return hash((self.internal_field, self.reducing_poly, self.__class__))
-
-
-    def zero(self) -> FiniteFieldElement:
-        """
-        Returns:
-            FiniteFieldElement: '0' element of the algebra.
-        """
-        return self.coerce(0)
-
-
-    def one(self) -> FiniteFieldElement:
-        """
-        Returns:
-            FiniteFieldElement: '1' element of the algebra.
-        """
-        return self.coerce(1)
 
 
     def shorthand(self) -> str:

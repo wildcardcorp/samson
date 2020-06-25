@@ -28,7 +28,7 @@ class InvalidCurveAttack(object):
     def __init__(self, oracle: Oracle, curve: WeierstrassCurve):
         """
         Parameters:
-            oracle   (Oracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
+            oracle          (Oracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
             curve (WeierstrassCurve): Curve that the victim is using.
         """
         self.oracle = oracle

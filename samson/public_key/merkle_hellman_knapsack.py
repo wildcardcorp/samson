@@ -122,7 +122,7 @@ class MerkleHellmanKnapsack(EncryptionAlg):
 
             for row in solution_matrix.rows:
                 relevant = row[:-2]
-                new_row  = [item for item in relevant if item >= QQ.zero() and item <= QQ.one()]
+                new_row  = [item for item in relevant if item >= QQ.zero and item <= QQ.one]
 
                 if len(new_row) == len(relevant):
                     return Bytes(int(''.join([str(int(float(val))) for val in relevant]), 2))

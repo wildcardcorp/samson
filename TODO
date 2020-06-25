@@ -14,8 +14,6 @@ CURRENT
 
 0.3.0
 ===============
-X   Polynomial factorization works in any ring
-
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA
 
@@ -40,6 +38,7 @@ X   New IoT ciphers
 
 
 X   Increase performance
+    X   Function level imports are EXPENSIVE (left_expression_intercept)
     X   Weierstrass curves
     X   Polynomial mul/div (NTT-FFT)
     X   Schoof's algorithm

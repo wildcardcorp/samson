@@ -51,4 +51,4 @@ class FieldElement(RingElement):
         Returns:
             bool: Whether the element is invertible.
         """
-        return self != self.ring.zero()
+        return self != self.ring.zero

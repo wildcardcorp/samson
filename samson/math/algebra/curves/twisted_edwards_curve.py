@@ -42,25 +42,12 @@ class TwistedEdwardsCurve(Ring):
         self.B = TwistedEdwardsPoint(*B, self)
         self.I = ring(2) ** ((self.q-1) // 4)
 
+        self.zero = TwistedEdwardsPoint(0, 1, self)
+        self.one  = self.B
+
 
     def __repr__(self):
         return f"<TwistedEdwardsCurve: b={self.b}, q={self.q}, l={self.l}>"
-
-
-    def zero(self) -> 'TwistedEdwardsPoint':
-        """
-        Returns:
-            TwistedEdwardsCurve: '0' element of the algebra.
-        """
-        return TwistedEdwardsPoint(0, 1, self)
-
-
-    def one(self) -> 'TwistedEdwardsPoint':
-        """
-        Returns:
-            TwistedEdwardsCurve: '1' element of the algebra.
-        """
-        return self.B
 
 
     def random(self, size: int=None) -> 'TwistedEdwardsPoint':
@@ -138,7 +125,7 @@ class TwistedEdwardsCurve(Ring):
             bool: Whether or not the point is on the curve.
         """
         x, y = P
-        return self.a * x*x + y*y - self.ring.one() - self.d * x*x*y*y == self.ring.zero()
+        return self.a * x*x + y*y - self.ring.one - self.d * x*x*y*y == self.ring.zero
 
 
 
@@ -159,10 +146,10 @@ class TwistedEdwardsCurve(Ring):
         if self.q % 8 == 5:
             x = xx ** ((self.q+3)//8)
 
-            if (x*x - xx) != self.ring.zero():
+            if (x*x - xx) != self.ring.zero:
                 x = (x*self.I)
 
-            if x % 2 != self.ring.zero():
+            if x % 2 != self.ring.zero:
                 x = -x
 
         elif self.q % 4 == 3:
@@ -229,8 +216,8 @@ class TwistedEdwardsPoint(RingElement):
         x1, y1 = self.x, self.y
         x2, y2 = other.x, other.y
 
-        x3 = (x1*y2+x2*y1) * ~(ring.one()+self.curve.d * x1*x2*y1*y2)
-        y3 = (y1*y2 - self.curve.a*x1*x2) * ~(ring.one()-self.curve.d * x1*x2*y1*y2)
+        x3 = (x1*y2+x2*y1) * ~(ring.one+self.curve.d * x1*x2*y1*y2)
+        y3 = (y1*y2 - self.curve.a*x1*x2) * ~(ring.one-self.curve.d * x1*x2*y1*y2)
 
         return TwistedEdwardsPoint(x3, y3, self.curve)
 

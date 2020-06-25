@@ -4,7 +4,7 @@ from math import ceil, log
 
 def _split(v, m, k):
     K      = 1<< (k-1)
-    zero   = v[0].ring.zero()
+    zero   = v[0].ring.zero
     zeroes = [zero] * K
     return [v[i:i+K] + zeroes for i in range(0, K << m, K)]
 
@@ -31,7 +31,7 @@ def _forward_butterfly(L1, L2, r):
     assert 0 <= r <= len(L1)
 
     K = len(L1)
-    zero = L1[0].ring.zero()
+    zero = L1[0].ring.zero
     nL1 = SparseVector([], zero)
     nL2 = SparseVector([], zero)
 
@@ -64,7 +64,7 @@ def _inverse_butterfly(L1, L2, r):
     # print('L1', L1.sparsity)
     # print()
 
-    # zero = L1[0].ring.zero()
+    # zero = L1[0].ring.zero
     # v1 = SparseVector([], zero)
     # v2 = SparseVector([], zero)
 
@@ -138,7 +138,7 @@ def _convolution_naive(L1, L2):
     m1 = len(L1)
     m2 = len(L2)
 
-    zero = L1[0].ring.zero()
+    zero = L1[0].ring.zero
     new_coeffs = SparseVector([], zero)
 
     for i, coeff_h in L1:
@@ -153,7 +153,7 @@ def _negaconvolution_naive(L1, L2):
     assert len(L1) == len(L2)
 
     N = len(L1)
-    zero = L1[0].ring.zero()
+    zero = L1[0].ring.zero
     new_coeffs = SparseVector([], zero)
 
     # for j in range(N):
@@ -274,7 +274,7 @@ def _convolution(L1, L2):
     K = 1 << k
 
     # zero pad inputs up to length N
-    zero = R.zero()
+    zero = R.zero
     L1 += [zero] * (N - len1)
     L2 += [zero] * (N - len2)
 

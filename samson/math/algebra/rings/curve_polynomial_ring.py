@@ -16,7 +16,7 @@ class CurvePolynomialElement(RingElement):
             ring         (Ring): Parent ring.
         """
         self.x_poly = x_poly
-        self.y_poly = y_poly or ring.poly_ring.zero()
+        self.y_poly = y_poly or ring.poly_ring.zero
         self.ring   = ring
 
     def __repr__(self):
@@ -61,7 +61,7 @@ class CurvePolynomialElement(RingElement):
             raise ZeroDivisionError
 
         if not self:
-            return self.ring.zero(), self.ring.zero()
+            return self.ring.zero, self.ring.zero
 
         if other.y_poly and (self.x_poly or other.x_poly):
             raise Exception("Multivariate polynomial division not supported")
@@ -72,7 +72,7 @@ class CurvePolynomialElement(RingElement):
             qy, ry = divmod(self.y_poly, other.x_poly)
         else:
             qx, rx = divmod(self.y_poly, other.y_poly)
-            qy, ry = self.ring.zero().x_poly, self.ring.zero().x_poly
+            qy, ry = self.ring.zero.x_poly, self.ring.zero.x_poly
 
         return (CurvePolynomialElement(qx, qy, self.ring), CurvePolynomialElement(rx, ry, self.ring))
 
@@ -123,26 +123,13 @@ class CurvePolynomialRing(Ring):
         self.a = a
         self.b = b
 
+        self.zero = CurvePolynomialElement(Polynomial([self.poly_ring.ring(0)], self.poly_ring.ring), None, self)
+        self.one  = CurvePolynomialElement(Polynomial([self.poly_ring.ring(1)], self.poly_ring.ring), None, self)
+
 
     @property
     def characteristic(self) -> int:
         return self.poly_ring.ring.characteristic
-
-
-    def zero(self) -> CurvePolynomialElement:
-        """
-        Returns:
-            CurvePolynomialElement: '0' element of the algebra.
-        """
-        return CurvePolynomialElement(Polynomial([self.poly_ring.ring(0)], self.poly_ring.ring), None, self)
-
-
-    def one(self) -> CurvePolynomialElement:
-        """
-        Returns:
-            CurvePolynomialElement: '1' element of the algebra.
-        """
-        return CurvePolynomialElement(Polynomial([self.poly_ring.ring(1)], self.poly_ring.ring), None, self)
 
 
     def random(self, size: int=None) -> CurvePolynomialElement:
@@ -188,10 +175,10 @@ class CurvePolynomialRing(Ring):
 
         if type(other) is tuple:
             x_poly = other[0]
-            y_poly = other[1] or self.poly_ring.zero()
+            y_poly = other[1] or self.poly_ring.zero
         else:
             x_poly = other
-            y_poly = self.poly_ring.zero()
+            y_poly = self.poly_ring.zero
 
         coerced = []
         for poly in [x_poly, y_poly]:

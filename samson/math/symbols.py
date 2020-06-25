@@ -77,13 +77,13 @@ class Symbol(Polynomial):
         return True
 
     def __pow__(self, power):
-        return self.var._create_poly({power: self.ring.ring.one()})
+        return self.var._create_poly({power: self.ring.ring.one})
 
 
     def build(self, ring):
         from samson.math.polynomial import Polynomial
         self.ring = ring
-        self.var  = Polynomial([ring.ring.zero(), ring.ring.one()], coeff_ring=ring.ring, ring=ring, symbol=self)
+        self.var  = Polynomial([ring.ring.zero, ring.ring.one], coeff_ring=ring.ring, ring=ring, symbol=self)
 
 
     def __getattribute__(self, name):

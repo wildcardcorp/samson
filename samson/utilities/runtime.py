@@ -1,5 +1,6 @@
 from samson.auxiliary.progress import Progress
 from samson.ace.exploit import DynamicExploit, register_knowns
+from functools import wraps
 from types import FunctionType
 import logging
 import inspect
@@ -47,21 +48,10 @@ class RuntimeConfiguration(object):
             self.reporter = Reporter()
 
 
-        # Initialize GRND_INT
-        try:
-            from gmpy2 import mpz
-            self.GRND_INT = mpz
-        except ImportError:
-            try:
-                from gmpy_cffi import mpz
-                self.GRND_INT = mpz
-            except ImportError:
-                self.GRND_INT = int
-
-
         self.random = lambda size: URANDOM.read(size)
         self.poly_fft_heuristic = default_poly_fft_heuristic
         self.default_short_printer = lambda elem: elem.tinyhand()
+        self.enable_poly_intercept = False
 
 
         # Initialize exploit mappings
@@ -71,10 +61,12 @@ class RuntimeConfiguration(object):
 
         self.primitives = []
 
+        self._contexts = {}
+
 
 
     def __repr__(self):
-        return f"<RuntimeConfiguration: GRND_INT={self.GRND_INT}, reporter={self.reporter}>"
+        return f"<RuntimeConfiguration: reporter={self.reporter}, enable_poly_intercept={self.enable_poly_intercept}>"
 
     def __str__(self):
         return self.__repr__()
@@ -131,6 +123,7 @@ class RuntimeConfiguration(object):
         Returns:
             func: Contextualized function.
         """
+        @wraps(func)
         def new_func(*args, **kwargs):
             result = None
             caller = args[0]
@@ -188,6 +181,55 @@ class RuntimeConfiguration(object):
         from hmac import compare_digest
         return compare_digest(a, b)
 
+
+    def set_context(self, **ctx_kwargs) -> FunctionType:
+        #func.__qualname__
+        def wrapper_0(func):
+            self._contexts[(func.__module__, func.__name__)] = RuntimeProxyContext(**ctx_kwargs)
+
+            @wraps(func)
+            def wrapper_1(*args, **kwargs):
+                return func(*args, **kwargs)
+            
+            return wrapper_1
+
+        return wrapper_0
+
+
+    def get_context(self):
+        stack  = inspect.stack()[1]
+        func   = stack.function
+        module = inspect.getmodule(stack[0])
+
+        if module:
+             module = module.__name__
+
+        # caller_locals = frame[0].f_locals
+
+
+        # if 'self' in caller_locals:
+        #     caller_type = type(caller_locals['self'])
+        # elif 'cls' in caller_locals:
+        #     caller_type = caller_locals['cls']
+        # else:
+        #     raise ValueError("Calling func must have a 'self' or 'cls' identifier.")
+
+        # f'{str(caller_type).split(".")[1][:-2]}.{func}'
+        return self._contexts[(module, func)]
+
+
+
+class RuntimeProxyContext(object):
+    def __init__(self, **kwargs):
+        self.attrs = kwargs
+
+    def __getattr__(self, name):
+        try:
+            attr = self.attrs[name]
+        except KeyError:
+            attr = getattr(RUNTIME, name)
+
+        return attr
 
 
 
