@@ -1,6 +1,8 @@
-from samson.math.general import fast_mul, square_and_mul
+from samson.math.general import fast_mul, square_and_mul, factor, is_prime
 from types import FunctionType
 from abc import ABC, abstractmethod
+from itertools import combinations
+from functools import reduce
 from samson.utilities.runtime import RUNTIME
 
 
@@ -167,6 +169,11 @@ class Ring(ABC):
             return PolynomialRing(self, x)
         else:
             return self.element_at(x)
+
+
+    def is_field(self) -> bool:
+        from samson.math.symbols import oo
+        return self.order != oo and is_prime(self.order)
 
 
 
@@ -371,10 +378,7 @@ class RingElement(ABC):
         Returns:
             int: Order.
         """
-        from samson.math.general import factor
         from samson.math.symbols import oo
-        from itertools import combinations
-        from functools import reduce
 
         if self.ring.order == oo:
             return oo

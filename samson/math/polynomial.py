@@ -16,7 +16,7 @@ class Polynomial(RingElement):
         """
         from samson.math.symbols import Symbol
 
-        self.coeff_ring = coeff_ring or coeffs[0].ring
+        self.coeff_ring = coeff_ring or list(coeffs.values.values())[0].ring
         c_type = type(coeffs)
 
         if c_type in [list, tuple, dict]:
@@ -285,8 +285,16 @@ class Polynomial(RingElement):
             {<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
         """
-        f = self.monic()
-        c = gcd(f, f.derivative().monic()).monic()
+        is_field = self.coeff_ring.is_field()
+        def cond_monic(poly):
+            if is_field:
+                return poly.monic()
+            else:
+                return poly
+
+        #f = self.monic()
+        f = cond_monic(self)
+        c = gcd(f, cond_monic(f.derivative())).monic()
         w = f / c
 
         factors = {}
@@ -294,7 +302,7 @@ class Polynomial(RingElement):
         i = 1
         while w != self.ring.one:
             y = gcd(w, c).monic()
-            fac = (w / y).monic()
+            fac = cond_monic(w / y)
 
             if fac != self.ring.one:
                 add_or_increment(factors, fac, i)
@@ -524,6 +532,84 @@ class Polynomial(RingElement):
         return self.is_irreducible()
 
 
+    def content(self) -> RingElement:
+        """
+        Returns:
+            RingElement: The content (i.e. GCD of the coefficients).
+        """
+        vals = list(self.coeffs.values.values())
+        content = vals[0]
+        for val in vals[1:]:
+            content = gcd(content, val)
+
+        return content
+
+
+    def _fac_ZZ(self):
+        """
+        Performs factorization over ZZ. Assumes `self` is square-free.
+
+        Internal use.
+
+        References:
+            https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
+        """
+        from samson.math.general import next_prime
+        from samson.math.algebra.rings.integer_ring import ZZ
+        import itertools
+    
+        # 'f' must be content-free
+        f = self // self.content()
+
+        # Select a prime such that `p` > 2B
+        # NOTE: Originally, the algorithm calls for a Hensel lift such that `p^a > 2B`.
+        # We're just cheating ;)
+        max_elem = max([abs(val) for val in f.coeffs.values.values()])
+        p = max_elem.val*2
+
+        # Find a `p` such that `g` is square-free
+        while True:
+            p = next_prime(p+1)
+            R = ZZ/ZZ(p)
+            g = f.embed_coeffs(R)
+            if sum(g.sff().values()) == 1:
+                break
+
+        # Factor over mod `p`
+        facs = g.factor()
+        expanded = [[fac]*mul for fac,mul in facs.items()]
+        expanded = [item for sublist in expanded for item in sublist]
+
+        factors = []
+
+        # Test direct candidacy
+        for fac in expanded:
+            poss = fac.peel_coeffs()
+            for cand in [poss, poss-p]:
+                while not f % cand:
+                    f //= cand
+                    factors.append(cand)
+
+                    if f.is_irreducible():
+                        factors.append(f)
+                        return factors
+
+
+        # Reassemble and reduce
+        for canda, candb in itertools.permutations(expanded, 2):
+            poss = (canda * candb).peel_coeffs()
+            while not f % poss:
+                f //= poss
+                factors.append(poss)
+
+                if f.is_irreducible():
+                    break
+        
+        factors.append(f)
+        return factors
+
+
+
     def factor(self, d: int=1, subgroup_divisor: int=None) -> list:
         """
         Factors the Polynomial into its constituent, irreducible factors.
@@ -550,12 +636,25 @@ class Polynomial(RingElement):
             True
 
         """
+        from samson.math.algebra.rings.integer_ring import ZZ
+
         factors = {}
-        distinct_degrees = [(factor, num) for poly, num in self.sff().items() for factor in poly.ddf()]
-        for (poly, _), num in distinct_degrees:
-            for factor in poly.edf(d, subgroup_divisor):
-                if factor != self.ring.one:
-                    add_or_increment(factors, factor, num)
+
+        if self.coeff_ring == ZZ:
+            f = self // self.content()
+            facs = [(poly._fac_ZZ(), num) for poly, num in f.sff().items()]
+
+            for partial_factors, num in facs:
+                for factor in partial_factors:
+                    if factor != self.ring.one:
+                        add_or_increment(factors, factor, num)  
+
+        else:
+            distinct_degrees = [(factor, num) for poly, num in self.sff().items() for factor in poly.ddf()]
+            for (poly, _), num in distinct_degrees:
+                for factor in poly.edf(d, subgroup_divisor):
+                    if factor != self.ring.one:
+                        add_or_increment(factors, factor, num)
 
         return factors
 
@@ -602,7 +701,7 @@ class Polynomial(RingElement):
             <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
 
         """
-        return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs})
+        return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs}, coeff_ring=ring)
 
 
     def peel_coeffs(self) -> 'Polynomial':
@@ -621,7 +720,7 @@ class Polynomial(RingElement):
             <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ>
 
         """
-        return Polynomial({idx: coeff.val for idx, coeff in self.coeffs})
+        return Polynomial({idx: coeff.val for idx, coeff in self.coeffs}, coeff_ring=self.coeff_ring.ring)
 
 
     def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):

@@ -18,6 +18,10 @@ class ProbabilisticFailureException(Exception):
     pass
 
 
+class NoSolutionException(Exception):
+    pass
+
+
 class OracleException(Exception):
     pass
 
