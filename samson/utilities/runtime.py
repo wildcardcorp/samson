@@ -190,7 +190,7 @@ class RuntimeConfiguration(object):
             @wraps(func)
             def wrapper_1(*args, **kwargs):
                 return func(*args, **kwargs)
-            
+
             return wrapper_1
 
         return wrapper_0

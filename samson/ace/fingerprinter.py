@@ -1,8 +1,4 @@
 from samson.utilities.runtime import RUNTIME
-from samson.utilities.exceptions import OracleException
-from samson.utilities.bytes import Bytes
-from samson.analysis.general import count_items
-from samson.math.general import kth_root, is_prime
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.core.metadata import IORelationType, FrequencyType, EphemeralType, SizeType, UsageType
 from samson.core.primitives import BlockCipher, BlockCipherMode, StreamingBlockCipherMode
@@ -10,7 +6,6 @@ from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.analysis.integer_analysis import IntegerAnalysis
 from itertools import groupby
 from types import FunctionType
-import math
 
 import logging
 log = logging.getLogger(__name__)
@@ -67,7 +62,7 @@ class Fingerprinter(object):
 
 
     @RUNTIME.report
-    def execute(self, initial_filter=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
+    def execute(self, initial_filter: FunctionType=BASIC_FILTER, min_input_len: int=1) -> Fingerprint:
         sample   = self.oracle.request(b'a'*min_input_len)
         base_len = len(sample)
         filtered = RUNTIME.search_primitives(initial_filter)
@@ -89,7 +84,7 @@ class Fingerprinter(object):
                 from samson.public_key.rsa import RSA
                 modifiers[RSA] = 1
 
-                log.debug(f'Max input size looks like RSA modulus')
+                log.debug('Max input size looks like RSA modulus')
 
             elif max_val_analysis.is_prime and max_val_analysis.is_uniform:
                 from samson.protocols.dragonfly import Dragonfly
@@ -102,7 +97,7 @@ class Fingerprinter(object):
                 modifiers[Dragonfly]     = dh_modifier
                 modifiers[ElGamal]       = dh_modifier
 
-                log.debug(f'Max input size looks like Diffie-Hellman modulus')
+                log.debug('Max input size looks like Diffie-Hellman modulus')
 
 
         matching = [match for match in filtered if block_size*8 in match.BLOCK_SIZE and match.IO_RELATION_TYPE == io_relation]
@@ -171,12 +166,12 @@ class Fingerprinter(object):
         if any([issubclass(match, BlockCipher) for match in matching]):
             from samson.block_ciphers.modes.ecb import ECB
 
-            log.debug(f'Block ciphers in candidates. Attempting to find possible block cipher modes')
+            log.debug('Block ciphers in candidates. Attempting to find possible block cipher modes')
             bc_modes = [prim for prim in filtered if issubclass(prim, BlockCipherMode) and not issubclass(prim, StreamingBlockCipherMode)]
 
             # Check for ECB
             if self.oracle.test_stateless_blocks(block_size):
-                log.info(f'Stateless blocks detected')
+                log.info('Stateless blocks detected')
                 bc_modes = [ECB]
 
             else:

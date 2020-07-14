@@ -291,4 +291,4 @@ class PKIAutoParser(object):
                         if encoder.check(buffer, passphrase=passphrase):
                             return encoder.decode(buffer, passphrase=passphrase)
 
-        raise ValueError(f"Unable to parse provided key.")
+        raise ValueError("Unable to parse provided key.")

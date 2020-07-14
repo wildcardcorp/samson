@@ -133,7 +133,7 @@ class MontgomeryPoint(RingElement):
         return self.curve
 
 
-    def __eq__(self, other: '') -> bool:
+    def __eq__(self, other: 'MontgomeryPoint') -> bool:
         return self.x == other.x and self.curve == other.curve
 
 

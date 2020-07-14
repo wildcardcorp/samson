@@ -1,5 +1,6 @@
 from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.encoding.pem import PEMEncodable
+from samson.math.general import is_prime
 
 class PKCS1DiffieHellmanParameters(PEMEncodable):
     """
@@ -13,7 +14,11 @@ class PKCS1DiffieHellmanParameters(PEMEncodable):
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
         items = bytes_to_der_sequence(buffer)
-        return len(items) == 2 and int(items[0]) != 0
+        try:
+            poss_p = int(items[0])
+            return len(items) == 2 and poss_p and is_prime(poss_p)
+        except:
+            return False
 
 
     @staticmethod

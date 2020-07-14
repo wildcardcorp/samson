@@ -1,6 +1,7 @@
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import Ring, left_expression_intercept
 from samson.math.general import gcd
+from fractions import Fraction
 
 
 class FractionFieldElement(FieldElement):
@@ -30,6 +31,10 @@ class FractionFieldElement(FieldElement):
         self.denominator = denominator
         self.field       = field
 
+        if self.ring.precision:
+            self.trim_to_precision(self.ring.precision)
+
+
 
     def __repr__(self):
         return f"<FractionFieldElement: numerator={self.numerator}, denominator={self.denominator}, ring={self.ring}>"
@@ -55,12 +60,49 @@ class FractionFieldElement(FieldElement):
 
         if not self:
             return oo
-        
+
         return self.numerator.valuation(p) - self.denominator.valuation(p)
 
 
-    def sqrt(self) -> 'RingElement':
-        return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+    def sqrt(self) -> 'FractionFieldElement':
+        if type(self.ring.ring).__name__ == 'IntegerRing':
+            from samson.math.general import kth_root_qq
+            return kth_root_qq(self, 2)
+        else:
+            return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+
+
+    def trim_to_precision(self, precision: 'FractionFieldElement') -> 'FractionFieldElement':
+        """
+        WARNING: Side effect based.
+
+        Attempts to trim self so that the error is less than `precision`.
+
+        Parameters:
+            precision (FractionFieldElement): Element to determine if trim is acceptable.
+        """
+        if self.numerator != self.denominator and self.ring.ring.one not in [self.numerator, self.denominator]:
+            if self.numerator > self.denominator:
+                q,r = divmod(self.numerator, self.denominator)
+                den = self.ring.ring.one
+                num = q
+
+                compare_num = r
+                compare_den = abs(q)
+
+
+            elif self.numerator < self.denominator:
+                q,r = divmod(self.denominator, self.numerator)
+                num = self.ring.ring.one
+                den = q
+
+                compare_num = r
+                compare_den = self.denominator
+
+            if compare_num * precision.denominator < precision.numerator * compare_den:
+                self.numerator   = num
+                self.denominator = den
+
 
 
     @left_expression_intercept
@@ -104,7 +146,7 @@ class FractionFieldElement(FieldElement):
 
     def __int__(self):
         return int(self.numerator) // int(self.denominator)
-    
+
     def __round__(self):
         q,r = divmod(self.numerator, self.denominator)
         R = self.ring.ring
@@ -145,8 +187,9 @@ class FractionField(Field):
             ring     (Ring): Underlying ring.
             simplify (bool): Whether or not to simplify the fraction.
         """
-        self.ring     = ring
-        self.simplify = simplify
+        self.ring      = ring
+        self.simplify  = simplify
+        self.precision = None
 
         self.zero = FractionFieldElement(self.ring.zero, self.ring.one, self)
         self.one  = FractionFieldElement(self.ring.one, self.ring.one, self)
@@ -171,6 +214,13 @@ class FractionField(Field):
     @property
     def order(self) -> int:
         return self.ring.order**2
+    
+
+    def set_precision(self, precision: FractionFieldElement):
+        """
+        Sets the element used for determine whether a trim is acceptable.
+        """
+        self.precision = precision
 
 
     def random(self, size: int=None) -> FractionFieldElement:
@@ -211,7 +261,6 @@ class FractionField(Field):
             return other
 
         elif type(other) is float:
-            from fractions import Fraction
             frac = Fraction(other)
             result = (self.ring.coerce(frac.numerator), self.ring.coerce(frac.denominator))
 

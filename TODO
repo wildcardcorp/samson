@@ -36,16 +36,14 @@ X   New IoT ciphers
     X   NSA Speck
 
 
-
 X   Increase performance
     X   Function level imports are EXPENSIVE (left_expression_intercept)
     X   Weierstrass curves
-    X   Polynomial mul/div (NTT-FFT)
+    X   Polynomial mul/div (SGSS-FFT)
     X   Schoof's algorithm
     X   LLL
 
 X   DualEC is incredibly slow
-X   LCG.crack_truncated crashes during LLL with lots of samples (50+; related to max precision in Python)
 
 
 X   Composable exploits and ACE
@@ -86,7 +84,6 @@ X   More protocols
 
 
 X   OCB3
-X   Fermat pseudoprime generation
 X   Lucas pseudoprime generation
 X   Unify Diffie-Hellmans
 

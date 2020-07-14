@@ -1,5 +1,6 @@
 from samson.encoding.general import export_der, bytes_to_der_sequence
 from samson.encoding.pem import PEMEncodable
+from samson.math.general import is_prime
 
 class PKCS1RSAPublicKey(PEMEncodable):
     DEFAULT_MARKER = 'RSA PUBLIC KEY'
@@ -10,7 +11,8 @@ class PKCS1RSAPublicKey(PEMEncodable):
     def check(buffer: bytes, **kwargs) -> bool:
         try:
             items = bytes_to_der_sequence(buffer)
-            return len(items) == 2
+            poss_p = int(items[0])
+            return len(items) == 2 and not is_prime(poss_p)
         except Exception as _:
             return False
 

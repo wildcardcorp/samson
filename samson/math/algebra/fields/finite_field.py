@@ -87,7 +87,7 @@ class FiniteField(Field):
         >>> F = FiniteField(2, 8)
         >>> assert F[5] / F[5] == F(1)
         >>> F[x]/(x**7 + x**2 + 1)
-        <QuotientRing: ring=F_(2**8)[x], quotient=<Polynomial: x**7 + x**2 + F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>>
+        <QuotientRing: ring=F_(2**8)[x], quotient=x**7 + x**2 + 1>
 
     """
 

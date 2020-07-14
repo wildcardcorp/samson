@@ -1,7 +1,6 @@
 from samson.core.attack_model import AttackModel
 from samson.oracles.known_plaintext_oracle import KnownPlaintextOracle
 from samson.oracles.oracle import Oracle
-from samson.utilities.general import binary_search
 from samson.utilities.exceptions import *
 from samson.core.metadata import IORelationType
 from samson.utilities.bytes import Bytes

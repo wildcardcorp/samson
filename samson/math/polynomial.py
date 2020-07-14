@@ -1,7 +1,8 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, factor as factor_int
+from samson.math.general import square_and_mul, gcd, factor as factor_int,kth_root
 from samson.math.sparse_vector import SparseVector
-from samson.utilities.general import add_or_increment
+from samson.utilities.general import add_or_increment, binary_search
+from samson.math.factors import Factors
 from types import FunctionType
 
 class Polynomial(RingElement):
@@ -125,30 +126,189 @@ class Polynomial(RingElement):
             RingElement: Evaluation at `x`.
         """
         coeffs   = self.coeffs
-        c0       = coeffs[-1]
+        c0       = coeffs[-1]*x
         last_idx = coeffs.last()
         idx      = None
 
-        for idx, coeff in self.coeffs.values.items()[:-1][::-1]:
-            c0 = coeff + c0*x**(last_idx-idx)
+        for idx, coeff in coeffs.values.items()[:-1][::-1]:
+            if not idx:
+                continue
+
+            c0 = (coeff + c0)*x**(last_idx-idx)
             last_idx = idx
 
-    
         # Handle the case where there's only one coeff
         if idx is None:
-            c0 *= x**last_idx
+            c0 *= x**(last_idx-1)
+
+        elif last_idx-idx:
+            c0 *= x**(last_idx-1-idx)
+
+        c0 += coeffs[0]
 
         return c0
-    
+
+
+    def newton(self, x0, max_tries: int=10000):
+        df = self.derivative()
+        tries = 0
+        while tries < max_tries:
+            a = self(x0)
+            b = df(x0)
+
+            if not a or not b:
+                break
+
+            a_b = a//b
+
+            if not a_b:
+                break
+
+            x0 -= a_b
+            tries += 1
+        
+        return x0
+
+
+    def _roots_ZZ_newtons(self):
+        abs_zero = abs(self.coeffs[0])
+
+        d_root = kth_root(abs_zero, self.degree())
+        d_1    = kth_root(abs_zero, self.degree()+1)
+        d_m_1  = kth_root(abs_zero, self.degree()-1)
+
+        res = [[r, -r] for r in [d_root, d_1, d_m_1]]
+
+        for r in [item for sublist in res for item in sublist]:
+            k = self.newton(r)
+
+            if not self(k):
+                return k
+
+            # Empirically, using Netwon's method over ZZ showed if `k` isn't a root,
+            # `k-1` might be.
+            if not self(k-1):
+                return k-1
+
+
+    def _roots_ZZ_binary_search(self):
+        abs_zero = abs(self.coeffs[0])
+        zero     = self.coeff_ring.zero
+        d_root   = kth_root(abs_zero, self.degree())
+
+        search_funcs = [
+            lambda curr: self(curr) < zero,
+            lambda curr: self(-curr) < zero,
+            lambda curr: self(curr) > zero,
+            lambda curr: self(-curr) > zero
+        ]
+
+        for func in search_funcs:
+            for section in range(1, self.degree()+1):
+                k = binary_search(func, d_root**section)
+
+                if not self(k):
+                    return k
+
+
+                if not self(-k):
+                    return -k
+
+
+    def _roots_ZZ_factor(self):
+        factors = (self.coeffs[0] // self.LC()).factor()
+
+        if -self.coeff_ring.one in factors:
+            factors.remove(-self.coeff_ring.one)
+
+        results = []
+
+        i = 1
+        p = self
+        while not p.is_irreducible() and i < len(factors.expand()):
+            last = len(factors)
+            found = False
+
+            # Try all linear combinations of factors
+            for facs in factors.combinations(i):
+                if not facs:
+                    return results
+
+                num = facs.recombine()
+                is_root = not self(num)
+                is_neg  = not self(-num)
+
+                if is_root or is_neg:
+                    found = True
+
+                    if is_neg:
+                        num = -num
+
+                    results.append(num)
+                    
+                    # Remove factors from pool
+                    factors = factors.difference(facs)
+                    p //= p.symbol - num
+                    break
+            
+            if not found:
+                i += 1
+
+        if not p.is_irreducible() and p != self:
+            results.extend(p.roots())
+        return results
+
+
+
+    def roots(self) -> list:
+        deg        = self.degree()
+        coeff_zero = self.coeffs[0]
+
+        # Handle degree zero
+        if deg == 0:
+            return []
+
+        # Handle degree one
+        elif deg == 1:
+            return [-coeff_zero]
+
+        # Doesn't have a constant; zero is a root
+        elif not coeff_zero:
+            k = 0
+
+        elif self.is_irreducible():
+            return []
+
+        else:
+            # Integer Netwon's
+            k = self._roots_ZZ_newtons()
+
+            # Binary search over different sections
+            if not k:
+                k = self._roots_ZZ_binary_search()
+
+            # Last resort... factor
+            if not k:
+                return self._roots_ZZ_factor()
+
+        if not self(k):
+            x = self.symbol
+            results = [k]
+            results.extend((self // (x-k)).roots())
+        else:
+            results = []
+        return results
+
+
 
     def valuation(self):
         from samson.math.algebra.symbols import oo
 
         if not self.coeffs:
             return oo
-        
+
         return min(self.coeffs)
-    
+
 
 
     def hensel_lift(self, p, a):
@@ -238,7 +398,7 @@ class Polynomial(RingElement):
             >>> from samson.math.symbols import Symbol
             >>> x = Symbol('x')
             >>> ZZ[x](x**4 + 2*x**2).trunc_kth_root(2)
-            <Polynomial: x**2 + ZZ(2)*x, coeff_ring=ZZ>
+            <Polynomial: x**2 + 2*x, coeff_ring=ZZ>
 
         """
         return self._create_poly([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k])
@@ -260,7 +420,7 @@ class Polynomial(RingElement):
             >>> x = Symbol('x')
             >>> _ = ZZ[x]
             >>> (5*x**5 + 4*x**4 + 3*x**3 + 2*x**2 + x + 1).trunc(3)
-            <Polynomial: ZZ(2)*x**5 + x**4 + ZZ(2)*x**2 + x + ZZ(1), coeff_ring=ZZ>
+            <Polynomial: 2*x**5 + x**4 + 2*x**2 + x + 1, coeff_ring=ZZ>
 
         """
         return self._create_poly([(idx, coeff % mod) for idx, coeff in self.coeffs])
@@ -282,7 +442,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> poly = 3*x**3+x**7-x**18
             >>> poly.square_free_decomposition()
-            {<Polynomial: x**15 + ZZ(-1)*x**4 + ZZ(-3), coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
+            {<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
         """
         f = self.monic()
@@ -466,32 +626,117 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
             https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
             https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
+            https://www.imomath.com/index.php?options=623&lmm=0#:~:text=Table%20of%20contents)-,Irreducibility,nonconstant%20polynomials%20with%20integer%20coefficients.&text=Every%20quadratic%20or%20cubic%20polynomial,3%E2%88%924x%2B1.
         """
-        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime
+        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime, batch_gcd, kth_root
         from samson.math.algebra.rings.integer_ring import ZZ
 
         n = self.degree()
 
+        # Either constant or degree one
         if n <= 1:
             return True
 
-        # If dealing with the integers, we can convert into FF.
-        #   From Wikipedia:
-        #   "The irreducibility of a polynomial over the integers Z
-        #   is related to that over the field F_p of `p` elements
-        #   (for a prime `p`). In particular, if a univariate polynomial `f` over Z
-        #   is irreducible over F_p for some prime `p` that does not
-        #   divide the leading coefficient of `f` (the coefficient of the highest power of the variable),
-        #   then f is irreducible over Z."
+        # Divisible by indeterminate
+        if not self.coeffs[0]:
+            return False
+
+        one  = self.coeff_ring.one
+        zero = self.coeff_ring.zero
+
+        # Divisible by element
+        if min(batch_gcd(self.coeffs.values.values())) > one:
+            return False
+
+
         if self.coeff_ring == ZZ:
-            lc = int(self.LC())
+            poly = self
+            if self.LC() < one:
+                poly = -self
+
+            coeff_zero = -poly.coeffs[0]
+
+            # If all coefficients are >0, then you'll never touch zero
+            if all(c > zero for c in poly.coeffs.values.values()):
+                return True
+
+            # Poly's of form x**n - c
+            if poly.coeffs.sparsity == 2:
+                is_neg = coeff_zero < zero
+
+                # There doesn't exist a square root of a negative number
+                # (x**4+16).is_irreducible() == True
+                if not n % 2 and is_neg:
+                    return True
+
+                # Check if a root exists of c0
+                root = kth_root(abs(coeff_zero), n)
+                if is_neg:
+                    root = -root
+
+                if root**n == coeff_zero:
+                    # (x**4-16).is_irreducible() == False
+                    if poly.LC() == one:
+                        return False
+
+                    # If LC is not one, then we have to check if that has a root
+                    # whose exponent divides degree.
+                    else:
+                        for fac in ZZ(n).factor():
+                            fac = int(fac)
+                            # (9*x**4-16).is_irreducible() == False
+                            if kth_root(poly.LC(), fac)**fac == poly.LC():
+                                return False
+                        
+                        # (3*x**4-16).is_irreducible() == True
+                        return True
+
+
+                else:
+                    # Coeff zero is not a root of degree
+                    # (x**4-15).is_irreducible() == True
+                    return True
+
+            # Eisenstein’s Criterion
+            # facs = self.coeffs[0].factor()
+            # for fac in facs:
+            #     # p∣a0,a1,…,ak,p∤ak+1 and p2∤a0, where k = n-1
+            #     if not sum([c % fac for c in self.coeffs.values.values()[:-1]]):
+            #         if self.LC() % fac and self.coeffs[0] % (fac**2):
+            #             return True
+
+            # Eisenstein’s Criterion
+            # NOTE: We use 'batch_gcd' to cut down on the factors we have to consider
+            # and hopefully break apart large factors.
+            p_facs = [g.factor() for g in batch_gcd(poly.coeffs.values.values()[:-1]) if g != ZZ.one]
+            p_facs = sum(p_facs, Factors())
+            for fac in p_facs:
+                # p∣a0,a1,…,ak,p∤ak+1 and p2∤a0, where k = n-1
+                if not sum([c % fac for c in poly.coeffs.values.values()[:-1]]):
+                    if poly.LC() % fac and coeff_zero % (fac**2):
+                        return True
+
+
+
+            # If dealing with the integers, we can convert into FF.
+            #   From Wikipedia:
+            #   "The irreducibility of a polynomial over the integers Z
+            #   is related to that over the field F_p of `p` elements
+            #   (for a prime `p`). In particular, if a univariate polynomial `f` over Z
+            #   is irreducible over F_p for some prime `p` that does not
+            #   divide the leading coefficient of `f` (the coefficient of the highest power of the variable),
+            #   then f is irreducible over Z."
+
+            # WARNING: This proves a poly over ZZ is irreducible if it's irreducible in F_p.
+            # The converse is NOT true. This may say a poly over ZZ is reducible when it is not.
+            lc = int(poly.LC())
             p  = 2
 
             if lc != 1:
-                p = find_coprime(lc, range(1, lc**2))
+                p = find_coprime(lc, range(2, lc**2))
 
             field = ZZ/ZZ(p)
-            poly  = self.embed_coeffs(field)
+            poly  = poly.embed_coeffs(field)
         else:
             poly = self
 
@@ -599,7 +844,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> p = x**4 + x**2 + 1
             >>> p.embed_coeffs(ZZ/ZZ(2))
-            <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+            <Polynomial: x**4 + x**2 + 1, coeff_ring=ZZ/ZZ(2)>
 
         """
         return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs})
@@ -618,7 +863,7 @@ class Polynomial(RingElement):
             >>> _ = (ZZ/ZZ(2))[x]
             >>> p = x**4 + x**2 + 1
             >>> p.peel_coeffs()
-            <Polynomial: x**4 + x**2 + ZZ(1), coeff_ring=ZZ>
+            <Polynomial: x**4 + x**2 + 1, coeff_ring=ZZ>
 
         """
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs})
@@ -777,7 +1022,10 @@ class Polynomial(RingElement):
         elif self.degree() > other.degree():
             return False
         
-        for idx, coeff in self.coeffs.values.items()[::-1]:
+        keys = set(self.coeffs.values.keys()).union(other.coeffs.values.keys())
+
+        for idx in keys:
+            coeff       = self.coeffs[idx]
             other_coeff = other.coeffs[idx]
 
             if other_coeff != coeff:

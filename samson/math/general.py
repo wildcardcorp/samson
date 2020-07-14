@@ -1,10 +1,19 @@
 from samson.utilities.general import rand_bytes, add_or_increment
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
+from samson.math.factors import Factors
+from functools import reduce
 from itertools import chain
 from types import FunctionType
 from copy import deepcopy
 from enum import Enum
 import math
+
+# Resolve circular dependencies while reducing function-level imports
+from samson.auxiliary.lazy_loader import LazyLoader
+integer_ring = LazyLoader('integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+poly         = LazyLoader('poly', globals(), 'samson.math.polynomial')
+mat          = LazyLoader('mat', globals(), 'samson.math.matrix')
+dense        = LazyLoader('dense', globals(), 'samson.math.dense_vector')
 
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
@@ -24,10 +33,11 @@ def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
         <Polynomial: x**6 + x**5 + x**2, coeff_ring=ZZ/ZZ(2)>
 
         >>> int_to_poly(128, 3)
-        <Polynomial: x**4 + x**3 + ZZ(2)*x**2 + ZZ(2), coeff_ring=ZZ/ZZ(3)>
+        <Polynomial: x**4 + x**3 + 2*x**2 + 2, coeff_ring=ZZ/ZZ(3)>
 
     """
-    from samson.math.all import ZZ, Polynomial
+    Polynomial = poly.Polynomial
+    ZZ = integer_ring.ZZ
     base_coeffs = []
 
     # Use != to handle negative numbers
@@ -199,12 +209,12 @@ def xgcd(a: int, b: int) -> (int, int, int):
         >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> xgcd(P(x**2), P(x**5))
-        (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(1)), coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
+        (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: 1, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
 
     References:
         https://anh.cs.luc.edu/331/notes/xgcd.pdf
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
+    ZZ = integer_ring.ZZ
 
     # For convenience
     peel_ring = False
@@ -287,7 +297,7 @@ def mod_inv(a: int, n: int) -> int:
         https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
         https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
+    ZZ = integer_ring.ZZ
 
     # For convenience
     peel_ring = False
@@ -333,7 +343,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> square_and_mul(P(x+5), 6)
-        <Polynomial: x**6 + ZZ(30)*x**5 + ZZ(121)*x**4 + ZZ(87)*x**3 + ZZ(104)*x**2 + ZZ(81)*x + ZZ(4), coeff_ring=ZZ/ZZ(127)>
+        <Polynomial: x**6 + 30*x**5 + 121*x**4 + 87*x**3 + 104*x**2 + 81*x + 4, coeff_ring=ZZ/ZZ(127)>
 
     """
     invert = False
@@ -375,7 +385,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> fast_mul(P(x+5), 5)
-        <Polynomial: ZZ(5)*x + ZZ(25), coeff_ring=ZZ/ZZ(127)>
+        <Polynomial: 5*x + 25, coeff_ring=ZZ/ZZ(127)>
 
     """
     s = s if s is not None else a.ring.zero
@@ -398,10 +408,10 @@ def kth_root(n: int, k: int) -> int:
     Parameters:
         n (int): Integer.
         k (int): Root (e.g. 2).
-    
+
     Returns:
         int: `k`-th integer root of `n
-    
+
     Examples:
         >>> from samson.math.general import kth_root
         >>> kth_root(1000, 3)
@@ -502,10 +512,10 @@ def crt(residues: list) -> (object, object):
         >>> n = P[17]
         >>> residues = [(P/mod)(n) for mod in moduli]
         >>> crt(residues)
-        (<Polynomial: x**4 + ZZ(1), coeff_ring=ZZ/ZZ(2)>, <Polynomial: x**6 + x**4 + x + ZZ(1), coeff_ring=ZZ/ZZ(2)>)
+        (<Polynomial: x**4 + 1, coeff_ring=ZZ/ZZ(2)>, <Polynomial: x**6 + x**4 + x + 1, coeff_ring=ZZ/ZZ(2)>)
 
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
+    ZZ = integer_ring.ZZ
 
     peel_ring = False
     if type(residues[0]) is tuple:
@@ -545,7 +555,7 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
 
     Returns:
         QuotientElement: Computed `x` over composite modulus.
-    
+
     Examples:
         >>> from samson.math.general import crt_lll
         >>> from samson.math.all import ZZ
@@ -553,27 +563,22 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
         >>> rings = [ZZ/ZZ(quotient) for quotient in [229, 246, 93, 22, 408]]
         >>> crt_lll([r(x) for r in rings])
         <QuotientElement: val=684250860, ring=ZZ/ZZ(1306272792)>
-
+    
+    References:
+        https://grocid.net/2016/08/11/solving-problems-with-lattice-reduction/
     """
-    from samson.math.all import QQ, ZZ, Matrix
-    from functools import reduce
-
-    # Calculate composite modulus
-    L = reduce(int.__mul__, [int(r.ring.quotient) for r in residues], 1)
-
+    from samson.math.all import QQ
+    ZZ = integer_ring.ZZ
+    Matrix = mat.Matrix
 
     # Remove redundant subgroups to minimize result
     if remove_redundant:
-        redundant_subgroup_residues = {}
-
-        for r in residues:
-            for fac in factor(r.ring.quotient.val):
-                add_or_increment(redundant_subgroup_residues, ((r.val % fac, fac)))
-
-
-        # Divide out all but one
-        for (_res, mod), count in redundant_subgroup_residues.items():
-            L //= mod**(count-1)
+        reduc_func = lcm
+    else:
+        reduc_func = int.__mul__
+    
+    # Calculate composite modulus
+    L = reduce(reduc_func, [int(r.ring.quotient) for r in residues], 1)
 
 
     # Build the problem matrix
@@ -588,7 +593,7 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
 
 
     B = A.LLL(0.99)
- 
+
     return (ZZ/ZZ(L))((B[-1, -2] * L).numerator)
 
 
@@ -825,7 +830,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     References:
         https://rosettacode.org/wiki/Gaussian_elimination#Python
     """
-    from samson.math.matrix import Matrix
+    Matrix = mat.Matrix
 
     A = deepcopy(system_matrix).row_join(rhs)
 
@@ -882,18 +887,17 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
         >>> from samson.math.all import QQ
         >>> from samson.math.matrix import Matrix
         >>> from samson.math.general import gram_schmidt
-        >>> out = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
+        >>> out, _ = gram_schmidt(Matrix([[3,1],[2,2]], QQ))
         >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-        [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
+        [[3.0, 1.0], [-0.4, 1.2]]
 
     References:
         https://github.com/sagemath/sage/blob/854f9764d14236110b8d7f7b35a7d52017e044f8/src/sage/modules/misc.py
         https://github.com/sagemath/sage/blob/1d465c7e3c82110d39034f3ca7d9d120f435511e/src/sage/matrix/matrix2.pyx
 
     """
-    from samson.math.matrix import Matrix
-    from samson.math.dense_vector import DenseVector
-    from functools import reduce
+    Matrix = mat.Matrix
+    DenseVector = dense.DenseVector
 
     R = matrix.coeff_ring
     n = matrix.num_rows
@@ -953,35 +957,32 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
         >>> lll(m)
         <Matrix: rows=
-        [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
-        [Frac(ZZ)(ZZ(-2)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(4)/ZZ(1))]>
+        [ 3,  2,  1,  0]
+        [-2,  0,  2,  4]>
 
     References:
         https://github.com/orisano/olll/blob/master/olll.py
         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
     """
-    from samson.utilities.exceptions import CoercionException
     from samson.math.all import QQ
-    from samson.math.matrix import Matrix
-    from samson.math.dense_vector import DenseVector
-    from samson.math.algebra.fields.fraction_field import FractionField
+    Matrix = mat.Matrix
+    DenseVector = dense.DenseVector
 
-    def matrix_to_vecs(matrix):
-        return [DenseVector(row) for row in matrix.rows]
 
     def vecs_to_matrix(vecs):
         return Matrix([vec.values for vec in vecs])
 
 
     # Prepare ring and basis
-    if type(in_basis.coeff_ring) is not FractionField:
+    if type(in_basis.coeff_ring).__name__ != 'FractionField':
+        from samson.math.algebra.fields.fraction_field import FractionField
         R = FractionField(in_basis.coeff_ring)
         in_basis = Matrix([[R(elem) for elem in row] for row in in_basis.rows], coeff_ring=R)
 
     R     = in_basis.coeff_ring
     basis = deepcopy(in_basis)
     n     = len(basis)
-    basis = matrix_to_vecs(basis)
+    basis = [DenseVector(row) for row in basis.rows]
 
     ortho, mu = gram_schmidt(in_basis)
 
@@ -1198,13 +1199,13 @@ def berlekamp_massey(output_list: list) -> 'Polynomial':
         >>> lfsr = FLFSR(3, x**25 + x**20 + x**12 + x**8  + 1)
         >>> outputs = [lfsr.generate() for _ in range(50)]
         >>> berlekamp_massey(outputs)
-        <Polynomial: x**25 + x**17 + x**13 + x**5 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+        <Polynomial: x**25 + x**17 + x**13 + x**5 + 1, coeff_ring=ZZ/ZZ(2)>
 
     References:
         https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
-    from samson.math.polynomial import Polynomial
+    Polynomial = poly.Polynomial
+    ZZ = integer_ring.ZZ
 
     n = len(output_list)
     b = [1] + [0] * (n - 1)
@@ -1525,7 +1526,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
-    from samson.math.algebra.rings.integer_ring import ZZ
+    ZZ = integer_ring.ZZ
 
     torsion_quotient_ring = ZZ/ZZ(l)
     psi = curve.division_poly(l)
@@ -1588,8 +1589,8 @@ def frobenius_trace(curve: object) -> int:
         -3
 
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
     from samson.math.symbols import Symbol
+    ZZ = integer_ring.ZZ
 
     search_range      = hasse_frobenius_trace_interval(curve.p)
     torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
@@ -2129,8 +2130,8 @@ def ecm(n: int, attempts: int=100) -> int:
 
     """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
-    from samson.math.polynomial import Polynomial
-    from samson.math.algebra.rings.integer_ring import ZZ
+    Polynomial = poly.Polynomial
+    ZZ = integer_ring.ZZ
 
     # For convenience
     peel_ring = False
@@ -2154,6 +2155,8 @@ def ecm(n: int, attempts: int=100) -> int:
 
         # Free factor!
         if is_poly and g.is_monic() and g > R.one or not is_poly and g > R.one:
+            if peel_ring:
+                g = g.val
             return g
 
         curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
@@ -2264,7 +2267,7 @@ def is_prime_power(n: int) -> (bool, int, int):
     return False, None, 0
 
 
-def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, limit: int=1000, visual: bool=False) -> list:
+def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, limit: int=1000, visual: bool=False, reraise_interrupt: bool=False) -> list:
     """
     Factors an integer `n` into its prime factors.
 
@@ -2273,7 +2276,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
         use_trial   (bool): Whether or not to use trial division.
         use_rho     (bool): Whether or not to use Pollard's rho factorization.
         use_ecm     (bool): Whether or not to use ECM factorization.
-        ecm_attempts (int): Maximum number of ECM attempts before giving up. Defaults to kth_root(n, 4).
+        ecm_attempts (int): Maximum number of ECM attempts before giving up.
         limit        (int): Upper limit of factors tried in trial division.
         visual      (bool): Whether or not to display progress bar.
 
@@ -2282,7 +2285,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
     
     Examples:
         >>> from samson.math.general import factor
-        >>> factor(26515460203326943826) == {2: 1, 3262271209: 1, 4063957057: 1} # equality because pytest sorts dicts weird
+        >>> dict(factor(26515460203326943826)) == {2: 1, 3262271209: 1, 4063957057: 1} # equality because pytest sorts dicts weird
         True
 
     """
@@ -2375,7 +2378,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                 add_or_increment(factors, n_fac)
                 progress_update(n_fac)
                 n //= n_fac
-            
+
                 n = check_perfect_powers(n)
 
 
@@ -2397,13 +2400,14 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
                     break
 
     except KeyboardInterrupt:
-        pass
+        if reraise_interrupt:
+            raise KeyboardInterrupt()
 
     progress_finish()
     if n != 1:
         add_or_increment(factors, n)
 
-    return factors
+    return Factors(factors)
 
 
 def is_primitive_root(a: int, p: int) -> bool:
@@ -2436,7 +2440,7 @@ def is_primitive_root(a: int, p: int) -> bool:
         True
 
     """
-    from samson.math.algebra.rings.integer_ring import ZZ
+    ZZ = integer_ring.ZZ
 
     Z_star = (ZZ/ZZ(p)).mul_group()
     a_star = Z_star(a)
@@ -2458,6 +2462,7 @@ def product(elem_list: list, return_tree=False) -> object:
     
     Examples:
         >>> from samson.math.general import product
+        >>> from samson.math.all import ZZ
         >>> product([ZZ(1), ZZ(2), ZZ(3)])
         <IntegerElement: val=6, ring=ZZ>
 
@@ -2576,3 +2581,53 @@ def is_sophie_germain_prime(p: int) -> bool:
 
 is_safe_prime = is_sophie_germain_prime
 
+
+def is_carmichael_number(n: int, factors: dict=None) -> bool:
+    """
+    Determines if `n` is a Carmichael number. A Carmichael number is a composible number that
+    passes the Fermat primality test for all bases coprime to it.
+
+    Parameters:
+        n        (int): Integer.
+        factors (dict): Factors of `n`.
+    
+    Returns:
+        bool: Whether or not `n` is a Carmichael number.
+
+    References:
+        https://en.wikipedia.org/wiki/Carmichael_number#Korselt's_criterion
+    """
+    factors = factors or factor(n, reraise_interrupt=True)
+    
+
+    if max(factors.values()) > 1 or len(factors) == 1:
+        return False
+    
+    return not any((n-1) % (p-1) for p in factors)
+
+
+
+def find_carmichael_number(min_bits: int=None, k: int=None) -> int:
+    """
+    Finds a Carmichael with a size of `min_bits` or initialized with `k`.
+
+    Parameters:
+        min_bits (int): Minimum size of number to find.
+        k        (int): Looping multiplier.
+
+    References:
+        https://en.wikipedia.org/wiki/Carmichael_number#Discovery
+    """
+    if min_bits:
+        # Take into account `k` three times and 6*12*18 is 11 bits
+        k = 2**((min_bits-11)//3)
+
+    while True:
+        a = 6*k+1
+        b = 12*k+1
+        c = 18*k+1
+
+        if all(is_prime(elem) for elem in [a, b, c]):
+            return a*b*c, (a, b, c)
+        
+        k += 1

@@ -1,5 +1,8 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
-from samson.math.general import totient
+from samson.math.general import totient, pohlig_hellman
+from samson.math.symbols import oo
+from samson.utilities.general import binary_search_unbounded
+from samson.utilities.exceptions import NotInvertibleException
 
 class MultiplicativeGroupElement(RingElement):
     """
@@ -25,17 +28,20 @@ class MultiplicativeGroupElement(RingElement):
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val * other.val, self.ring)
 
+
     @left_expression_intercept
     def __sub__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = self.ring.coerce(other)
         return MultiplicativeGroupElement(self.val / other.val, self.ring)
 
+
     def __mul__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = int(other)
-        if self.ring.order_cache:
-            other %= self.ring.order_cache
+        if self.ring.order and self.ring.order != oo:
+            other %= self.ring.order
 
         return MultiplicativeGroupElement(self.val ** other, self.ring)
+
 
     def __neg__(self) -> 'MultiplicativeGroupElement':
         return MultiplicativeGroupElement(~self.val, self.ring)
@@ -43,13 +49,22 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
-        from samson.math.general import pohlig_hellman
-
         g = self.ring.coerce(other)
-        return pohlig_hellman(g, self, self.ring.order)
+
+        if self.ring.order == oo:
+            k = binary_search_unbounded(lambda guess: g*guess < self)
+
+            if g*k == self:
+                return k
+            else:
+                raise NotInvertibleException("Logarithm not found", parameters={'g': g, 'k': k, 'h': self})
+        else:
+            return pohlig_hellman(g, self, self.ring.order)
+
 
 
     __floordiv__ = __truediv__
+
 
     def ordinality(self) -> int:
         return self.val.ordinality() - 1
@@ -76,7 +91,7 @@ class MultiplicativeGroup(Ring):
         >>> mul_ring = ring.mul_group()
         >>> g = mul_ring(2)
         >>> (g*a)*(g*b) # Perform Diffie-Hellman
-        <MultiplicativeGroupElement: val=ZZ(15), ring=ZZ/ZZ(53)*>
+        <MultiplicativeGroupElement: val=15, ring=ZZ/ZZ(53)*>
 
     """
 
@@ -102,7 +117,6 @@ class MultiplicativeGroup(Ring):
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
-        from samson.math.symbols import oo
 
         if not self.order_cache:
             if type(self.ring) is QuotientRing:

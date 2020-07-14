@@ -73,7 +73,7 @@ class DualEC(object):
             Q (WeierstrassPoint): Elliptical curve point `Q`.
             d              (int): Backdoor that relates Q to P.
             observed_out (bytes): Observed output from the compromised Dual EC generator.
-        
+
         Returns:
             list: List of possible internal states.
         """

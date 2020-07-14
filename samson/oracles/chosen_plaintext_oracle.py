@@ -30,7 +30,7 @@ class ChosenPlaintextOracle(Oracle):
         i       = min_input_len + 1
         io_diff = []
 
-        log.debug(f'Starting block size/output size testing')
+        log.debug('Starting block size/output size testing')
         while base_len == new_len and i < 64 or i < 32:
             sample  = self.request(b'a'*i)
             new_len = len(sample)

@@ -1,6 +1,5 @@
 from samson.prngs.lcg import LCG
 from samson.utilities.bytes import Bytes
-from samson.utilities.runtime import RUNTIME
 from tqdm import tqdm
 import unittest
 

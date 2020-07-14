@@ -79,7 +79,7 @@ def binary_search(func: FunctionType, max_int: int):
         max_int (int): Maximum integer to try.
     
     Returns:
-        int: Hidden value.
+        int: Index of hidden value.
     """
     start_idx = 0
     end_idx   = max_int
@@ -93,6 +93,25 @@ def binary_search(func: FunctionType, max_int: int):
             end_idx = current
 
     return end_idx
+
+
+def binary_search_unbounded(func: FunctionType):
+    """
+    Finds the upper bound and then performs binary search.
+
+    Parameters:
+        func (func): Function to compare the current value against the hidden value.
+    
+    Returns:
+        int: Index of hidden value.
+    """
+    current = 1
+
+    while True:
+        if func(current):
+            current *= 2
+        else:
+            return binary_search(func, current)
 
 
 def binary_search_list(in_list: list, value: object, key: FunctionType=lambda item: item, fuzzy: bool=False) -> int:

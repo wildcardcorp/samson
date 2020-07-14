@@ -1,7 +1,7 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import random_int_between, tonelli
+from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv
 
 
 class WeierstrassPoint(RingElement):
@@ -78,7 +78,6 @@ class WeierstrassPoint(RingElement):
         return WeierstrassPoint(self.x, -self.y, self.curve)
 
 
-    @left_expression_intercept
     def __add__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if self == self.curve.POINT_AT_INFINITY:
             return P2
@@ -103,19 +102,18 @@ class WeierstrassPoint(RingElement):
     def __radd__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self.__add__(P2)
 
-    @left_expression_intercept
     def __sub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self + (-P2)
 
     def __rsub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return -self + P2
 
-    @left_expression_intercept
     def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
-        from samson.math.general import pohlig_hellman
-
-        g = self.ring.coerce(other)
-        return pohlig_hellman(g, self, self.ring.order)
+        if type(other) is int:
+            return self*mod_inv(other, self.curve.q)
+        else:
+            g = self.ring.coerce(other)
+            return pohlig_hellman(g, self, self.ring.order)
 
 
     __floordiv__ = __truediv__
@@ -158,13 +156,12 @@ class WeierstrassCurve(Ring):
         self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
         self.zero = WeierstrassPoint(0, 0, self)
-        self.one  = self.G
 
 
 
     def __repr__(self):
         return f"<WeierstrassCurve: a={self.a}, b={self.b}, cardinality={self.cardinality_cache}, ring={self.ring}, G={(str(self.G_cache.x), str(self.G_cache.y)) if self.G_cache else self.G_cache}>"
- 
+
 
 
     def shorthand(self) -> str:
@@ -258,6 +255,11 @@ class WeierstrassCurve(Ring):
             self.G_cache = self.random()
 
         return self.G_cache
+
+
+    @property
+    def one(self):
+        return self.G
 
 
     @property

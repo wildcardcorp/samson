@@ -65,7 +65,7 @@ class Matrix(RingElement):
     @property
     def num_cols(self) -> int:
         return len(self.rows[0])
-    
+
 
     @property
     def cols(self) -> list:
@@ -83,9 +83,9 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).transpose()
             <Matrix: rows=
-            [ZZ(1), ZZ(4), ZZ(7)]
-            [ZZ(2), ZZ(5), ZZ(8)]
-            [ZZ(3), ZZ(6), ZZ(9)]>
+            [1, 4, 7]
+            [2, 5, 8]
+            [3, 6, 9]>
 
         """
         return Matrix([[self.rows[r][c] for r in range(self.num_rows)] for c in range(self.num_cols)], coeff_ring=self.coeff_ring, ring=self.ring)
@@ -141,9 +141,9 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix.fill(ZZ.zero, 3, 4)
             <Matrix: rows=
-            [ZZ(0), ZZ(0), ZZ(0), ZZ(0)]
-            [ZZ(0), ZZ(0), ZZ(0), ZZ(0)]
-            [ZZ(0), ZZ(0), ZZ(0), ZZ(0)]>
+            [0, 0, 0, 0]
+            [0, 0, 0, 0]
+            [0, 0, 0, 0]>
 
         """
         return Matrix([[value for c in range(cols or rows)] for r in range(rows)], coeff_ring=coeff_ring, ring=ring)
@@ -163,9 +163,9 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).apply_elementwise(lambda elem: elem**2)
             <Matrix: rows=
-            [ ZZ(1),  ZZ(4),  ZZ(9)]
-            [ZZ(16), ZZ(25), ZZ(36)]
-            [ZZ(49), ZZ(64), ZZ(81)]>
+            [ 1,  4,  9]
+            [16, 25, 36]
+            [49, 64, 81]>
 
         """
         return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
@@ -185,8 +185,8 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).row_join(Matrix([[5,6], [7,8]], ZZ))
             <Matrix: rows=
-            [ZZ(1), ZZ(2), ZZ(5), ZZ(6)]
-            [ZZ(3), ZZ(4), ZZ(7), ZZ(8)]>
+            [1, 2, 5, 6]
+            [3, 4, 7, 8]>
 
         """
         type_o = type(other)
@@ -213,10 +213,10 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).col_join(Matrix([[5,6], [7,8]], ZZ))
             <Matrix: rows=
-            [ZZ(1), ZZ(2)]
-            [ZZ(3), ZZ(4)]
-            [ZZ(5), ZZ(6)]
-            [ZZ(7), ZZ(8)]>
+            [1, 2]
+            [3, 4]
+            [5, 6]
+            [7, 8]>
 
         """
         type_o = type(other)
@@ -245,8 +245,8 @@ class Matrix(RingElement):
             >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
             >>> m.LLL()
             <Matrix: rows=
-            [ Frac(ZZ)(ZZ(3)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(1)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1))]
-            [Frac(ZZ)(ZZ(-2)/ZZ(1)),  Frac(ZZ)(ZZ(0)/ZZ(1)),  Frac(ZZ)(ZZ(2)/ZZ(1)),  Frac(ZZ)(ZZ(4)/ZZ(1))]>
+            [ 3,  2,  1,  0]
+            [-2,  0,  2,  4]>
     
         """
         return lll(self, delta)
@@ -265,9 +265,9 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import QQ
             >>> from samson.math.matrix import Matrix
-            >>> out = Matrix([[3,1],[2,2]], QQ).gram_schmidt()
+            >>> out, _ = Matrix([[3,1],[2,2]], QQ).gram_schmidt()
             >>> [[float(out[r][c]) for c in range(out.num_cols)] for r in range(out.num_rows)]
-            [[0.9486832980505138, 0.31622776601683794], [-0.31622776601683794, 0.9486832980505138]]
+            [[3.0, 1.0], [-0.4, 1.2]]
 
         """
         return gram_schmidt(self, full)
@@ -291,14 +291,12 @@ class Matrix(RingElement):
             >>> from samson.math.all import QQ, Matrix
             >>> Matrix([[4,4,4,4]]*4, QQ).normalize()
             <Matrix: rows=
-            [Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2))]
-            [Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2))]
-            [Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2))]
-            [Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2)), Frac(ZZ)(ZZ(1)/ZZ(2))]>
+            [1/2, 1/2, 1/2, 1/2]
+            [1/2, 1/2, 1/2, 1/2]
+            [1/2, 1/2, 1/2, 1/2]
+            [1/2, 1/2, 1/2, 1/2]>
 
         """
-        from math import sqrt
-
         magnitude = (self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one, rows=self.num_cols, cols=1))[0,0].sqrt()
         return self * ~magnitude
 

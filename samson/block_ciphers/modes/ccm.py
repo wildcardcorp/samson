@@ -4,7 +4,6 @@ from samson.macs.cbc_mac import CBCMAC
 from samson.core.primitives import EncryptionAlg, StreamingBlockCipherMode, Primitive, AuthenticatedCipher
 from samson.core.metadata import FrequencyType, SizeType, SizeSpec, EphemeralType, EphemeralSpec
 from samson.ace.decorators import register_primitive
-import hmac
 
 @register_primitive()
 class CCM(StreamingBlockCipherMode, AuthenticatedCipher):

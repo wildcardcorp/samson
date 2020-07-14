@@ -19,15 +19,20 @@ class SparseVector(object):
             else:
                 zero = 0
 
+        not_empty = len(items)
+
 
         if type(items) is dict:
             self.values = SortedDict({k:v for k,v in items.items() if v != zero})
+            length = list(items.keys())[-1] if not_empty else 0
 
         elif type(items) is list:
             if len(items) == 0 or type(items[0]) is tuple:
                 self.values = SortedDict([(k, v) for k,v in items if v != zero])
+                length = items[-1][0] if not_empty else 0
             else:
                 self.values = SortedDict({idx: value for idx, value in enumerate(items) if value != zero})
+                length = not_empty
 
         else:
             raise Exception("'items' must be dict or list")
@@ -39,7 +44,7 @@ class SparseVector(object):
 
         self.zero = zero
         self.allow_virtual_len = allow_virtual_len
-        self.virtual_len = self.last()+1 if self.values else 0
+        self.virtual_len = length
 
 
     def __repr__(self):
@@ -80,7 +85,7 @@ class SparseVector(object):
         Returns:
             int: Index of last element.
         """
-        return self.values.keys()[-1]
+        return self.values.keys()[-1] if self.values else 0
 
 
 
@@ -127,7 +132,6 @@ class SparseVector(object):
                 # Calculate 'new_vec' length
                 calcd_len = (req_stop - req_start) // (idx.step or 1)
                 new_vec.virtual_len = max(min(calcd_len, self.len()), 0)
-
 
                 return new_vec
             else:

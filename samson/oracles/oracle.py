@@ -43,7 +43,7 @@ class Oracle(object):
                 log.warning(f'Oracle returned ValueError. Reducing MAX_TEST_INPUT to 2^{int(math.log(max_int, 2))}')
                 continue
 
-            log.info(f'Oracle seems to take in arbitrary-sized inputs')
+            log.info('Oracle seems to take in arbitrary-sized inputs')
             break
 
 
@@ -53,7 +53,7 @@ class Oracle(object):
         max_val = -1
 
         if should_test_max:
-            log.debug(f'Starting max input testing')
+            log.debug('Starting max input testing')
 
             def search_func(n):
                 try:
@@ -72,6 +72,6 @@ class Oracle(object):
             log.info(f'Max input size: {round(math.log(max_val, 2), 1)} bits')
 
         else:
-            log.debug(f'Skipping max input testing')
+            log.debug('Skipping max input testing')
 
         return max_val

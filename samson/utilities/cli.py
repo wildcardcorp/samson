@@ -30,7 +30,6 @@ def start_repl():
     import IPython
     import sys
     from samson import VERSION
-    from samson.utilities.runtime import RUNTIME
     from traitlets.config import Config
 
     banner = f"""

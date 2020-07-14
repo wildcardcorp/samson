@@ -1,7 +1,12 @@
 from samson.math.general import fast_mul, square_and_mul
 from types import FunctionType
 from abc import ABC, abstractmethod
+from functools import wraps
 from samson.utilities.runtime import RUNTIME
+from samson.auxiliary.lazy_loader import LazyLoader
+
+poly = LazyLoader('poly', globals(), 'samson.math.polynomial')
+
 
 
 def try_poly_first(element: object, other: object, func: FunctionType) -> object:
@@ -15,8 +20,7 @@ def try_poly_first(element: object, other: object, func: FunctionType) -> object
     Returns:
         RingElement/None: The output of the Polynomial's function if possible.
     """
-    from samson.math.polynomial import Polynomial
-    if issubclass(type(other), Polynomial) and other.coeff_ring == element.ring:
+    if issubclass(type(other), poly.Polynomial) and other.coeff_ring == element.ring:
         return func(other, element)
 
 
@@ -25,13 +29,13 @@ def left_expression_intercept(func: FunctionType) -> object:
     Intercepts "left" operators to give Polynomials precedence so elements from the coefficient ring can be coerced.
     """
 
+    @wraps(func)
     def poly_build(*args, **kwargs):
         if RUNTIME.enable_poly_intercept:
-            from samson.math.polynomial import Polynomial
             try:
                 name = func.__name__
                 name = '__r' + name[2:]
-                poly_res = try_poly_first(*args, **kwargs, func=getattr(Polynomial, name))
+                poly_res = try_poly_first(*args, **kwargs, func=getattr(poly.Polynomial, name))
 
                 if poly_res is not None:
                     return poly_res
@@ -154,16 +158,14 @@ class Ring(ABC):
     def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         if element.ring != self:
-            raise RuntimeError(f"'element' must be an element of the ring")
+            raise RuntimeError("'element' must be an element of the ring")
 
         return QuotientRing(element, self)
 
 
     def __getitem__(self, x: int) -> 'RingElement':
-        from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-        from samson.math.symbols import Symbol
-
-        if type(x) is Symbol:
+        if type(x).__name__ == 'Symbol':
+            from samson.math.algebra.rings.polynomial_ring import PolynomialRing
             return PolynomialRing(self, x)
         else:
             return self.element_at(x)
@@ -184,7 +186,6 @@ class RingElement(ABC):
 
 
     def __str__(self):
-        from samson.utilities.runtime import RUNTIME
         return RUNTIME.default_short_printer(self)
 
     def __hash__(self) -> int:
@@ -257,7 +258,7 @@ class RingElement(ABC):
 
     def __int__(self) -> int:
         return int(self.val)
-    
+
 
     def __abs__(self) -> 'RingElement':
         return self if self >= self.ring.zero else -self
@@ -278,10 +279,9 @@ class RingElement(ABC):
         if type_o is int:
             return fast_mul(self, other)
 
-        # This is like a bajillion times faster than importing Poly at the top
+        # This is like a bajillion times faster than importing Poly
         elif type_o.__name__ in ['Polynomial', 'Symbol']:
-            from samson.math.polynomial import Polynomial
-            return try_poly_first(self, other, Polynomial.__rmul__)
+            return try_poly_first(self, other, poly.Polynomial.__rmul__)
 
 
     def is_invertible(self) -> bool:
@@ -349,16 +349,15 @@ class RingElement(ABC):
             >>> F = FF(2, 8)
             >>> R = F/F[11]
             >>> R[5].get_ground()
-            <Polynomial: x**2 + ZZ(1), coeff_ring=ZZ/ZZ(2)>
+            <Polynomial: x**2 + 1, coeff_ring=ZZ/ZZ(2)>
 
         """
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.algebra.fields.fraction_field import FractionFieldElement
-        from samson.math.polynomial import Polynomial
 
-        if type(self) in [IntegerElement, Polynomial, FractionFieldElement]:
+        if type(self) in [IntegerElement, poly.Polynomial, FractionFieldElement]:
             return self
-        
+
         else:
             return self.val.get_ground()
 
@@ -424,6 +423,7 @@ class RingElement(ABC):
             dict: Dictionary of factors.
         """
         from samson.math.general import ecm
+        from samson.math.factors import Factors
         from samson.analysis.general import count_items
 
         factors = []
@@ -438,11 +438,11 @@ class RingElement(ABC):
 
         except KeyboardInterrupt:
             pass
-        
+
         if n != self.ring.one:
             factors.append(n)
 
-        return count_items(factors)
+        return Factors(count_items(factors))
 
 
 

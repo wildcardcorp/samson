@@ -11,9 +11,9 @@ class MatrixRing(Ring):
         >>> M = MatrixRing(3, ZZ)
         >>> M.one * 5
         <Matrix: rows=
-        [ZZ(5), ZZ(0), ZZ(0)]
-        [ZZ(0), ZZ(5), ZZ(0)]
-        [ZZ(0), ZZ(0), ZZ(5)]>
+        [5, 0, 0]
+        [0, 5, 0]
+        [0, 0, 5]>
 
     """
 
