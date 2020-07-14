@@ -3,6 +3,7 @@ from samson.math.general import square_and_mul, gcd, factor as factor_int
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
 from types import FunctionType
+import itertools
 
 class Polynomial(RingElement):
 
@@ -212,14 +213,17 @@ class Polynomial(RingElement):
         return self.LC() == self.coeff_ring.one
 
 
-    def derivative(self) -> 'Polynomial':
+    def derivative(self, n: int=1) -> 'Polynomial':
         """
         Returns the derivative of the Polynomial.
 
         Returns:
             Polynomial: Derivative of self.
         """
-        return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0])
+        if n <= 0:
+            return self
+        else:
+            return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0]).derivative(n-1)
 
 
     def trunc_kth_root(self, k: int) -> 'Polynomial':
@@ -402,11 +406,34 @@ class Polynomial(RingElement):
 
         f_quot   = f.ring / f
         if self.coeff_ring.order != oo:
-            q = self.coeff_ring.order
-            if not subgroup_divisor:
-                subgroup_divisor = [f for f in factor_int((q - 1))][0]
+            q   = self.coeff_ring.order
+            q_1 = q - 1
 
-            exponent = (q - 1) // subgroup_divisor
+            # Finite fields must be in the form p^k where `p` is prime and `k` >= 1.
+            # If `p` is an odd prime, then 2|p^k-1.
+            # This follows since an odd number times an odd number (e.g. itself)
+            # produces an odd number.
+
+            # If p is 2, then things a bit more complicated. Luckily for us,
+            # it's very patterned.
+
+            # If 2|k, then 3|p^k-1.
+            # If 3|k, then 7|p^k-1.
+            # If 5|k, then 31|p^k-1.
+
+            # In other words, if `k` is composite, then factors of 2^k-1 include the factors of
+            # 2^p_i-1 for where `p_i` represents a factor of `k`.
+            if not subgroup_divisor:
+                # Try trial division first
+                subgroup_divisor = list(factor_int(q_1, use_rho=False))[0]
+
+                # Didn't find a factor using trial division
+                # `q` must be 2^k where `k` is odd and not divisible by primes under 41.
+                # 2^41-1 is the first composite number with its smallest factor greater than 1000.
+                if subgroup_divisor == q_1:
+                    subgroup_divisor = list(factor_int(q_1, use_trial=False))[0]
+
+            exponent = q_1 // subgroup_divisor
 
         one   = self.ring.one
         bases = frobenius_monomial_base(f)
@@ -540,9 +567,27 @@ class Polynomial(RingElement):
         vals = list(self.coeffs.values.values())
         content = vals[0]
         for val in vals[1:]:
-            content = gcd(content, val)
+            content = content.gcd(val)
 
         return content
+
+
+    def roots(self):
+        from samson.math.general import crt
+
+        R = self.coeff_ring
+        if R.is_field():
+            facs = self.factor()
+            return [-fac.coeffs[0] for fac in facs.keys() if fac.degree() == 1]
+        else:
+            all_facs = []
+            q_facs   = R.quotient.factor()
+            for fac in q_facs:
+                sub_facs = self.peel_coeffs().embed_coeffs(R.ring/R.ring(fac)).factor()
+                all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
+            
+            return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
+
 
 
     def _fac_ZZ(self):
@@ -551,12 +596,23 @@ class Polynomial(RingElement):
 
         Internal use.
 
+        Examples:
+            >>> from samson.math.all import ZZ, Symbol
+            >>> x = Symbol('x')
+            >>> P = ZZ[x]
+            >>> p = 1296*x**3 + 3654*x**2 + 3195*x + 812
+            >>> p.factor()
+            {<Polynomial: 24*x + 29, coeff_ring=ZZ>: 1, <Polynomial: 9*x + 4, coeff_ring=ZZ>: 1, <Polynomial: 6*x + 7, coeff_ring=ZZ>: 1}
+
+            >>> p = (x+5)*(3*x-7)*(x**4+1)
+            >>> p.factor()
+            {<Polynomial: 3*x + -7, coeff_ring=ZZ>: 1, <Polynomial: x + 5, coeff_ring=ZZ>: 1, <Polynomial: x**4 + 1, coeff_ring=ZZ>: 1}
+
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
         """
-        from samson.math.general import next_prime
+        from samson.math.general import next_prime, batch_gcd
         from samson.math.algebra.rings.integer_ring import ZZ
-        import itertools
     
         # 'f' must be content-free
         f = self // self.content()
@@ -582,15 +638,38 @@ class Polynomial(RingElement):
 
         factors = []
 
-        # Test direct candidacy
+
+        # TODO: batch_gcd isn't good enough :/
+        # We need to factor the relevant coefficients, then pair them up with
+        # candidates by degree. Really needing that git merge...
+        coeff_facs = {}
         for fac in expanded:
+            c_degree = f.degree() + 1 - fac.degree()
+            if not c_degree in coeff_facs:
+                facs    = fac.factor()
+                fac_exp = [[fac]*mul for fac,mul in facs.items()]
+                coeff_facs[c_degree] = [item for sublist in fac_exp for item in sublist]
+
+        # Here we "reattach" coefficients that were stripped due to monicity constraints of Cantor-Zassenhaus.
+        # EXAMPLE: 1296*x**3 + 3654*x**2 + 3195*x + 812
+        # The correct factorization is (6*x + 7) * (9*x + 4) * (24*x + 29)
+        # However, it actually factors to (x + 2133) * (x + 6092) * (x + 4061) over ZZ/ZZ(7309)
+        # Note that 24*(x + 2133) == (24*x + 29)
+        d1_coeffs = set([c for c in batch_gcd(f.coeffs.values.values()) if c != ZZ.one])
+        d1_cands  = set([poly*int(mul) for poly,mul in itertools.product(facs, d1_coeffs)])
+        d1_cands  = [item for sublist in [(poly, -poly) for poly in d1_cands] for item in sublist]
+
+        # Test direct candidacy
+        for fac in d1_cands:
             poss = fac.peel_coeffs()
             for cand in [poss, poss-p]:
+                cand //= cand.content()
+
                 while not f % cand:
                     f //= cand
                     factors.append(cand)
 
-                    if f.is_irreducible():
+                    if False and f.is_irreducible():
                         factors.append(f)
                         return factors
 
@@ -723,29 +802,106 @@ class Polynomial(RingElement):
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs}, coeff_ring=self.coeff_ring.ring)
 
 
+    # def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
+    #     other = self.ring.coerce(other)
+    #     assert other != self.ring.zero
+
+    #     n = other.degree()
+    #     if n > self.degree():
+    #         return self.ring.zero, self
+
+    #     dividend = self._create_sparse([c for c in self.coeffs])
+    #     divisor  = other.coeffs
+
+    #     n = other.degree()
+    #     quotient = self._create_sparse([])
+
+    #     for k in reversed(range(self.degree() - n + 1)):
+    #         div = dividend[k+n]
+    #         is_neg = div < self.coeff_ring.zero
+
+    #         # Negative number screw this up. Make negative after.
+    #         # E.g. divmod(-41, 176) == (-1, 135)
+    #         if is_neg:
+    #             div = -div
+
+    #         # quotient[k] = (div / divisor[n]) * (is_neg*2-1)
+    #         quotient[k], dividend[n-k] = divmod(div, divisor[n]) # * (is_neg*2-1)
+
+    #         for j in range(k, k+n):
+    #             dividend[j] -= quotient[k] * divisor[j-k]
+
+    #     remainder = dividend[:n]
+
+    #     return (self._create_poly(quotient), self._create_poly(remainder))
+
+
     def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
+        """
+        Examples:
+            >>> from samson.math.all import Polynomial, ZZ
+            >>> R = ZZ/ZZ(127)
+            >>> Q = R[y]
+            >>> a = 94*y**9 + 115*y**8 + 4*y**7 + 14*y**6 + 14*y**5 + 111*y**4 + 76*y**3 + 47*y**2 + 124*y + 11
+            >>> b = 92*y**4 + 93*y**3 + 76*y**2 + 62*y + 101
+            >>> divmod(a,b)
+            (59*y**5 + 41*y^** + 41*y**3 + 88*y**2 + 90*y + 110, 79*y**3 + 79*y**2 + 89*y + 77)
+
+            >>> P = ZZ[x]
+            >>> p = 9*x**10 + 24*x**9 - 105*x**8 - 6*x**6 - 16*x**5 + 70*x**4 - 3*x**2 - 8*x + 35
+            >>> d = 100*x
+            >>> divmod(p,d)
+            (-2*x**7, 9*x**10 + 24*x**9 + 95*x**8 - 6*x**6 - 16*x**5 + 70*x**4 - 3*x**2 - 8*x + 35)
+
+        """
+        # Check for zero
         other = self.ring.coerce(other)
         assert other != self.ring.zero
 
+        # Divisor > dividend, early out
         n = other.degree()
         if n > self.degree():
             return self.ring.zero, self
 
-        dividend = self._create_sparse([c for c in self.coeffs])
-        divisor  = other.coeffs
+        q = self.ring.zero
+        r = self
 
-        n = other.degree()
-        quotient = self._create_sparse([])
+        remainder = self._create_sparse([0])
+        is_field  = self.coeff_ring.is_field()
 
-        for k in reversed(range(self.degree() - n + 1)):
-            quotient[k] = dividend[k+n] / divisor[n]
+        while r and r.degree() >= n:
+            r_start = r
+            # Fields have exact division, but we have to
+            # keep track of remainders for non-trivial Euclidean division
+            if is_field:
+                t, rem = r.LC() / other.LC(), self.coeff_ring.zero
+            else:
+                t, rem = divmod(r.LC(), other.LC())
 
-            for j in range(k, k+n):
-                dividend[j] -= quotient[k] * divisor[j-k]
+                # Handle -1 specifically!
+                # This means it doesn't ACTUALLY divide it
+                if t == -self.coeff_ring.one:
+                    t, rem = self.coeff_ring.zero, r.LC()
 
-        remainder = dividend[:n]
 
-        return (self._create_poly(quotient), self._create_poly(remainder))
+            r -= (other << (r.degree() - n)) * t
+            remainder[r.degree()] = rem
+
+            if not t:
+                r.coeffs[r.degree()] = t
+
+            # Update q
+            q  += t
+            q <<= r_start.degree() - r.degree()
+
+
+        r_deg = r.degree()
+        r     = self.ring(remainder) + self.ring(r.coeffs[:n])
+
+        if q:
+            q >>= (n-r_deg)
+
+        return q, r
 
 
     def __add__(self, other: 'Polynomial') -> 'Polynomial':
@@ -910,3 +1066,28 @@ class Polynomial(RingElement):
             bool: Whether the element is invertible.
         """
         return self != self.ring.zero and all([coeff.is_invertible() for _, coeff in self.coeffs])
+
+
+    def gcd(self, other: 'Polynomial') -> 'Polynomial':
+        """
+        References:
+            https://math.stackexchange.com/a/2587365
+        """
+        from samson.math.algebra.fields.fraction_field import FractionField
+
+        # Euclidean is only defined for polynomials over a field
+        R = self.coeff_ring
+        if R.is_field():
+            return super().gcd(other)
+
+        else:
+            # Embed ring into a fraction field
+            Q   = FractionField(R)
+            s_q = self.embed_coeffs(Q)
+            o_q = other.embed_coeffs(Q)
+
+            fac = s_q.gcd(o_q)
+            c   = fac.content()
+
+            result = s_q.content().gcd(o_q.content())*(fac // c)
+            return self.ring(result.coeffs.map(lambda idx, val: (idx, val.numerator)))

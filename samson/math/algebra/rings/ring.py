@@ -453,3 +453,10 @@ class RingElement(ABC):
     def sqrt(self) -> 'RingElement':
         from samson.math.general import kth_root
         return self.ring(kth_root(int(self.val), 2))
+
+
+    def gcd(self, other: 'RingElement') -> 'RingElement':
+        a, b = self, other
+        while b:
+            a, b = b, a % b
+        return a

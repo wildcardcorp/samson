@@ -60,7 +60,12 @@ class FractionFieldElement(FieldElement):
 
 
     def sqrt(self) -> 'RingElement':
-        return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+        return FractionFieldElement(self.numerator.sqrt(), self.denominator, self.ring)
+
+
+    def gcd(self, other):
+        from samson.math.general import lcm
+        return self.ring((self.numerator.gcd(other.numerator), lcm(self.denominator, other.denominator)))
 
 
     @left_expression_intercept

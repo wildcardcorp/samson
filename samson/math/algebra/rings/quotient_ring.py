@@ -75,6 +75,10 @@ class QuotientElement(RingElement):
         other = self.ring.coerce(other)
         return QuotientElement((self.val // other.val) % self.ring.quotient, self.ring)
 
+    def __divmod__(self, other):
+        return self // other, self % other
+
+
     def __neg__(self) -> 'QuotientElement':
         return QuotientElement((-self.val) % self.ring.quotient, self.ring)
 

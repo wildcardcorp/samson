@@ -171,9 +171,11 @@ def gcd(a: int, b: int) -> int:
         <Polynomial: x**2, coeff_ring=F_(2**8)>
 
     """
-    while b:
-        a, b = b, a % b
-    return a
+    if type(a) is int:
+        while b:
+            a, b = b, a % b
+        return a
+    return a.gcd(b)
 
 
 
