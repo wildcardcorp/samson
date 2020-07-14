@@ -69,7 +69,7 @@ class FractionFieldElement(FieldElement):
             from samson.math.general import kth_root_qq
             return kth_root_qq(self, 2)
         else:
-            return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+            return FractionFieldElement(self.numerator.sqrt(), self.denominator, self.ring)
 
 
     def trim_to_precision(self, precision: 'FractionFieldElement') -> 'FractionFieldElement':
@@ -103,6 +103,10 @@ class FractionFieldElement(FieldElement):
                 self.numerator   = num
                 self.denominator = den
 
+
+    def gcd(self, other):
+        from samson.math.general import lcm
+        return self.ring((self.numerator.gcd(other.numerator), lcm(self.denominator, other.denominator)))
 
 
     @left_expression_intercept

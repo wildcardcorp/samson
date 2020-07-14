@@ -139,3 +139,57 @@ class PolynomialRing(Ring):
             deg = size.degree()
             max_val = max(size.coeffs.values.values()) + self.ring.one
             return self([self.ring.random(max_val) for _ in range(deg)])
+
+
+    def interpolate(self, points: list) -> Polynomial:
+        """
+        Given a list of `points`, returns the polynomial that generates them (i.e. interpolation).
+
+        Parameters:
+            points (list): List of points formatted as [(x,y), ...].
+
+        Returns:
+            Polynomial: Interpolated polynomial.
+        
+        Examples:
+            >>> from samson.math.all import ZZ, Symbol
+            >>> x = Symbol('x')
+            >>> P = ZZ[x]
+            >>> q = 10*x**8 + 7*x**7 + 25*x**6 + 6*x**5 + 8*x**4 + 9*x**3 + 4*x**2 + 4*x + 3
+            >>> P.interpolate([(i, q(i)) for i in range(q.degree()+1)]) == q
+            True
+
+        References:
+            https://en.wikipedia.org/wiki/Polynomial_interpolation#Constructing_the_interpolation_polynomial
+        """
+        from samson.utilities.exceptions import NoSolutionException
+        from samson.math.algebra.fields.fraction_field import FractionField
+        from samson.math.matrix import Matrix
+
+        R = self.ring
+        not_field = not R.is_field()
+
+        # Gaussian elimination requires a field
+        if not_field:
+            R = FractionField(R)
+            points = [(R(x), R(y)) for x,y in points]
+
+        # Build the Vandermonde matrix
+        degree = len(points)
+        a      = Matrix([[p[0] for p in points]], R).T
+        vand   = a.apply_elementwise(lambda elem: elem**(degree-1))
+
+        for e in reversed(range(degree-1)):
+            vand = vand.row_join(a.apply_elementwise(lambda elem: elem**e))
+
+        # Calculate poly
+        y      = Matrix([[p[1] for p in points]], R).T
+        result = vand.LUsolve(y).T[0]
+
+        if not_field:
+            if not all([c.denominator == self.ring.one for c in result]):
+                raise NoSolutionException(f"No solution in ring {self.ring}")
+
+            result = [c.numerator for c in result]
+
+        return self(result[::-1])

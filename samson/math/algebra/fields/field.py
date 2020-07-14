@@ -6,7 +6,9 @@ class Field(Ring):
     Algebraic structure that satisfies all of the properties of a ring and every element has a
     multiplicative inverse.
     """
-    pass
+    def is_field(self) -> bool:
+        return True
+
 
 
 class FieldElement(RingElement):

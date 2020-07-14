@@ -75,6 +75,10 @@ class QuotientElement(RingElement):
         other = self.ring.coerce(other)
         return QuotientElement((self.val // other.val) % self.ring.quotient, self.ring)
 
+    def __divmod__(self, other):
+        return self // other, self % other
+
+
     def __neg__(self) -> 'QuotientElement':
         return QuotientElement((-self.val) % self.ring.quotient, self.ring)
 
@@ -217,3 +221,7 @@ class QuotientRing(Ring):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
+
+
+    def is_field(self) -> bool:
+        return self.quotient.is_irreducible()
