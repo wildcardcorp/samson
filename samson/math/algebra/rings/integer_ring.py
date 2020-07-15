@@ -1,8 +1,11 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
 from samson.utilities.exceptions import CoercionException
+from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import is_prime, factor, kth_root
 from samson.math.factors import Factors
 from samson.math.symbols import oo
+
+all_mod = LazyLoader('all_mod', globals(), 'samson.math.all')
 
 class IntegerElement(RingElement):
     """
@@ -195,6 +198,9 @@ class IntegerRing(Ring):
 
         elif type(other) is IntegerElement:
             return other
+
+        elif other.ring == all_mod.QQ and other.denominator == ZZ.one:
+            return other.numerator
 
         raise CoercionException('Coercion failed')
 

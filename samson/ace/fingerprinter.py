@@ -1,6 +1,6 @@
 from samson.utilities.runtime import RUNTIME
 from samson.protocols.diffie_hellman import DiffieHellman
-from samson.core.metadata import IORelationType, FrequencyType, EphemeralType, SizeType, UsageType
+from samson.core.metadata import FrequencyType, EphemeralType, SizeType, UsageType
 from samson.core.primitives import BlockCipher, BlockCipherMode, StreamingBlockCipherMode
 from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.analysis.integer_analysis import IntegerAnalysis

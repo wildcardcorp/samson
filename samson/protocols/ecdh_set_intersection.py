@@ -23,9 +23,9 @@ class ECDHSetIntersectionServer(object):
 
         if H_n not in self.db:
             self.db[H_n] = []
-        
+
         self.db[H_n].append(H_b)
-    
+
 
     def create_response(self, H_n: int, H_a: WeierstrassPoint) -> (list, WeierstrassPoint):
         return self.db[H_n], H_a*self.b

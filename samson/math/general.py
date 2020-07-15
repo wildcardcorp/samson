@@ -578,7 +578,7 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
         reduc_func = lcm
     else:
         reduc_func = int.__mul__
-    
+
     # Calculate composite modulus
     L = reduce(reduc_func, [int(r.ring.quotient) for r in residues], 1)
 
@@ -2303,7 +2303,7 @@ def factor(n: int, use_trial: bool=True, use_rho: bool=True, use_ecm: bool=False
     # Handle [0, 1] or prime
     if n < 2 or is_prime(n):
         factors[n] = 1
-        return factors
+        return Factors(factors)
 
 
     def calc_prog(x):
@@ -2600,11 +2600,11 @@ def is_carmichael_number(n: int, factors: dict=None) -> bool:
         https://en.wikipedia.org/wiki/Carmichael_number#Korselt's_criterion
     """
     factors = factors or factor(n, reraise_interrupt=True)
-    
+
 
     if max(factors.values()) > 1 or len(factors) == 1:
         return False
-    
+
     return not any((n-1) % (p-1) for p in factors)
 
 
@@ -2631,5 +2631,5 @@ def find_carmichael_number(min_bits: int=None, k: int=None) -> int:
 
         if all(is_prime(elem) for elem in [a, b, c]):
             return a*b*c, (a, b, c)
-        
+
         k += 1

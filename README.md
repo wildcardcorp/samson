@@ -25,8 +25,8 @@ samson's key focuses are:
 
 ## Examples
 ### **REPL**
-```bash
-[root@localhost ~]# samson
+```python
+╰─>$ samson
 
 
                                                                 
@@ -39,64 +39,73 @@ samson's key focuses are:
                                                                 
                                                                 
                                                                 
-    v0.2.0 -- https://github.com/wildcardcorp/samson
+    v0.2.3 -- https://github.com/wildcardcorp/samson
 
-Python 3.5.3 (11af55503d5c, May 23 2019, 09:37:40)
-[PyPy 7.0.0 with GCC 9.1.1 20190503 (Red Hat 9.1.1-1)]
-IPython 7.6.0
+Python 3.6.9 (78d4c48fa091, Apr 30 2020, 07:55:31)
+[PyPy 7.3.1 with GCC 10.0.1 20200328 (Red Hat 10.0.1-0.11)]
+IPython 7.15.0
 
 
-In [1]: logging.getLogger("samson").setLevel(logging.INFO)                                                                                  
-In [2]: RC4(b'what a key!').generate(12) ^ b'Hello world!'                                                                                  
+In [1]: logging.getLogger("samson").setLevel(logging.INFO)
+
+
+In [2]: RC4(b'what a key!').generate(12) ^ b'Hello world!'
 Out[2]: <Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder=big>
 
-In [3]: gcm = GCM(Rijndael(Bytes.random(32)).encrypt)  
-   ...: data = b"Auth'd data"  
-   ...: nonce = Bytes.random(8)  
-   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data)  
-   ...: gcm.decrypt(nonce, ciphertext, data)                                                                                                
+
+In [3]: gcm   = GCM(Rijndael(Bytes.random(32)))   
+   ...: data  = b"Auth'd data"   
+   ...: nonce = Bytes.random(8)   
+   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data)   
+   ...: gcm.decrypt(nonce, ciphertext, data)
 Out[3]: <Bytes: b'Hello world!', byteorder=big>
 
-In [4]: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?', data=b'') 
+
+In [4]: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?', data=b'')  
    ...:  
-   ...: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:] 
-   ...: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:] 
+   ...: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:]  
+   ...: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:]  
    ...:  
-   ...: candidates = ForbiddenAttack().execute(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b) 
-   ...: gcm.H in candidates                                                                                                                 
+   ...: candidates = ForbiddenAttack().execute(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b)  
+   ...: gcm.H in candidates
 Out[4]: True
 
-In [5]: bf = Blowfish(b"world's worst key")  
-   ...: cbc = CBC(bf.encrypt, bf.decrypt, block_size=8, iv=Bytes.random(8))  
-   ...:   
-   ...: def oracle_func(attempt):  
-   ...:     try:  
-   ...:         _ = cbc.decrypt(attempt)  
-   ...:         return True  
-   ...:     except Exception as _:  
-   ...:         return False  
-   ...:   
-   ...:   
-   ...: ciphertext = cbc.encrypt(b'secret plaintext')  
-   ...: attack = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv)  
-   ...: recovered_plaintext = attack.execute(ciphertext)                                                                                    
-Blocks cracked: 100%|█████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 14.25blocks/s]
-Bytes cracked: 100%|██████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 226.56bytes/s]
 
-In [6]: recovered_plaintext                                                                                                                 
+In [5]: bf  = Blowfish(b"world's worst key")   
+   ...: cbc = CBC(bf, iv=Bytes.random(8))   
+   ...:    
+   ...: def oracle_func(attempt):   
+   ...:     try:   
+   ...:         cbc.decrypt(attempt)   
+   ...:         return True   
+   ...:     except Exception:   
+   ...:         return False   
+   ...:    
+   ...:    
+   ...: ciphertext = cbc.encrypt(b'secret plaintext')   
+   ...: attack     = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv)   
+   ...: recovered  = attack.execute(ciphertext)
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 144.74bytes/s]
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 129.54bytes/s]
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00, 252.90bytes/s]
+Blocks cracked: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00, 16.43blocks/s]
+
+
+In [6]: recovered
 Out[6]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder=big>
 
-In [7]: Z_p = ZZ/ZZ(49339) 
-   ...: Z_p[x](x**5 - x**3 + 1).factor()                                                                                                    
-Out[7]: 
-{<Polynomial: x**2 + ZZ(34751)*x + ZZ(20606), coeff_ring=ZZ/ZZ(49339)>: 1,
- <Polynomial: x**3 + ZZ(14588)*x**2 + ZZ(39369)*x + ZZ(31211), coeff_ring=ZZ/ZZ(49339)>: 1}
 
-In [8]: F = FF(2, 8) 
-   ...: F[36] / F(x + 1)                                                                                                                    
+In [7]: Z_p = ZZ/ZZ(49339)  
+   ...: Z_p[x](x**5 - x**3 + 1).factor()
+Out[7]: <Factors: {<Polynomial: x**2 + 34751*x + 20606, coeff_ring=ZZ/ZZ(49339)>: 1, <Polynomial: x**3 + 14588*x**2 + 39369*x + 31211, coeff_ring=ZZ/ZZ(49339)>: 1}>
+
+
+In [8]: F = FF(2, 8)  
+   ...: F[36] / F[3]
 Out[8]: <FiniteFieldElement: val=x**4 + x**3 + x**2, field=F_(2**8)>
 
-In [9]: gcd(F[2], F[10])                                                                                                                    
+
+In [9]: gcd(F[2], F[10])
 Out[9]: <FiniteFieldElement: val=x, field=F_(2**8)>
 ```
 
@@ -187,9 +196,9 @@ KzxOGlBrUMD0vXbjp0wpDnpynBxYXNZxHIrERMolw1wJBS72VR5m4ubujrW2ynM5p9hoc3
 
 
 ## Testing Environment
-* **Runtime**: PyPy 7.3.0 (Python 3.6.9)
-* **Architecture**: Linux 5.5.8-200.fc31.x86_64 #1 SMP
-* **OS**: Fedora Security Lab (Fedora release 31)
+* **Runtime**: PyPy 7.3.1 (Python 3.6.9)
+* **Architecture**: Linux 5.7.7-200.fc32.x86_64 #1 SMP
+* **OS**: Fedora Security Lab (Fedora release 32)
 
 
 ## Installation
@@ -232,4 +241,4 @@ samson's primitives aren't the fastest nor were they meant to be. If you're conc
 * Use primitives from a faster library (e.g. pycrypto)
 * Use PyPy instead of CPython
 
-Since samson mostly calls Python, PyPy offers large speed-ups. However, the latest stable version of PyPy works with Python 3.5 while SHA3 was introduced in 3.6. samson's SHA3 will still work, but the tests will fail.
+Since samson mostly calls Python, PyPy offers large speed-ups.

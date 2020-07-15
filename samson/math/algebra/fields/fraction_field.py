@@ -1,5 +1,6 @@
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import Ring, left_expression_intercept
+from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import gcd
 from fractions import Fraction
 
@@ -218,7 +219,7 @@ class FractionField(Field):
     @property
     def order(self) -> int:
         return self.ring.order**2
-    
+
 
     def set_precision(self, precision: FractionFieldElement):
         """
@@ -261,14 +262,15 @@ class FractionField(Field):
         Returns:
             FractionFieldElement: Coerced element.
         """
-        if type(other) is FractionFieldElement:
+        type_other = type(other)
+        if type_other is FractionFieldElement:
             return other
 
-        elif type(other) is float:
+        elif type_other is float and self.ring == ZZ:
             frac = Fraction(other)
             result = (self.ring.coerce(frac.numerator), self.ring.coerce(frac.denominator))
 
-        elif type(other) is tuple:
+        elif type_other is tuple:
             if len(other) < 2:
                 denom = self.ring.one
             else:

@@ -5,6 +5,7 @@ from functools import wraps, reduce
 from itertools import combinations
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
+from samson.utilities.exceptions import CoercionException
 
 poly = LazyLoader('poly', globals(), 'samson.math.polynomial')
 
@@ -114,6 +115,14 @@ class Ring(ABC):
 
     def __call__(self, args) -> 'RingElement':
         return self.coerce(args)
+
+
+    def __contains__(self, element: 'RingElement') -> bool:
+        try:
+            self.coerce(element)
+            return True
+        except CoercionException:
+            return False
 
 
     def element_at(self, x: int) -> 'RingElement':
@@ -415,7 +424,7 @@ class RingElement(ABC):
 
 
 
-    def factor(self, attempts: int=1000) -> dict:
+    def factor(self, attempts: int=1000) -> 'Factors':
         """
         Factors the element.
 
@@ -423,7 +432,7 @@ class RingElement(ABC):
             attempts (int): Number of ECM attempts before failure.
 
         Returns:
-            dict: Dictionary of factors.
+            Factors: Dictionary-like Factors object.
         """
         from samson.math.general import ecm
         from samson.math.factors import Factors

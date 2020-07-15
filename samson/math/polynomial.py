@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, factor as factor_int,kth_root
+from samson.math.general import square_and_mul, gcd, factor as factor_int, kth_root
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment, binary_search
 from samson.math.factors import Factors
@@ -18,18 +18,31 @@ class Polynomial(RingElement):
         """
         from samson.math.symbols import Symbol
 
-        self.coeff_ring = coeff_ring or list(coeffs.values.values())[0].ring
+        self.coeff_ring = coeff_ring
         c_type = type(coeffs)
 
         if c_type in [list, tuple, dict]:
             if c_type is dict or (len(coeffs) > 0 and type(coeffs[0]) is tuple):
                 vec = coeffs
+
+                if not self.coeff_ring:
+                    if c_type is dict:
+                        self.coeff_ring = list(coeffs.values())[0].ring
+                    else:
+                        self.coeff_ring = coeffs[0][1].ring
+
             else:
+                if not self.coeff_ring:
+                    self.coeff_ring = coeffs[0].ring
+
                 vec = [self.coeff_ring.coerce(coeff) for coeff in coeffs]
 
             self.coeffs = self._create_sparse(vec)
 
         elif c_type is SparseVector:
+            if not self.coeff_ring:
+                self.coeff_ring = list(coeffs.values.values())[0].ring
+
             self.coeffs = coeffs
 
         else:
@@ -167,139 +180,38 @@ class Polynomial(RingElement):
 
             x0 -= a_b
             tries += 1
-        
+
         return x0
 
 
-    def _roots_ZZ_newtons(self):
-        abs_zero = abs(self.coeffs[0])
-
-        d_root = kth_root(abs_zero, self.degree())
-        d_1    = kth_root(abs_zero, self.degree()+1)
-        d_m_1  = kth_root(abs_zero, self.degree()-1)
-
-        res = [[r, -r] for r in [d_root, d_1, d_m_1]]
-
-        for r in [item for sublist in res for item in sublist]:
-            k = self.newton(r)
-
-            if not self(k):
-                return k
-
-            # Empirically, using Netwon's method over ZZ showed if `k` isn't a root,
-            # `k-1` might be.
-            if not self(k-1):
-                return k-1
-
-
-    def _roots_ZZ_binary_search(self):
-        abs_zero = abs(self.coeffs[0])
-        zero     = self.coeff_ring.zero
-        d_root   = kth_root(abs_zero, self.degree())
-
-        search_funcs = [
-            lambda curr: self(curr) < zero,
-            lambda curr: self(-curr) < zero,
-            lambda curr: self(curr) > zero,
-            lambda curr: self(-curr) > zero
-        ]
-
-        for func in search_funcs:
-            for section in range(1, self.degree()+1):
-                k = binary_search(func, d_root**section)
-
-                if not self(k):
-                    return k
-
-
-                if not self(-k):
-                    return -k
-
-
-    def _roots_ZZ_factor(self):
-        factors = (self.coeffs[0] // self.LC()).factor()
-
-        if -self.coeff_ring.one in factors:
-            factors.remove(-self.coeff_ring.one)
-
-        results = []
-
-        i = 1
-        p = self
-        while not p.is_irreducible() and i < len(factors.expand()):
-            last = len(factors)
-            found = False
-
-            # Try all linear combinations of factors
-            for facs in factors.combinations(i):
-                if not facs:
-                    return results
-
-                num = facs.recombine()
-                is_root = not self(num)
-                is_neg  = not self(-num)
-
-                if is_root or is_neg:
-                    found = True
-
-                    if is_neg:
-                        num = -num
-
-                    results.append(num)
-                    
-                    # Remove factors from pool
-                    factors = factors.difference(facs)
-                    p //= p.symbol - num
-                    break
-            
-            if not found:
-                i += 1
-
-        if not p.is_irreducible() and p != self:
-            results.extend(p.roots())
-        return results
-
-
-
     def roots(self) -> list:
-        deg        = self.degree()
-        coeff_zero = self.coeffs[0]
+        """
+        Finds the roots of the polynomial (i.e. where the evaluation is zero).
 
-        # Handle degree zero
-        if deg == 0:
-            return []
+        Returns:
+            list: List of roots.
+        
+        References:
+            https://crypto.stanford.edu/pbc/notes/numbertheory/poly.html
+            https://math.stackexchange.com/questions/170128/roots-of-a-polynomial-mod-n
+        """
+        from samson.math.general import crt
+        from samson.math.algebra.rings.integer_ring import ZZ
 
-        # Handle degree one
-        elif deg == 1:
-            return [-coeff_zero]
+        R = self.coeff_ring
 
-        # Doesn't have a constant; zero is a root
-        elif not coeff_zero:
-            k = 0
-
-        elif self.is_irreducible():
-            return []
+        if R.is_field() or R == ZZ:
+            facs = self.factor()
+            return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
         else:
-            # Integer Netwon's
-            k = self._roots_ZZ_newtons()
+            all_facs = []
+            q_facs   = R.quotient.factor()
+            for fac in q_facs:
+                sub_facs = self.peel_coeffs().embed_coeffs(R.ring/R.ring(fac)).factor()
+                all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
 
-            # Binary search over different sections
-            if not k:
-                k = self._roots_ZZ_binary_search()
-
-            # Last resort... factor
-            if not k:
-                return self._roots_ZZ_factor()
-
-        if not self(k):
-            x = self.symbol
-            results = [k]
-            results.extend((self // (x-k)).roots())
-        else:
-            results = []
-        return results
-
+            return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
 
 
     def valuation(self):
@@ -444,9 +356,9 @@ class Polynomial(RingElement):
             >>> from samson.math.symbols import Symbol
             >>> x = Symbol('x')
             >>> _ = ZZ[x]
-            >>> poly = 3*x**3+x**7-x**18
+            >>> poly = -1*x**18 + x**7 + 3*x**3
             >>> poly.square_free_decomposition()
-            {<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
+            {<Polynomial: -1*x**15 + x**4 + 3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
         """
         is_field = self.coeff_ring.is_field()
@@ -574,7 +486,7 @@ class Polynomial(RingElement):
             # This follows since an odd number times an odd number (e.g. itself)
             # produces an odd number.
 
-            # If p is 2, then things a bit more complicated. Luckily for us,
+            # If p is 2, then things are a bit more complicated. Luckily for us,
             # it's very patterned.
 
             # If 2|k, then 3|p^k-1.
@@ -691,10 +603,6 @@ class Polynomial(RingElement):
 
             coeff_zero = -poly.coeffs[0]
 
-            # If all coefficients are >0, then you'll never touch zero
-            if all(c > zero for c in poly.coeffs.values.values()):
-                return True
-
             # Poly's of form x**n - c
             if poly.coeffs.sparsity == 2:
                 is_neg = coeff_zero < zero
@@ -722,7 +630,7 @@ class Polynomial(RingElement):
                             # (9*x**4-16).is_irreducible() == False
                             if kth_root(poly.LC(), fac)**fac == poly.LC():
                                 return False
-                        
+
                         # (3*x**4-16).is_irreducible() == True
                         return True
 
@@ -732,13 +640,6 @@ class Polynomial(RingElement):
                     # (x**4-15).is_irreducible() == True
                     return True
 
-            # Eisenstein’s Criterion
-            # facs = self.coeffs[0].factor()
-            # for fac in facs:
-            #     # p∣a0,a1,…,ak,p∤ak+1 and p2∤a0, where k = n-1
-            #     if not sum([c % fac for c in self.coeffs.values.values()[:-1]]):
-            #         if self.LC() % fac and self.coeffs[0] % (fac**2):
-            #             return True
 
             # Eisenstein’s Criterion
             # NOTE: We use 'batch_gcd' to cut down on the factors we have to consider
@@ -750,7 +651,6 @@ class Polynomial(RingElement):
                 if not sum([c % fac for c in poly.coeffs.values.values()[:-1]]):
                     if poly.LC() % fac and coeff_zero % (fac**2):
                         return True
-
 
 
             # If dealing with the integers, we can convert into FF.
@@ -817,25 +717,7 @@ class Polynomial(RingElement):
         return content
 
 
-    def roots(self):
-        from samson.math.general import crt
-
-        R = self.coeff_ring
-        if R.is_field():
-            facs = self.factor()
-            return [-fac.coeffs[0] for fac in facs.keys() if fac.degree() == 1]
-        else:
-            all_facs = []
-            q_facs   = R.quotient.factor()
-            for fac in q_facs:
-                sub_facs = self.peel_coeffs().embed_coeffs(R.ring/R.ring(fac)).factor()
-                all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
-            
-            return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
-
-
-
-    def _fac_ZZ(self):
+    def _fac_ZZ(self, d: int=1, subgroup_divisor: int=None):
         """
         Performs factorization over ZZ. Assumes `self` is square-free.
 
@@ -846,19 +728,19 @@ class Polynomial(RingElement):
             >>> x = Symbol('x')
             >>> P = ZZ[x]
             >>> p = 1296*x**3 + 3654*x**2 + 3195*x + 812
-            >>> p.factor()
-            {<Polynomial: 24*x + 29, coeff_ring=ZZ>: 1, <Polynomial: 9*x + 4, coeff_ring=ZZ>: 1, <Polynomial: 6*x + 7, coeff_ring=ZZ>: 1}
+            >>> p.factor().recombine() == p
+            True
 
             >>> p = (x+5)*(3*x-7)*(x**4+1)
-            >>> p.factor()
-            {<Polynomial: 3*x + -7, coeff_ring=ZZ>: 1, <Polynomial: x + 5, coeff_ring=ZZ>: 1, <Polynomial: x**4 + 1, coeff_ring=ZZ>: 1}
+            >>> p.factor().recombine() == p
+            True
 
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
         """
-        from samson.math.general import next_prime, batch_gcd
+        from samson.math.general import next_prime
         from samson.math.algebra.rings.integer_ring import ZZ
-    
+
         # 'f' must be content-free
         f = self // self.content()
 
@@ -877,36 +759,29 @@ class Polynomial(RingElement):
                 break
 
         # Factor over mod `p`
-        facs = g.factor()
-        expanded = [[fac]*mul for fac,mul in facs.items()]
-        expanded = [item for sublist in expanded for item in sublist]
-
-        factors = []
-
-
-        # TODO: batch_gcd isn't good enough :/
-        # We need to factor the relevant coefficients, then pair them up with
-        # candidates by degree. Really needing that git merge...
-        coeff_facs = {}
-        for fac in expanded:
-            c_degree = f.degree() + 1 - fac.degree()
-            if not c_degree in coeff_facs:
-                facs    = fac.factor()
-                fac_exp = [[fac]*mul for fac,mul in facs.items()]
-                coeff_facs[c_degree] = [item for sublist in fac_exp for item in sublist]
+        facs = g.factor(d=d, subgroup_divisor=subgroup_divisor)
 
         # Here we "reattach" coefficients that were stripped due to monicity constraints of Cantor-Zassenhaus.
         # EXAMPLE: 1296*x**3 + 3654*x**2 + 3195*x + 812
         # The correct factorization is (6*x + 7) * (9*x + 4) * (24*x + 29)
         # However, it actually factors to (x + 2133) * (x + 6092) * (x + 4061) over ZZ/ZZ(7309)
         # Note that 24*(x + 2133) == (24*x + 29)
-        d1_coeffs = set([c for c in batch_gcd(f.coeffs.values.values()) if c != ZZ.one])
-        d1_cands  = set([poly*int(mul) for poly,mul in itertools.product(facs, d1_coeffs)])
-        d1_cands  = [item for sublist in [(poly, -poly) for poly in d1_cands] for item in sublist]
+        d1_cands = []
+        lc_facs  = f.LC().factor()
+        for d in lc_facs.all_divisors():
+            coeff = int(d)
+
+            for poly in facs:
+                cand = poly * coeff
+                d1_cands.extend([cand, -cand])
+
+        d1_cands = set(d1_cands)
+        factors  = []
 
         # Test direct candidacy
         for fac in d1_cands:
             poss = fac.peel_coeffs()
+
             for cand in [poss, poss-p]:
                 cand //= cand.content()
 
@@ -914,13 +789,13 @@ class Polynomial(RingElement):
                     f //= cand
                     factors.append(cand)
 
-                    if False and f.is_irreducible():
+                    if f.is_irreducible():
                         factors.append(f)
                         return factors
 
 
         # Reassemble and reduce
-        for canda, candb in itertools.permutations(expanded, 2):
+        for canda, candb in itertools.permutations(d1_cands, 2):
             poss = (canda * candb).peel_coeffs()
             while not f % poss:
                 f //= poss
@@ -928,7 +803,7 @@ class Polynomial(RingElement):
 
                 if f.is_irreducible():
                     break
-        
+
         factors.append(f)
         return factors
 
@@ -961,26 +836,66 @@ class Polynomial(RingElement):
 
         """
         from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.all import QQ, Symbol
+        from samson.math.factors import Factors
+
+        p = self
+        if not p:
+            return Factors({p:1})
 
         factors = {}
 
+        # Add content as constant polynomial
+        content = p.content()
+
+        if content != self.coeff_ring.one:
+            factors[self.ring(content)] = 1
+
+
+        # If there isn't a constant, we can factor out
+        # `x` until there is
+        first_idx = list(p.coeffs.values.keys())[0]
+        if first_idx:
+            factors[p.symbol*1] = first_idx
+            p >>= first_idx
+
+
         if self.coeff_ring == ZZ:
-            f = self // self.content()
+            f    = p // content
             facs = [(poly._fac_ZZ(), num) for poly, num in f.sff().items()]
 
             for partial_factors, num in facs:
                 for factor in partial_factors:
-                    if factor != self.ring.one:
-                        add_or_increment(factors, factor, num)  
-
-        else:
-            distinct_degrees = [(factor, num) for poly, num in self.sff().items() for factor in poly.ddf()]
-            for (poly, _), num in distinct_degrees:
-                for factor in poly.edf(d, subgroup_divisor):
-                    if factor != self.ring.one:
+                    if factor != p.ring.one:
+                        factor.symbol = p.symbol
                         add_or_increment(factors, factor, num)
 
-        return factors
+
+        elif self.coeff_ring == QQ:
+            # Strip off content
+            # This will give `p` integer coefficients
+            q = p // content
+
+            # Factor `p` over ZZ
+            P    = ZZ[Symbol(q.symbol.repr)]
+            z    = P(q.coeffs.map(lambda idx, val: (idx, val.numerator)))
+            facs = z.factor(d=d, subgroup_divisor=subgroup_divisor)
+
+            # Coerce the factors back into QQ
+            for fac, e in facs.items():
+                fac = fac.embed_coeffs(QQ)
+                fac.symbol = q.symbol
+                factors[fac] = e
+
+        else:
+            # Cantor-Zassenhaus (SFF -> DDF -> EDF)
+            distinct_degrees = [(factor, num) for poly, num in p.sff().items() for factor in poly.ddf()]
+            for (poly, _), num in distinct_degrees:
+                for factor in poly.edf(d, subgroup_divisor):
+                    if factor != p.ring.one:
+                        add_or_increment(factors, factor, num)
+
+        return Factors(factors)
 
 
     def degree(self) -> int:
@@ -1047,56 +962,24 @@ class Polynomial(RingElement):
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs}, coeff_ring=self.coeff_ring.ring)
 
 
-    # def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
-    #     other = self.ring.coerce(other)
-    #     assert other != self.ring.zero
-
-    #     n = other.degree()
-    #     if n > self.degree():
-    #         return self.ring.zero, self
-
-    #     dividend = self._create_sparse([c for c in self.coeffs])
-    #     divisor  = other.coeffs
-
-    #     n = other.degree()
-    #     quotient = self._create_sparse([])
-
-    #     for k in reversed(range(self.degree() - n + 1)):
-    #         div = dividend[k+n]
-    #         is_neg = div < self.coeff_ring.zero
-
-    #         # Negative number screw this up. Make negative after.
-    #         # E.g. divmod(-41, 176) == (-1, 135)
-    #         if is_neg:
-    #             div = -div
-
-    #         # quotient[k] = (div / divisor[n]) * (is_neg*2-1)
-    #         quotient[k], dividend[n-k] = divmod(div, divisor[n]) # * (is_neg*2-1)
-
-    #         for j in range(k, k+n):
-    #             dividend[j] -= quotient[k] * divisor[j-k]
-
-    #     remainder = dividend[:n]
-
-    #     return (self._create_poly(quotient), self._create_poly(remainder))
-
-
     def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
         """
         Examples:
-            >>> from samson.math.all import Polynomial, ZZ
+            >>> from samson.math.all import Polynomial, ZZ, Symbol
             >>> R = ZZ/ZZ(127)
+            >>> y = Symbol('y')
             >>> Q = R[y]
             >>> a = 94*y**9 + 115*y**8 + 4*y**7 + 14*y**6 + 14*y**5 + 111*y**4 + 76*y**3 + 47*y**2 + 124*y + 11
             >>> b = 92*y**4 + 93*y**3 + 76*y**2 + 62*y + 101
             >>> divmod(a,b)
-            (59*y**5 + 41*y^** + 41*y**3 + 88*y**2 + 90*y + 110, 79*y**3 + 79*y**2 + 89*y + 77)
+            (<Polynomial: 59*y**5 + 41*y**4 + 41*y**3 + 88*y**2 + 90*y + 110, coeff_ring=ZZ/ZZ(127)>, <Polynomial: 79*y**3 + 79*y**2 + 89*y + 77, coeff_ring=ZZ/ZZ(127)>)
 
+            >>> x = Symbol('x')
             >>> P = ZZ[x]
             >>> p = 9*x**10 + 24*x**9 - 105*x**8 - 6*x**6 - 16*x**5 + 70*x**4 - 3*x**2 - 8*x + 35
             >>> d = 100*x
             >>> divmod(p,d)
-            (-2*x**7, 9*x**10 + 24*x**9 + 95*x**8 - 6*x**6 - 16*x**5 + 70*x**4 - 3*x**2 - 8*x + 35)
+            (<Polynomial: -2*x**7, coeff_ring=ZZ>, <Polynomial: 9*x**10 + 24*x**9 + 95*x**8 + -6*x**6 + -16*x**5 + 70*x**4 + -3*x**2 + -8*x + 35, coeff_ring=ZZ>)
 
         """
         # Check for zero
@@ -1114,19 +997,21 @@ class Polynomial(RingElement):
         remainder = self._create_sparse([0])
         is_field  = self.coeff_ring.is_field()
 
+        zero, one = self.coeff_ring.zero, self.coeff_ring.one
+
         while r and r.degree() >= n:
             r_start = r
             # Fields have exact division, but we have to
             # keep track of remainders for non-trivial Euclidean division
             if is_field:
-                t, rem = r.LC() / other.LC(), self.coeff_ring.zero
+                t, rem = r.LC() / other.LC(), zero
             else:
                 t, rem = divmod(r.LC(), other.LC())
 
                 # Handle -1 specifically!
                 # This means it doesn't ACTUALLY divide it
-                if t == -self.coeff_ring.one:
-                    t, rem = self.coeff_ring.zero, r.LC()
+                if t == -one and rem > zero:
+                    t, rem = zero, r.LC()
 
 
             r -= (other << (r.degree() - n)) * t
@@ -1276,7 +1161,7 @@ class Polynomial(RingElement):
 
         elif self.degree() > other.degree():
             return False
-        
+
         keys = set(self.coeffs.values.keys()).union(other.coeffs.values.keys())
 
         for idx in keys:
