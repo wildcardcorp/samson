@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, factor as factor_int, kth_root
+from samson.math.general import square_and_mul, gcd, factor as factor_int, kth_root, pk_1_smallest_divisor
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment, binary_search
 from samson.math.factors import Factors
@@ -478,8 +478,7 @@ class Polynomial(RingElement):
 
         f_quot   = f.ring / f
         if self.coeff_ring.order != oo:
-            q   = self.coeff_ring.order
-            q_1 = q - 1
+            q = self.coeff_ring.order
 
             # Finite fields must be in the form p^k where `p` is prime and `k` >= 1.
             # If `p` is an odd prime, then 2|p^k-1.
@@ -496,16 +495,9 @@ class Polynomial(RingElement):
             # In other words, if `k` is composite, then factors of 2^k-1 include the factors of
             # 2^p_i-1 for where `p_i` represents a factor of `k`.
             if not subgroup_divisor:
-                # Try trial division first
-                subgroup_divisor = list(factor_int(q_1, use_rho=False))[0]
+                subgroup_divisor = pk_1_smallest_divisor(q)
 
-                # Didn't find a factor using trial division
-                # `q` must be 2^k where `k` is odd and not divisible by primes under 41.
-                # 2^41-1 is the first composite number with its smallest factor greater than 1000.
-                if subgroup_divisor == q_1:
-                    subgroup_divisor = list(factor_int(q_1, use_trial=False))[0]
-
-            exponent = q_1 // subgroup_divisor
+            exponent = (q - 1) // subgroup_divisor
 
         one   = self.ring.one
         bases = frobenius_monomial_base(f)

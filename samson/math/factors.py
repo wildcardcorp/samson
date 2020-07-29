@@ -123,6 +123,9 @@ class Factors(object):
 
 
     def recombine(self) -> 'RingElement':
+        if not self.factors:
+            return 1
+
         elem0 = list(self.factors.keys())[0]
         mul   = type(elem0).__mul__
         one   = elem0.ring.one if hasattr(elem0, 'ring') else 1
