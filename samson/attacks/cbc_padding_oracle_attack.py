@@ -56,7 +56,7 @@ class CBCPaddingOracleAttack(object):
         plaintexts = []
 
         for i, block in enumerate(RUNTIME.report_progress(reversed_blocks, desc='Blocks cracked', unit='blocks')):
-            log.debug("Starting iteration {}".format(i))
+            log.debug(f"Starting iteration {i}")
             plaintext = Bytes(b'')
 
             if i == len(reversed_blocks) - 1:
@@ -86,12 +86,12 @@ class CBCPaddingOracleAttack(object):
                 if self.batch_requests:
                     best_block = self.oracle.check_padding([k for k,v in exploit_blocks.items()])
                     last_working_char = exploit_blocks[best_block]
-                    log.debug("Found working byte: {}".format(last_working_char))
+                    log.debug(f"Found working byte: {last_working_char}")
                 else:
                     # Oracle can't handle batch requests. Feed blocks into it.
                     for exploit_block, byte in exploit_blocks.items():
                         if self.oracle.check_padding(exploit_block):
-                            log.debug("Found working byte: {}".format(byte))
+                            log.debug(f"Found working byte: {byte}")
                             last_working_char = byte
 
                         # Early out optimization. Note, we're being careful about PKCS7 padding here.

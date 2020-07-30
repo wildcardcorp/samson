@@ -1,7 +1,7 @@
 start_exec = """
 import logging
 logging.getLogger().setLevel(logging.WARNING)
-logging.getLogger("samson").setLevel(logging.DEBUG)
+logging.getLogger("samson").setLevel(logging.INFO)
 
 from samson.all import *
 x = Symbol('x')

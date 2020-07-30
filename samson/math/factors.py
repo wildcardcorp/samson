@@ -2,10 +2,11 @@ from samson.utilities.general import add_or_increment
 from samson.analysis.general import count_items
 from functools import reduce
 from itertools import combinations, chain
+from sortedcontainers import SortedDict
 
 class Factors(object):
     def __init__(self, factors=None):
-        self.factors = factors or {}
+        self.factors = SortedDict(factors or {})
 
 
     def __repr__(self):
@@ -27,6 +28,43 @@ class Factors(object):
 
     def __len__(self) -> int:
         return len(self.factors)
+    
+
+    def __hash__(self):
+        return hash(self.recombine())
+
+
+    def _compare(self, other, func):
+        t = type(other)
+
+        if t in [dict, SortedDict]:
+            other = Factors(other)
+
+        elif t is not Factors:
+            return func(self.recombine(), other)
+        
+        return func(self.recombine(), other.recombine())
+
+
+    def __eq__(self, other):
+        return self._compare(other, lambda a, b: a == b)
+
+
+    def __lt__(self, other):
+        return self._compare(other, lambda a, b: a < b)
+
+
+    def __gt__(self, other):
+        return self._compare(other, lambda a, b: a > b)
+    
+
+    def __ge__(self, other):
+        return self._compare(other, lambda a, b: a >= b)
+
+
+    def __le__(self, other):
+        return self._compare(other, lambda a, b: a <= b)
+
 
 
     def __add__(self, other: dict) -> 'Factors':
@@ -45,13 +83,16 @@ class Factors(object):
         if t is int:
             from samson.math.general import factor
             other = factor(other)
-        elif t is not dict:
+
+        elif t not in [Factors, dict, SortedDict]:
             other = other.factor()
 
         return self.difference(other)
 
 
+    __mul__ = __add__
     __floordiv__ = __truediv__
+    __sub__ = __truediv__
 
 
     def __getattr__(self, name: str):
@@ -99,8 +140,12 @@ class Factors(object):
         return (Factors(count_items(c)) for c in combinations(self.expand(), n))
 
 
+    def number_of_factors(self) -> int:
+        return sum(self.factors.values())
+
+
     def all_combinations(self) -> list:
-        return chain(*[self.combinations(i) for i in range(1, sum(self.factors.values())+1)])
+        return chain(*[self.combinations(i) for i in range(1, self.number_of_factors()+1)])
 
 
     def all_divisors(self) -> set:
@@ -115,7 +160,7 @@ class Factors(object):
         elif max(self.factors.values()) > 1:
             return 0
 
-        elif sum(self.factors.values()) % 2:
+        elif self.number_of_factors() % 2:
             return -1
 
         else:

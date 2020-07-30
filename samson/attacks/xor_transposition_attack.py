@@ -67,7 +67,7 @@ class XORTranspositionAttack(object):
 
         # Clean up with a character-by-character, higher-context analysis (retransposed)
         for j in RUNTIME.report_progress(range(iterations), desc='Higher-context analysis'):
-            log.debug("Starting iteration {}/{}".format(j + 1, iterations))
+            log.debug(f"Starting iteration {j + 1}/{iterations}")
             differential_mask = bytearray()
 
             for i in RUNTIME.report_progress(range(min_size), desc='Building differential mask', unit='bytes'):

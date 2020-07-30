@@ -44,7 +44,7 @@ class ECBPrependAttack(object):
 
         plaintexts = []
         for curr_block in RUNTIME.report_progress(range(baseline // block_size), unit='blocks'):
-            log.debug("Starting iteration {}".format(curr_block))
+            log.debug(f"Starting iteration {curr_block}")
 
             plaintext = b''
             for curr_byte in RUNTIME.report_progress(range(block_size), unit='bytes'):

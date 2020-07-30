@@ -83,5 +83,5 @@ class NaiveMDCollider(object):
                 state_ctr += 1
 
                 if state == state_to_collide:
-                    log.debug('Found collision for ({}, {})'.format(p1, p2))
+                    log.debug(f'Found collision for ({p1}, {p2})')
                     return input_for_p1, attempt[:state_ctr * self.output_size], state_to_collide

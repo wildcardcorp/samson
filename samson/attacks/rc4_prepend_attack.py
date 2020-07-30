@@ -67,7 +67,7 @@ class RC4PrependAttack(object):
         log.info(f"Running with {cpu_count} cores")
 
         for i in RUNTIME.report_progress(range(secret_length), unit='bytes'):
-            log.debug("Starting iteration {}/{}".format(i + 1, secret_length))
+            log.debug(f"Starting iteration {i + 1}/{secret_length}")
 
             if len(cracked_indices[i]) > 0:
                 continue

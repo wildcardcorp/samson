@@ -89,8 +89,8 @@ class PKCS1v15PaddingOracleAttack(object):
 
         # Step 2
         while True:
-            log.debug("Starting iteration {}".format(i))
-            log.debug("Current intervals: {}".format(M))
+            log.debug(f"Starting iteration {i}")
+            log.debug(f"Current intervals: {M}")
 
             diff = math.log(sum([interval[1] - interval[0] for interval in M]) + 1, 2)
             progress.update(last_log_diff - diff)
@@ -100,7 +100,7 @@ class PKCS1v15PaddingOracleAttack(object):
             if i == 1:
                 s = _ceil(n, 3*B)
 
-                log.debug("Starting search at {}".format(s))
+                log.debug(f"Starting search at {s}")
 
                 while True:
                     c = c_0 * pow(s, e, n) % n
@@ -110,7 +110,7 @@ class PKCS1v15PaddingOracleAttack(object):
                     s += 1
             # Step 2.b
             elif len(M) >= 2:
-                log.debug("Intervals left: {}".format(M))
+                log.debug(f"Intervals left: {M}")
                 while True:
                     s += 1
                     c = c_0 * pow(s, e, n) % n

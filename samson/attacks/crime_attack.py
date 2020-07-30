@@ -56,7 +56,7 @@ class CRIMEAttack(object):
 
         ctr = 0
         while (len(plaintext) - len(known_plaintext)) < secret_len:
-            log.debug('Attempt format of "{}"'.format((plaintext + b'{}' + padding).decode()))
+            log.debug(f'Attempt format of "{(plaintext + b"{}" + padding).decode()}"')
             padded_sizes = [(struct.pack('B', char), self.oracle.request(plaintext + struct.pack('B', char) + padding + constant_padding)) for char in self.alphabet]
 
             sorted_sizes = sorted(padded_sizes, key=lambda req: req[1])
@@ -88,5 +88,5 @@ class CRIMEAttack(object):
 
             if new_len > reference_len:
                 padding = padding[:-1]
-                log.debug('Found suitable padding "{}"'.format(padding.decode()))
+                log.debug(f'Found suitable padding "{padding.decode()}"')
                 return padding

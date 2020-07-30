@@ -1391,40 +1391,6 @@ def hasse_frobenius_trace_interval(p: int) -> (int, int):
     return (-l , l + 1)
 
 
-# def sieve_of_eratosthenes(n: int) -> list:
-#     """
-#     Finds all primes up to `n`.
- 
-#     Parameters:
-#         n (int): Limit.
-
-#     Returns:
-#         list: List of prime numbers.
-
-#     Examples:
-#         >>> from samson.math.general import sieve_of_eratosthenes
-#         >>> sieve_of_eratosthenes(100)
-#         [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
-
-#     """
-#     k     = kth_root(n, 2)
-#     n_2   = n // 2
-#     A     = 2**n_2-1
-#     A_inv = ((1 << A.bit_length()) - 1)
-
-#     for i in range(3, k, 2):
-#         if A & (i // 2):
-#             b = 0
-
-#             # Create the bitmask of the multiples
-#             for j in range((i*i) // 2, n_2, i):
-#                 b += 1 << j
-
-#             # Invert the bitmask and AND it
-#             A &= b ^ A_inv
-
-#     return [2] + [b*2+1 for b in range(1, A.bit_length()) if A & (1 << b)]
-
 
 def sieve_of_eratosthenes(n: int, chunk_size: int=1024, prime_base: set=None) -> list:
     """
@@ -2343,6 +2309,22 @@ def is_prime_power(n: int) -> (bool, int, int):
     return False, None, 0
 
 
+def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_update: FunctionType=lambda n: None):
+    facs = Factors()
+
+    if n < 0:
+        facs.add(-1)
+
+    for prime in (prime_base or sieve_of_eratosthenes(limit)):
+        while not n % prime:
+            facs.add(prime)
+            progress_update(prime)
+            n //= prime
+    
+    return facs
+
+
+
 def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
     """
     Factors an integer `n` into its prime factors.
@@ -2355,7 +2337,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
         use_ecm              (bool): Whether or not to use ECM factorization.
         ecm_attempts          (int): Maximum number of ECM attempts before giving up.
         perfect_power_checks (bool): Whether or not to check for perfect powers.
-        mersenne_check       (bool): Whether or not to check if `n` is a Mersenne number and factor accordingly (see `mersenne_factor`).
+        mersenne_check       (bool): Whether or not to check if `n` is a Mersenne number and factor accordingly (see `_mersenne_factor`).
         visual               (bool): Whether or not to display progress bar.
         reraise_interrupt    (bool): Whether or not to reraise a KeyboardInterrupt.
         user_stop_func       (func): A function that takes in (n, facs) and returns True if the user wants to stop factoring.
@@ -2374,7 +2356,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
     if not user_stop_func:
         user_stop_func = lambda n, facs: False
 
-    factors = {}
+    factors = Factors()
 
     # Handle negatives
     if n < 1:
@@ -2392,42 +2374,6 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
 
     def is_factored(n):
         return n == 1 or is_prime(n) or user_stop_func(n, factors)
-
-    # We want to check for perfect powers after every found factor
-    # It's relatively cheap and can instantly factor the rest
-    def check_perfect_powers(n):
-        if perfect_power_checks and not is_factored(n):
-            ipp, root, k = is_prime_power(n)
-            if ipp:
-                add_or_increment(factors, root, k)
-                r_k = root**k
-                progress_update(r_k)
-                n //= r_k
-
-            else:
-                try:
-                    ipp, root, k = is_perfect_power(n)
-                    if ipp:
-                        for fac, exponent in factor(root).items():
-                            e_k = exponent*k
-                            add_or_increment(factors, fac, e_k)
-
-                            rek = root**e_k
-                            progress_update(rek)
-                            n //= rek
-                except OverflowError:
-                    pass
-
-        return n
-    
-
-    def process_possible_composite(n, f):
-        for fac, exponent in factor(f).items():
-            add_or_increment(factors, fac, exponent)
-            progress_update(fac**exponent)
-            n //= fac**exponent
-
-        return n
 
 
     # Set up visual updates
@@ -2448,21 +2394,57 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
             pass
 
 
+    # We want to check for perfect powers after every found factor
+    # It's relatively cheap and can instantly factor the rest
+    def check_perfect_powers(n):
+        if perfect_power_checks and not is_factored(n):
+            ipp, root, k = is_prime_power(n)
+            if ipp:
+                factors.add(root, k)
+                r_k = root**k
+                progress_update(r_k)
+                n //= r_k
+
+            else:
+                try:
+                    ipp, root, k = is_perfect_power(n)
+                    if ipp:
+                        for fac, exponent in factor(root).items():
+                            e_k = exponent*k
+                            factors.add(fac, e_k)
+
+                            rek = root**e_k
+                            progress_update(rek)
+                            n //= rek
+                except OverflowError:
+                    pass
+
+        return n
+    
+
+    def process_possible_composite(n, f):
+        for fac, exponent in factor(f).items():
+            factors.add(fac, exponent)
+            progress_update(fac**exponent)
+            n //= fac**exponent
+
+        return n
+
+
+
     # Actual factorization
     try:
         if mersenne_check and is_power_of_two(original+1):
             _, _, k = is_prime_power(original+1)
-            return mersenne_factor(k)
+            facs, _ = _mersenne_factor(factor(k), progress_update)
+            progress_finish()
+            return facs
 
 
         if use_trial:
             # Trial division
-            for prime in sieve_of_eratosthenes(limit):
-                while not n % prime:
-                    add_or_increment(factors, prime)
-                    progress_update(prime)
-                    n //= prime
-
+            factors += trial_division(n, limit=limit, progress_update=progress_update)
+            n //= factors.recombine()
             n = check_perfect_powers(n)
 
 
@@ -2497,9 +2479,9 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
 
     progress_finish()
     if n != 1:
-        add_or_increment(factors, n)
+        factors.add(n)
 
-    return Factors(factors)
+    return factors
 
 
 def is_primitive_root(a: int, p: int) -> bool:
@@ -2752,7 +2734,7 @@ def pollards_p_1(n: int, B1: int=None, B2: int=None, a: int=2, E: int=1, exclude
         # The idea is that we want to target a factor `f < n^(1/5)`
         # whose greatest factor `d < f^(1/3)`.
         B2 = max(kth_root(n, 15), B1**5)
-    
+
 
     if not exclude_list:
         exclude_list = []
@@ -2784,41 +2766,68 @@ def pollards_p_1(n: int, B1: int=None, B2: int=None, a: int=2, E: int=1, exclude
 
 
 
-def mersenne_p_1(n: int, k: int, B1: int=None, B2: int=None, exclude_list: list=None) -> int:
+def _mersenne_p_1(n: int, k: int, B1: int=None, B2: int=None, exclude_list: list=None) -> int:
     # All factors of Mersenne numbers are `1 mod 2` and `1 mod k`
     return pollards_p_1(n=n, B1=B1, B2=B2, a=3, E=2*k, exclude_list=exclude_list or [k])
 
 
 
-def mersenne_factor(k: int) -> Factors:
-    all_facs = Factors()
+def _mersenne_fac_subroutine(n: int, p: int):
+    # We only set `fac` to 4 to pass the first "while" condition
+    fac        = 4
+    e_facs     = Factors()
+    reraise_interrupt = False
 
-    # Break `k` into its individual factors and factor those instead
-    for p,e in factor(k).items():
-        p_facs = []
-        for i in range(1, e+1):
-            # We only set `fac` to 4 to pass the first "while" condition
-            fac    = 4
-            e_facs = Factors()
-            n      = 2**(p**i)-1
+    try:
+        # Start with fast smoothness factoring
+        while fac and not is_prime(fac):
+            fac = _mersenne_p_1(n, p, B1=2, B2=min(1000000, kth_root(n, 2)))
+            if fac:
+                n //= fac
+                e_facs.add(fac, 1)
 
-            # `n` will always contain factors from lower exponents,
-            # so let's remove them first
-            n //= 2**(p**(i-1))-1
+        left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True)
 
-            # Start with fast smoothness factoring
-            while fac and not is_prime(fac):
-                fac = mersenne_p_1(n, p**i, B1=2, B2=min(1000000, kth_root(n, 2)), exclude_list=[p])
-                if fac:
-                    n //= fac
-                    e_facs.add(fac, 1)
+    # This is kinda sloppy, but we need to ferry the interrupt up the chain
+    except KeyboardInterrupt:
+        reraise_interrupt = True
+        left_overs = Factors({n: 1})
 
-            e_facs += factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False)
-            p_facs.append(e_facs)
+    return e_facs + left_overs, reraise_interrupt
 
-        all_facs += sum(p_facs, Factors())
 
-    return all_facs
+
+def _mersenne_factor(k: Factors, progress_update: FunctionType) -> Factors:
+    """
+    Internal function.
+
+    This function factors Mersenne numbers by recursively factoring their greatest divisor.
+    Here is an example of how it works:
+        M12 = M6 * x_1
+        M6  = M3 * x_2
+
+    Now we factor M3, x_2, and x_1. We then return the summation of their factorization (e.g. {2: 1} + {3: 1} == {2: 1, 3: 1})
+    """
+    k_rec = k.recombine()
+    if is_prime(k_rec):
+        facs, reraise_interrupt =_mersenne_fac_subroutine(2**k_rec-1, k_rec)
+        progress_update(facs.recombine())
+        return facs, reraise_interrupt
+
+    else:
+        biggest_d = k // list(k)[0]
+        d_facs, reraise_interrupt = _mersenne_factor(biggest_d, progress_update)
+        left_over = (2**k_rec-1) // (2**biggest_d.recombine()-1)
+
+        # Handle d_fac interrupt
+        if reraise_interrupt:
+            return d_facs + Factors({left_over: 1}), reraise_interrupt
+
+        k_facs, reraise_interrupt = _mersenne_fac_subroutine(left_over, k_rec)
+
+        # Update prog
+        progress_update(k_facs.recombine())
+        return k_facs + d_facs, reraise_interrupt
 
 
 
@@ -2938,4 +2947,3 @@ def carmichael_function(n: int, factors: dict=None) -> int:
         result = lcm(result, a)
     
     return result
-
