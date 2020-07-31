@@ -2325,7 +2325,7 @@ def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_upda
 
 
 
-def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, use_ecm: bool=False, ecm_attempts: int=None, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
+def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, use_qsieve: bool=False, qsieve_bound: int=None, use_ecm: bool=False, ecm_attempts: int=None, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
     """
     Factors an integer `n` into its prime factors.
 
@@ -2334,6 +2334,8 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
         use_trial            (bool): Whether or not to use trial division.
         limit                 (int): Upper limit of factors tried in trial division.
         use_rho              (bool): Whether or not to use Pollard's rho factorization.
+        use_qsieve           (bool): Whether or not to use quadratic sieve.
+        qsieve_bound          (int): Smoothness bound for qsieve.
         use_ecm              (bool): Whether or not to use ECM factorization.
         ecm_attempts          (int): Maximum number of ECM attempts before giving up.
         perfect_power_checks (bool): Whether or not to check for perfect powers.
@@ -2378,7 +2380,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
 
     # Set up visual updates
     if visual:
-        progress = tqdm(None, total=calc_prog(n), unit='bit')
+        progress = tqdm(None, total=calc_prog(n), unit='bit', desc="factor: Bits factored")
         def progress_update(x):
             progress.update(calc_prog(x))
             progress.refresh()
@@ -2456,6 +2458,15 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
                     break
 
                 # Rho will give a factor, but not necessarily a prime
+                n = process_possible_composite(n, n_fac)
+                n = check_perfect_powers(n)
+        
+
+        if use_qsieve:
+            from samson.math.qsieve import qsieve
+            while not is_factored(n):
+                n_fac = qsieve(n, qsieve_bound, visual=visual)
+
                 n = process_possible_composite(n, n_fac)
                 n = check_perfect_powers(n)
 
