@@ -1,4 +1,5 @@
-from samson.math.general import fast_mul, square_and_mul, factor, is_prime
+from samson.math.general import fast_mul, square_and_mul, is_prime
+from samson.math.factorization.general import factor
 from types import FunctionType
 from abc import ABC, abstractmethod
 from functools import wraps, reduce
@@ -435,7 +436,7 @@ class RingElement(ABC):
             Factors: Dictionary-like Factors object.
         """
         from samson.math.general import ecm
-        from samson.math.factors import Factors
+        from samson.math.factorization.factors import Factors
         from samson.analysis.general import count_items
 
         factors = []

@@ -1,4 +1,5 @@
-from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv, factor as factorint
+from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv
+from samson.math.factorization.general import factor as factorint
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.oracle import Oracle
@@ -49,7 +50,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
             int: Private key.
         """
         # Factor as much as we can
-        factors = [r for r in factorint((self.p - 1) // self.order, use_rho=False, limit=max_factor_size) if r < max_factor_size]
+        factors = [r for r in factorint((self.p - 1) // self.order, use_rho=True, limit=max_factor_size, use_siqs=False) if r < max_factor_size]
         log.debug(f'Found factors: {factors}')
 
         residues = []

@@ -1,9 +1,10 @@
-from samson.math.general import sieve_of_eratosthenes, legendre, ResidueSymbol, kth_root, tonelli, trial_division, gcd, is_prime, batch_gcd, random_int_between, mod_inv
+from samson.math.general import sieve_of_eratosthenes, legendre, ResidueSymbol, kth_root, tonelli, gcd, is_prime, batch_gcd, random_int_between, mod_inv
 from samson.math.polynomial import Polynomial
 from samson.math.matrix import Matrix
 from samson.math.symbols import Symbol
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.factors import Factors
+from samson.math.factorization.factors import Factors
+from samson.math.factorization.general import trial_division
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.exceptions import NoSolutionException
 from itertools import chain
@@ -14,6 +15,13 @@ from math import exp, sqrt
 import logging
 log = logging.getLogger(__name__)
 
+
+# """
+# References:
+#     "Factoring Integers with the Self-Initializing Quadratic Sieve" (https://pdfs.semanticscholar.org/5c52/8a975c1405bd35c65993abf5a4edb667c1db.pdf)
+#     "A fast algorithm for gaussian elimination over GF(2) and its implementation on the GAPP" (https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf)
+#     https://github.com/skollmann/PyFactorise/blob/master/factorise.py
+# """
 
 #############
 # CONSTANTS #
@@ -36,9 +44,9 @@ SIQS_MAX_PRIME_POLYNOMIAL = 4000
 ###########
 
 class PrimeBase(object):
-    def __init__(self, p: int, n: int, t: int=None):
+    def __init__(self, p: int, n: int, t: int=None, lp: int=None):
         self.p  = p
-        self.lp = round(math.log2(p))
+        self.lp = lp or round(math.log2(p))
         self.soln1 = None
         self.soln2 = None
         self.t = t or tonelli(n % p, p)
@@ -87,9 +95,6 @@ class SMatrix(object):
 def siqs_choose_nf_m(d):
     """
     Choose parameters nf (sieve of factor base) and m (for sieving in [-m,m].
-
-    References:
-        https://github.com/skollmann/PyFactorise/blob/master/factorise.py#L585
     """
     # Using similar parameters as msieve-1.52
     if d <= 34:
@@ -129,7 +134,7 @@ def siqs_choose_nf_m(d):
 def find_base(n, num_factors):
     base = [PrimeBase(2, n, t=1)]
 
-    for p in sieve_of_eratosthenes(1000000):
+    for p in sieve_of_eratosthenes(2**64):
         if legendre(n, p) == ResidueSymbol.EXISTS:
             base.append(PrimeBase(p, n))
         
@@ -139,7 +144,6 @@ def find_base(n, num_factors):
 
 
 def gen_polys(a, b, n):
-    b_orig = b
     if (2 * b > a):
         b = a - b
 
@@ -150,6 +154,9 @@ def gen_polys(a, b, n):
 
 
 def poly_prepare_base(a, b, prime_base):
+    if (2 * b > a):
+        b = a - b
+
     for pb in prime_base:
         if a % pb.p:
             pb.ainv  = mod_inv(a, pb.p)
@@ -171,6 +178,7 @@ def find_first_poly(n, m, prime_base):
             p_max_i = i - 1
             break
 
+
     # The following may happen if the factor base is small, make sure
     # that we have enough primes.
     if p_max_i is None:
@@ -180,6 +188,7 @@ def find_first_poly(n, m, prime_base):
         p_min_i = min(p_min_i, 5)
 
     
+    # TODO: Make pretty
     target  = math.ceil(kth_root(2*n, 2) / m)
     target1 = math.ceil(target / ((prime_base[p_min_i].p + prime_base[p_max_i].p) / 2)**0.5)
 
@@ -245,8 +254,7 @@ def find_next_poly(n, prime_base, i, g, B, a, b):
     b = (b + 2*z*B[v-1]) % a
 
     poly_prepare_base(a, b, prime_base)
-    return gen_polys(a, b, n)
-
+    return gen_polys(a, b, n), a, b
 
 
 def sieve(prime_base, m):
@@ -274,11 +282,11 @@ def sieve(prime_base, m):
 def create_exp_vec(facs: Factors, prime_base: list):
     exp_vec = SparseVector({}, zero=_zero)
 
-    for idx, pb in enumerate(prime_base):
+    for idx, pb in enumerate([PrimeBase(-1, n=0, t=1, lp=1)] + prime_base):
         if pb.p in facs and facs[pb.p] % 2:
             exp_vec[idx] = _one
 
-    exp_vec.virtual_len = len(prime_base)
+    exp_vec.virtual_len = len(prime_base)+1
     return exp_vec
 
 
@@ -305,17 +313,13 @@ def siqs_trial_div(n: int, m: int, g: Polynomial, h: Polynomial, sieve_array: li
 
 
 def ge_f2_nullspace(M: Matrix, visual: bool=False):
-    """
-    References:
-        https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
-    """
     num_rows = len(M.rows)
     num_cols = M.num_cols
     marks    = [False] * num_cols
     iterator = enumerate(M.rows)
 
     if visual:
-        iterator = tqdm(iterator, total=num_rows, unit='row', desc='qsieve: Gaussian elimination')
+        iterator = tqdm(iterator, total=num_rows, unit='row', desc='siqs: Gaussian elimination')
 
 
     for i, row in iterator:
@@ -353,8 +357,9 @@ def solve_row(candidate, M, marks):
                 solution_vec.append(r)
                 break
 
+
+    solution_vec.append(candidate[1])
     log.debug(f"Found linear dependencies at rows {str(solution_vec)}")
-    solution_vec.append(candidate[1])      
     return solution_vec
 
 
@@ -384,7 +389,6 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: SMatrix, marks: 
         sol_vec = solve_row(solutions[K], M, marks)
         factor  = solve(sol_vec, smooth_nums, n)
 
-        # if factor not in [1, n, left] and factor not in factors:
         if factor not in primes and is_prime(factor):
             primes.add(factor)
             left //= factor
@@ -428,11 +432,11 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: SMatrix, marks: 
 
 
 
-def siqs(n: int, relations_ratio: float= 1.05, visual: bool=False):
+def siqs(n: int, relations_ratio: float=1.05, visual: bool=False):
     nf, m      = siqs_choose_nf_m(len(str(n)))
     prime_base = find_base(n, nf)
 
-    smooth_relations   = []
+    smooth_relations = []
     num_poly = 0
 
     log.debug(f"Searching for smooth relations using {nf} factors over interval size {m}...")
@@ -441,7 +445,7 @@ def siqs(n: int, relations_ratio: float= 1.05, visual: bool=False):
         required_relations = round(relations_ratio*len(prime_base))
 
         if visual:
-            progress = tqdm(None, total=required_relations-len(smooth_relations), unit='relation', desc='qsieve: Smooth number sieve')
+            progress = tqdm(None, total=required_relations-len(smooth_relations), unit='relation', desc='siqs: Smooth number sieve')
             def progress_update(x):
                 progress.update(x)
                 progress.refresh()
@@ -461,19 +465,21 @@ def siqs(n: int, relations_ratio: float= 1.05, visual: bool=False):
             if not num_poly:
                 (g, h), B, a, b = find_first_poly(n, m, prime_base)
             else:
-                g, h = find_next_poly(n, prime_base, num_poly, g, B, a, b)
+                (g, h), a, b = find_next_poly(n, prime_base, num_poly, g, B, a, b)
 
             num_poly = (num_poly+1) % 2**(len(B)-1)
-            
+
             # Sieve
             sieve_array = sieve(prime_base, m)
             siqs_trial_div(n, m, g, h, sieve_array, prime_base, required_relations, smooth_relations, progress_update)
+
         
 
         progress_finish()
 
         log.debug(f"Solving exponent parity matrix for nullspace...")
-        exp_mat = SMatrix([exp_vec for _, _, exp_vec in smooth_relations], num_cols=len(prime_base)).T
+        # 'num_cols' is len(prime_base)+1 because we want Gaussian elimination to cancel out negatives
+        exp_mat = SMatrix([exp_vec for _, _, exp_vec in smooth_relations], num_cols=len(prime_base)+1).T
         solutions, marks, M = ge_f2_nullspace(M=exp_mat, visual=visual)
 
         log.debug(f"Checking solutions...")
@@ -483,3 +489,4 @@ def siqs(n: int, relations_ratio: float= 1.05, visual: bool=False):
             return primes, composites
         else:
             relations_ratio += 0.05
+

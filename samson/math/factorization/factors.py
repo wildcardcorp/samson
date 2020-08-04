@@ -81,7 +81,7 @@ class Factors(object):
     def __truediv__(self, other: 'RingElement') -> 'Factors':
         t = type(other)
         if t is int:
-            from samson.math.general import factor
+            from samson.math.factorization.general import factor
             other = factor(other)
 
         elif t not in [Factors, dict, SortedDict]:

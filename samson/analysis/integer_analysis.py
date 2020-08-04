@@ -1,5 +1,6 @@
 from samson.analysis.general import count_items
-from samson.math.general import is_prime, factor, is_sophie_germain_prime, smoothness
+from samson.math.general import is_prime, is_sophie_germain_prime, smoothness
+from samson.math.factorization.general import factor
 from samson.protocols.diffie_hellman import DiffieHellman
 
 WELL_KNOWN_GROUPS = {

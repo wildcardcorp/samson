@@ -1,6 +1,7 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import crt, factor as factorint
+from samson.math.general import crt
+from samson.math.factorization.general import factor as factorint
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.oracle import Oracle
 from typing import List

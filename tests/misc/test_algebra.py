@@ -1,6 +1,7 @@
 from samson.math.algebra.all import FF, ZZ, QQ, P256
 from samson.math.symbols import Symbol, oo
-from samson.math.general import random_int, find_prime, factor
+from samson.math.general import random_int, find_prime
+from samson.math.factorization.general import factor
 from samson.utilities.exceptions import NotInvertibleException
 from functools import reduce
 import unittest

@@ -1,4 +1,5 @@
-from samson.math.general import gcd, mod_inv, is_power_of_two, is_prime, factor as factorint, is_primitive_root
+from samson.math.general import gcd, mod_inv, is_power_of_two, is_prime, is_primitive_root
+from samson.math.factorization.general import factor as factorint
 from samson.math.matrix import Matrix
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME

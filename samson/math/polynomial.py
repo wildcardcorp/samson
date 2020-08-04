@@ -1,8 +1,9 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, factor as factor_int, kth_root, pk_1_smallest_divisor
+from samson.math.general import square_and_mul, gcd, kth_root
+from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
+from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment, binary_search
-from samson.math.factors import Factors
 from types import FunctionType
 import itertools
 
@@ -829,7 +830,7 @@ class Polynomial(RingElement):
         """
         from samson.math.algebra.rings.integer_ring import ZZ
         from samson.math.all import QQ, Symbol
-        from samson.math.factors import Factors
+        from samson.math.factorization.factors import Factors
 
         p = self
         if not p:
