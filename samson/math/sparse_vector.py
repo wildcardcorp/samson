@@ -202,3 +202,16 @@ class SparseVector(object):
         integer overflow problems.
         """
         return self.virtual_len if self.allow_virtual_len else (self.last() + 1 if self.values.keys() else 0)
+
+
+    def vec_add(self, other) -> 'SparseVector':
+        vec = SparseVector([], zero=self.zero)
+        for idx, coeff in self:
+            vec[idx] = coeff + other[idx]
+
+        for idx, coeff in other:
+            if not idx in self:
+                vec[idx] = coeff
+        
+        vec.virtual_len = self.virtual_len
+        return vec

@@ -403,6 +403,33 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
     return s
 
 
+def sqrt_int(n: int) -> int:
+    """
+    Return the square root of the given integer, rounded down to the nearest integer.
+
+    Parameters:
+        n (int): Integer to take square root of.
+    
+    Returns:
+        int: Square root of `n`.
+    
+    References:
+        https://github.com/skollmann/PyFactorise/blob/master/factorise.py#L478
+    """
+    a = n
+    s = 0
+    o = 1 << (int(math.log2(n)) & ~1)
+    while o != 0:
+        t = s + o
+        if a >= t:
+            a -= t
+            s = (s >> 1) + o
+        else:
+            s >>= 1
+        o >>= 2
+    return s
+
+
 def kth_root(n: int, k: int) -> int:
     """
     Calculates the `k`-th integer root of `n`.
@@ -425,7 +452,18 @@ def kth_root(n: int, k: int) -> int:
     References:
         https://stackoverflow.com/questions/23621833/is-cube-root-integer
     """
-    lb, ub = 0, n # lower bound, upper bound
+    ub = n
+
+    for _ in range(k.bit_length()-1):
+        ub = sqrt_int(ub)
+
+
+    if is_power_of_two(k):
+        return ub
+    
+
+    lb = sqrt_int(ub)
+
     while lb < ub:
         guess = (lb + ub) // 2
         if pow(guess, k) < n:
@@ -433,7 +471,8 @@ def kth_root(n: int, k: int) -> int:
         else:
             ub = guess
 
-    return lb
+    return lb + (lb**k < n)
+
 
 
 def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
@@ -2112,7 +2151,7 @@ def is_prime(n: int) -> bool:
     return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)
 
 
-def pollards_rho(n: int) -> int:
+def pollards_rho(n: int, max_attempts: int=None) -> int:
     """
     Uses Pollard's rho to find a factor of `n`.
 
@@ -2129,29 +2168,41 @@ def pollards_rho(n: int) -> int:
 
     References:
         https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm
+        https://github.com/skollmann/PyFactorise/blob/master/factorise.py
+        "An improved Monte Carlo factorization algorithm" (https://maths-people.anu.edu.au/~brent/pd/rpb051i.pdf)
     """
-    x = 2
-    x_fixed = x
-    cycle_size = 2
-    factor = 1
-    mod = 1
+    y, c, m  = [random_int_between(1, n-1) for _ in range(3)]
+    r, q, g  = 1, 1, 1
+    attempts = 0
 
-    while factor == 1:
-        count = 1
-        while count <= cycle_size and factor <= 1:
-            x = (x*x + mod) % n
-            factor = gcd(x - x_fixed, n)
-            count += 1
+    brent = lambda c, n, x: (x*x + c) % n
 
-            # If we get stuck on `n`, retry with -1
-            if factor == n:
-                factor = 1
-                mod    = -1
+    while g == 1 and (not max_attempts or attempts < max_attempts):
+        x = y
 
-        cycle_size *= 2
-        x_fixed = x
+        for _ in range(r):
+            y = brent(c, n, y)
+        
+        k = 0
+        while k < r and g == 1:
+            ys = y
+            for _ in range(min(m, r-k)):
+                y = brent(c, n, y)
+                q = (q * abs(x-y)) % n
+            
+            g  = gcd(q, n)
+            k += m
 
-    return factor
+        r *= 2
+
+        if g == n:
+            while True:
+                ys = brent(c, n, ys)
+                g  = gcd(abs(x-ys), n)
+
+                if g > 1:
+                    break
+    return g
 
 
 def ecm(n: int, attempts: int=100) -> int:
@@ -2217,24 +2268,24 @@ def ecm(n: int, attempts: int=100) -> int:
     raise ProbabilisticFailureException("Factor not found")
 
 
-def is_perfect_power(n: int, precision: float=0.6) -> (bool, int, int):
+def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
     """
-    Determines if `n` is a perfect power. If it is, the root and exponent are returned.
-    This only works for composite roots. See 'is_prime_power' for prime roots.
+    Determines if `n` is a composite power. If it is, the root and exponent are returned.
+    This only works for composite roots. See 'is_perfect_power' for prime roots.
 
     Parameters:
         n           (int): Possible perfect power.
         precision (float): Required precision of natural comprime bases.
     
     Returns:
-        (bool, int, int): Formatted as (is_perfect_power, root, exponent).
+        (bool, int, int): Formatted as (is_composite_power, root, exponent).
     
     Examples:
-        >>> from samson.math.general import is_perfect_power
-        >>> is_perfect_power(1806031142**10*2)
+        >>> from samson.math.general import is_composite_power
+        >>> is_composite_power(1806031142**10*2)
         (False, None, 0)
 
-        >>> is_perfect_power(325221983058579206406111588123469551600**8)
+        >>> is_composite_power(325221983058579206406111588123469551600**8)
         (True, 325221983058579206406111588123469551600, 8)
 
     References:
@@ -2273,21 +2324,69 @@ def is_perfect_power(n: int, precision: float=0.6) -> (bool, int, int):
     return root**d == n, root, d
 
 
-def is_prime_power(n: int) -> (bool, int, int):
+
+# def is_perfect_power(n: int) -> (bool, int, int):
+#     """
+#     Determines if `n` is a perfect power. If it is, the root and exponent are returned.
+
+#     Parameters:
+#         n (int): Possible perfect power.
+    
+#     Returns:
+#         (bool, int, int): Formatted as (is_prime_power, root, exponent).
+    
+#     Examples:
+#         >>> from samson.math.general import is_perfect_power
+#         >>> p = 322061084716023110461357635858544836091
+#         >>> is_perfect_power(p**17)
+#         (True, 322061084716023110461357635858544836091, 17)
+
+#     References:
+#         https://mathoverflow.net/a/106316
+#     """
+#     if is_power_of_two(n):
+#         return True, 2, int(math.log(n, 2))
+
+#     e = 1
+#     last_root = n
+
+#     def calc_bound(n):
+#         return math.ceil(math.log(n, 3))
+
+#     for k in sieve_of_eratosthenes(calc_bound(n)):
+#         is_root = True
+
+#         # Keep trying to remove `k` roots out
+#         while is_root:
+#             root    = kth_root(last_root, k)
+#             is_root = root**k == last_root
+
+#             if is_root:
+#                 if is_prime(root):
+#                     return e > 1, root, e*k
+#                 else:
+#                     last_root = root
+#                     e         *= k
+
+#         if k > calc_bound(last_root):
+#             break
+
+#     return e > 1, last_root, e
+
+def is_perfect_power(n: int) -> (bool, int, int):
     """
-    Determines if `n` is a prime power. If it is, the root and exponent are returned.
-    This only works for prime roots. See 'is_perfect_power' for composite roots.
+    Determines if `n` is a perfect power. If it is, the root and exponent are returned.
 
     Parameters:
-        n (int): Possible prime power.
+        n (int): Possible perfect power.
     
     Returns:
         (bool, int, int): Formatted as (is_prime_power, root, exponent).
     
     Examples:
-        >>> from samson.math.general import is_prime_power
+        >>> from samson.math.general import is_perfect_power
         >>> p = 322061084716023110461357635858544836091
-        >>> is_prime_power(p**17)
+        >>> is_perfect_power(p**17)
         (True, 322061084716023110461357635858544836091, 17)
 
     References:
@@ -2296,26 +2395,55 @@ def is_prime_power(n: int) -> (bool, int, int):
     if is_power_of_two(n):
         return True, 2, int(math.log(n, 2))
 
-    for k in sieve_of_eratosthenes(math.ceil(math.log(n, 3))):
-        root = kth_root(n, k)
+    e = 1
+    last_root = n
 
-        if root**k == n:
-            if is_prime(root):
-                return True, root, k
+    p = 2
+    while True:
+        is_root = True
+
+        # Keep trying to remove `p` roots out
+        while is_root:
+            root    = kth_root(last_root, p)
+            is_root = root**p == last_root
+
+            if is_root:
+                if is_prime(root):
+                    e = e*p
+                    return e > 1, root, e
+                else:
+                    last_root = root
+                    e         *= p
+
+            elif root > 2:
+                # Make sure we don't overflow Python
+                if root.bit_length() < 1024:
+                    # We can calculate the minimum root that produces the next base
+                    # Imagine the following: n = 3**2113, p = 2003, root = 4
+                    # The next prime is 2011, but 'kth_root(n, 2011)' is also 4.
+                    # Thus, we've tried nothing new. The following calculations
+                    # allow us to skip redudant primes
+                    next_base = math.ceil(int(math.log(last_root, root-1)))
+                    p = max(next_prime(next_base), next_prime(p+1))
+                else:
+                    p = next_prime(p+1)
+
             else:
-                ipp, p, k2 = is_prime_power(root)
-                return ipp, p, k*k2
+                return e > 1, last_root, e
 
-    return False, None, 0
 
 
 def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_update: FunctionType=lambda n: None):
     facs = Factors()
 
     if n < 0:
+        n //= -1
         facs.add(-1)
 
     for prime in (prime_base or sieve_of_eratosthenes(limit)):
+        if n == 1:
+            break
+
         while not n % prime:
             facs.add(prime)
             progress_update(prime)
@@ -2361,7 +2489,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
     factors = Factors()
 
     # Handle negatives
-    if n < 1:
+    if n < 0:
         factors[-1] = 1
         n //= -1
 
@@ -2400,26 +2528,15 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
     # It's relatively cheap and can instantly factor the rest
     def check_perfect_powers(n):
         if perfect_power_checks and not is_factored(n):
-            ipp, root, k = is_prime_power(n)
+            ipp, root, k = is_perfect_power(n)
             if ipp:
-                factors.add(root, k)
-                r_k = root**k
-                progress_update(r_k)
-                n //= r_k
+                for fac, exponent in factor(root).items():
+                    e_k = exponent*k
+                    factors.add(fac, e_k)
 
-            else:
-                try:
-                    ipp, root, k = is_perfect_power(n)
-                    if ipp:
-                        for fac, exponent in factor(root).items():
-                            e_k = exponent*k
-                            factors.add(fac, e_k)
-
-                            rek = root**e_k
-                            progress_update(rek)
-                            n //= rek
-                except OverflowError:
-                    pass
+                    rek = fac**e_k
+                    progress_update(rek)
+                    n //= rek
 
         return n
     
@@ -2437,7 +2554,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
     # Actual factorization
     try:
         if mersenne_check and is_power_of_two(original+1):
-            _, _, k = is_prime_power(original+1)
+            k = int(math.log(original+1, 2))
             facs, _ = _mersenne_factor(factor(k), progress_update)
             progress_finish()
             return facs
@@ -2445,8 +2562,9 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, us
 
         if use_trial:
             # Trial division
-            factors += trial_division(n, limit=limit, progress_update=progress_update)
-            n //= factors.recombine()
+            trial_facs = trial_division(n, limit=limit, progress_update=progress_update)
+            factors += trial_facs
+            n //= trial_facs.recombine()
             n = check_perfect_powers(n)
 
 
@@ -2790,14 +2908,23 @@ def _mersenne_fac_subroutine(n: int, p: int):
     reraise_interrupt = False
 
     try:
+        if p in _P2K_FACS:
+            cached = _P2K_FACS[p]
+            if not n % cached:
+                e_facs.add(cached, 1)
+                n //= cached
+
         # Start with fast smoothness factoring
-        while fac and not is_prime(fac):
+        while fac and n > 1 and not is_prime(n):
             fac = _mersenne_p_1(n, p, B1=2, B2=min(1000000, kth_root(n, 2)))
             if fac:
                 n //= fac
-                e_facs.add(fac, 1)
+                e_facs += factor(fac)
 
-        left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True)
+        if n > 1:
+            left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True)
+        else:
+            left_overs = Factors()
 
     # This is kinda sloppy, but we need to ferry the interrupt up the chain
     except KeyboardInterrupt:
