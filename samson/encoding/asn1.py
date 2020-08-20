@@ -4,6 +4,10 @@ from pyasn1_modules import rfc2459
 from pyasn1.codec.der import encoder
 from pyasn1.type.univ import ObjectIdentifier, OctetString
 
+def invert_dict(dic):
+    return {v:k for k,v in dic.items()}
+
+
 # https://www.ietf.org/rfc/rfc5698.txt
 HASH_OID_LOOKUP = {
     SHA1: ObjectIdentifier('1.3.14.3.2.26'),
@@ -13,22 +17,28 @@ HASH_OID_LOOKUP = {
     SHA512: ObjectIdentifier('2.16.840.1.101.3.4.2.3')
 }
 
-INVERSE_HASH_OID_LOOKUP = {v:k for k,v in HASH_OID_LOOKUP.items()}
+INVERSE_HASH_OID_LOOKUP = invert_dict(HASH_OID_LOOKUP)
 
 
 RDN_TYPE_LOOKUP = {
     'CN': rfc2459.CommonName,
     'O': rfc2459.OrganizationName,
     'C': rfc2459.X520countryName,
-    'L': rfc2459.UTF8String
+    'L': rfc2459.UTF8String,
+    'ST': rfc2459.X520StateOrProvinceName
 }
+
+INVERSE_RDN_TYPE_LOOKUP = invert_dict(RDN_TYPE_LOOKUP)
 
 RDN_OID_LOOKUP = {
     'CN': ObjectIdentifier([2, 5, 4, 3]),
     'O': ObjectIdentifier([2, 5, 4, 10]),
     'C': ObjectIdentifier([2, 5, 4, 6]),
-    'L': ObjectIdentifier([2, 5, 4, 7])
+    'L': ObjectIdentifier([2, 5, 4, 7]),
+    'ST': ObjectIdentifier([2, 5, 4, 8])
 }
+
+INVERSE_RDN_OID_LOOKUP = invert_dict(RDN_OID_LOOKUP)
 
 # https://tools.ietf.org/html/rfc8017#appendix-A.2.4
 SIGNING_ALG_OIDS = {
@@ -70,3 +80,14 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
         rdn_seq.setComponentByPosition(i, rdn)
 
     return rdn_seq
+
+
+def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
+    from pyasn1.codec.der import decoder
+    rdn_map = []
+    for rdn in rdns[::-1]:
+        rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(rdn[0]['type'].asTuple())]
+        rval  = str(decoder.decode(bytes(rdn[0]['value']))[0])
+        rdn_map.append((rtype, rval))
+    
+    return ','.join(f'{rtype}={rval}' for rtype, rval in rdn_map)

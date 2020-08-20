@@ -81,7 +81,6 @@ class Symbol(Polynomial):
 
 
     def build(self, ring):
-        from samson.math.polynomial import Polynomial
         self.ring = ring
         self.var  = Polynomial([ring.ring.zero, ring.ring.one], coeff_ring=ring.ring, ring=ring, symbol=self)
 

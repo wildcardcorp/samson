@@ -1,5 +1,5 @@
 from samson.encoding.pem import PEMEncodable, pem_decode
-from samson.encoding.asn1 import parse_rdn
+from samson.encoding.asn1 import parse_rdn,rdn_to_str
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
 from pyasn1.type.univ import ObjectIdentifier, Any, OctetString
@@ -162,6 +162,56 @@ class X509Certificate(PEMEncodable):
         alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
         return alg.verify(verification_key, encoded_tbs, sig_value)
 
+
+
+    @classmethod
+    def get_attributes(cls, buffer: bytes) -> dict:
+        cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
+
+        signature    = Bytes(int(cert['signatureValue']))
+        cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])]
+
+        tbs_cert  = cert['tbsCertificate']
+        version   = int(tbs_cert['version'])
+
+        serial_num        = int(tbs_cert['serialNumber'])
+        issuer_unique_id  = int(tbs_cert['issuerUniqueID']) if tbs_cert['issuerUniqueID'].hasValue() else None
+        subject_unique_id = int(tbs_cert['subjectUniqueID']) if tbs_cert['subjectUniqueID'].hasValue() else None
+
+        # Decode RDNs
+        issuer  = rdn_to_str(tbs_cert['issuer'][0])
+        subject = rdn_to_str(tbs_cert['subject'][0])
+
+        sig_params = bytes(tbs_cert['signature']['parameters'])
+        validity   = tbs_cert['validity']
+        not_before = validity['notBefore']['utcTime'].asDateTime
+        not_after  = validity['notAfter']['utcTime'].asDateTime
+
+        subjectPublicKeyInfo = cls.decode(buffer)
+
+        cert_dict = {
+            'signatureAlgorithm': cert_sig_alg,
+            'signatureValue': signature,
+            'tbsCertificate': {
+                'version': version,
+                'serialNumber': serial_num,
+                'issuer': issuer,
+                'subject': subject,
+                'issuerUniqueID': issuer_unique_id,
+                'subjectUniqueID': subject_unique_id,
+                'subjectPublicKeyInfo': subjectPublicKeyInfo,
+                'signature': {
+                    'algorithm': cert_sig_alg,
+                    'parameters': sig_params
+                },
+                'validity': {
+                    'notBefore': not_before,
+                    'notAfter': not_after
+                },
+            }
+        }
+
+        return cert_dict
 
 
     @classmethod

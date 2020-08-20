@@ -192,6 +192,6 @@ class CurvePolynomialRing(Ring):
                 coerced.append(Polynomial([poly], self.poly_ring.ring))
 
             else:
-                raise CoercionException('Coercion failed')
+                raise CoercionException(self, other)
 
         return CurvePolynomialElement(*coerced, ring=self)

@@ -8,11 +8,11 @@ import math
 
 # Resolve circular dependencies while reducing function-level imports
 from samson.auxiliary.lazy_loader import LazyLoader
-integer_ring = LazyLoader('integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
-poly         = LazyLoader('poly', globals(), 'samson.math.polynomial')
-mat          = LazyLoader('mat', globals(), 'samson.math.matrix')
-dense        = LazyLoader('dense', globals(), 'samson.math.dense_vector')
-factor_gen   = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
+_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_poly         = LazyLoader('poly', globals(), 'samson.math.polynomial')
+_mat          = LazyLoader('mat', globals(), 'samson.math.matrix')
+_dense        = LazyLoader('dense', globals(), 'samson.math.dense_vector')
+_factor_gen   = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
@@ -34,8 +34,8 @@ def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
         <Polynomial: x**4 + x**3 + 2*x**2 + 2, coeff_ring=ZZ/ZZ(3)>
 
     """
-    Polynomial = poly.Polynomial
-    ZZ = integer_ring.ZZ
+    Polynomial = _poly.Polynomial
+    ZZ = _integer_ring.ZZ
     base_coeffs = []
 
     # Use != to handle negative numbers
@@ -58,7 +58,7 @@ def poly_to_int(poly: 'Polynomial') -> int:
         int: Integer representation.
     
     Examples:
-        >>> from samson.math.general import int_to_poly, poly_to_int
+        >>> from samson.math.general import int_to_poly, _poly_to_int
         >>> poly_to_int(int_to_poly(100))
         100
 
@@ -214,7 +214,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
     References:
         https://anh.cs.luc.edu/331/notes/xgcd.pdf
     """
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     # For convenience
     peel_ring = False
@@ -297,7 +297,7 @@ def mod_inv(a: int, n: int) -> int:
         https://en.wikipedia.org/wiki/Euclidean_algorithm#Linear_Diophantine_equations
         https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
     """
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     # For convenience
     peel_ring = False
@@ -554,7 +554,7 @@ def crt(residues: list) -> (object, object):
         (<Polynomial: x**4 + 1, coeff_ring=ZZ/ZZ(2)>, <Polynomial: x**6 + x**4 + x + 1, coeff_ring=ZZ/ZZ(2)>)
 
     """
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     peel_ring = False
     if type(residues[0]) is tuple:
@@ -607,8 +607,8 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
         https://grocid.net/2016/08/11/solving-problems-with-lattice-reduction/
     """
     from samson.math.all import QQ
-    ZZ = integer_ring.ZZ
-    Matrix = mat.Matrix
+    ZZ = _integer_ring.ZZ
+    Matrix = _mat.Matrix
 
     # Remove redundant subgroups to minimize result
     if remove_redundant:
@@ -869,7 +869,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     References:
         https://rosettacode.org/wiki/Gaussian_elimination#Python
     """
-    Matrix = mat.Matrix
+    Matrix = _mat.Matrix
 
     A = deepcopy(system_matrix).row_join(rhs)
 
@@ -935,8 +935,8 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
         https://github.com/sagemath/sage/blob/1d465c7e3c82110d39034f3ca7d9d120f435511e/src/sage/matrix/matrix2.pyx
 
     """
-    Matrix = mat.Matrix
-    DenseVector = dense.DenseVector
+    Matrix = _mat.Matrix
+    DenseVector = _dense.DenseVector
 
     R = matrix.coeff_ring
     n = matrix.num_rows
@@ -1004,8 +1004,8 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
         https://en.wikipedia.org/wiki/Lenstra%E2%80%93Lenstra%E2%80%93Lov%C3%A1sz_lattice_basis_reduction_algorithm
     """
     from samson.math.all import QQ
-    Matrix = mat.Matrix
-    DenseVector = dense.DenseVector
+    Matrix = _mat.Matrix
+    DenseVector = _dense.DenseVector
 
 
     def vecs_to_matrix(vecs):
@@ -1210,6 +1210,9 @@ def next_prime(start_int: int) -> int:
         13
 
     """
+    if start_int < 2:
+        return 2
+
     start_int |= 1
     while not is_prime(start_int):
         start_int += 2
@@ -1243,8 +1246,8 @@ def berlekamp_massey(output_list: list) -> 'Polynomial':
     References:
         https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
     """
-    Polynomial = poly.Polynomial
-    ZZ = integer_ring.ZZ
+    Polynomial = _poly.Polynomial
+    ZZ = _integer_ring.ZZ
 
     n = len(output_list)
     b = [1] + [0] * (n - 1)
@@ -1312,7 +1315,7 @@ def totient(n: int, factors: dict=None) -> int:
         int: Totient of `n`.
     """
     if not factors:
-        factors = factor_gen.factor(n)
+        factors = _factor_gen.factor(n)
 
     t = 1
     for p, e in factors.items():
@@ -1602,7 +1605,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     torsion_quotient_ring = ZZ/ZZ(l)
     psi = curve.division_poly(l)
@@ -1666,7 +1669,7 @@ def frobenius_trace(curve: object) -> int:
 
     """
     from samson.math.symbols import Symbol
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     search_range      = hasse_frobenius_trace_interval(curve.p)
     torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
@@ -1824,23 +1827,31 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
     """
     if not n:
-        n = g.ring.order
+        n = g.order
 
     if not factors:
-        factors = factor_gen.factor(n)
+        factors = _factor_gen.factor(n)
+    
+    def pp_bsgs(g, h, p, e):
+        x = [0]*(e+1)
 
-    x = [0] * len(factors)
-
-    for i, (p, e) in enumerate(factors.items()):
-        gamma = g * (n // p)
+        gamma = g*(p**(e-1))
         for k in range(e):
-            g_k   = g * x[i]
-            h_k   = (h + -g_k) * (n // p**(k+1))
-            d_k   = bsgs(gamma, h_k, p)
-            x[i] += d_k * p**k
+            h_k = (g * -x[k] + h) * (p**(e-1-k))
+            d_k = bsgs(gamma, h_k, p)
+            x[k+1] = x[k] + d_k * p**k
+
+        return x[-1]
+
+    x = []
+    for i, (p, e) in enumerate(factors.items()):
+        ex_i = (n // p**e)
+        g_i  = g * ex_i
+        h_i  = h * ex_i
+        x_i  = pp_bsgs(g_i, h_i, p, e)
+        x.append(x_i)
 
     return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
-
 
 
 def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
@@ -1897,7 +1908,7 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     return True
 
 
-FB_LARGE_MOD = 3989930175
+_FB_LARGE_MOD = 3989930175
 def is_square(n: int) -> bool:
     """
     Determines if `n` is a square using "fenderbender" tests first.
@@ -1927,7 +1938,7 @@ def is_square(n: int) -> bool:
     if ((m*0x8bc40d7d) & (m*0xa1e2f5d1) & 0x14020a):
         return False
 
-    n_mod = n % FB_LARGE_MOD
+    n_mod = n % _FB_LARGE_MOD
 
     m = n_mod % 63
     if ((m*0x3d491df7) & (m*0xc824a9f9) & 0x10f14008):
@@ -2179,7 +2190,7 @@ def is_primitive_root(a: int, p: int) -> bool:
         True
 
     """
-    ZZ = integer_ring.ZZ
+    ZZ = _integer_ring.ZZ
 
     Z_star = (ZZ/ZZ(p)).mul_group()
     a_star = Z_star(a)
@@ -2286,7 +2297,7 @@ def smoothness(n: int, factors: dict=None, **factor_kwargs) -> float:
         if not factor_kwargs:
             factor_kwargs = {"use_rho": False}
 
-        factors = factor_gen.factor(n, **factor_kwargs)
+        factors = _factor_gen.factor(n, **factor_kwargs)
 
     # 'factors' will return {n: 1} if `n` is prime
     # Just early-out since there will be zero non-trivials anyway
@@ -2336,7 +2347,7 @@ def is_carmichael_number(n: int, factors: dict=None) -> bool:
     References:
         https://en.wikipedia.org/wiki/Carmichael_number#Korselt's_criterion
     """
-    factors = factors or factor_gen.factor(n, reraise_interrupt=True)
+    factors = factors or _factor_gen.factor(n, reraise_interrupt=True)
 
 
     if max(factors.values()) > 1 or len(factors) == 1:
@@ -2388,7 +2399,7 @@ def carmichael_function(n: int, factors: dict=None) -> int:
         https://en.wikipedia.org/wiki/Carmichael_function
     """
     if not factors:
-        factors = factor_gen.factor(n)
+        factors = _factor_gen.factor(n)
     
     result = 1
     for p, e in factors.items():
@@ -2399,3 +2410,106 @@ def carmichael_function(n: int, factors: dict=None) -> int:
         result = lcm(result, a)
     
     return result
+
+
+# def coppersmiths(N: int, f: 'Polynomial') -> list:
+#     """
+#     References:
+#         "Rounding LLL: Finding Faster Small Roots of Univariate Polynomial Congruences" (https://eprint.iacr.org/2013/512.pdf)
+#     """
+#     Matrix = _mat.Matrix
+#     d = f.degree()
+
+#     # We already have the root
+#     if d == 1:
+#         return [-f.coeffs[0]]
+
+#     else:
+#         d_root = kth_root(N, d)
+
+#         # Use exhaustive search
+#         if d+1 > math.log2(N) // 2:
+#             roots = []
+
+#             for x0 in range(-d_root, d_root+1):
+#                 if not f(x0) % N:
+#                     roots.append(x0)
+
+#             return roots
+
+#         else:
+#             h = math.ceil(math.log2(N) / d)
+#             n = h*d
+#             X = math.floor(2**(-1/2) * N**((h-1)/(n-1)) * (n+1)**(-1/(n-1)))
+#             t = X - d_root
+
+#             x = f.symbol
+
+#             roots = []
+#             while t <= d_root:
+#                 g = f(x - t)
+
+#                 # Not sure how to get to this branch
+#                 # How can d > log2(N) AND < log2(N) // 2 - 1?
+#                 if d > math.log2(N):
+#                     if not g(0) % N:
+#                         roots.append(0+t)
+#                 else:
+#                     g = [x**j * N**(m-i) * f**i for i in h(m) for j in range(d)]
+#                     g.extend([x**i * f**m for i in range(t)])
+
+#                     # Build the problem matrix
+#                     B = []
+#                     for i in range(len(g)):
+#                         B.append([])
+
+#                         for j in range(g[i].degree()+1):
+#                             B[i].append(g[i].coeffs[j]*X**j)
+                    
+#                     B = Matrix(B, ZZ).LLL()
+#                     k = sum([ZZ(B[0, i] // X**i)*x**i for i in range(B.num_cols)])
+#                     R = k.roots()
+#                     Zn = ZZ/ZZ(N)
+#                     roots = set(Zn(r) for r in R if abs(r) <= X)
+
+#                 t += 2*X
+            
+#             return roots
+
+
+def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X: int=None) -> list:
+    ZZ = _integer_ring.ZZ
+    Matrix = _mat.Matrix
+
+    d = f.degree()
+    x = f.symbol
+
+    if not epsilon:
+        epsilon = beta/8
+    
+
+    m = math.ceil(max(beta**2/(d*epsilon), 7*beta/d))
+    t = int(d*m * (1/beta - 1))
+
+    if not X:
+        X = math.ceil(0.5 * N**(beta**2/d - epsilon))
+
+    g = [x**j * N**(m-i) * f**i for i in range(m) for j in range(d)]
+    g.extend([x**i * f**m for i in range(t)])
+
+    # Build the problem matrix
+    B = Matrix.fill(ZZ.zero, len(g), d*m + max(d, t))
+    for i in range(len(g)):
+        for j in range(g[i].degree()+1):
+            B[i,j] = (g[i].coeffs[j]*X**j)
+    
+
+    # Solve the problem matrix
+    B = Matrix(B, ZZ).LLL()
+    k = sum([x**i*ZZ(B[0, i] // X**i) for i in range(B.num_cols)])
+
+    R     = k.roots()
+    Zn    = ZZ/ZZ(N)
+    roots = set(Zn(r) for r in R if abs(r) <= X)
+    Nb    = N**beta
+    return [root for root in roots if gcd(N, root) >= Nb]

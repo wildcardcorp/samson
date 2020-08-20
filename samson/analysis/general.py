@@ -1,8 +1,8 @@
 from samson.encoding.general import bytes_to_bitstring
 from math import log, sqrt, pi
-import operator
+import operator as _operator
 import json
-import difflib
+import difflib as _difflib
 import os
 
 RC4_BIAS_MAP = [163, 0, 131, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 240, 17, 18, 0, 20, 21, 22, 0, 24, 25, 26, 0, 28, 29, 0, 31, 224, 33, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 208, 0, 0, 0]
@@ -19,7 +19,7 @@ def longest_subsequence(seq_a: list, seq_b: list) -> list:
     Returns
         list: Longest subsequence.
     """
-    seqMatch = difflib.SequenceMatcher(None, seq_a, seq_b)
+    seqMatch = _difflib.SequenceMatcher(None, seq_a, seq_b)
     match = seqMatch.find_longest_match(0, len(seq_a), 0, len(seq_b))
     return seq_a[match.a: match.a + match.size]
 
@@ -175,7 +175,7 @@ def find_repeating_key_size(ciphertext: bytes, key_range: list) -> list:
 
         key_distances[size] = size_sum / num_blocks
 
-    return sorted(key_distances.items(), key=operator.itemgetter(1))
+    return sorted(key_distances.items(), key=_operator.itemgetter(1))
 
 
 

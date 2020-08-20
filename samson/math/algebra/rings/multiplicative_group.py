@@ -31,8 +31,8 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __sub__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
-        other = self.ring.coerce(other)
-        return MultiplicativeGroupElement(self.val / other.val, self.ring)
+        other = self.ring.coerce(-other)
+        return MultiplicativeGroupElement(self.val * other.val, self.ring)
 
 
     def __mul__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
@@ -116,6 +116,7 @@ class MultiplicativeGroup(Ring):
     def order(self) -> int:
         from samson.math.algebra.rings.quotient_ring import QuotientRing
         from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.algebra.fields.finite_field import FiniteField
         from samson.math.polynomial import Polynomial
 
         if not self.order_cache:
@@ -131,9 +132,13 @@ class MultiplicativeGroup(Ring):
 
                     else:
                         self.order_cache = totient(int(quotient))
-
+            
                 else:
                     raise NotImplementedError()
+            
+            elif type(self.ring) is FiniteField:
+                self.order_cache = self.ring.order-1
+
 
             elif self.ring.order == oo:
                 self.order_cache = oo

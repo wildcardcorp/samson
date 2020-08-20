@@ -1,14 +1,18 @@
 from samson.math.general import fast_mul, square_and_mul, is_prime
 from samson.math.factorization.general import factor
+from samson.math.factorization.factors import Factors
 from types import FunctionType
 from abc import ABC, abstractmethod
 from functools import wraps, reduce
 from itertools import combinations
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
-from samson.utilities.exceptions import CoercionException
+from samson.utilities.exceptions import CoercionException, NotInvertibleException
+from samson.utilities.general import binary_search
 
-poly = LazyLoader('poly', globals(), 'samson.math.polynomial')
+_poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
+_quot = LazyLoader('_quot', globals(), 'samson.math.algebra.rings.quotient_ring')
+_frac = LazyLoader('_frac', globals(), 'samson.math.algebra.fields.fraction_field')
 
 
 
@@ -23,7 +27,7 @@ def try_poly_first(element: object, other: object, func: FunctionType) -> object
     Returns:
         RingElement/None: The output of the Polynomial's function if possible.
     """
-    if issubclass(type(other), poly.Polynomial) and other.coeff_ring == element.ring:
+    if issubclass(type(other), _poly.Polynomial) and other.coeff_ring == element.ring:
         return func(other, element)
 
 
@@ -38,7 +42,7 @@ def left_expression_intercept(func: FunctionType) -> object:
             try:
                 name = func.__name__
                 name = '__r' + name[2:]
-                poly_res = try_poly_first(*args, **kwargs, func=getattr(poly.Polynomial, name))
+                poly_res = try_poly_first(*args, **kwargs, func=getattr(_poly.Polynomial, name))
 
                 if poly_res is not None:
                     return poly_res
@@ -92,7 +96,7 @@ class Ring(ABC):
             return self[random_int(size.ordinality())]
 
 
-    def coerce(self, other: object) -> 'RingElement':
+    def base_coerce(self, other: object) -> 'RingElement':
         """
         Attempts to coerce other into an element of the algebra.
 
@@ -102,7 +106,20 @@ class Ring(ABC):
         Returns:
             RingElement: Coerced element.
         """
-        return other
+        t_o = type(other)
+        if t_o is _quot.QuotientElement and other.ring.ring == self:
+            return other.val
+    
+        elif t_o is _frac.FractionFieldElement and other.ring.ring == self:
+            scaled = other.numerator / other.denominator
+
+            if scaled.ring == other.ring:
+                raise CoercionException(self, other)
+            else:
+                return scaled
+    
+        else:
+            return other
 
 
     def mul_group(self) -> 'MultiplicativeGroup':
@@ -115,7 +132,7 @@ class Ring(ABC):
 
 
     def __call__(self, args) -> 'RingElement':
-        return self.coerce(args)
+        return self.coerce(self.base_coerce(args))
 
 
     def __contains__(self, element: 'RingElement') -> bool:
@@ -167,11 +184,10 @@ class Ring(ABC):
 
 
     def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
-        from samson.math.algebra.rings.quotient_ring import QuotientRing
         if element.ring != self:
             raise RuntimeError("'element' must be an element of the ring")
 
-        return QuotientRing(element, self)
+        return _quot.QuotientRing(element, self)
 
 
     def __getitem__(self, x: int) -> 'RingElement':
@@ -238,6 +254,16 @@ class RingElement(ABC):
         return divmod(self.ring.coerce(other), self)
 
 
+    def __truediv__(self, other: 'RingElement') -> 'RingElement':
+        if self.ring.coerce(other) == self.ring.one:
+            return self
+
+        if RUNTIME.auto_promote:
+            return _frac.FractionField(self.ring)((self, other))
+        else:
+            raise NotInvertibleException("Non-unit division impossible", parameters={'a': other})
+
+
     def __rtruediv__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) / self
 
@@ -297,7 +323,7 @@ class RingElement(ABC):
 
         # This is like a bajillion times faster than importing Poly
         elif type_o.__name__ in ['Polynomial', 'Symbol']:
-            return try_poly_first(self, other, poly.Polynomial.__rmul__)
+            return try_poly_first(self, other, _poly.Polynomial.__rmul__)
 
 
     def is_invertible(self) -> bool:
@@ -369,9 +395,8 @@ class RingElement(ABC):
 
         """
         from samson.math.algebra.rings.integer_ring import IntegerElement
-        from samson.math.algebra.fields.fraction_field import FractionFieldElement
 
-        if type(self) in [IntegerElement, poly.Polynomial, FractionFieldElement]:
+        if type(self) in [IntegerElement, _poly.Polynomial, _frac.FractionFieldElement]:
             return self
 
         else:
@@ -390,17 +415,21 @@ class RingElement(ABC):
 
         if self.ring.order == oo:
             return oo
+        
 
-        expanded_factors = [1] + [item for fac, num in factor(self.ring.order).items() for item in [fac]*num]
-        all_orders = []
+        ro_facs = factor(self.ring.order)
+        so_facs = Factors()
 
-        for product_size in range(1, len(expanded_factors)+1):
-            for combination in set(combinations(expanded_factors, product_size)):
-                product = reduce(int.__mul__, combination, 1)
-                if self*product == self.ring.zero:
-                    all_orders.append(product)
+        for p in ro_facs:
+            e = ro_facs[p]
+            for i in range(1,e+2):
+                o = self.ring.order // p**i
+                if self*o != self.ring.zero:
+                    break
 
-        return min(all_orders)
+            so_facs[p] = e-(i-1)
+
+        return so_facs.recombine()
 
 
 

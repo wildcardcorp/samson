@@ -117,6 +117,18 @@ class Polynomial(RingElement):
         return hash((self.coeff_ring, self.coeffs, self.__class__))
 
 
+    def __getitem__(self, idx: int) -> object:
+        vec = self.coeffs[idx]
+        if type(vec) is SparseVector:
+            return self._create_poly(vec)
+        else:
+            return vec
+    
+
+    def __setitem__(self, idx: int, value: 'RingElement'):
+        self.coeffs[idx] = value
+
+
     def LC(self) -> RingElement:
         """
         Returns the leading coefficient.
@@ -141,7 +153,7 @@ class Polynomial(RingElement):
             RingElement: Evaluation at `x`.
         """
         coeffs   = self.coeffs
-        c0       = coeffs[-1]*x
+        c0       = x*coeffs[-1]
         last_idx = coeffs.last()
         idx      = None
 
@@ -149,7 +161,7 @@ class Polynomial(RingElement):
             if not idx:
                 continue
 
-            c0 = (coeff + c0)*x**(last_idx-idx)
+            c0 = (c0+coeff)*x**(last_idx-idx)
             last_idx = idx
 
         # Handle the case where there's only one coeff
@@ -159,7 +171,8 @@ class Polynomial(RingElement):
         elif last_idx-idx:
             c0 *= x**(last_idx-1-idx)
 
-        c0 += coeffs[0]
+        if self.degree():
+            c0 += coeffs[0]
 
         return c0
 
@@ -209,7 +222,7 @@ class Polynomial(RingElement):
             all_facs = []
             q_facs   = R.quotient.factor()
             for fac in q_facs:
-                sub_facs = self.peel_coeffs().embed_coeffs(R.ring/R.ring(fac)).factor()
+                sub_facs = self.peel_coeffs().change_ring(R.ring/R.ring(fac)).factor()
                 all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
 
             return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
@@ -438,7 +451,7 @@ class Polynomial(RingElement):
 
             if g != self.ring.one:
                 S.append((g, i))
-                f_star /= g
+                f_star //= g
 
             i += 1
 
@@ -664,7 +677,7 @@ class Polynomial(RingElement):
                 p = find_coprime(lc, range(2, lc**2))
 
             field = ZZ/ZZ(p)
-            poly  = poly.embed_coeffs(field)
+            poly  = poly.change_ring(field)
         else:
             poly = self
 
@@ -747,7 +760,7 @@ class Polynomial(RingElement):
         while True:
             p = next_prime(p+1)
             R = ZZ/ZZ(p)
-            g = f.embed_coeffs(R)
+            g = f.change_ring(R)
             if sum(g.sff().values()) == 1:
                 break
 
@@ -876,7 +889,7 @@ class Polynomial(RingElement):
 
             # Coerce the factors back into QQ
             for fac, e in facs.items():
-                fac = fac.embed_coeffs(QQ)
+                fac = fac.change_ring(QQ)
                 fac.symbol = q.symbol
                 factors[fac] = e
 
@@ -914,7 +927,7 @@ class Polynomial(RingElement):
         return int(self)
 
 
-    def embed_coeffs(self, ring: Ring) -> 'Polynomial':
+    def change_ring(self, ring: Ring) -> 'Polynomial':
         """
         Returns a new Polynomial with the coefficients coerced into `ring`.
 
@@ -929,7 +942,7 @@ class Polynomial(RingElement):
             >>> x = Symbol('x')
             >>> _ = ZZ[x]
             >>> p = x**4 + x**2 + 1
-            >>> p.embed_coeffs(ZZ/ZZ(2))
+            >>> p.change_ring(ZZ/ZZ(2))
             <Polynomial: x**4 + x**2 + 1, coeff_ring=ZZ/ZZ(2)>
 
         """
@@ -1124,11 +1137,8 @@ class Polynomial(RingElement):
         return self._create_poly([(idx, -coeff) for idx, coeff in self.coeffs])
 
 
-    def __truediv__(self, other: 'Polynomial') -> 'Polynomial':
+    def __floordiv__(self, other: 'Polynomial') -> 'Polynomial':
         return self.__divmod__(other)[0]
-
-
-    __floordiv__ = __truediv__
 
 
     def __mod__(self, other: 'Polynomial') -> 'Polynomial':
@@ -1201,7 +1211,7 @@ class Polynomial(RingElement):
         """
         from samson.math.algebra.fields.fraction_field import FractionField
 
-        # Euclidean is only defined for polynomials over a field
+        # Euclidean division is only defined for polynomials over a field
         R = self.coeff_ring
         if R.is_field():
             return super().gcd(other)
@@ -1209,8 +1219,8 @@ class Polynomial(RingElement):
         else:
             # Embed ring into a fraction field
             Q   = FractionField(R)
-            s_q = self.embed_coeffs(Q)
-            o_q = other.embed_coeffs(Q)
+            s_q = self.change_ring(Q)
+            o_q = other.change_ring(Q)
 
             fac = s_q.gcd(o_q)
             c   = fac.content()

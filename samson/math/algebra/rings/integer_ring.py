@@ -6,7 +6,7 @@ from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from samson.math.symbols import oo
 
-all_mod = LazyLoader('all_mod', globals(), 'samson.math.all')
+_all_mod = LazyLoader('all_mod', globals(), 'samson.math.all')
 
 class IntegerElement(RingElement):
     """
@@ -122,9 +122,6 @@ class IntegerElement(RingElement):
         return divmod(self, other)[0]
 
 
-    __truediv__ = __floordiv__
-
-
     def __neg__(self) -> 'IntegerElement':
         return IntegerElement(-self.val, self.ring)
 
@@ -200,10 +197,10 @@ class IntegerRing(Ring):
         elif type(other) is IntegerElement:
             return other
 
-        elif other.ring == all_mod.QQ and other.denominator == ZZ.one:
+        elif other.ring == _all_mod.QQ and other.denominator == ZZ.one:
             return other.numerator
 
-        raise CoercionException('Coercion failed')
+        raise CoercionException(self, other)
 
 
     def __eq__(self, other: 'IntegerRing') -> bool:

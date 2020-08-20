@@ -1,20 +1,20 @@
 from samson.utilities.manipulation import get_blocks
 from pyasn1.codec.der import encoder, decoder
-from pyasn1.type.univ import Sequence, Integer, SequenceOf
+from pyasn1.type.univ import Sequence as _Sequence, Integer as _Integer, SequenceOf as _SequenceOf
 import base64
 import string
 import math
 
 
 # https://github.com/fwenzel/python-bcrypt
-B64_CHARS = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '+/')).encode('utf-8')
-B64_CHARS_BCRYPT = ''.join(('./', string.ascii_uppercase, string.ascii_lowercase, string.digits)).encode('utf-8')
-B64_CHARS_URL = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '-_')).encode('utf-8')
+_B64_CHARS = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '+/')).encode('utf-8')
+_B64_CHARS_BCRYPT = ''.join(('./', string.ascii_uppercase, string.ascii_lowercase, string.digits)).encode('utf-8')
+_B64_CHARS_URL = ''.join((string.ascii_uppercase, string.ascii_lowercase, string.digits, '-_')).encode('utf-8')
 
-B64_TO_BCRYPT_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_BCRYPT)
-BCRYPT_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_BCRYPT, B64_CHARS)
-B64_TO_URL_TRANSLATION = bytes.maketrans(B64_CHARS, B64_CHARS_URL)
-URL_TO_B64_TRANSLATION = bytes.maketrans(B64_CHARS_URL, B64_CHARS)
+_B64_TO_BCRYPT_TRANSLATION = bytes.maketrans(_B64_CHARS, _B64_CHARS_BCRYPT)
+_BCRYPT_TO_B64_TRANSLATION = bytes.maketrans(_B64_CHARS_BCRYPT, _B64_CHARS)
+_B64_TO_URL_TRANSLATION = bytes.maketrans(_B64_CHARS, _B64_CHARS_URL)
+_URL_TO_B64_TRANSLATION = bytes.maketrans(_B64_CHARS_URL, _B64_CHARS)
 
 
 def bcrypt_b64_encode(bytestring: bytes) -> bytes:
@@ -27,7 +27,7 @@ def bcrypt_b64_encode(bytestring: bytes) -> bytes:
     Returns:
         bytes: bcrypt-base64 encoded bytestring.
     """
-    return base64.b64encode(bytestring).translate(B64_TO_BCRYPT_TRANSLATION, b'=')
+    return base64.b64encode(bytestring).translate(_B64_TO_BCRYPT_TRANSLATION, b'=')
 
 
 def bcrypt_b64_decode(bytestring: bytes) -> bytes:
@@ -41,7 +41,7 @@ def bcrypt_b64_decode(bytestring: bytes) -> bytes:
         bytes: bcrypt-base64 decoded bytestring.
     """
     # Handle missing padding
-    bytestring = bytestring.translate(BCRYPT_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
+    bytestring = bytestring.translate(_BCRYPT_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
     return base64.b64decode(bytestring)
 
 
@@ -55,7 +55,7 @@ def url_b64_encode(bytestring: bytes) -> bytes:
     Returns:
         bytes: url-base64 encoded bytestring.
     """
-    return base64.b64encode(bytestring).translate(B64_TO_URL_TRANSLATION, b'=')
+    return base64.b64encode(bytestring).translate(_B64_TO_URL_TRANSLATION, b'=')
 
 
 def url_b64_decode(bytestring: bytes) -> bytes:
@@ -69,7 +69,7 @@ def url_b64_decode(bytestring: bytes) -> bytes:
         bytes: url-base64 decoded bytestring.
     """
     # Handle missing padding
-    bytestring = bytestring.translate(URL_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
+    bytestring = bytestring.translate(_URL_TO_B64_TRANSLATION) + (b'=' * (4 - len(bytestring) % 4))
     return base64.b64decode(bytestring)
 
 
@@ -181,14 +181,14 @@ def export_der(items: list, item_types: list=None) -> bytes:
     Returns:
         bytes: DER-encoded sequence bytes.
     """
-    seq = Sequence()
+    seq = _Sequence()
 
     if not item_types:
-        item_types = [Integer] * len(items)
+        item_types = [_Integer] * len(items)
 
     seq_len = 0
     for val, item_type in zip(items, item_types):
-        if item_type == SequenceOf:
+        if item_type == _SequenceOf:
             item = item_type()
             item.extend(val)
         else:
@@ -201,7 +201,7 @@ def export_der(items: list, item_types: list=None) -> bytes:
 
 
 
-def bytes_to_der_sequence(buffer: bytes, passphrase: bytes=None) -> Sequence:
+def bytes_to_der_sequence(buffer: bytes, passphrase: bytes=None) -> _Sequence:
     """
     Attempts to PEM-decode `buffer` then decodes the result to a DER sequence.
 
@@ -256,20 +256,20 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
 
 from enum import Enum
 class PKIEncoding(Enum):
-    PKCS1 = 0
-    PKCS8 = 1
-    X509 = 2
+    PKCS1     = 0
+    PKCS8     = 1
+    X509      = 2
     X509_CERT = 3
-    OpenSSH = 4
-    SSH2 = 5
-    JWK = 6
+    OpenSSH   = 4
+    SSH2      = 5
+    JWK       = 6
 
 
 
 class PKIAutoParser(object):
 
     @staticmethod
-    def import_key(buffer: bytes, passphrase: bytes=None):
+    def get_encoding(buffer: bytes, passphrase: bytes=None):
         from samson.core.encodable_pki import EncodablePKI, ORDER
         from samson.encoding.pem import pem_decode
 
@@ -289,6 +289,16 @@ class PKIAutoParser(object):
                         encoder = encoding_type[encoding]
 
                         if encoder.check(buffer, passphrase=passphrase):
-                            return encoder.decode(buffer, passphrase=passphrase)
+                            return encoder
 
         raise ValueError("Unable to parse provided key.")
+
+
+    @staticmethod
+    def import_key(buffer: bytes, passphrase: bytes=None):
+        from samson.encoding.pem import pem_decode
+
+        if buffer.startswith(b'----'):
+            buffer = pem_decode(buffer, passphrase)
+
+        return PKIAutoParser.get_encoding(buffer, passphrase=passphrase).decode(buffer, passphrase=passphrase)

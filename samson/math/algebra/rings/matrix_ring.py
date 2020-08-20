@@ -68,7 +68,7 @@ class MatrixRing(Ring):
             elem = other
 
         else:
-            raise CoercionException('Coercion failed')
+            raise CoercionException(self, other)
 
 
         assert elem.is_square(), "Elements must be square in a MatrixRing"

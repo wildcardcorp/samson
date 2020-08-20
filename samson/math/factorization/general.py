@@ -5,23 +5,24 @@ from tqdm import tqdm
 import math
 
 from samson.auxiliary.lazy_loader import LazyLoader
-integer_ring = LazyLoader('integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
-poly         = LazyLoader('poly', globals(), 'samson.math.polynomial')
-samson_math  = LazyLoader('samson_math', globals(), 'samson.math.general')
-siqs         = LazyLoader('siqs', globals(), 'samson.math.factorization.siqs')
+_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_poly         = LazyLoader('_poly', globals(), 'samson.math.polynomial')
+_samson_math  = LazyLoader('_samson_math', globals(), 'samson.math.general')
+_siqs         = LazyLoader('_siqs', globals(), 'samson.math.factorization.siqs')
 
 
-def pollards_p_1(n: int, B1: int=None, B2: int=None, a: int=2, E: int=1, exclude_list: list=None) -> int:
+def pollards_p_1(n: int, B1: int=None, max_bound: int=None, a: int=2, E: int=1, exclude_list: list=None, exp_func: FunctionType=lambda n, p: n.bit_length() // p.bit_length()) -> int:
     """
     Factoring algorithm that exploits the smoothness of `p-1` for factors `p_0..p_k` of `n`.
     This is due to the multiplicative group structure, cyclic properties of Z mod `n`, and Fermat's little theorem.
 
     Parameters:
-        n  (int): Integer to factor.
-        B1 (int): Lower bound. Will automatically increase.
-        B2 (int): Maximum bound.
-        a  (int): Starting base of `a^E-1`.
-        E  (int): Starting exponent of `a^E-1`.
+        n         (int): Integer to factor.
+        B1        (int): Lower bound. Will automatically increase.
+        max_bound (int): Maximum bound.
+        a         (int): Starting base of `a^E-1`.
+        E         (int): Starting exponent of `a^E-1`.
+        exp_func (func): Function that calculates the desired exponent for the current prime: (n, p) -> e.
 
     Returns:
         int: Factor of `n` or None on failure.
@@ -29,25 +30,26 @@ def pollards_p_1(n: int, B1: int=None, B2: int=None, a: int=2, E: int=1, exclude
     References:
         https://en.wikipedia.org/wiki/Pollard%27s_p_%E2%88%92_1_algorithm
     """
-    kth_root = samson_math.kth_root
-    sieve_of_eratosthenes = samson_math.sieve_of_eratosthenes
-    gcd = samson_math.gcd
+    kth_root = _samson_math.kth_root
+    sieve_of_eratosthenes = _samson_math.sieve_of_eratosthenes
+    gcd = _samson_math.gcd
+
 
     # Set bounds
     if not B1:
         B1 = max(kth_root(n, 20), 2)
 
-    if not B2:
+    if not max_bound:
         # The idea is that we want to target a factor `f < n^(1/5)`
         # whose greatest factor `d < f^(1/3)`.
-        B2 = max(kth_root(n, 15), B1**5)
+        max_bound = max(kth_root(n, 15), B1**5)
 
 
     if not exclude_list:
         exclude_list = []
 
 
-    for p in sieve_of_eratosthenes(B2):
+    for p in sieve_of_eratosthenes(max_bound):
         if p > B1:
             # By saving a's congruence and resetting E,
             # we can prevent recomputing the entire exponent
@@ -69,18 +71,18 @@ def pollards_p_1(n: int, B1: int=None, B2: int=None, a: int=2, E: int=1, exclude
             E = 1
 
         if p not in exclude_list:
-            E *= p**int(math.log(n, p))
+            E *= p**exp_func(n, p)
 
 
 
-def _mersenne_p_1(n: int, k: int, B1: int=None, B2: int=None, exclude_list: list=None) -> int:
+def _mersenne_p_1(n: int, k: int, B1: int=None, max_bound: int=None, exclude_list: list=None) -> int:
     # All factors of Mersenne numbers are `1 mod 2` and `1 mod k`
-    return pollards_p_1(n=n, B1=B1, B2=B2, a=3, E=2*k, exclude_list=exclude_list or [k])
+    return pollards_p_1(n=n, B1=B1, max_bound=max_bound, a=3, E=2*k, exclude_list=exclude_list or [k])
 
 
 
-def _mersenne_fac_subroutine(n: int, p: int):
-    is_prime = samson_math.is_prime
+def _mersenne_fac_subroutine(n: int, p: int, visual: bool=True):
+    is_prime = _samson_math.is_prime
 
     # We only set `fac` to 4 to pass the first "while" condition
     fac        = 4
@@ -88,23 +90,26 @@ def _mersenne_fac_subroutine(n: int, p: int):
     reraise_interrupt = False
 
     try:
+        # Use our convenient cache ;)
         if p in _P2K_FACS:
             cached = _P2K_FACS[p]
+
             if not n % cached:
                 e_facs.add(cached, 1)
                 n //= cached
 
         # Start with fast smoothness factoring
         while fac and n > 1 and not is_prime(n):
-            fac = _mersenne_p_1(n, p, B1=2, B2=min(1000000, samson_math.kth_root(n, 2)))
+            fac = _mersenne_p_1(n, p, B1=2, max_bound=min(1000000, _samson_math.kth_root(n, 2)))
             if fac:
                 n //= fac
                 e_facs += factor(fac)
 
         if n > 1:
-            left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True)
+            left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True, visual=visual)
         else:
             left_overs = Factors()
+
 
     # This is kinda sloppy, but we need to ferry the interrupt up the chain
     except KeyboardInterrupt:
@@ -115,7 +120,7 @@ def _mersenne_fac_subroutine(n: int, p: int):
 
 
 
-def _mersenne_factor(k: Factors, progress_update: FunctionType) -> Factors:
+def _mersenne_factor(k: Factors, visual: bool=False, progress_update: FunctionType=None) -> Factors:
     """
     Internal function.
 
@@ -126,7 +131,7 @@ def _mersenne_factor(k: Factors, progress_update: FunctionType) -> Factors:
 
     Now we factor M3, x_2, and x_1. We then return the summation of their factorization (e.g. {2: 1} + {3: 1} == {2: 1, 3: 1})
     """
-    is_prime = samson_math.is_prime
+    is_prime = _samson_math.is_prime
 
     k_rec = k.recombine()
     if is_prime(k_rec):
@@ -136,7 +141,7 @@ def _mersenne_factor(k: Factors, progress_update: FunctionType) -> Factors:
 
     else:
         biggest_d = k // list(k)[0]
-        d_facs, reraise_interrupt = _mersenne_factor(biggest_d, progress_update)
+        d_facs, reraise_interrupt = _mersenne_factor(biggest_d, visual, progress_update)
         left_over = (2**k_rec-1) // (2**biggest_d.recombine()-1)
 
         # Handle d_fac interrupt
@@ -200,7 +205,7 @@ def pk_1_smallest_divisor(prime_power: int) -> int:
         https://homes.cerias.purdue.edu/~ssw/cun/pmain420.txt
         https://en.wikipedia.org/wiki/Mersenne_prime#Theorems_about_Mersenne_numbers
     """
-    is_prime = samson_math.is_prime
+    is_prime = _samson_math.is_prime
 
     # This works for all odd prime powers
     if not (prime_power-1) % 2:
@@ -242,14 +247,70 @@ def pk_1_smallest_divisor(prime_power: int) -> int:
     return list(factor(2**d-1, use_trial=False, perfect_power_checks=False, user_stop_func=find_one))[0]
 
 
+def _modular_lucas(v: int, a: int, n: int) -> int:
+    """
+    Internal use. Multiplies along a Lucas sequence modulo n.
+    """
+    v1, v2 = v, (v**2 - 2) % n
+    for bit in bin(a)[3:]:
+        b = (v1*v2 - v) % n
+        if bit == "0":
+            v1, v2 = (v1**2 - 2) % n, b
+        else:
+            v1, v2 = b, (v2**2 - 2) % n
+    return v1
 
-def is_perfect_power(n: int) -> (bool, int, int):
+
+
+def williams_pp1(n: int, max_bound: int=None, max_attempts: int=50, exp_func: FunctionType=lambda n, p: n.bit_length() // p.bit_length()) -> int:
+    """
+    Factors `n` if `p|n` and `p+1` is `max_bound`-smooth.
+
+    Parameters:
+        n            (int): Integer to factor.
+        max_bound    (int): Maximum integer for prime sieve.
+        max_attempts (int): Number of attempts with a different starting point.
+        exp_func    (func): Function that calculates the desired exponent for the current prime: (n, p) -> e.
+
+    References:
+        https://en.wikipedia.org/wiki/Williams%27s_p_%2B_1_algorithm
+        https://programmingpraxis.com/2010/06/04/williams-p1-factorization-algorithm
+    """
+    sieve_of_eratosthenes = _samson_math.sieve_of_eratosthenes
+    gcd = _samson_math.gcd
+
+    if not max_bound:
+        max_bound = max(kth_root(n, 15), 100000)
+
+    for v in range(max_attempts):
+        for p in sieve_of_eratosthenes(max_bound):
+            e = exp_func(n, p)
+
+            # Maxed out; try new `v`
+            if not e:
+                break
+
+            for _ in range(e):
+                v = _modular_lucas(v, p, n)
+
+            g = gcd(v - 2, n)
+
+            if 1 < g < n:
+                return g
+
+            if g == n:
+                break
+
+
+
+def is_perfect_power(n: int, minimum_base: int=3) -> (bool, int, int):
     """
     Determines if `n` is a perfect power. If it is, the root and exponent are returned.
 
     Parameters:
-        n (int): Possible perfect power.
-    
+        n            (int): Possible perfect power.
+        minimum_base (int): Minimum base to explicitly check for. Note: the algorithm may still find the correct base below this.
+
     Returns:
         (bool, int, int): Formatted as (is_prime_power, root, exponent).
     
@@ -262,16 +323,17 @@ def is_perfect_power(n: int) -> (bool, int, int):
     References:
         https://mathoverflow.net/a/106316
     """
-    kth_root =samson_math.kth_root
-    is_power_of_two = samson_math.is_power_of_two
-    is_prime = samson_math.next_prime
-    next_prime = samson_math.next_prime
+    kth_root = _samson_math.kth_root
+    is_power_of_two = _samson_math.is_power_of_two
+    is_prime = _samson_math.is_prime
+    next_prime = _samson_math.next_prime
 
     if is_power_of_two(n):
         return True, 2, int(math.log(n, 2))
 
     e = 1
     last_root = n
+    min_m1 = minimum_base-1
 
     p = 2
     while True:
@@ -290,12 +352,12 @@ def is_perfect_power(n: int) -> (bool, int, int):
                     last_root = root
                     e         *= p
 
-            elif root > 2:
+            elif root > min_m1:
                 # Make sure we don't overflow Python
                 if root.bit_length() < 1024:
                     # We can calculate the minimum root that produces the next base
                     # Imagine the following: n = 3**2113, p = 2003, root = 4
-                    # The next prime is 2011, but 'samson_math.kth_root(n, 2011)' is also 4.
+                    # The next prime is 2011, but 'kth_root(n, 2011)' is also 4.
                     # Thus, we've tried nothing new. The following calculations
                     # allow us to skip redudant primes
                     next_base = math.ceil(int(math.log(last_root, root-1)))
@@ -309,7 +371,7 @@ def is_perfect_power(n: int) -> (bool, int, int):
 
 
 def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_update: FunctionType=lambda n: None):
-    sieve_of_eratosthenes = samson_math.sieve_of_eratosthenes
+    sieve_of_eratosthenes = _samson_math.sieve_of_eratosthenes
 
     facs = Factors()
 
@@ -317,7 +379,7 @@ def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_upda
         n //= -1
         facs.add(-1)
 
-    for prime in (prime_base or samson_math.sieve_of_eratosthenes(limit)):
+    for prime in (prime_base or _samson_math.sieve_of_eratosthenes(limit)):
         if n == 1:
             break
 
@@ -349,9 +411,9 @@ def pollards_rho(n: int, max_attempts: int=None) -> int:
         https://github.com/skollmann/PyFactorise/blob/master/factorise.py
         "An improved Monte Carlo factorization algorithm" (https://maths-people.anu.edu.au/~brent/pd/rpb051i.pdf)
     """
-    gcd = samson_math.gcd
+    gcd = _samson_math.gcd
 
-    y, c, m  = [samson_math.random_int_between(1, n-1) for _ in range(3)]
+    y, c, m  = [_samson_math.random_int_between(1, n-1) for _ in range(3)]
     r, q, g  = 1, 1, 1
     attempts = 0
 
@@ -389,7 +451,7 @@ def pollards_rho(n: int, max_attempts: int=None) -> int:
     return g
 
 
-def ecm(n: int, attempts: int=100) -> int:
+def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
     """
     Uses Lenstra's Elliptic Curve Method to probabilistically find a factor of `n`.
 
@@ -407,9 +469,27 @@ def ecm(n: int, attempts: int=100) -> int:
 
     """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
-    Polynomial = poly.Polynomial
-    ZZ  = integer_ring.ZZ
-    gcd = samson_math.gcd
+    Polynomial = _poly.Polynomial
+    ZZ  = _integer_ring.ZZ
+    gcd = _samson_math.gcd
+    sieve_of_eratosthenes = _samson_math.sieve_of_eratosthenes
+
+    primes = list(sieve_of_eratosthenes(B2))
+
+    def try_candidate(curr, k):
+        try:
+            curr *= k
+    
+        except NotInvertibleException as e:
+            res = gcd(e.parameters['a'], n)
+            if res != R.one and (not is_poly or res.is_monic()):
+                if peel_ring:
+                    res = res.val
+
+                return curr, res
+
+        return curr, None
+
 
     # For convenience
     peel_ring = False
@@ -418,18 +498,9 @@ def ecm(n: int, attempts: int=100) -> int:
         n = ZZ(n)
 
     R = n.ring
-    ring = R/n
     is_poly = type(n) is Polynomial
     for a in range(attempts):
-        while True:
-            x = R.random(n)
-            y = R.random(n)
-            a = R.random(n)
-            b = (y**2 - x**3 - (a * x)) % n
-
-            g = gcd(4 * a**3 - 27 * b**2, n)
-            if g != n:
-                break
+        curve, g = WeierstrassCurve.random_curve(n)
 
         # Free factor!
         if is_poly and g.is_monic() and g > R.one or not is_poly and g > R.one:
@@ -437,20 +508,56 @@ def ecm(n: int, attempts: int=100) -> int:
                 g = g.val
             return g
 
-        curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
-        curr  = curve.G
-        for fac in range(2, 64):
-            try:
-                curr *= fac
-            except NotInvertibleException as e:
-                res = gcd(e.parameters['a'], n)
-                if res != R.one and (not is_poly or res.is_monic()):
-                    if peel_ring:
-                        res = res.val
 
-                    return res
+        curr  = curve.G
+        for p_idx, p in enumerate(primes):
+            if p >= B1:
+                break
+
+            curr, fac = try_candidate(curr, p**int(math.log(B1, p)))
+            if fac:
+                return fac
+
+
+        # Stage 2
+        for p in primes[p_idx:]:
+            curr, fac = try_candidate(curr, p)
+            if fac:
+                return fac
 
     raise ProbabilisticFailureException("Factor not found")
+
+
+def fast_ecm(n: int) -> int:
+    random_int_between = _samson_math.random_int_between
+    mod_inv = _samson_math.mod_inv
+    gcd = _samson_math.gcd
+    kth_root = _samson_math.kth_root
+
+    x0, y0 = [random_int_between(1, n) for _ in range(2)]
+
+    for a in range(1, n):
+        b = y0**2 - x0**3 - a * x0
+        g = gcd(4 * a**3 - 27 * b**2, n)
+    
+        if g == n:
+            continue
+
+        if g != 1:
+            return g
+
+        s = (3 * x0**2 + a) * mod_inv(2 * y0, n)
+        x, y = (s**2 - 2 * x0, s * (3 * x0 - s**2) - y0)
+
+        for k in range(1, kth_root(n, 2)):
+            for _ in range(k):
+                g = gcd(x - x0, n)
+                if g != 1:
+                    return g
+                else:
+                    s = (y - y0) * mod_inv(x - x0, n)
+                    y = (s * (2 * x + x0 - s**2) - y) % n
+                    x = (s**2 - x - x0) % n
 
 
 
@@ -477,8 +584,8 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
     References:
         "DETECTING PERFECT POWERS BY FACTORING INTO COPRIMES" (http://cr.yp.to/lineartime/powers2-20050509.pdf)
     """
-    gcd = samson_math.gcd
-    kth_root = samson_math.kth_root
+    gcd = _samson_math.gcd
+    kth_root = _samson_math.kth_root
 
     rs = []
     r  = 2
@@ -514,9 +621,9 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
 
 
 
-POLLARD_QUICK_ITERATIONS = 25
+_POLLARD_QUICK_ITERATIONS = 25
 
-def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_siqs: bool=True, use_pollards_p_1: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
+def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_siqs: bool=True, use_smooth_p: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
     """
     Factors an integer `n` into its prime factors.
 
@@ -527,7 +634,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         use_rho              (bool): Whether or not to use Pollard's rho factorization.
         rho_max_bits          (int): Threshold in which Pollard's rho is considered ineffective.
         use_siqs             (bool): Whether or not to use the Self-Initializing Quadratic Sieve.
-        use_pollards_p_1     (bool): Whether or not to use Pollard's P-1.
+        use_smooth_p         (bool): Whether or not to use smooth `p +- 1` factorization methods (i.e. Pollard's P-1, and William's P+1).
         use_ecm              (bool): Whether or not to use ECM factorization.
         ecm_attempts          (int): Maximum number of ECM attempts before giving up.
         perfect_power_checks (bool): Whether or not to check for perfect powers.
@@ -545,8 +652,8 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         True
 
     """
-    is_prime = samson_math.is_prime
-    is_power_of_two = samson_math.is_power_of_two
+    is_prime = _samson_math.is_prime
+    is_power_of_two = _samson_math.is_power_of_two
 
     original = n
 
@@ -595,7 +702,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
     # It's relatively cheap and can instantly factor the rest
     def check_perfect_powers(n):
         if perfect_power_checks and not is_factored(n):
-            ipp, root, k = is_perfect_power(n)
+            ipp, root, k = is_perfect_power(n, minimum_base=1009)
             if ipp:
                 for fac, exponent in factor(root).items():
                     e_k = exponent*k
@@ -618,23 +725,26 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
 
 
     def quick_factor(factor_func, n):
-        while not is_factored(n):
-            n_fac = factor_func(n)
+        try:
+            while not is_factored(n):
+                n_fac = factor_func(n)
 
-            if n_fac:
-                n = process_possible_composite(n, n_fac)
-                n = check_perfect_powers(n)
-            else:
-                break
-        
-        return n
+                if n_fac:
+                    n = process_possible_composite(n, n_fac)
+                    n = check_perfect_powers(n)
+                else:
+                    break
+            
+            return n, False
+        except KeyboardInterrupt:
+            return n, True
 
 
     # Actual factorization
     try:
         if mersenne_check and is_power_of_two(original+1):
             k = int(math.log(original+1, 2))
-            facs, _ = _mersenne_factor(factor(k), progress_update)
+            facs, _ = _mersenne_factor(factor(k), visual=visual, progress_update=progress_update)
             progress_finish()
             return facs
 
@@ -653,15 +763,9 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
             # Pollard's rho
             # If `n` is too big, attempt to remove small factors
             if n_bits > rho_max_bits:
-                n = quick_factor(lambda n: pollards_rho(n, POLLARD_QUICK_ITERATIONS), n)
-                # while not is_factored(n):
-                #     n_fac = pollards_rho(n, POLLARD_QUICK_ITERATIONS)
-
-                #     if n_fac:
-                #         n = process_possible_composite(n, n_fac)
-                #         n = check_perfect_powers(n)
-                #     else:
-                #         break
+                n, internal_reraise = quick_factor(lambda n: pollards_rho(n, _POLLARD_QUICK_ITERATIONS), n)
+                if internal_reraise:
+                    raise KeyboardInterrupt
 
             else:
                 # Full factorization with 'pollards_rho'
@@ -672,16 +776,27 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
                     n = process_possible_composite(n, n_fac)
                     n = check_perfect_powers(n)
 
-        if use_pollards_p_1:
-            n = quick_factor(lambda n: pollards_p_1(n, B2=100000), n)
-            # while not is_factored(n):
-            #     n_fac = pollards_p_1(n, B2=100000)
 
-            #     if n_fac:
-            #         n = process_possible_composite(n, n_fac)
-            #         n = check_perfect_powers(n)
-            #     else:
-            #         break
+        if use_smooth_p:
+            # If we used Pollard's rho, then we've probably removed all factors < 45
+            # Therefore, the worst case scenario for P-1 is that `n` is a semiprime
+            # whose smallest factor is 46 bits and largest factor is the smooth `p-1`
+            # we have to target.
+
+            # Generally, P-1 guarantees a factor if the greatest factor `q` of `p-1` is less than B1.
+            # This is because P-1 assumes the worst case scenario: that `p-1` is of the form `2*q^k+1`.
+            # Instead, we assume the largest exponent is log(n, p) // 4
+            bit_mod   = 45*use_rho
+            exp_func  = lambda n, p: (n.bit_length()-bit_mod) // p.bit_length() // 4
+            max_bound = min(100000, _samson_math.kth_root(n, 4))
+
+            n, internal_reraise = quick_factor(lambda n: williams_pp1(n, max_bound=max_bound, exp_func=exp_func), n)
+            if internal_reraise:
+                raise KeyboardInterrupt
+    
+            n, internal_reraise = quick_factor(lambda n: pollards_p_1(n, max_bound=max_bound, exp_func=exp_func), n)
+            if internal_reraise:
+                raise KeyboardInterrupt
 
         if use_ecm:
             # Lenstra's ECM
@@ -699,7 +814,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
 
         if use_siqs:
             while not is_factored(n):
-                primes, composites = siqs.siqs(n, visual=visual)
+                primes, composites = _siqs.siqs(n, visual=visual)
                 factors += primes
 
                 n //= primes.recombine()

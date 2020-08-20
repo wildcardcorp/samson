@@ -53,6 +53,7 @@ class FractionFieldElement(FieldElement):
         return hash((self.numerator, self.denominator, self.field))
 
     def __eq__(self, other: 'FractionFieldElement'):
+        other = self.ring.coerce(other)
         return type(self) == type(other) and self.numerator * other.denominator == self.denominator * other.numerator
 
 
@@ -70,7 +71,7 @@ class FractionFieldElement(FieldElement):
             from samson.math.general import kth_root_qq
             return kth_root_qq(self, 2)
         else:
-            return FractionFieldElement(self.numerator.sqrt(), self.denominator, self.ring)
+            return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
 
 
     def trim_to_precision(self, precision: 'FractionFieldElement') -> 'FractionFieldElement':

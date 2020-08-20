@@ -52,6 +52,7 @@ class RuntimeConfiguration(object):
         self.poly_fft_heuristic = default_poly_fft_heuristic
         self.default_short_printer = lambda elem: elem.tinyhand()
         self.enable_poly_intercept = False
+        self.auto_promote = True
 
 
         # Initialize exploit mappings
@@ -66,7 +67,7 @@ class RuntimeConfiguration(object):
 
 
     def __repr__(self):
-        return f"<RuntimeConfiguration: reporter={self.reporter}, enable_poly_intercept={self.enable_poly_intercept}>"
+        return f"<RuntimeConfiguration: reporter={self.reporter}, auto_promote={self.auto_promote}, enable_poly_intercept={self.enable_poly_intercept}>"
 
     def __str__(self):
         return self.__repr__()

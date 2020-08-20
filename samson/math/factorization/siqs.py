@@ -11,6 +11,7 @@ from itertools import chain
 from tqdm import tqdm
 import math
 from math import exp, sqrt
+from copy import deepcopy
 
 import logging
 log = logging.getLogger(__name__)
@@ -27,9 +28,9 @@ log = logging.getLogger(__name__)
 # CONSTANTS #
 #############
 
-x  = Symbol('x')
+_x  = Symbol('x')
 _R = ZZ/ZZ(2)
-_P = ZZ[x]
+_P = ZZ[_x]
 
 _one  = _R.one
 _zero = _R.zero
@@ -56,13 +57,9 @@ class PrimeBase(object):
         return f'<PrimeBase: {self.p}>'
 
 
-    def parameterize_soln(self, b: int):
-        self.soln1 = (self.t - b) % self.p
-        self.soln2 = (-self.t - b) % self.p
 
 
-
-class SMatrix(object):
+class BMatrix(object):
     def __init__(self, rows, num_cols):
         self.rows = rows
         self.num_cols = num_cols
@@ -70,21 +67,27 @@ class SMatrix(object):
 
     @property
     def T(self):
-        num_cols = len(self.rows)
-        T = [SparseVector({}, zero=_R.zero) for _ in range(len(self.rows[0]))]
+        T = [[b for b in bin(row)[2:].zfill(self.num_cols)[::-1]] for row in self.rows]
+        return BMatrix([int(''.join([T[r][c] for r in range(len(self.rows))][::-1]), 2) for c in range(self.num_cols)], num_cols=len(self.rows))
 
-        for row_num, row in enumerate(self.rows):
-            for col_num, val in row.values.items():
-                T[col_num][row_num] = val
 
-        for sv in T:
-            sv.virtual_len = num_cols
+    def add_pivot(self, idx, row):
+        self.rows[idx] ^= row
 
-        return SMatrix(T, num_cols=num_cols)
 
+    def find_pivot(self, idx):
+        row = self.rows[idx]
+        return lowest_set_bit(row) if row else None
+    
 
     def print(self):
-        print([[idx for idx, val in r] for r in self.rows])
+        print([[c for c in range(self.num_cols) if self[r, c]] for r in range(len(self.rows))])
+
+
+    def __getitem__(self, idx):
+        i, j = idx
+        return self.rows[i] >> j & 1
+
 
 
 
@@ -321,18 +324,19 @@ def ge_f2_nullspace(M: Matrix, visual: bool=False):
     if visual:
         iterator = tqdm(iterator, total=num_rows, unit='row', desc='siqs: Gaussian elimination')
 
-
     for i, row in iterator:
-        for j, _elem in row:
-            marks[j] = True
+        j = M.find_pivot(i)
+        if j is None:
+            continue
 
-            for k in range(num_rows):
-                if k == i:
-                    continue
+        marks[j] = True
 
-                if M.rows[k][j]:
-                    M.rows[k] = M.rows[k].vec_add(row)
-            break
+        for k in range(num_rows):
+            if k == i:
+                continue
+
+            if M[k, j]:
+                M.add_pivot(k, row)
 
     M = M.T
     solutions = []
@@ -343,24 +347,26 @@ def ge_f2_nullspace(M: Matrix, visual: bool=False):
     return solutions, marks, M
 
 
+
 def solve_row(candidate, M, marks):
     free_row     = candidate[0]
-    indices      = [idx for idx, val in free_row if val]
+    indices      = [idx for idx, val in enumerate(bin(free_row)[2:].zfill(M.num_cols)[::-1]) if val == '1']
     solution_vec = []
+
 
     for r, mark in enumerate(marks):
         if not mark:
             continue
 
         for i in indices:
-            if M.rows[r][i]:
+            if M[r, i]:
                 solution_vec.append(r)
                 break
 
-
-    solution_vec.append(candidate[1])
     log.debug(f"Found linear dependencies at rows {str(solution_vec)}")
+    solution_vec.append(candidate[1])      
     return solution_vec
+
 
 
 def solve(solution_vec, smooth_nums, n):
@@ -373,39 +379,42 @@ def solve(solution_vec, smooth_nums, n):
     a = kth_root(a_square, 2)
     log.debug(f"Found congruence: {a}^2 = {b}^2 mod {n}")
 
-    return gcd(abs(b-a), n)
+    return gcd(abs(b-a), n), gcd(abs(b+a), n)
 
 
 
-def find_factors(n: int, solutions: list, smooth_nums: list, M: SMatrix, marks: list):
+def find_factors(n: int, solutions: list, smooth_nums: list, M: BMatrix, marks: list):
     primes     = Factors()
     left       = n
     composites = Factors()
 
-    for K in range(len(solutions)):
+    for solution in solutions:
         if left == 1:
             break
 
-        sol_vec = solve_row(solutions[K], M, marks)
-        factor  = solve(sol_vec, smooth_nums, n)
+        sol_vec = solve_row(solution, M, marks)
+        factors = solve(sol_vec, smooth_nums, n)
 
-        if factor not in primes and is_prime(factor):
-            primes.add(factor)
-            left //= factor
+        for factor in factors:
+            fac_prime = is_prime(factor)
+            if factor not in primes and fac_prime:
+                primes.add(factor)
+                left //= factor
 
-            if is_prime(left):
-                primes.add(left)
-                break
+                if is_prime(left):
+                    primes.add(left)
+                    left //= factor
+                    break
 
-        elif factor not in [1, n] and factor not in composites:
-            composites.add(factor)
+            elif not fac_prime and factor not in [1, n] and factor not in composites:
+                composites.add(factor)
 
 
     # Did we find anything?
     if primes or composites:
         factors = Factors() + primes
 
-        if composites:
+        if left > 1 and composites:
             # Use batch_gcd over composites
             for fac in batch_gcd(composites):
                 if is_prime(fac) and fac not in factors:
@@ -425,15 +434,15 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: SMatrix, marks: 
 
                 elif candidate != 1 and candidate not in composites:
                     composites.add(fac)
-        
+
         primes = factors
 
     return primes, composites
 
 
-
-def siqs(n: int, relations_ratio: float=1.05, visual: bool=False):
+def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bool=False):
     nf, m      = siqs_choose_nf_m(len(str(n)))
+    nf        = int(nf * bound_ratio)
     prime_base = find_base(n, nf)
 
     smooth_relations = []
@@ -479,11 +488,13 @@ def siqs(n: int, relations_ratio: float=1.05, visual: bool=False):
 
         log.debug(f"Solving exponent parity matrix for nullspace...")
         # 'num_cols' is len(prime_base)+1 because we want Gaussian elimination to cancel out negatives
-        exp_mat = SMatrix([exp_vec for _, _, exp_vec in smooth_relations], num_cols=len(prime_base)+1).T
-        solutions, marks, M = ge_f2_nullspace(M=exp_mat, visual=visual)
+        exp_vecs = [exp_vec for _, _, exp_vec in smooth_relations]
+        exp_ints = [int(''.join([str(int(exp_vec[b])) for b in range(len(exp_vec))])[::-1], 2) for exp_vec in exp_vecs]
+        bexp_mat = BMatrix(exp_ints, num_cols=len(prime_base)+1).T
 
-        log.debug(f"Checking solutions...")
+        solutions, marks, M = ge_f2_nullspace(M=bexp_mat, visual=visual)
         primes, composites = find_factors(n=n, solutions=solutions, smooth_nums=smooth_relations, M=M, marks=marks)
+
 
         if primes or composites:
             return primes, composites

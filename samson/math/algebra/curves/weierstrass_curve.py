@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv
+from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv, schoofs_algorithm, gcd
 
 
 class WeierstrassPoint(RingElement):
@@ -200,6 +200,25 @@ class WeierstrassCurve(Ring):
     @property
     def p(self) -> int:
         return int(self.ring.quotient)
+    
+
+    @staticmethod
+    def random_curve(n: RingElement) -> 'WeierstrassCurve':
+        R = n.ring
+        ring = R/n
+
+        while True:
+            x = R.random(n)
+            y = R.random(n)
+            a = R.random(n)
+            b = (y**2 - x**3 - (a * x))
+
+            g = gcd(int(4 * a**3 - 27 * b**2), n)
+            if g != n:
+                break
+
+        curve = WeierstrassCurve(a=a, b=b, ring=ring, base_tuple=(x, y))
+        return curve, g
 
 
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:
@@ -212,8 +231,6 @@ class WeierstrassCurve(Ring):
         Returns:
             int: Cardinality of the curve.
         """
-        from samson.math.general import schoofs_algorithm
-
         if not self.cardinality_cache:
             if algorithm == EllipticCurveCardAlg.AUTO:
                 curve_size = self.p.bit_length()

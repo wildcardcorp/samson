@@ -79,13 +79,18 @@ class PolynomialRing(Ring):
         if type_o is list or type_o is dict or type_o is SparseVector:
             return Polynomial(other, coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
-        elif type_o is Polynomial and other.ring == self:
-            return other
+        elif type_o is Polynomial:
+            if other.ring == self:
+                return other
+            else:
+                coeff_coerced = other.change_ring(self.ring)
+                coeff_coerced.symbol = self.symbol
+                return coeff_coerced
 
         elif type_o is Symbol and other.var.ring == self:
             return other.var
 
-        raise CoercionException('Coercion failed')
+        raise CoercionException(self, other)
 
 
     def element_at(self, x: int) -> Polynomial:
