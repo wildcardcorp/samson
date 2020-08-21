@@ -37,13 +37,11 @@ class PRNG(object):
 
     @staticmethod
     def auto_crack(outputs):
-        candidates = []
-
         # Do all the IterativePRNGs with their specific invocations
         for prng in IterativePRNG.__subclasses__():
             instance = prng([1]*prng.STATE_SIZE)
             try:
-                candidates.append(instance.crack(outputs))
+                yield instance.crack(outputs)
             except RuntimeError:
                 pass
 
@@ -51,8 +49,6 @@ class PRNG(object):
         for prng in [MT19937, *lcgs]:
             instance = prng(0)
             try:
-                candidates.append(instance.crack(outputs))
+                yield instance.crack(outputs)
             except Exception:
                 pass
-
-        return candidates

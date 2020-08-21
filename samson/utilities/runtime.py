@@ -20,7 +20,7 @@ class RuntimeConfiguration(object):
     Global runtime configuration. Allows for the dynamic configuration of existing samson code.
     """
 
-    def __init__(self, log_fmt: str='%(asctime)s - %(name)s [%(levelname)s] %(message)s', use_color: bool=True):
+    def __init__(self, log_fmt: str='%(asctime)s - %(name)s [%(levelname)s] %(message)s', use_color: bool=True, use_rich: bool=True):
         # Initialize reporter
         try:
             from samson.auxiliary.tqdm_handler import TqdmHandler
@@ -30,6 +30,7 @@ class RuntimeConfiguration(object):
             handler = TqdmHandler()
 
             self.use_color = use_color
+            self.use_rich  = use_rich
 
             # Only color logs if attached to TTY
             if sys.stdout.isatty() and use_color:
@@ -46,6 +47,13 @@ class RuntimeConfiguration(object):
         except ImportError:
             from samson.auxiliary.reporter import Reporter
             self.reporter = Reporter()
+
+
+        if use_color and use_rich:
+            try:
+                self.install_rich_exceptions()
+            except ImportError:
+                pass
 
 
         self.random = lambda size: URANDOM.read(size)
@@ -161,11 +169,22 @@ class RuntimeConfiguration(object):
 
 
     def show_primitives(self, filter_func: FunctionType=lambda primitive: True, sort_key: FunctionType=lambda primitive: str(primitive).split('.')[-1][:-2], reverse: bool=False):
+        filtered_prims = sorted(self.search_primitives(filter_func), key=sort_key, reverse=reverse)
+        columns        = ['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType']
+
+        if self.use_color and self.use_rich:
+            self._build_prims_rich_table(columns, filtered_prims)
+        else:
+            self._build_prims_ascii_table(columns, filtered_prims)
+
+    
+
+    def _build_prims_ascii_table(self, col_names, primitives):
         lines = []
-        all_columns = [['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType']]
+        all_columns = [col_names]
         max_column_sizes = [len(col) for col in all_columns[0]]
 
-        for primitive in sorted(self.search_primitives(filter_func), key=sort_key, reverse=reverse):
+        for primitive in primitives:
             columns = [str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES])]
             max_column_sizes = [max(len(col), curr_max) for col, curr_max in zip(columns, max_column_sizes)]
             all_columns.append(columns)
@@ -176,6 +195,27 @@ class RuntimeConfiguration(object):
 
         table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
         print(table)
+
+    
+    def _build_prims_rich_table(self, col_names, primitives):
+        from rich.table import Table
+        from rich.table import Column
+        from rich import box
+        from rich import print
+
+        table = Table(title="Matching Cryptographic Primitives", show_lines=True)
+
+        styles = ["dim white", "green", "magenta", "yellow", "cyan", "dim white"]
+
+        for name, style in zip(col_names, styles):
+            table.add_column(name, style="bold " + style, no_wrap=True)
+
+        for primitive in primitives:
+            table.add_row(*[str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES])])
+
+        print()
+        print(table)
+
 
 
     def compare_bytes(self, a: bytes, b: bytes) -> bool:
@@ -205,18 +245,25 @@ class RuntimeConfiguration(object):
         if module:
              module = module.__name__
 
-        # caller_locals = frame[0].f_locals
-
-
-        # if 'self' in caller_locals:
-        #     caller_type = type(caller_locals['self'])
-        # elif 'cls' in caller_locals:
-        #     caller_type = caller_locals['cls']
-        # else:
-        #     raise ValueError("Calling func must have a 'self' or 'cls' identifier.")
-
-        # f'{str(caller_type).split(".")[1][:-2]}.{func}'
         return self._contexts[(module, func)]
+
+
+    def install_rich_exceptions(self):
+        # https://stackoverflow.com/a/28758396
+        from rich.console import Console
+        from rich.traceback import Traceback
+        import sys
+        traceback_console = Console(file=sys.stderr)
+
+
+        def showtraceback(self, running_compiled_code=False):
+            _type, exception, trace = sys.exc_info()
+            traceback_console.print(
+                Traceback.from_exception(_type, exception, trace.tb_next)
+            )
+
+        import IPython
+        IPython.core.interactiveshell.InteractiveShell.showtraceback = showtraceback
 
 
 

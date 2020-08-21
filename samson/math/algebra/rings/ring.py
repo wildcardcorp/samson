@@ -3,12 +3,10 @@ from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
 from abc import ABC, abstractmethod
-from functools import wraps, reduce
-from itertools import combinations
+from functools import wraps
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.utilities.exceptions import CoercionException, NotInvertibleException
-from samson.utilities.general import binary_search
 
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
 _quot = LazyLoader('_quot', globals(), 'samson.math.algebra.rings.quotient_ring')
@@ -109,7 +107,7 @@ class Ring(ABC):
         t_o = type(other)
         if t_o is _quot.QuotientElement and other.ring.ring == self:
             return other.val
-    
+
         elif t_o is _frac.FractionFieldElement and other.ring.ring == self:
             scaled = other.numerator / other.denominator
 
@@ -117,7 +115,7 @@ class Ring(ABC):
                 raise CoercionException(self, other)
             else:
                 return scaled
-    
+
         else:
             return other
 
@@ -415,7 +413,7 @@ class RingElement(ABC):
 
         if self.ring.order == oo:
             return oo
-        
+
 
         ro_facs = factor(self.ring.order)
         so_facs = Factors()

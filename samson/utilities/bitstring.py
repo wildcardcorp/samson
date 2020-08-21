@@ -151,7 +151,7 @@ class Bitstring(UserString):
         return self._format_return(max_val - self.int())
 
 
-    def lrot(self, amount: int, bits: int=None):
+    def lrot(self, amount: int, bits: int=None) -> 'Bitstring':
         """
         Performs a left-rotate.
 
@@ -165,7 +165,7 @@ class Bitstring(UserString):
         return self._format_return(self.bytes().lrot(amount, bits=bits))
 
 
-    def rrot(self, amount: int, bits: int=None):
+    def rrot(self, amount: int, bits: int=None) -> 'Bitstring':
         """
         Performs a right-rotate.
 
@@ -193,7 +193,7 @@ class Bitstring(UserString):
         return get_blocks(self, size, allow_partials)
 
 
-    def transpose(self, size: int):
+    def transpose(self, size: int) -> 'Bitstring':
         """
         Builds a matrix of `size` row-length, transposes the matrix, and collapses it back into a Bitstring object.
 
@@ -206,38 +206,37 @@ class Bitstring(UserString):
         return self._format_return(''.join(transpose(str(self), size)))
 
 
-    def zfill(self, size: int):
+    def zfill(self, size: int) -> 'Bitstring':
         """
         Fills the Bitstring to specified size with 0 bits _such that the integer representation stays the same according to the byteorder_.
 
         Parameters:
             size (int): Size of the resulting Bitstring.
         
-        Return:
+        Returns:
             Bitstring: Bitstring padded with zeroes.
         """
         return _zfill(self, size, self.byteorder)
 
 
-    def stretch(self, size: int, offset: int=0):
+    def stretch(self, size: int, offset: int=0) -> 'Bitstring':
         """
         Repeats a Bitstring object until it reaches `size` length shifted by `offset`.
-
-        Examples:
-
-        >>> stretch_key(b'abc', 5)
-        b'abcab'
-
-        >>> stretch_key(b'abc', 5, offset=1)
-        b'cabca'
-
 
         Parameters:
             size   (int): Size to be stretched to.
             offset (int): Offset to start from.
-        
+
         Returns:
             Bitstring: Bitstring stretched to `size`.
+        
+        Examples:
+            >>> stretch_key(b'abc', 5)
+            b'abcab'
+
+            >>> stretch_key(b'abc', 5, offset=1)
+            b'cabca'
+
         """
         return self._format_return(stretch_key(self, size, offset))
 
@@ -262,7 +261,7 @@ class Bitstring(UserString):
         return self.to_int()
 
 
-    def to_bytes(self):
+    def to_bytes(self) -> Bytes:
         """
         Converts to a Bytes representation.
 
@@ -272,7 +271,7 @@ class Bitstring(UserString):
         return Bytes([int(str(chunk), 2) for chunk in self.zfill(self.byte_length()).chunk(8, allow_partials=True)], self.byteorder)
 
 
-    def bytes(self):
+    def bytes(self) -> Bytes:
         """
         Converts to a Bytes representation.
 

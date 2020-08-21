@@ -23,7 +23,7 @@ class Bytes(bytearray):
 
 
     @staticmethod
-    def wrap(bytes_like: bytes, byteorder: str='big'):
+    def wrap(bytes_like: bytes, byteorder: str='big') -> 'Bytes':
         """
         Conditional initialization. Only creates a new Bytes object if it already isn't one.
 
@@ -41,7 +41,7 @@ class Bytes(bytearray):
 
 
     @staticmethod
-    def random(size: int=16, byteorder: str='big'):
+    def random(size: int=16, byteorder: str='big') -> 'Bytes':
         """
         Generates a random Bytes object using /dev/urandom.
 
@@ -137,7 +137,7 @@ class Bytes(bytearray):
 
 
     # Manipulations
-    def lrot(self, amount: int, bits: int=None):
+    def lrot(self, amount: int, bits: int=None) -> 'Bytes':
         """
         Performs a left-rotate.
 
@@ -156,7 +156,7 @@ class Bytes(bytearray):
 
 
 
-    def rrot(self, amount: int, bits: int=None):
+    def rrot(self, amount: int, bits: int=None) -> 'Bytes':
         """
         Performs a right-rotate.
 
@@ -190,7 +190,7 @@ class Bytes(bytearray):
 
 
 
-    def transpose(self, size: int):
+    def transpose(self, size: int) -> 'Bytes':
         """
         Builds a matrix of `size` row-length, transposes the matrix, and collapses it back into a Bytes object.
 
@@ -204,20 +204,20 @@ class Bytes(bytearray):
 
 
 
-    def zfill(self, size: int):
+    def zfill(self, size: int) -> 'Bytes':
         """
         Fills the Bytes to specified size with NUL bytes _such that the integer representation stays the same according to the byteorder_.
 
         Parameters:
             size (int): Size of the resulting Bytes.
         
-        Return:
+        Returns:
             Bytes: Bytes padded with zeroes.
         """
         return Bytes(int.to_bytes(self.to_int(), size, self.byteorder), self.byteorder)
 
 
-    def pad_congruent_left(self, congruence: int, pad_byte: bytes=b'\x00'):
+    def pad_congruent_left(self, congruence: int, pad_byte: bytes=b'\x00') -> 'Bytes':
         """
         Pads the bytes left until the length is congruent to `congruence`.
 
@@ -231,7 +231,7 @@ class Bytes(bytearray):
         return ((congruence - (len(self) % congruence)) % congruence) * pad_byte + self
 
 
-    def pad_congruent_right(self, congruence: int, pad_byte: bytes=b'\x00'):
+    def pad_congruent_right(self, congruence: int, pad_byte: bytes=b'\x00') -> 'Bytes':
         """
         Pads the bytes right until the length is congruent to `congruence`.
 
@@ -245,18 +245,9 @@ class Bytes(bytearray):
         return self + ((congruence - (len(self) % congruence)) % congruence) * pad_byte
 
 
-    def stretch(self, size: int, offset: int=0):
+    def stretch(self, size: int, offset: int=0) -> 'Bytes':
         """
         Repeats a Bytes object until it reaches `size` length shifted by `offset`.
-
-        Examples:
-
-        >>> stretch_key(b'abc', 5)
-        b'abcab'
-
-        >>> stretch_key(b'abc', 5, offset=1)
-        b'cabca'
-
 
         Parameters:
             size   (int): Size to be stretched to.
@@ -264,6 +255,14 @@ class Bytes(bytearray):
         
         Returns:
             Bytes: Bytes stretched to `size`.
+
+        Examples:
+            >>> stretch_key(b'abc', 5)
+            b'abcab'
+
+            >>> stretch_key(b'abc', 5, offset=1)
+            b'cabca'
+
         """
         return Bytes(stretch_key(self, size, offset), self.byteorder)
 
@@ -290,7 +289,7 @@ class Bytes(bytearray):
         return self.to_int()
 
 
-    def to_hex(self):
+    def to_hex(self) -> 'Bytes':
         """
         Converts to an hex representation.
 
@@ -300,7 +299,7 @@ class Bytes(bytearray):
         return Bytes(codecs.encode(self, 'hex_codec'), self.byteorder)
 
 
-    def hex(self):
+    def hex(self) -> 'Bytes':
         """
         Converts to an hex representation.
         
@@ -310,7 +309,7 @@ class Bytes(bytearray):
         return self.to_hex()
 
 
-    def unhex(self):
+    def unhex(self) -> 'Bytes':
         """
         Converts from an hex representation.
 
@@ -320,7 +319,7 @@ class Bytes(bytearray):
         return Bytes(codecs.decode(self, 'hex_codec'), self.byteorder)
 
 
-    def to_bin(self):
+    def to_bin(self) -> 'Bitstring':
         """
         Converts to a Bitstring representation.
 
@@ -331,7 +330,7 @@ class Bytes(bytearray):
         return Bitstring(self, byteorder=self.byteorder).zfill(len(self) * 8)
 
 
-    def bin(self):
+    def bin(self) -> 'Bitstring':
         """
         Converts to a Bitstring representation.
 
@@ -341,7 +340,7 @@ class Bytes(bytearray):
         return self.to_bin()
 
 
-    def to_bits(self):
+    def to_bits(self) -> 'Bitstring':
         """
         Converts to a Bitstring representation.
 
@@ -351,7 +350,7 @@ class Bytes(bytearray):
         return self.to_bin()
 
 
-    def bits(self):
+    def bits(self) -> 'Bitstring':
         """
         Converts to a Bitstring representation.
 

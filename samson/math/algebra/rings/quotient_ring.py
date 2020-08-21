@@ -34,6 +34,10 @@ class QuotientElement(RingElement):
         return self.val.ordinality()
 
 
+    def __call__(self, x: int) -> RingElement:
+        return self.val(x)
+
+
     @left_expression_intercept
     def __add__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)

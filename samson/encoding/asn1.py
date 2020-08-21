@@ -89,5 +89,5 @@ def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
         rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(rdn[0]['type'].asTuple())]
         rval  = str(decoder.decode(bytes(rdn[0]['value']))[0])
         rdn_map.append((rtype, rval))
-    
+
     return ','.join(f'{rtype}={rval}' for rtype, rval in rdn_map)

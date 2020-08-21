@@ -20,26 +20,25 @@ def xor_buffs(buf1: bytes, buf2: bytes) -> bytearray:
 
 def stretch_key(key: bytes, length: int, offset: int=0) -> bytes:
     """
-    Repeats a bytes object until it reaches `size` length shifted by `offset`.
-
-    Examples:
-
-    >>> stretch_key(b'abc', 5)
-    b'abcab'
-
-    >>> stretch_key(b'abc', 5, offset=1)
-    b'cabca'
-
+    Repeats a bytes object, `key`, until it reaches `length` shifted by `offset`.
 
     Parameters:
-        size   (int): Size to be stretched to.
+        length (int): Size to be stretched to.
         offset (int): Offset to start from.
     
     Returns:
         bytes: Bytes stretched to `size`.
+    
+    Examples:
+        >>> stretch_key(b'abc', 5)
+        b'abcab'
+
+        >>> stretch_key(b'abc', 5, offset=1)
+        b'cabca'
+
     """
-    offset_mod = offset % len(key)
-    key_stream = (key * ceil(length / len(key)))
+    offset_mod   = offset % len(key)
+    key_stream   = (key * ceil(length / len(key)))
     complete_key = (key[-offset_mod:] + key_stream)[:length]
     return complete_key
 

@@ -14,15 +14,13 @@ class NaiveMDCollider(object):
     def __init__(self, construction_func: FunctionType, output_size: int):
         """
         Parameters:
-            construction_func (func): Function that takes in two bytes-like arguments
-                                      and returns the next Merkle-Damgard state.
-
-        Example:
-        def construction_func(iv, message):
-            return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
-
-
+            construction_func (func): Function that takes in two bytes-like arguments and returns the next Merkle-Damgard state.
             output_size        (int): Size in bytes of the hash output.
+
+        Examples:
+            >>> def construction_func(iv, message):
+            >>>     return MerkleDamgardConstruction(iv, compressor, padder, output_size=hash_size).yield_state(message)
+
         """
         self.construction_func = construction_func
         self.output_size = output_size
@@ -38,8 +36,7 @@ class NaiveMDCollider(object):
         Parameters:
             prefixes          (list): List of bytes-like prefixes to build initial states from.
             iv               (bytes): Initial state of the Merkle-Damgard function (possibly None).
-            construction_func (func): Function that takes in two bytes-like arguments
-                                      and returns the next Merkle-Damgard state.
+            construction_func (func): Function that takes in two bytes-like arguments and returns the next Merkle-Damgard state.
             output_size        (int): Size in bytes of the hash output.
         
         Returns:

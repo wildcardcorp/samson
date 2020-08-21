@@ -1,5 +1,8 @@
-from samson.auxiliary.english_data import ENGLISH_ONE_GRAMS, ENGLISH_TWO_GRAMS
+# from samson.auxiliary.english_data import ENGLISH_ONE_GRAMS, ENGLISH_TWO_GRAMS
 from math import log10
+
+from samson.auxiliary.lazy_loader import LazyLoader
+_eng_data = LazyLoader('_eng_data', globals(), 'samson.auxiliary.english_data')
 
 # http://practicalcryptography.com/cryptanalysis/text-characterisation/word-statistics-fitness-measure/
 class ViterbiDecoder(object):
@@ -12,21 +15,21 @@ class ViterbiDecoder(object):
         self.N = 1024908267229 ## Number of tokens
 
         # Calculate first order log probabilities
-        for key in ENGLISH_ONE_GRAMS.keys():
-            self.Pw[key.upper()] = log10(float(ENGLISH_ONE_GRAMS[key]) / self.N)
+        for key in _eng_data.ENGLISH_ONE_GRAMS.keys():
+            self.Pw[key.upper()] = log10(float(_eng_data.ENGLISH_ONE_GRAMS[key]) / self.N)
 
 
         # Get second order word model
         self.Pw2 = {}
 
         # Calculate second order log probabilities
-        for key in ENGLISH_TWO_GRAMS.keys():
+        for key in _eng_data.ENGLISH_TWO_GRAMS.keys():
             word1 = key.split()[0].upper()
 
             if word1 not in self.Pw:
-                self.Pw2[key.upper()] = log10(float(ENGLISH_TWO_GRAMS[key]) / self.N)
+                self.Pw2[key.upper()] = log10(float(_eng_data.ENGLISH_TWO_GRAMS[key]) / self.N)
             else:
-                self.Pw2[key.upper()] = log10(float(ENGLISH_TWO_GRAMS[key]) / self.N) - self.Pw[word1]
+                self.Pw2[key.upper()] = log10(float(_eng_data.ENGLISH_TWO_GRAMS[key]) / self.N) - self.Pw[word1]
 
 
         # Precalculate the probabilities we assign to words not in our dict, L is length of word

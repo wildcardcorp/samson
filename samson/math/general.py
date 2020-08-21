@@ -1,4 +1,4 @@
-from samson.utilities.general import rand_bytes, add_or_increment
+from samson.utilities.general import rand_bytes
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
 from functools import reduce
 from types import FunctionType
@@ -16,14 +16,14 @@ _factor_gen   = LazyLoader('factor_gen', globals(), 'samson.math.factorization.g
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
-    Encodes an integer as a polynomial.
+    Encodes an `integer` as a polynomial.
 
     Parameters:
         integer (int): Integer to encode.
         modulus (int): Modulus to reduce the integer over.
     
     Returns:
-        object: Polynomial representation.
+        Polynomial: Polynomial representation.
     
     Examples:
         >>> from samson.math.general import int_to_poly
@@ -76,7 +76,7 @@ def poly_to_int(poly: 'Polynomial') -> int:
 
 def frobenius_monomial_base(poly: 'Polynomial') -> list:
     """
-    Generates a list of monomials of x**(i*p) % g for range(poly.degrees()). Used with Frobenius map.
+    Generates a list of monomials of x**(i*p) % g for range(`poly`.degrees()). Used with Frobenius map.
 
     Parameters:
         poly (Polynomial): Polynomial to generate bases for.
@@ -119,7 +119,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
 
 def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polynomial':
     """
-    Computes f**p % g using the Frobenius map.
+    Computes `f`**p % `g` using the Frobenius map.
     
     Parameters:
         f (Polynomial): Base.
@@ -127,7 +127,7 @@ def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polyno
         bases   (list): Frobenius monomial bases. Will generate if not provided.
 
     Returns:
-        Polynomial: f**p % g
+        Polynomial: `f`**p % `g`
 
     References:
         https://en.wikipedia.org/wiki/Finite_field#Frobenius_automorphism_and_Galois_theory
@@ -152,7 +152,6 @@ def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polyno
         sf += bases[i] * P([f.coeffs[i]])
 
     return sf
-
 
 
 def gcd(a: int, b: int) -> int:
@@ -186,11 +185,10 @@ def gcd(a: int, b: int) -> int:
     return a.gcd(b)
 
 
-
 def xgcd(a: int, b: int) -> (int, int, int):
     """
     Extended Euclidean algorithm form of GCD.
-    `ax + by = gcd(a, b)`
+    `a`x + `b`y = gcd(`a`, `b`)
 
     Parameters:
         a (int): First integer.
@@ -323,7 +321,7 @@ def mod_inv(a: int, n: int) -> int:
 
 def square_and_mul(g: int, u: int, s: int=None) -> int:
     """
-    Computes `s = g ^ u` over arbitrary rings.
+    Computes `s` = `g` ^ `u` over arbitrary rings.
 
     Parameters:
         g (int): Base.
@@ -331,7 +329,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         s (int): The 'one' value of the ring.
     
     Returns:
-        int: `g ^ u` within its ring.
+        int: `g` ^ `u` within its ring.
     
     Examples:
         >>> from samson.math.general import mod_inv
@@ -365,7 +363,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
 
 def fast_mul(a: int, b: int, s: int=None) -> int:
     """
-    Computes `s = a * b` over arbitrary rings.
+    Computes `s` = `a` * `b` over arbitrary rings.
 
     Parameters:
         a (int): Element `a`.
@@ -373,7 +371,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         s (int): The 'zero' value of the ring.
     
     Returns:
-        int: `a * b` within its ring.
+        int: `a` * `b` within its ring.
     
     Examples:
         >>> from samson.math.general import fast_mul
@@ -403,7 +401,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
 
 def sqrt_int(n: int) -> int:
     """
-    Return the square root of the given integer, rounded down to the nearest integer.
+    Return the square root of `n`, rounded down to the nearest integer.
 
     Parameters:
         n (int): Integer to take square root of.
@@ -458,7 +456,7 @@ def kth_root(n: int, k: int) -> int:
 
     if is_power_of_two(k):
         return ub + (ub**k < n)
-    
+
 
     lb = sqrt_int(ub)
 
@@ -470,7 +468,6 @@ def kth_root(n: int, k: int) -> int:
             ub = guess
 
     return lb + (lb**k < n)
-
 
 
 def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
@@ -853,7 +850,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
         system_matrix (Matrix): The `A` matrix.
         rhs           (Matrix): The right-hand side matrix.
     
-    Returns
+    Returns:
         Matrix: The `x` matrix.
     
     Examples:
@@ -1145,7 +1142,7 @@ def random_int(n: int) -> int:
 
 def random_int_between(a: int, b :int) -> int:
     """
-    Finds a unbiased, uniformly-random integer between a and `b`-1 (i.e. "[a, b)").
+    Finds a unbiased, uniformly-random integer between `a` and `b`-1 (i.e. "[`a`, `b`)").
 
     Parameters:
         a (int): Lower bound.
@@ -1334,7 +1331,7 @@ def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterat
         a                (int): Interval start.
         b                (int): Interval end.
         iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
-        f               (func): Pseudorandom map function of signature (y: RingElement, k: int) -> int.
+        f               (func): Pseudorandom map function of signature (`y`: RingElement, k: int) -> int.
         apply_reduction (bool): Whether or not to reduce the answer by the ring's order.
     
     Returns:
@@ -1453,7 +1450,7 @@ def sieve_of_eratosthenes(n: int, chunk_size: int=1024, prime_base: set=None) ->
     n_2 = n // 2
     k   = kth_root(n, 2)
 
-    # Allow preloading, but remove 2 since it's intrinsically removed 
+    # Allow preloading, but remove 2 since it's intrinsically removed
     if not prime_base:
         prime_base = PRIMES_UNDER_1000.difference({2})
 
@@ -1831,7 +1828,7 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
 
     if not factors:
         factors = _factor_gen.factor(n)
-    
+
     def pp_bsgs(g, h, p, e):
         x = [0]*(e+1)
 
@@ -1958,8 +1955,8 @@ def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
     Parameters:
         n (int): Possible quadatric residue.
         k (int): Modulus (must be odd).
-    
-    Return:
+
+    Returns:
         ResidueSymbol: Jacobi symbol.
     
     Examples:
@@ -2400,15 +2397,15 @@ def carmichael_function(n: int, factors: dict=None) -> int:
     """
     if not factors:
         factors = _factor_gen.factor(n)
-    
+
     result = 1
     for p, e in factors.items():
         a = totient(0, {p: e})
         if p == 2 and e > 2:
             a //= 2
-        
+
         result = lcm(result, a)
-    
+
     return result
 
 
@@ -2465,7 +2462,7 @@ def carmichael_function(n: int, factors: dict=None) -> int:
 
 #                         for j in range(g[i].degree()+1):
 #                             B[i].append(g[i].coeffs[j]*X**j)
-                    
+
 #                     B = Matrix(B, ZZ).LLL()
 #                     k = sum([ZZ(B[0, i] // X**i)*x**i for i in range(B.num_cols)])
 #                     R = k.roots()
@@ -2473,7 +2470,7 @@ def carmichael_function(n: int, factors: dict=None) -> int:
 #                     roots = set(Zn(r) for r in R if abs(r) <= X)
 
 #                 t += 2*X
-            
+
 #             return roots
 
 
@@ -2486,7 +2483,7 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
 
     if not epsilon:
         epsilon = beta/8
-    
+
 
     m = math.ceil(max(beta**2/(d*epsilon), 7*beta/d))
     t = int(d*m * (1/beta - 1))
@@ -2502,7 +2499,7 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
     for i in range(len(g)):
         for j in range(g[i].degree()+1):
             B[i,j] = (g[i].coeffs[j]*X**j)
-    
+
 
     # Solve the problem matrix
     B = Matrix(B, ZZ).LLL()

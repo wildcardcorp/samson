@@ -48,7 +48,7 @@ class IntegerAnalysis(object):
 
         uniform_dist     = abs(0.50 - percent_one) < 0.05
         factor_mod       = n - (1 if n_is_prime else 0)
-        small_factors    = factor(factor_mod, use_rho=False)
+        small_factors    = factor(factor_mod, use_rho=False, use_siqs=False, use_smooth_p=False)
         smoothness_ratio = smoothness(factor_mod, factors=small_factors)
 
         return IntegerAnalysis(n=n, is_prime=n_is_prime, smoothness_ratio=smoothness_ratio, byte_aligned=byte_aligned, is_safe_prime=is_safe_prime, prime_name=prime_name, percent_one=percent_one, is_uniform=uniform_dist, small_factors=small_factors)

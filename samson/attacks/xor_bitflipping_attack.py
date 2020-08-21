@@ -52,7 +52,7 @@ class XORBitflippingAttack(object):
             desired_injection (bytes): Bytes to inject at `index`.
             index               (int): Index to inject the bytes.
         
-        Return:
+        Returns:
             Bytes: The manipulated ciphertext.
         """
         payload = b'a' * self.block_size

@@ -16,7 +16,7 @@ def longest_subsequence(seq_a: list, seq_b: list) -> list:
         seq_a (list): First enumerable.
         seq_b (list): Second enumerable.
     
-    Returns
+    Returns:
         list: Longest subsequence.
     """
     seqMatch = _difflib.SequenceMatcher(None, seq_a, seq_b)

@@ -4,6 +4,8 @@ logging.getLogger().setLevel(logging.WARNING)
 logging.getLogger("samson").setLevel(logging.INFO)
 
 from samson.all import *
+from samson.auxiliary.autodoc import autodoc
+autodoc(globals())
 x = Symbol('x')
 y = Symbol('y')
 z = Symbol('z')
@@ -49,6 +51,7 @@ IPython {IPython.__version__}
 
     conf.InteractiveShell.confirm_exit = False
     conf.TerminalInteractiveShell.term_title_format = f"samson v{VERSION}"
+    #conf.TerminalInteractiveShell.highlighting_style = 'monokai'
 
     IPython.start_ipython(config=conf)
 

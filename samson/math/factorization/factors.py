@@ -28,7 +28,7 @@ class Factors(object):
 
     def __len__(self) -> int:
         return len(self.factors)
-    
+
 
     def __hash__(self):
         return hash(self.recombine())
@@ -42,7 +42,7 @@ class Factors(object):
 
         elif t is not Factors:
             return func(self.recombine(), other)
-        
+
         return func(self.recombine(), other.recombine())
 
 
@@ -56,7 +56,7 @@ class Factors(object):
 
     def __gt__(self, other):
         return self._compare(other, lambda a, b: a > b)
-    
+
 
     def __ge__(self, other):
         return self._compare(other, lambda a, b: a >= b)

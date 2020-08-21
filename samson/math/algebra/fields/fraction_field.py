@@ -57,6 +57,10 @@ class FractionFieldElement(FieldElement):
         return type(self) == type(other) and self.numerator * other.denominator == self.denominator * other.numerator
 
 
+    def __call__(self, x: int) -> 'RingElement':
+        return self.numerator(x) / self.denominator(x)
+
+
     def valuation(self, p: int) -> int:
         from samson.math.symbols import oo
 

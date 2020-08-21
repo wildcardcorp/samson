@@ -3,7 +3,7 @@ from samson.math.general import square_and_mul, gcd, kth_root
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
-from samson.utilities.general import add_or_increment, binary_search
+from samson.utilities.general import add_or_increment
 from types import FunctionType
 import itertools
 
@@ -12,10 +12,10 @@ class Polynomial(RingElement):
     def __init__(self, coeffs: list, coeff_ring: Ring=None, symbol: object=None, ring: Ring=None):
         """
         Parameters:
-            coeffs (list or Expr): Coefficients of the polynomial as a list of increasing degree or an expression.
-            coeff_ring     (Ring): Ring the coefficients are in.
-            symbol       (Symbol): Symbol to use as the indeterminate.
-            ring           (Ring): Parent PolynomialRing.
+            coeffs     (list): Coefficients of the polynomial as a list of increasing degree or an expression.
+            coeff_ring (Ring): Ring the coefficients are in.
+            symbol   (Symbol): Symbol to use as the indeterminate.
+            ring       (Ring): Parent PolynomialRing.
         """
         from samson.math.symbols import Symbol
 
@@ -123,7 +123,7 @@ class Polynomial(RingElement):
             return self._create_poly(vec)
         else:
             return vec
-    
+
 
     def __setitem__(self, idx: int, value: 'RingElement'):
         self.coeffs[idx] = value
@@ -581,7 +581,7 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
             https://www.imomath.com/index.php?options=623&lmm=0#:~:text=Table%20of%20contents)-,Irreducibility,nonconstant%20polynomials%20with%20integer%20coefficients.&text=Every%20quadratic%20or%20cubic%20polynomial,3%E2%88%924x%2B1.
         """
-        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime, batch_gcd, kth_root
+        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime, batch_gcd
         from samson.math.algebra.rings.integer_ring import ZZ
 
         n = self.degree()
@@ -826,14 +826,14 @@ class Polynomial(RingElement):
         Returns:
             list: Factors.
 
-        Example:
+        Examples:
             >>> from samson.math.algebra.all import *
             >>> from samson.math.symbols import Symbol
             >>> from functools import reduce
-            >>> x = Symbol('x')
+            >>> x  = Symbol('x')
             >>> Z7 = ZZ/ZZ(7)
             >>> P  = Z7[x]
-
+            >>> #___________________
             >>> # Generate random factors
             >>> factors = [fac for fac in [P.random(P(x**3)) for _ in range(4)] if fac]
             >>> p = reduce(Polynomial.__mul__, factors, P[1]) # Build the Polynomial

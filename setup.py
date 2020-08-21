@@ -13,7 +13,8 @@ requires = [
     "ipython",
     "tqdm",
     "z3-solver",
-    "sortedcontainers"
+    "sortedcontainers",
+    "rich"
 ]
 
 tests_require = [

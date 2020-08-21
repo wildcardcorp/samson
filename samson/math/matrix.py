@@ -308,7 +308,7 @@ class Matrix(RingElement):
         Parameters:
             rhs (Matrix): The right-hand side matrix.
         
-        Returns
+        Returns:
             Matrix: The `x` matrix.
         
         Examples:

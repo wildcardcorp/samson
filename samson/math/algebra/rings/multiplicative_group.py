@@ -132,10 +132,10 @@ class MultiplicativeGroup(Ring):
 
                     else:
                         self.order_cache = totient(int(quotient))
-            
+
                 else:
                     raise NotImplementedError()
-            
+
             elif type(self.ring) is FiniteField:
                 self.order_cache = self.ring.order-1
 

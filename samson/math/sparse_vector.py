@@ -212,6 +212,6 @@ class SparseVector(object):
         for idx, coeff in other:
             if not idx in self:
                 vec[idx] = coeff
-        
+
         vec.virtual_len = self.virtual_len
         return vec

@@ -6,12 +6,9 @@ from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.factorization.factors import Factors
 from samson.math.factorization.general import trial_division
 from samson.math.sparse_vector import SparseVector
-from samson.utilities.exceptions import NoSolutionException
-from itertools import chain
 from tqdm import tqdm
 import math
-from math import exp, sqrt
-from copy import deepcopy
+
 
 import logging
 log = logging.getLogger(__name__)
@@ -78,7 +75,7 @@ class BMatrix(object):
     def find_pivot(self, idx):
         row = self.rows[idx]
         return lowest_set_bit(row) if row else None
-    
+
 
     def print(self):
         print([[c for c in range(self.num_cols) if self[r, c]] for r in range(len(self.rows))])
@@ -140,7 +137,7 @@ def find_base(n, num_factors):
     for p in sieve_of_eratosthenes(2**64):
         if legendre(n, p) == ResidueSymbol.EXISTS:
             base.append(PrimeBase(p, n))
-        
+
         if len(base) >= num_factors:
             return base
 
@@ -190,7 +187,7 @@ def find_first_poly(n, m, prime_base):
     if p_min_i is None or p_max_i - p_min_i < 20:
         p_min_i = min(p_min_i, 5)
 
-    
+
     # TODO: Make pretty
     target  = math.ceil(kth_root(2*n, 2) / m)
     target1 = math.ceil(target / ((prime_base[p_min_i].p + prime_base[p_max_i].p) / 2)**0.5)
@@ -218,9 +215,10 @@ def find_first_poly(n, m, prime_base):
             best_q     = q
             best_a     = a
             best_ratio = ratio
-        
+
 
         B = []
+        a = best_a
         for l in best_q:
             pb_l = prime_base[l]
             p_l  = pb_l.p
@@ -230,13 +228,13 @@ def find_first_poly(n, m, prime_base):
             gamma = (pb_l.t * mod_inv(a // p_l, p_l)) % p_l
             if gamma > p_l // 2:
                 gamma = p_l - gamma
-            
+
             B.append(a // p_l * gamma)
-        
+
 
         b = sum(B) % a
         poly_prepare_base(a, b, prime_base)
-        
+
         return gen_polys(a, b, n), B, a, b
 
 
@@ -364,7 +362,7 @@ def solve_row(candidate, M, marks):
                 break
 
     log.debug(f"Found linear dependencies at rows {str(solution_vec)}")
-    solution_vec.append(candidate[1])      
+    solution_vec.append(candidate[1])
     return solution_vec
 
 
@@ -419,7 +417,7 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: BMatrix, marks: 
             for fac in batch_gcd(composites):
                 if is_prime(fac) and fac not in factors:
                     factors.add(fac)
-    
+
                 elif fac != 1 and fac not in composites:
                     composites.add(fac)
 
@@ -482,11 +480,11 @@ def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bo
             sieve_array = sieve(prime_base, m)
             siqs_trial_div(n, m, g, h, sieve_array, prime_base, required_relations, smooth_relations, progress_update)
 
-        
+
 
         progress_finish()
 
-        log.debug(f"Solving exponent parity matrix for nullspace...")
+        log.debug("Solving exponent parity matrix for nullspace...")
         # 'num_cols' is len(prime_base)+1 because we want Gaussian elimination to cancel out negatives
         exp_vecs = [exp_vec for _, _, exp_vec in smooth_relations]
         exp_ints = [int(''.join([str(int(exp_vec[b])) for b in range(len(exp_vec))])[::-1], 2) for exp_vec in exp_vecs]
@@ -500,4 +498,3 @@ def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bo
             return primes, composites
         else:
             relations_ratio += 0.05
-

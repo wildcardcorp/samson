@@ -176,11 +176,18 @@ class WeierstrassCurve(Ring):
             return super().__getitem__(args)
 
 
-    def __call__(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
+    def coerce(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
+        if type(x) is WeierstrassPoint and x.curve == self:
+            return x
+
         if y:
             return WeierstrassPoint(x, y, self)
         else:
             return self.recover_point_from_x(x)
+
+
+    def __call__(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
+        return self.coerce(x, y)
 
 
     def __eq__(self, other: 'WeierstrassCurve') -> bool:
@@ -200,7 +207,7 @@ class WeierstrassCurve(Ring):
     @property
     def p(self) -> int:
         return int(self.ring.quotient)
-    
+
 
     @staticmethod
     def random_curve(n: RingElement) -> 'WeierstrassCurve':

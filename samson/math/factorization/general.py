@@ -379,7 +379,7 @@ def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_upda
         n //= -1
         facs.add(-1)
 
-    for prime in (prime_base or _samson_math.sieve_of_eratosthenes(limit)):
+    for prime in (prime_base or sieve_of_eratosthenes(limit)):
         if n == 1:
             break
 
@@ -387,7 +387,7 @@ def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_upda
             facs.add(prime)
             progress_update(prime)
             n //= prime
-    
+
     return facs
 
 
@@ -424,14 +424,14 @@ def pollards_rho(n: int, max_attempts: int=None) -> int:
 
         for _ in range(r):
             y = brent(c, n, y)
-        
+
         k = 0
         while k < r and g == 1:
             ys = y
             for _ in range(min(m, r-k)):
                 y = brent(c, n, y)
                 q = (q * abs(x-y)) % n
-            
+
             g  = gcd(q, n)
             k += m
 
@@ -457,6 +457,8 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
 
     Parameters:
         n        (int): Integer to factor.
+        B1       (int): Stage 1 bound for max factor.
+        B2       (int): Maximum bound. Used in stage 2 if no factors were found.
         attempts (int): Number of attempts to perform.
     
     Returns:
@@ -479,7 +481,7 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
     def try_candidate(curr, k):
         try:
             curr *= k
-    
+
         except NotInvertibleException as e:
             res = gcd(e.parameters['a'], n)
             if res != R.one and (not is_poly or res.is_monic()):
@@ -526,39 +528,6 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
                 return fac
 
     raise ProbabilisticFailureException("Factor not found")
-
-
-def fast_ecm(n: int) -> int:
-    random_int_between = _samson_math.random_int_between
-    mod_inv = _samson_math.mod_inv
-    gcd = _samson_math.gcd
-    kth_root = _samson_math.kth_root
-
-    x0, y0 = [random_int_between(1, n) for _ in range(2)]
-
-    for a in range(1, n):
-        b = y0**2 - x0**3 - a * x0
-        g = gcd(4 * a**3 - 27 * b**2, n)
-    
-        if g == n:
-            continue
-
-        if g != 1:
-            return g
-
-        s = (3 * x0**2 + a) * mod_inv(2 * y0, n)
-        x, y = (s**2 - 2 * x0, s * (3 * x0 - s**2) - y0)
-
-        for k in range(1, kth_root(n, 2)):
-            for _ in range(k):
-                g = gcd(x - x0, n)
-                if g != 1:
-                    return g
-                else:
-                    s = (y - y0) * mod_inv(x - x0, n)
-                    y = (s * (2 * x + x0 - s**2) - y) % n
-                    x = (s**2 - x - x0) % n
-
 
 
 def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
@@ -641,7 +610,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         mersenne_check       (bool): Whether or not to check if `n` is a Mersenne number and factor accordingly (see `_mersenne_factor`).
         visual               (bool): Whether or not to display progress bar.
         reraise_interrupt    (bool): Whether or not to reraise a KeyboardInterrupt.
-        user_stop_func       (func): A function that takes in (n, facs) and returns True if the user wants to stop factoring.
+        user_stop_func       (func): A function that takes in (`n`, facs) and returns True if the user wants to stop factoring.
 
     Returns:
         list: List of factors.
@@ -713,7 +682,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
                     n //= rek
 
         return n
-    
+
 
     def process_possible_composite(n, f):
         for fac, exponent in factor(f).items():
@@ -734,7 +703,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
                     n = check_perfect_powers(n)
                 else:
                     break
-            
+
             return n, False
         except KeyboardInterrupt:
             return n, True
@@ -793,7 +762,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
             n, internal_reraise = quick_factor(lambda n: williams_pp1(n, max_bound=max_bound, exp_func=exp_func), n)
             if internal_reraise:
                 raise KeyboardInterrupt
-    
+
             n, internal_reraise = quick_factor(lambda n: pollards_p_1(n, max_bound=max_bound, exp_func=exp_func), n)
             if internal_reraise:
                 raise KeyboardInterrupt

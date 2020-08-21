@@ -2,25 +2,24 @@ from samson.analyzers.analyzer import Analyzer
 from samson.analysis.general import chisquare
 from samson.auxiliary.tokenizer import Tokenizer
 from samson.auxiliary.token_list_handler import TokenListHandler
-from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS, CHAR_FREQ, ENGLISH_ONE_GRAMS
+#from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS_LOWER, CHAR_FREQ, ENGLISH_ONE_GRAMS
 from collections import Counter
 import string
 import re
 
-TOP_50K = [k.encode('utf-8') for k,v in ENGLISH_ONE_GRAMS.items()][:50000]
+from samson.auxiliary.lazy_loader import LazyLoader
+_eng_data = LazyLoader('_eng_data', globals(), 'samson.auxiliary.english_data')
 
 ASCII_RANGE     = {k:0 for k in [10, 13] + list(range(20, 127))}
 ASCII_LOWER     = {k:0 for k in bytes(string.ascii_lowercase, 'utf-8')}
-WORDLIST        = {word.decode().strip(): 0 for word in CRACKLIB_WORDLIST + TOP_50K}
 DELIMITER_REGEX = re.compile(b'[?.,! ]')
 
-MOST_COMMON_BIGRAMS = {k.lower():v for k,v in MOST_COMMON_BIGRAMS.items()}
 
 def _num_common_first_letters(words):
     if not len(words):
         return 0
 
-    return sum([FIRST_LETTER_FREQUENCIES[bytes([word[0]])] for word in words if len(word) > 0 and bytes([word[0]]) in FIRST_LETTER_FREQUENCIES]) / len(words)
+    return sum([_eng_data.FIRST_LETTER_FREQUENCIES[bytes([word[0]])] for word in words if len(word) > 0 and bytes([word[0]]) in _eng_data.FIRST_LETTER_FREQUENCIES]) / len(words)
 
 
 def weighted_token_ratio(in_bytes, weighted_dict, in_bytes_len):
@@ -32,8 +31,8 @@ def key_count(in_bytes, key):
     return (key, in_bytes.count(key))
 
 
-TOKENIZER = Tokenizer([word for word, _ in WORDLIST.items() if len(word) > 2], TokenListHandler, delimiter=' ')
-TOKENIZE  = TOKENIZER.tokenize
+# TOKENIZER = Tokenizer([word for word, _ in _eng_data.WORDLIST.items() if len(word) > 2], TokenListHandler, delimiter=' ')
+# TOKENIZE  = TOKENIZER.tokenize
 
 class EnglishAnalyzer(Analyzer):
     """
@@ -89,15 +88,15 @@ class EnglishAnalyzer(Analyzer):
         alphabet_ratio = sum([1 for char in bytes_lower if char in ASCII_LOWER]) / byte_len
         ascii_ratio    = sum([1 for char in bytes_lower if char in ASCII_RANGE]) / byte_len
 
-        bigram_score      = weighted_token_ratio(bytes_lower, MOST_COMMON_BIGRAMS, byte_len)
+        bigram_score      = weighted_token_ratio(bytes_lower, _eng_data.MOST_COMMON_BIGRAMS_LOWER, byte_len)
         first_letter_freq = _num_common_first_letters(delimited_words)
 
-        found_words  = TOKENIZE([bytes_lower.decode('latin-1')])
-        common_words = len([word for word in found_words if word in MOST_COMMON_WORDS])
+        found_words  = _eng_data.TOKENIZE([bytes_lower.decode('latin-1')])
+        common_words = len([word for word in found_words if word in _eng_data.MOST_COMMON_WORDS])
 
         # We divide it by the `length*2` to normalize it since I empirically found that the chisquared of
         # a uniform distribution of `length` bytes tends towards it.
-        monogram_chisquared = chisquare(Counter(in_bytes), CHAR_FREQ, byte_len) / (byte_len * 2)
+        monogram_chisquared = chisquare(Counter(in_bytes), _eng_data.CHAR_FREQ, byte_len) / (byte_len * 2)
 
         return_dict = {
             'word_freq': word_freq,

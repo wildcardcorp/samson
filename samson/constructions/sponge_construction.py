@@ -62,14 +62,14 @@ class SpongeConstruction(object):
 
 
 
-    def squeeze(self, amount: int):
+    def squeeze(self, amount: int) -> list:
         """
         Squeezes bytes out of the sponge.
 
         Parameters:
             amount (int): Number of bytes to return.
         
-        Return:
+        Returns:
             generator: Yields blocks of Bytes until at least request `amount` has been returned.
         """
         for _ in range(ceil(amount / self.block_size)):
