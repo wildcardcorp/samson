@@ -1,4 +1,5 @@
 from samson.math.factorization.factors import Factors
+from samson.utilities.runtime import RUNTIME
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException
 from types import FunctionType
 from tqdm import tqdm
@@ -81,7 +82,7 @@ def _mersenne_p_1(n: int, k: int, B1: int=None, max_bound: int=None, exclude_lis
 
 
 
-def _mersenne_fac_subroutine(n: int, p: int, visual: bool=True):
+def _mersenne_fac_subroutine(n: int, p: int, use_siqs: bool=False, visual: bool=True):
     is_prime = _samson_math.is_prime
 
     # We only set `fac` to 4 to pass the first "while" condition
@@ -106,7 +107,7 @@ def _mersenne_fac_subroutine(n: int, p: int, visual: bool=True):
                 e_facs += factor(fac)
 
         if n > 1:
-            left_overs = factor(n, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True, visual=visual)
+            left_overs = factor(n, use_siqs=use_siqs, use_trial=False, perfect_power_checks=False, mersenne_check=False, reraise_interrupt=True, visual=visual)
         else:
             left_overs = Factors()
 
@@ -120,7 +121,7 @@ def _mersenne_fac_subroutine(n: int, p: int, visual: bool=True):
 
 
 
-def _mersenne_factor(k: Factors, visual: bool=False, progress_update: FunctionType=None) -> Factors:
+def _mersenne_factor(k: Factors, use_siqs: bool=True, visual: bool=False, progress_update: FunctionType=None) -> Factors:
     """
     Internal function.
 
@@ -135,20 +136,20 @@ def _mersenne_factor(k: Factors, visual: bool=False, progress_update: FunctionTy
 
     k_rec = k.recombine()
     if is_prime(k_rec):
-        facs, reraise_interrupt =_mersenne_fac_subroutine(2**k_rec-1, k_rec)
+        facs, reraise_interrupt =_mersenne_fac_subroutine(2**k_rec-1, k_rec, use_siqs=use_siqs, visual=visual)
         progress_update(facs.recombine())
         return facs, reraise_interrupt
 
     else:
         biggest_d = k // list(k)[0]
-        d_facs, reraise_interrupt = _mersenne_factor(biggest_d, visual, progress_update)
+        d_facs, reraise_interrupt = _mersenne_factor(biggest_d, use_siqs, visual, progress_update)
         left_over = (2**k_rec-1) // (2**biggest_d.recombine()-1)
 
         # Handle d_fac interrupt
         if reraise_interrupt:
             return d_facs + Factors({left_over: 1}), reraise_interrupt
 
-        k_facs, reraise_interrupt = _mersenne_fac_subroutine(left_over, k_rec)
+        k_facs, reraise_interrupt = _mersenne_fac_subroutine(left_over, k_rec, use_siqs=use_siqs, visual=visual)
 
         # Update prog
         progress_update(k_facs.recombine())
@@ -592,7 +593,7 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
 
 _POLLARD_QUICK_ITERATIONS = 25
 
-def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_siqs: bool=True, use_smooth_p: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> list:
+def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_msieve: bool=True, use_siqs: bool=True, use_smooth_p: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> Factors:
     """
     Factors an integer `n` into its prime factors.
 
@@ -602,6 +603,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         limit                 (int): Upper limit of factors tried in trial division.
         use_rho              (bool): Whether or not to use Pollard's rho factorization.
         rho_max_bits          (int): Threshold in which Pollard's rho is considered ineffective.
+        use_msieve           (bool): Use msieve if available.
         use_siqs             (bool): Whether or not to use the Self-Initializing Quadratic Sieve.
         use_smooth_p         (bool): Whether or not to use smooth `p +- 1` factorization methods (i.e. Pollard's P-1, and William's P+1).
         use_ecm              (bool): Whether or not to use ECM factorization.
@@ -613,7 +615,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         user_stop_func       (func): A function that takes in (`n`, facs) and returns True if the user wants to stop factoring.
 
     Returns:
-        list: List of factors.
+        Factors: Factorization of `n`.
     
     Examples:
         >>> from samson.math.factorization.general import factor
@@ -623,6 +625,8 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
     """
     is_prime = _samson_math.is_prime
     is_power_of_two = _samson_math.is_power_of_two
+
+    use_msieve &= bool(RUNTIME.msieve_loc)
 
     original = n
 
@@ -713,7 +717,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
     try:
         if mersenne_check and is_power_of_two(original+1):
             k = int(math.log(original+1, 2))
-            facs, _ = _mersenne_factor(factor(k), visual=visual, progress_update=progress_update)
+            facs, _ = _mersenne_factor(factor(k), use_siqs=use_siqs, visual=visual, progress_update=progress_update)
             progress_finish()
             return facs
 
@@ -728,7 +732,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
 
         n_bits = n.bit_length()
 
-        if use_rho:
+        if use_rho and not use_msieve:
             # Pollard's rho
             # If `n` is too big, attempt to remove small factors
             if n_bits > rho_max_bits:
@@ -755,7 +759,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
             # Generally, P-1 guarantees a factor if the greatest factor `q` of `p-1` is less than B1.
             # This is because P-1 assumes the worst case scenario: that `p-1` is of the form `2*q^k+1`.
             # Instead, we assume the largest exponent is log(n, p) // 4
-            bit_mod   = 45*use_rho
+            bit_mod   = 45*(use_rho and not use_msieve)
             exp_func  = lambda n, p: (n.bit_length()-bit_mod) // p.bit_length() // 4
             max_bound = min(100000, _samson_math.kth_root(n, 4))
 
@@ -766,6 +770,19 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
             n, internal_reraise = quick_factor(lambda n: pollards_p_1(n, max_bound=max_bound, exp_func=exp_func), n)
             if internal_reraise:
                 raise KeyboardInterrupt
+
+
+
+        if use_msieve:
+            # Full factorization with 'msieve'
+            while not is_factored(n):
+                n_fac = msieve(n)
+
+                # msieve will always fully factor
+                factors += n_fac
+                n //= n_fac.recombine()
+
+
 
         if use_ecm:
             # Lenstra's ECM
@@ -798,8 +815,31 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         if reraise_interrupt:
             raise KeyboardInterrupt()
 
+
     progress_finish()
     if n != 1:
         factors.add(n)
 
     return factors
+
+
+
+def msieve(n: int, *args) -> Factors:
+    """
+    Provides a simple subprocess interface to msieve.
+
+    Parameters:
+        n      (int): Integer to factor.
+        *args (list): Arguments to pass into msieve.
+    
+    Returns:
+        Factors: Factorization of `n`.
+    """
+    from samson.analysis.general import count_items
+    import subprocess
+
+    if not RUNTIME.msieve_loc:
+        raise RuntimeError("msieve not in PATH; you must manually set 'RUNTIME.msieve_loc'")
+
+    results = subprocess.check_output([RUNTIME.msieve_loc, "-q", *args, str(n)])
+    return Factors(count_items([int(res.split(b' ')[1]) for res in results.splitlines()[2:-1]]))

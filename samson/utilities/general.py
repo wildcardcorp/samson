@@ -1,5 +1,7 @@
 from types import FunctionType
 import random
+import ssl
+import socket
 
 
 def rand_bytes(size: int=16) -> bytes:
@@ -205,3 +207,39 @@ def crc24(data: bytes) -> int:
                 crc ^= poly
 
     return crc & 0xFFFFFF
+
+
+def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) -> bytes:
+    """
+    Gets a TLS cert from the server at `host`:`port`.
+
+    Parameters:
+        host      (tuple): Host to get certificate from.
+        port        (int): Port to connect to.
+        parse_cert (bool): Whether or not to automatically parse the certificate.
+        timeout     (int): Timeout for the TCP connection.
+    
+    Returns:
+        bytes/dict: Certificate (possibly decoded).
+    """
+    context = ssl.create_default_context()
+    context.check_hostname = False
+
+    conn = socket.create_connection((host, port), timeout=timeout)
+    sock = context.wrap_socket(conn)
+
+    try:
+        cert = sock.getpeercert(binary_form=True)
+    finally:
+        sock.close()
+
+
+    if parse_cert:
+        from samson.encoding.pem import pem_decode
+        from samson.encoding.general import PKIAutoParser
+        cert = PKIAutoParser.get_encoding(cert).get_attributes(pem_decode(cert))
+    else:
+        cert = ssl.DER_cert_to_PEM_cert(cert).encode('utf-8')
+
+    return cert
+

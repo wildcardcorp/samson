@@ -193,6 +193,11 @@ class TwistedEdwardsPoint(RingElement):
     def shorthand(self) -> str:
         return f'{self.curve.shorthand()}({{x={self.x}, y={self.y}}})'
 
+
+    def tinyhand(self) -> str:
+        return self.shorthand()
+
+
     @property
     def ring(self):
         return self.curve

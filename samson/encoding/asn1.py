@@ -25,7 +25,8 @@ RDN_TYPE_LOOKUP = {
     'O': rfc2459.OrganizationName,
     'C': rfc2459.X520countryName,
     'L': rfc2459.UTF8String,
-    'ST': rfc2459.X520StateOrProvinceName
+    'ST': rfc2459.X520StateOrProvinceName,
+    'OU': rfc2459.X520OrganizationalUnitName
 }
 
 INVERSE_RDN_TYPE_LOOKUP = invert_dict(RDN_TYPE_LOOKUP)
@@ -33,6 +34,7 @@ INVERSE_RDN_TYPE_LOOKUP = invert_dict(RDN_TYPE_LOOKUP)
 RDN_OID_LOOKUP = {
     'CN': ObjectIdentifier([2, 5, 4, 3]),
     'O': ObjectIdentifier([2, 5, 4, 10]),
+    'OU': ObjectIdentifier([2, 5, 4, 11]),
     'C': ObjectIdentifier([2, 5, 4, 6]),
     'L': ObjectIdentifier([2, 5, 4, 7]),
     'ST': ObjectIdentifier([2, 5, 4, 8])

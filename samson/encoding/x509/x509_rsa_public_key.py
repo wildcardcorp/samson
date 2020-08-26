@@ -46,9 +46,5 @@ class X509RSAPublicKey(X509PublicKeyBase):
                 raise ValueError('Unable to decode RSA key.')
 
         n, e = [int(item) for item in items]
-        rsa = RSA(8, e=e)
-        rsa.n = n
-
-        rsa.bits = rsa.n.bit_length()
-
+        rsa = RSA(n=n, e=e)
         return rsa

@@ -11,6 +11,7 @@ from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
 from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
+from samson.encoding.dns_key.dns_key_eddsa_public_key import DNSKeyEdDSAPublicKey
 from samson.encoding.general import PKIEncoding
 from samson.core.primitives import Primitive
 from samson.core.metadata import SizeType, SizeSpec, FrequencyType
@@ -36,7 +37,8 @@ class EdDSA(DSA):
         PKIEncoding.OpenSSH: OpenSSHEdDSAPublicKey,
         PKIEncoding.SSH2: SSH2EdDSAPublicKey,
         PKIEncoding.X509: X509EdDSAPublicKey,
-        PKIEncoding.JWK: JWKEdDSAPublicKey
+        PKIEncoding.JWK: JWKEdDSAPublicKey,
+        PKIEncoding.DNS_KEY: DNSKeyEdDSAPublicKey
     }
 
     KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[255, 448])

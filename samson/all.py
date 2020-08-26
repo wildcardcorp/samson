@@ -25,3 +25,4 @@ from samson.utilities.all import *
 
 from samson.encoding.general import *
 from samson.encoding.pem import pem_decode, pem_encode
+from samson.encoding.dns_key.general import DNSKeyAlgorithm, DNSKeyFlags

@@ -51,7 +51,6 @@ IPython {IPython.__version__}
 
     conf.InteractiveShell.confirm_exit = False
     conf.TerminalInteractiveShell.term_title_format = f"samson v{VERSION}"
-    #conf.TerminalInteractiveShell.highlighting_style = 'monokai'
 
     IPython.start_ipython(config=conf)
 

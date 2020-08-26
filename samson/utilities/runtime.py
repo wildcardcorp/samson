@@ -61,6 +61,11 @@ class RuntimeConfiguration(object):
         self.default_short_printer = lambda elem: elem.tinyhand()
         self.enable_poly_intercept = False
         self.auto_promote = True
+        
+        
+        # Find mseive
+        import distutils.spawn
+        self.msieve_loc = distutils.spawn.find_executable("msieve")
 
 
         # Initialize exploit mappings
@@ -256,14 +261,14 @@ class RuntimeConfiguration(object):
         traceback_console = Console(file=sys.stderr)
 
 
-        def showtraceback(self, running_compiled_code=False):
+        def showtraceback(self, _type, exception, trace):
             _type, exception, trace = sys.exc_info()
             traceback_console.print(
                 Traceback.from_exception(_type, exception, trace.tb_next)
             )
 
         import IPython
-        IPython.core.interactiveshell.InteractiveShell.showtraceback = showtraceback
+        IPython.core.interactiveshell.InteractiveShell._showtraceback = showtraceback
 
 
 

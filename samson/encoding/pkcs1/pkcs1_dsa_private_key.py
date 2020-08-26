@@ -12,8 +12,11 @@ class PKCS1DSAPrivateKey(PEMEncodable):
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
-        items = bytes_to_der_sequence(buffer)
-        return len(items) == 6 and int(items[0]) == 0
+        try:
+            items = bytes_to_der_sequence(buffer)
+            return len(items) == 6 and int(items[0]) == 0
+        except:
+            return False
 
 
     @staticmethod

@@ -32,8 +32,5 @@ class PKCS1RSAPublicKey(PEMEncodable):
 
         n, e = items
 
-        rsa = RSA(8, e=e)
-        rsa.n = n
-        rsa.bits = rsa.n.bit_length()
-
+        rsa = RSA(n=n, e=e)
         return rsa

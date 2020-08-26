@@ -2409,72 +2409,7 @@ def carmichael_function(n: int, factors: dict=None) -> int:
     return result
 
 
-# def coppersmiths(N: int, f: 'Polynomial') -> list:
-#     """
-#     References:
-#         "Rounding LLL: Finding Faster Small Roots of Univariate Polynomial Congruences" (https://eprint.iacr.org/2013/512.pdf)
-#     """
-#     Matrix = _mat.Matrix
-#     d = f.degree()
-
-#     # We already have the root
-#     if d == 1:
-#         return [-f.coeffs[0]]
-
-#     else:
-#         d_root = kth_root(N, d)
-
-#         # Use exhaustive search
-#         if d+1 > math.log2(N) // 2:
-#             roots = []
-
-#             for x0 in range(-d_root, d_root+1):
-#                 if not f(x0) % N:
-#                     roots.append(x0)
-
-#             return roots
-
-#         else:
-#             h = math.ceil(math.log2(N) / d)
-#             n = h*d
-#             X = math.floor(2**(-1/2) * N**((h-1)/(n-1)) * (n+1)**(-1/(n-1)))
-#             t = X - d_root
-
-#             x = f.symbol
-
-#             roots = []
-#             while t <= d_root:
-#                 g = f(x - t)
-
-#                 # Not sure how to get to this branch
-#                 # How can d > log2(N) AND < log2(N) // 2 - 1?
-#                 if d > math.log2(N):
-#                     if not g(0) % N:
-#                         roots.append(0+t)
-#                 else:
-#                     g = [x**j * N**(m-i) * f**i for i in h(m) for j in range(d)]
-#                     g.extend([x**i * f**m for i in range(t)])
-
-#                     # Build the problem matrix
-#                     B = []
-#                     for i in range(len(g)):
-#                         B.append([])
-
-#                         for j in range(g[i].degree()+1):
-#                             B[i].append(g[i].coeffs[j]*X**j)
-
-#                     B = Matrix(B, ZZ).LLL()
-#                     k = sum([ZZ(B[0, i] // X**i)*x**i for i in range(B.num_cols)])
-#                     R = k.roots()
-#                     Zn = ZZ/ZZ(N)
-#                     roots = set(Zn(r) for r in R if abs(r) <= X)
-
-#                 t += 2*X
-
-#             return roots
-
-
-def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X: int=None) -> list:
+def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X: int=None, m: int=None, t: int=None) -> list:
     ZZ = _integer_ring.ZZ
     Matrix = _mat.Matrix
 
@@ -2485,8 +2420,8 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
         epsilon = beta/8
 
 
-    m = math.ceil(max(beta**2/(d*epsilon), 7*beta/d))
-    t = int(d*m * (1/beta - 1))
+    m = m or math.ceil(max(beta**2/(d*epsilon), 7*beta/d))
+    t = t or int(d*m * (1/beta - 1))
 
     if not X:
         X = math.ceil(0.5 * N**(beta**2/d - epsilon))

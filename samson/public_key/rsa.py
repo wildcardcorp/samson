@@ -10,6 +10,7 @@ from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
 from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
+from samson.encoding.dns_key.dns_key_rsa_public_key import DNSKeyRSAPublicKey
 from samson.encoding.general import PKIEncoding
 
 from samson.utilities.bytes import Bytes
@@ -40,7 +41,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         PKIEncoding.SSH2: SSH2RSAPublicKey,
         PKIEncoding.X509_CERT: X509RSACertificate,
         PKIEncoding.X509: X509RSAPublicKey,
-        PKIEncoding.PKCS1: PKCS1RSAPublicKey
+        PKIEncoding.PKCS1: PKCS1RSAPublicKey,
+        PKIEncoding.DNS_KEY: DNSKeyRSAPublicKey
     }
 
     X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
@@ -242,3 +244,19 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
                     break
 
         return RSA(0, p=p, q=q, e=e)
+
+
+
+    @staticmethod
+    def check_roca(n: int) -> bool:
+        """
+        Determines whether `n` is vulnerable to Return of Coppersmith's Attack ("ROCA", CVE-2017-15361).
+
+        Parameters:
+            n (int): Modulus to test.
+        
+        Returns:
+            bool: Whether or not `n` is vulnerable.
+        """
+        from samson.auxiliary.roca import check_roca
+        return check_roca(n)

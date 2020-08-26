@@ -1,6 +1,11 @@
 from samson.utilities.manipulation import get_blocks
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence as _Sequence, Integer as _Integer, SequenceOf as _SequenceOf
+from samson.classical.affine import AffineCipher
+from samson.analyzers.analyzer import Analyzer
+import urllib.parse
+import codecs
+import re
 import base64
 import string
 import math
@@ -263,6 +268,7 @@ class PKIEncoding(Enum):
     OpenSSH   = 4
     SSH2      = 5
     JWK       = 6
+    DNS_KEY   = 7
 
 
 
@@ -302,3 +308,111 @@ class PKIAutoParser(object):
             buffer = pem_decode(buffer, passphrase)
 
         return PKIAutoParser.get_encoding(buffer, passphrase=passphrase).decode(buffer, passphrase=passphrase)
+
+
+
+from samson.utilities.bytes import Bytes
+class EncodingScheme(Enum):
+    PLAIN      = 0
+    URL        = 1
+    ROT13_LOW  = 2
+    ROT13_UPP  = 3
+    BASE64     = 4
+    BASE64_URL = 5
+    BASE32     = 6
+    BASE32_HEX = 7
+    HEX        = 8
+    OCTAL      = 9
+    BINARY     = 10
+
+
+    def encode(self, text: bytes):
+        return Bytes.wrap(_ENCODERS[self](text))
+
+
+    def decode(self, text: bytes):
+        return Bytes.wrap(_DECODERS[self](text))
+
+
+
+    @staticmethod
+    def get_valid_charsets(text: bytes) -> list:
+        candidates = []
+
+        for encoding, regex in _CHARSETS.items():
+            char_re = re.compile(regex.encode('utf-8'))
+
+            if char_re.fullmatch(text):
+                candidates.append(encoding)
+        
+        return candidates
+
+
+    @staticmethod
+    def get_valid_decodings(text: bytes) -> dict:
+        candidates = {}
+
+        for encoding in EncodingScheme:
+            try:
+                decoded = encoding.decode(text)
+
+                if encoding.encode(decoded) == text:
+                    candidates[encoding] = decoded
+            except:
+                pass
+        
+        return candidates
+
+
+
+    @staticmethod
+    def get_best_decoding(text: bytes, analyzer: Analyzer) -> bytes:
+        decodings = EncodingScheme.get_valid_decodings(text)
+        return analyzer.select_highest_scores(decodings.items(), key=lambda item: item[1])[0]
+
+
+
+_CHARSETS = {
+    EncodingScheme.PLAIN: r'.*',
+    EncodingScheme.HEX: r'(0x)?([a-f0-9]+|[A-F0-9]+)',
+
+    # https://tools.ietf.org/html/rfc4648#section-6
+    EncodingScheme.BASE32: r'[A-Z2-7]+(=|={3}|={4}|={6})?',
+    EncodingScheme.BASE32_HEX: r'[A-V0-9]+(=|={3}|={4}|={6})?',
+    EncodingScheme.BASE64: r'[A-Za-z0-9+/]+={0,2}',
+    EncodingScheme.BASE64_URL: r'[A-Za-z0-9-_]+',
+    EncodingScheme.ROT13_LOW: r'[a-z]+',
+    EncodingScheme.ROT13_UPP: r'[A-Z]+',
+    EncodingScheme.URL: r'[A-Za-z0-9-._~]+',
+    EncodingScheme.BINARY: r'(0b)?[0-1]+',
+    EncodingScheme.OCTAL: r'(0o)[0-7]+'
+}
+
+_rot13_low = AffineCipher(a=1, b=13, alphabet=string.ascii_lowercase)
+_rot13_upp = AffineCipher(a=1, b=13, alphabet=string.ascii_uppercase)
+
+_ENCODERS = {
+    EncodingScheme.PLAIN: lambda text: text,
+    EncodingScheme.HEX: lambda text: codecs.encode(text, 'hex_codec'),
+    EncodingScheme.BASE32: base64.b32encode,
+    EncodingScheme.BASE64: base64.b64encode,
+    EncodingScheme.BASE64_URL: url_b64_encode,
+    EncodingScheme.ROT13_LOW: lambda text: _rot13_low.encrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.ROT13_UPP: lambda text: _rot13_upp.encrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.URL: lambda text: urllib.parse.quote_from_bytes(text).encode('utf-8'),
+    EncodingScheme.BINARY: lambda text: bin(text).encode('utf-8'),
+    EncodingScheme.OCTAL: lambda text: oct(text).encode('utf-8')
+}
+
+_DECODERS = {
+    EncodingScheme.PLAIN: lambda text: text,
+    EncodingScheme.HEX: lambda text: codecs.decode(text, 'hex_codec'),
+    EncodingScheme.BASE32: base64.b32decode,
+    EncodingScheme.BASE64: base64.b64decode,
+    EncodingScheme.BASE64_URL: url_b64_decode,
+    EncodingScheme.ROT13_LOW: lambda text: _rot13_low.decrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.ROT13_UPP: lambda text: _rot13_upp.decrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.URL: urllib.parse.unquote_to_bytes,
+    EncodingScheme.BINARY: lambda text: int_to_bytes(int(text, 2)),
+    EncodingScheme.OCTAL: lambda text: int_to_bytes(int(text, 8))
+}

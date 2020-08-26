@@ -1,3 +1,5 @@
+from types import FunctionType
+
 class Analyzer(object):
     """
     Base class for all Analyzers.
@@ -23,15 +25,16 @@ class Analyzer(object):
         raise NotImplementedError("The `analyze` method must be implemented by a subclass.")
 
 
-    def select_highest_scores(self, in_list: list, num: int=1) -> list:
+    def select_highest_scores(self, in_list: list, num: int=1, key: FunctionType=lambda item: item) -> list:
         """
         Analyzes a list `in_list`, sorts the list, and returns the top `num` scores.
 
         Parameters:
             in_list (list): The list of byte-like objects to be analyzed.
             num      (int): Number of results to return.
+            key     (func): Key selector function.
 
         Returns:
             list: `in_list` sorted and truncated.
         """
-        return sorted(in_list, key=lambda item: self.analyze(item), reverse=True)[:num]
+        return sorted(in_list, key=lambda item: self.analyze(key(item)), reverse=True)[:num]

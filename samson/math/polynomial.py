@@ -4,6 +4,7 @@ from samson.math.factorization.general import factor as factor_int, pk_1_smalles
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
+from samson.utilities.exceptions import NotInvertibleException
 from types import FunctionType
 import itertools
 
@@ -142,6 +143,7 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero
 
 
+
     def evaluate(self, x: RingElement) -> RingElement:
         """
         Evaluates the `Polynomial` at `x` using Horner's method.
@@ -153,28 +155,18 @@ class Polynomial(RingElement):
             RingElement: Evaluation at `x`.
         """
         coeffs   = self.coeffs
-        c0       = x*coeffs[-1]
+        total    = self.coeff_ring.zero
         last_idx = coeffs.last()
-        idx      = None
 
-        for idx, coeff in coeffs.values.items()[:-1][::-1]:
-            if not idx:
-                continue
-
-            c0 = (c0+coeff)*x**(last_idx-idx)
+        for idx, c in coeffs.values.items()[::-1]:
+            total *= x**(last_idx-idx)
+            total += c
             last_idx = idx
 
-        # Handle the case where there's only one coeff
-        if idx is None:
-            c0 *= x**(last_idx-1)
 
-        elif last_idx-idx:
-            c0 *= x**(last_idx-1-idx)
+        total *= x**idx
 
-        if self.degree():
-            c0 += coeffs[0]
-
-        return c0
+        return total
 
 
     def newton(self, x0, max_tries: int=10000):
@@ -682,23 +674,29 @@ class Polynomial(RingElement):
             poly = self
 
 
+        if not poly.coeff_ring.is_field():
+            raise NotImplementedError("Irreducibility tests of polynomials over rings of composite characteristic is not implemented")
+
         x = poly.symbol
         f = poly.monic()
         P = poly.ring
 
         subgroups = {n // fac for fac in factor_int(n)}
 
-        bases  = frobenius_monomial_base(f)
+        bases  = frobenius_monomial_base(poly)
         h      = bases[1]
         x_poly = P(x)
         one    = P.one
 
         for idx in range(1, n):
+            print('1', idx)
             if idx in subgroups:
-                if gcd(f, h - x_poly).monic() != one:
+                if gcd(poly, h - x_poly).monic() != one:
                     return False
+                
+                print('2')
 
-            h = frobenius_map(h, f, bases=bases)
+            h = frobenius_map(h, poly, bases=bases)
 
         return h == x_poly
 
@@ -1204,7 +1202,8 @@ class Polynomial(RingElement):
         return self != self.ring.zero and all([coeff.is_invertible() for _, coeff in self.coeffs])
 
 
-    def gcd(self, other: 'Polynomial') -> 'Polynomial':
+
+    def gcd(self, other: 'Polynomial', use_naive: bool=False) -> 'Polynomial':
         """
         References:
             https://math.stackexchange.com/a/2587365
@@ -1215,6 +1214,16 @@ class Polynomial(RingElement):
         R = self.coeff_ring
         if R.is_field():
             return super().gcd(other)
+        
+        elif use_naive:
+            # Assumes invertibility despite not being a field
+            # We use monic to reduce the leading coefficient so the algorithm will terminate
+            a, b = self, other
+            while b:
+                a = a.monic()
+                b = b.monic()
+                a, b = b, a % b
+            return a.monic()
 
         else:
             # Embed ring into a fraction field
