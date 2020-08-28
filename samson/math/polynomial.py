@@ -689,12 +689,10 @@ class Polynomial(RingElement):
         one    = P.one
 
         for idx in range(1, n):
-            print('1', idx)
             if idx in subgroups:
                 if gcd(poly, h - x_poly).monic() != one:
                     return False
-                
-                print('2')
+
 
             h = frobenius_map(h, poly, bases=bases)
 

@@ -12,6 +12,7 @@ from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.encoding.dns_key.dns_key_eddsa_public_key import DNSKeyEdDSAPublicKey
+from samson.encoding.dns_key.dns_key_eddsa_private_key import DNSKeyEdDSAPrivateKey
 from samson.encoding.general import PKIEncoding
 from samson.core.primitives import Primitive
 from samson.core.metadata import SizeType, SizeSpec, FrequencyType
@@ -29,7 +30,8 @@ class EdDSA(DSA):
     PRIV_ENCODINGS = {
         PKIEncoding.OpenSSH: OpenSSHEdDSAPrivateKey,
         PKIEncoding.PKCS8: PKCS8EdDSAPrivateKey,
-        PKIEncoding.JWK: JWKEdDSAPrivateKey
+        PKIEncoding.JWK: JWKEdDSAPrivateKey,
+        PKIEncoding.DNS_KEY: DNSKeyEdDSAPrivateKey
     }
 
 

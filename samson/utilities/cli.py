@@ -120,5 +120,6 @@ ENCODING_MAPPING = {
     'PKCS8': PKIEncoding.PKCS8,
     'SSH2': PKIEncoding.SSH2,
     'X509': PKIEncoding.X509,
-    'X509_CERT': PKIEncoding.X509_CERT
+    'X509_CERT': PKIEncoding.X509_CERT,
+    'DNS_KEY': PKIEncoding.DNS_KEY
 }

@@ -14,6 +14,7 @@ from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
 from samson.encoding.dns_key.dns_key_ecdsa_public_key import DNSKeyECDSAPublicKey
+from samson.encoding.dns_key.dns_key_ecdsa_private_key import DNSKeyECDSAPrivateKey
 from samson.encoding.general import PKIEncoding
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
 from samson.core.primitives import Primitive
@@ -31,7 +32,8 @@ class ECDSA(DSA):
         PKIEncoding.JWK: JWKECPrivateKey,
         PKIEncoding.OpenSSH: OpenSSHECDSAPrivateKey,
         PKIEncoding.PKCS1: PKCS1ECDSAPrivateKey,
-        PKIEncoding.PKCS8: PKCS8ECDSAPrivateKey
+        PKIEncoding.PKCS8: PKCS8ECDSAPrivateKey,
+        PKIEncoding.DNS_KEY: DNSKeyECDSAPrivateKey
     }
 
 

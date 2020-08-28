@@ -1,4 +1,3 @@
-from samson.encoding.general import bytes_to_bitstring
 from math import log, sqrt, pi
 import operator as _operator
 import json
@@ -36,6 +35,7 @@ def hamming_distance(bytes1: bytes, bytes2: bytes) -> int:
     Returns:
         int: Hamming distance.
     """
+    from samson.encoding.general import bytes_to_bitstring
     assert len(bytes1) == len(bytes2)
     bitstring1 = bytes_to_bitstring(bytes1)
     bitstring2 = bytes_to_bitstring(bytes2)

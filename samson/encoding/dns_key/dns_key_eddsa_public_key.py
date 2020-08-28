@@ -19,7 +19,7 @@ class DNSKeyEdDSAPublicKey(DNSKeyBase):
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> 'ed_key':
         from samson.public_key.eddsa import EdDSA
-        alg       = DNSKeyAlgorithm(int(buffer.split(b' ')[2]))
+        alg       = DNSKeyAlgorithm(int(DNSKeyBase.prune_buffer(buffer).split(b' ')[2]))
         pub_bytes = DNSKeyBase.get_pub_bytes(buffer)
 
         curve = ED_CURVE_MAP[alg]

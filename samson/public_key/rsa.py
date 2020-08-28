@@ -11,8 +11,10 @@ from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
 from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.dns_key.dns_key_rsa_public_key import DNSKeyRSAPublicKey
+from samson.encoding.dns_key.dns_key_rsa_private_key import DNSKeyRSAPrivateKey
 from samson.encoding.general import PKIEncoding
 
+from samson.utilities.exceptions import NoSolutionException
 from samson.utilities.bytes import Bytes
 from samson.core.encodable_pki import EncodablePKI
 from samson.core.primitives import Primitive, NumberTheoreticalAlg
@@ -31,7 +33,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         PKIEncoding.JWK: JWKRSAPrivateKey,
         PKIEncoding.OpenSSH: OpenSSHRSAPrivateKey,
         PKIEncoding.PKCS1: PKCS1RSAPrivateKey,
-        PKIEncoding.PKCS8: PKCS8RSAPrivateKey
+        PKIEncoding.PKCS8: PKCS8RSAPrivateKey,
+        PKIEncoding.DNS_KEY: DNSKeyRSAPrivateKey
     }
 
 
@@ -260,3 +263,55 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         """
         from samson.auxiliary.roca import check_roca
         return check_roca(n)
+
+
+
+    @staticmethod
+    def franklin_reiter(n: int, e:int, c1: bytes, c2: bytes, a: int, b: int) -> (Bytes, Bytes):
+        """
+        Plaintext recovery attack on related messages. If two messages `m1` and `m2` are encrypted under
+        the same RSA key and differ by a polynomial `f`(`x`)=`a``x`+`b` such that `f`(`m2`)=`m1`,
+        an attacker can recover both messages.
+
+        Parameters:
+            n    (int): Modulus.
+            e    (int): Public exponent.
+            c1 (bytes): First ciphertext.
+            c2 (bytes): Second ciphertext.
+            a    (int): Degree one coefficient of `f`.
+            b    (int): Degree zero coefficient of `f`.
+
+        Returns:
+            (Bytes, Bytes): Formatted as (plaintext of `c1`, plaintext of `c2`).
+
+        Examples:
+            >>> n = 12888116222751572707240304314061489969911517689681896002815278735734599554528139201175828301306206875758015813657671194091088574408652687049044678022350881
+            >>> e = 3
+            >>> c1, c2 = (1069840764750984151382541524182133076049036437301406613777333377072807719543492846608433094574284616519736184031434837790828328968169604334545475452353520, 6128850605905061316574224955190498492830401383027566668909504849309619877251329707299254116186505675740734972894129266563268585885907678840482692103494952)
+            >>> msg_1, msg_2 = (4522760776158455690156842391692112439215231484566493313552482744592035149379214992316932614241610059456557632128387082728369044265, 4522760776158455690156842391692112439215123068100955980064492871261939142436073092871197229985928362464740136774601007644199107151)
+            >>> RSA.franklin_reiter(n, e, c1, c2, 1, -(msg_2 - msg_1)) == (Bytes(msg_1), Bytes(msg_2))
+            True
+
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.symbols import Symbol
+        x = Symbol('x')
+
+        c1, c2  = [Bytes.wrap(item).int() for item in [c1, c2]]
+
+        Zn = ZZ/ZZ(n)
+        P  = Zn[x]
+
+        f = a*x + b
+        f = f.monic()
+
+        g1 = f**e - c1
+        g2 = x**e - c2
+
+        g3 = g1.gcd(g2, use_naive=True)
+
+        if g3.degree() != 1:
+            raise NoSolutionException(f"Resultant polynomial ({g3}) is not degree one")
+
+        m2 = int(-g3[0])
+        return Bytes(int(f(m2))), Bytes(m2)

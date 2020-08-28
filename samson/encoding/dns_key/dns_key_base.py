@@ -1,13 +1,23 @@
 from samson.encoding.general import EncodingScheme
 from samson.encoding.dns_key.general import DNSKeyAlgorithm, DNSKeyFlags
+import re
+
+METADATA_RE = re.compile(b'[0-9]{1,3} 3 [0-9]{1,2}')
 
 class DNSKeyBase(object):
     ALGS = None
 
+    @staticmethod
+    def prune_buffer(buffer: bytes) -> bytes:
+        match = METADATA_RE.search(buffer)
+        start = match.start() if match else 0
+        return buffer[start:]
+
+
     @classmethod
     def check(cls, buffer: bytes, **kwargs) -> bool:
         try:
-            split   = buffer.split(b' ')
+            split   = DNSKeyBase.prune_buffer(buffer).split(b' ')
             alg     = int(split[2])
             pub_key = b''.join(buffer.split(b' ')[3:])
 
@@ -23,10 +33,13 @@ class DNSKeyBase(object):
         proto = kwargs.get('proto', 3)
         flags = kwargs.get('flags', DNSKeyFlags.ZONE_KEY)
 
-        return f'{int(flags)} {proto} {alg.value} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(32, allow_partials=True))
+        if type(alg) is DNSKeyAlgorithm:
+            alg = alg.value
+
+        return f'{int(flags)} {proto} {alg} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(kwargs.get('spacing', 32), allow_partials=True))
 
 
     @staticmethod
     def get_pub_bytes(buffer: bytes):
-        pub_key   = b''.join(buffer.split(b' ')[3:])
+        pub_key   = b''.join(DNSKeyBase.prune_buffer(buffer).split(b' ')[3:])
         return EncodingScheme.BASE64.decode(pub_key)

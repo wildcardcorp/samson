@@ -5,6 +5,9 @@ from pygments.lexers import Python3Lexer
 from pygments.formatters import TerminalTrueColorFormatter
 from pygments import highlight
 import shutil
+import re
+
+UNDEFINED_PARAM_RE = re.compile(r'`[A-Za-z0-9() _+-]+`')
 
 TERM_SIZE = shutil.get_terminal_size((80, 20))
 
@@ -31,6 +34,10 @@ def type_format(cls):
 
 def param_format(text):
     return color_format(ConsoleColors.CYAN, text)
+
+
+def undefined_param_format(text):
+    return color_format(ConsoleColors.YELLOW, text)
 
 
 def code_format(code, bg_size):
@@ -146,10 +153,15 @@ def gen_doc(description: str=None, parameters: list=None, returns: DocReturns=No
                 d_str = d_str.replace(f'`{param.name}`', param_format(param.name))
 
             return d_str
+        
 
-        parameterized_desc = parameterize(description)
-        parameterized_ret  = parameterize(returns_str)
-        param_params       = parameterize(parameters_str)
+        def undefined_parameterize(d_str):
+            return UNDEFINED_PARAM_RE.sub(lambda match: undefined_param_format(match.group()[1:-1]), d_str)
+
+
+        parameterized_desc = undefined_parameterize(parameterize(description))
+        parameterized_ret  = undefined_parameterize(parameterize(returns_str))
+        param_params       = undefined_parameterize(parameterize(parameters_str))
 
         func.__doc__ = f"{parameterized_desc}{param_params}{parameterized_ret}{examples_str}{references_str}"
         func.examples = examples
@@ -188,7 +200,7 @@ def parse_doc(func):
 
 
     # Handle each case separately
-    description = NEWLINE.join(parsed['Description'])
+    description = ' '.join([line.strip() for line in parsed['Description']]).strip()
 
     params = []
     if 'Parameters' in parsed:
@@ -202,9 +214,9 @@ def parse_doc(func):
 
     returns = None
     if 'Returns' in parsed:
-        split   = parsed['Returns'][0].split()
+        split   = parsed['Returns'][0].split(':')
         r_type  = split[0].rstrip(':')
-        r_desc  = ' '.join(split[1:])
+        r_desc  = split[1].strip()
 
         returns = DocReturns(r_type, r_desc)
 

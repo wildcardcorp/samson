@@ -311,7 +311,8 @@ class PKIAutoParser(object):
 
 
 
-from samson.utilities.bytes import Bytes
+from samson.auxiliary.lazy_loader import LazyLoader
+_bytes = LazyLoader('_bytes', globals(), 'samson.utilities.bytes')
 class EncodingScheme(Enum):
     PLAIN      = 0
     URL        = 1
@@ -327,11 +328,11 @@ class EncodingScheme(Enum):
 
 
     def encode(self, text: bytes):
-        return Bytes.wrap(_ENCODERS[self](text))
+        return _bytes.Bytes.wrap(_ENCODERS[self](text))
 
 
     def decode(self, text: bytes):
-        return Bytes.wrap(_DECODERS[self](text))
+        return _bytes.Bytes.wrap(_DECODERS[self](text))
 
 
 

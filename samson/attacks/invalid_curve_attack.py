@@ -3,7 +3,6 @@ from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import crt
 from samson.math.factorization.general import factor as factorint
 from samson.utilities.runtime import RUNTIME
-from samson.oracles.oracle import Oracle
 from typing import List
 import itertools
 
@@ -26,7 +25,7 @@ class InvalidCurveAttack(object):
     * The user has access to an oracle that accepts arbitrary public keys and returns the residue
     """
 
-    def __init__(self, oracle: Oracle, curve: WeierstrassCurve):
+    def __init__(self, oracle: 'Oracle', curve: WeierstrassCurve):
         """
         Parameters:
             oracle          (Oracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
@@ -114,6 +113,7 @@ class InvalidCurveAttack(object):
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
             n, _ = crt(residue_subset)
             if G_cache * (int(n) % cardinality) == public_key:
+                print(residue_subset)
                 break
 
         return n.val

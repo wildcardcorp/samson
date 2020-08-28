@@ -4,6 +4,8 @@ from samson.math.factorization.general import factor
 from samson.protocols.diffie_hellman import DiffieHellman
 
 WELL_KNOWN_GROUPS = {
+    DiffieHellman.MODP_768: 'MODP_768',
+    DiffieHellman.MODP_1024: 'MODP_1024',
     DiffieHellman.MODP_1536: 'MODP_1536',
     DiffieHellman.MODP_2048: 'MODP_2048',
     DiffieHellman.MODP_3072: 'MODP_3072',

@@ -1,4 +1,3 @@
-from samson.encoding.general import int_to_bytes
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
@@ -125,7 +124,7 @@ class PKCS1v15PaddingOracleAttack(object):
                 a, b = M[0]
 
                 if a == b:
-                    return Bytes(b'\x00' + int_to_bytes(a, 'big'))
+                    return Bytes(b'\x00' + Bytes(a))
 
                 r = _ceil(2 * (b*s - 2*B), n)
                 s = _ceil(2*B + r*n, b)
