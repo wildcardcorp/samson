@@ -1,15 +1,13 @@
 from samson.encoding.general import url_b64_encode
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
-class JWKEdDSAPrivateKey(object):
+class JWKEdDSAPrivateKey(JWKBase):
     """
     JWK encoder for EdDSA private keys
     """
 
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -32,8 +30,8 @@ class JWKEdDSAPrivateKey(object):
             return False
 
 
-    @staticmethod
-    def encode(eddsa_key: 'EdDSA', **kwargs) -> str:
+
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -43,8 +41,8 @@ class JWKEdDSAPrivateKey(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKEdDSAPublicKey.build_pub(eddsa_key)
-        jwk['d'] = url_b64_encode(eddsa_key.d).decode()
+        jwk = JWKEdDSAPublicKey.build_pub(self.key)
+        jwk['d'] = url_b64_encode(self.key.d).decode()
 
         return json.dumps(jwk).encode('utf-8')
 
@@ -60,4 +58,4 @@ class JWKEdDSAPrivateKey(object):
         Returns:
             EdDSA: EdDSA object.
         """
-        return JWKEdDSAPublicKey.decode(buffer)
+        return JWKEdDSAPrivateKey(JWKEdDSAPublicKey.decode(buffer).key)

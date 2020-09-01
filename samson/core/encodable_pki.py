@@ -24,8 +24,10 @@ class EncodablePKI(object):
 
         for encoding in ORDER:
             for encoding_type in [cls.PRIV_ENCODINGS, cls.PUB_ENCODINGS]:
+
                 if encoding in encoding_type:
                     encoder = encoding_type[encoding]
+    
                     if encoder.check(buffer, passphrase=passphrase):
                         return encoder.decode(buffer, passphrase=passphrase)
 
@@ -49,7 +51,7 @@ class EncodablePKI(object):
             raise ValueError(f'Unsupported public encoding "{encoding}" for "{self.__class__}"')
 
         encoder = self.PUB_ENCODINGS[encoding]
-        encoded = encoder.encode(self, encode_pem=encode_pem, marker=marker, **kwargs)
+        encoded = encoder(self, encode_pem=encode_pem, marker=marker, **kwargs)
 
         return encoded
 
@@ -74,6 +76,5 @@ class EncodablePKI(object):
             raise ValueError(f'Unsupported private encoding "{encoding}" for "{self.__class__}"')
 
         encoder = self.PRIV_ENCODINGS[encoding]
-        encoded = encoder.encode(self, encode_pem=encode_pem, marker=marker, encryption=encryption, passphrase=passphrase, iv=iv, **kwargs)
-
+        encoded = encoder(self, encode_pem=encode_pem, marker=marker, encryption=encryption, passphrase=passphrase, iv=iv, **kwargs)
         return encoded

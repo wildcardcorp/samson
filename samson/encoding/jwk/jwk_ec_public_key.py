@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
 from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
 JWK_CURVE_NAME_LOOKUP = {
@@ -13,14 +14,10 @@ JWK_CURVE_NAME_LOOKUP = {
 
 JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
 
-class JWKECPublicKey(object):
+class JWKECPublicKey(JWKBase):
     """
     JWK encoder for ECDSA public keys
     """
-
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -65,8 +62,8 @@ class JWKECPublicKey(object):
         return jwk
 
 
-    @staticmethod
-    def encode(ec_key: 'ECDSA', **kwargs) -> str:
+
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -76,7 +73,7 @@ class JWKECPublicKey(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKECPublicKey.build_pub(ec_key)
+        jwk = JWKECPublicKey.build_pub(self.key)
         return json.dumps(jwk).encode('utf-8')
 
 
@@ -110,4 +107,4 @@ class JWKECPublicKey(object):
 
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
         ecdsa.Q = curve(x, y)
-        return ecdsa
+        return JWKECPublicKey(ecdsa)

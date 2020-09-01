@@ -316,15 +316,14 @@ _bytes = LazyLoader('_bytes', globals(), 'samson.utilities.bytes')
 class EncodingScheme(Enum):
     PLAIN      = 0
     URL        = 1
-    ROT13_LOW  = 2
-    ROT13_UPP  = 3
-    BASE64     = 4
-    BASE64_URL = 5
-    BASE32     = 6
-    BASE32_HEX = 7
-    HEX        = 8
-    OCTAL      = 9
-    BINARY     = 10
+    ROT13      = 2
+    BASE64     = 3
+    BASE64_URL = 4
+    BASE32     = 5
+    BASE32_HEX = 6
+    HEX        = 7
+    OCTAL      = 8
+    BINARY     = 9
 
 
     def encode(self, text: bytes):
@@ -382,8 +381,7 @@ _CHARSETS = {
     EncodingScheme.BASE32_HEX: r'[A-V0-9]+(=|={3}|={4}|={6})?',
     EncodingScheme.BASE64: r'[A-Za-z0-9+/]+={0,2}',
     EncodingScheme.BASE64_URL: r'[A-Za-z0-9-_]+',
-    EncodingScheme.ROT13_LOW: r'[a-z]+',
-    EncodingScheme.ROT13_UPP: r'[A-Z]+',
+    EncodingScheme.ROT13: r'[a-zA-Z]+',
     EncodingScheme.URL: r'[A-Za-z0-9-._~]+',
     EncodingScheme.BINARY: r'(0b)?[0-1]+',
     EncodingScheme.OCTAL: r'(0o)[0-7]+'
@@ -398,8 +396,7 @@ _ENCODERS = {
     EncodingScheme.BASE32: base64.b32encode,
     EncodingScheme.BASE64: base64.b64encode,
     EncodingScheme.BASE64_URL: url_b64_encode,
-    EncodingScheme.ROT13_LOW: lambda text: _rot13_low.encrypt(text.decode()).encode('utf-8'),
-    EncodingScheme.ROT13_UPP: lambda text: _rot13_upp.encrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.ROT13: lambda text: _rot13_upp.encrypt(_rot13_low.encrypt(text.decode())).encode('utf-8'),
     EncodingScheme.URL: lambda text: urllib.parse.quote_from_bytes(text).encode('utf-8'),
     EncodingScheme.BINARY: lambda text: bin(text).encode('utf-8'),
     EncodingScheme.OCTAL: lambda text: oct(text).encode('utf-8')
@@ -411,8 +408,7 @@ _DECODERS = {
     EncodingScheme.BASE32: base64.b32decode,
     EncodingScheme.BASE64: base64.b64decode,
     EncodingScheme.BASE64_URL: url_b64_decode,
-    EncodingScheme.ROT13_LOW: lambda text: _rot13_low.decrypt(text.decode()).encode('utf-8'),
-    EncodingScheme.ROT13_UPP: lambda text: _rot13_upp.decrypt(text.decode()).encode('utf-8'),
+    EncodingScheme.ROT13: lambda text: _rot13_upp.decrypt(_rot13_low.decrypt(text.decode())).encode('utf-8'),
     EncodingScheme.URL: urllib.parse.unquote_to_bytes,
     EncodingScheme.BINARY: lambda text: int_to_bytes(int(text, 2)),
     EncodingScheme.OCTAL: lambda text: int_to_bytes(int(text, 8))

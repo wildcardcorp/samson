@@ -1,9 +1,7 @@
 from samson.math.general import mod_inv, find_prime, random_int_between, is_prime
 from samson.utilities.bytes import Bytes
 
-from samson.encoding.openssh.openssh_dsa_private_key import OpenSSHDSAPrivateKey
-from samson.encoding.openssh.openssh_dsa_public_key import OpenSSHDSAPublicKey
-from samson.encoding.openssh.ssh2_dsa_public_key import SSH2DSAPublicKey
+from samson.encoding.openssh.openssh_dsa_key import OpenSSHDSAPrivateKey, OpenSSHDSAPublicKey, SSH2DSAPublicKey
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
@@ -87,11 +85,8 @@ class DSA(EncodablePKI, SignatureAlg):
 
 
 
-    def __repr__(self):
-        return f"<DSA: hash_obj={self.hash_obj}, p={self.p}, q={self.q}, g={self.g}, x={self.x}, y={self.y}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['hash_obj', 'p', 'q', 'g', 'x', 'y']
 
 
 

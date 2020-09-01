@@ -4,6 +4,7 @@ from samson.ace.exploit import KeyPossession, PlaintextPossession
 from samson.ace.constraints import EncryptedConstraint
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import CiphertextLengthException, InvalidMACException
+from samson.core.base_object import BaseObject
 from copy import deepcopy
 from abc import abstractmethod
 
@@ -26,7 +27,7 @@ class classproperty(object):
         return self.fget(owner_cls)
 
 
-class Primitive(object):
+class Primitive(BaseObject):
     CONSTRUCTION_TYPES = []
     USAGE_TYPE         = UsageType.GENERAL
     USAGE_FREQUENCY    = FrequencyType.NEGLIGIBLE

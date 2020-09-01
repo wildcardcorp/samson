@@ -17,13 +17,13 @@ class PKCS8EdDSAPrivateKey(PKCS8Base):
             return False
 
 
-    @staticmethod
-    def encode(eddsa_key: 'EdDSA', **kwargs) -> bytes:
-        alg_id = SequenceOf()
-        alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
 
-        zero_fill = math.ceil(eddsa_key.d.int().bit_length() / 8)
-        priv_key = OctetString(encoder.encode(OctetString(Bytes.wrap(eddsa_key.d).zfill(zero_fill))))
+    def encode(self, **kwargs) -> bytes:
+        alg_id = SequenceOf()
+        alg_id.setComponentByPosition(0, ObjectIdentifier(self.key.curve.oid))
+
+        zero_fill = math.ceil(self.key.d.int().bit_length() / 8)
+        priv_key = OctetString(encoder.encode(OctetString(Bytes.wrap(self.key.d).zfill(zero_fill))))
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, Integer(0))
@@ -48,4 +48,4 @@ class PKCS8EdDSAPrivateKey(PKCS8Base):
         curve = EDCURVE_OID_LOOKUP[curve_oid]
         eddsa = EdDSA(d=d, curve=curve)
 
-        return eddsa
+        return PKCS8EdDSAPrivateKey(eddsa)

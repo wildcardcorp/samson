@@ -14,18 +14,18 @@ class PKCS8DSAPrivateKey(PKCS8Base):
             return False
 
 
-    @staticmethod
-    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
+
+    def encode(self, **kwargs) -> bytes:
         dss_params = SequenceOf()
-        dss_params.setComponentByPosition(0, Integer(dsa_key.p))
-        dss_params.setComponentByPosition(1, Integer(dsa_key.q))
-        dss_params.setComponentByPosition(2, Integer(dsa_key.g))
+        dss_params.setComponentByPosition(0, Integer(self.key.p))
+        dss_params.setComponentByPosition(1, Integer(self.key.q))
+        dss_params.setComponentByPosition(2, Integer(self.key.g))
 
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10040, 4, 1]))
         alg_id.setComponentByPosition(1, dss_params)
 
-        param_oct = OctetString(encoder.encode(Integer(dsa_key.x)))
+        param_oct = OctetString(encoder.encode(Integer(self.key.x)))
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, Integer(0))
@@ -47,4 +47,4 @@ class PKCS8DSAPrivateKey(PKCS8Base):
         x = int(x)
         dsa = DSA(None, p=p, q=q, g=g, x=x)
 
-        return dsa
+        return PKCS8DSAPrivateKey(dsa)

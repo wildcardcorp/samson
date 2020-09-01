@@ -71,7 +71,7 @@ def export_pki(pki_obj, arguments):
             for i in range(1, len(literals), 2):
                 preprocessed_literals[f'#{i}'] = literals[i]
                 literals[i] = f'#{i}'
-        
+
 
         processed_args = [arg.split('=') for arg in ''.join(literals).split(',')]
         for i, (_, v)in enumerate(processed_args):
@@ -82,7 +82,7 @@ def export_pki(pki_obj, arguments):
             with open(encoding_args['signing_key'], 'rb') as f:
                 encoding_args['signing_key'] = PKIAutoParser.import_key(f.read())
 
-                
+
     else:
         encoding_args = {}
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
             if not text:
                 text = sys.stdin.buffer.read()
-            
+
             if arguments.eval:
                 text = PARSE_METHOD(text)
 

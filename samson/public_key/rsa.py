@@ -1,8 +1,6 @@
 from samson.math.general import gcd, lcm, mod_inv, find_prime
 
-from samson.encoding.openssh.openssh_rsa_private_key import OpenSSHRSAPrivateKey
-from samson.encoding.openssh.openssh_rsa_public_key import OpenSSHRSAPublicKey
-from samson.encoding.openssh.ssh2_rsa_public_key import SSH2RSAPublicKey
+from samson.encoding.openssh.openssh_rsa_key import OpenSSHRSAPrivateKey, OpenSSHRSAPublicKey, SSH2RSAPublicKey
 from samson.encoding.jwk.jwk_rsa_public_key import JWKRSAPublicKey
 from samson.encoding.jwk.jwk_rsa_private_key import JWKRSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
@@ -10,8 +8,7 @@ from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
 from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
-from samson.encoding.dns_key.dns_key_rsa_public_key import DNSKeyRSAPublicKey
-from samson.encoding.dns_key.dns_key_rsa_private_key import DNSKeyRSAPrivateKey
+from samson.encoding.dns_key.dns_key_rsa_key import DNSKeyRSAPublicKey, DNSKeyRSAPrivateKey
 from samson.encoding.general import PKIEncoding
 
 from samson.utilities.exceptions import NoSolutionException
@@ -132,12 +129,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
 
 
-    def __repr__(self):
-        return f"<RSA: bits={self.bits}, p={self.p}, q={self.q}, e={self.e}, n={self.n}, phi={self.phi}, d={self.d}, alt_d={self.alt_d}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['bits', 'e', 'd', 'alt_d', 'p', 'q', 'n', 'phi']
 
 
     def encrypt(self, plaintext: bytes) -> int:

@@ -1,16 +1,51 @@
-from samson.encoding.dns_key.dns_key_base import DNSKeyBase
+from samson.encoding.dns_key.dns_key_private_base import DNSKeyPrivateBase
+from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm
+from samson.encoding.general import EncodingScheme
 from samson.utilities.bytes import Bytes
 
-# https://tools.ietf.org/html/rfc2539#section-2
-class DNSKeyDHPublicKey(DNSKeyBase):
-    ALGS = [DNSKeyAlgorithm.DH]
 
+class DNSKeyDHBase(object):
+    ALGS = [DNSKeyAlgorithm.DH]
 
     @staticmethod
     def get_default_alg(dh_key: 'DiffieHellman') -> DNSKeyAlgorithm:
         return DNSKeyAlgorithm.DH
 
+
+
+class DNSKeyDHPrivateKey(DNSKeyPrivateBase, DNSKeyDHBase):
+
+    @staticmethod
+    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
+        return self.build(
+            fields={
+                'Prime(p)': dh_key.p,
+                'Generator(g)': dh_key.g,
+                'Private_value(x)': dh_key.key,
+                'Public_value(y)': dh_key.y
+            }
+        )
+
+
+    @staticmethod
+    def decode(buffer: bytes, **kwargs) -> 'DiffieHellman':
+        from samson.protocols.diffie_hellman import DiffieHellman
+
+        version, alg, fields = DNSKeyPrivateBase.extract_fields(buffer)
+        p = fields[b'Prime(p)'].int()
+        g = fields[b'Generator(g)'].int()
+        x = fields[b'Private_value(x)'].int()
+        y = fields[b'Public_value(y)'].int()
+
+        full_key = DNSKeyDHPrivateKey(DiffieHellman(g=g, p=p, key=x, y=y), alg, version, *DNSKeyDHPrivateKey.get_metadata(buffer))
+        return full_key
+
+
+
+
+# https://tools.ietf.org/html/rfc2539#section-2
+class DNSKeyDHPublicKey(DNSKeyPublicBase, DNSKeyDHBase):
 
     @staticmethod
     def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
@@ -28,13 +63,13 @@ class DNSKeyDHPublicKey(DNSKeyBase):
         if 'spacing' not in kwargs:
             kwargs['spacing'] = 56
 
-        return DNSKeyDHPublicKey.build(dh_key, payload,  **kwargs)
+        return self.build(payload)
 
 
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> 'RSA':
         from samson.protocols.diffie_hellman import DiffieHellman, DHGroupToMod
-        pub_bytes = DNSKeyBase.get_pub_bytes(buffer)
+        pub_bytes = DNSKeyPublicBase.get_pub_bytes(buffer)
 
         # `p` length
         curr_idx = 2
@@ -65,4 +100,5 @@ class DNSKeyDHPublicKey(DNSKeyBase):
             g = 2
 
         dh = DiffieHellman(key=1, p=p, g=g, y=y)
-        return dh
+        full_key = DNSKeyDHPublicKey(dh, *DNSKeyPublicBase.get_metadata(buffer))
+        return full_key

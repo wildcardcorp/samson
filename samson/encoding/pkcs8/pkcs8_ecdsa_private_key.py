@@ -20,18 +20,18 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
             return False
 
 
-    @staticmethod
-    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
+
+    def encode(self, **kwargs) -> bytes:
         alg_id = SequenceOf()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10045, 2, 1]))
-        alg_id.setComponentByPosition(1, ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(ecdsa_key.G.curve.oid)]) + ecdsa_key.G.curve.oid)[0].asTuple()))
+        alg_id.setComponentByPosition(1, ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.key.G.curve.oid)]) + self.key.G.curve.oid)[0].asTuple()))
 
-        zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
+        zero_fill = math.ceil(self.key.G.curve.q.bit_length() / 8)
 
         params_seq = Sequence()
         params_seq.setComponentByPosition(0, Integer(1))
-        params_seq.setComponentByPosition(1, OctetString(Bytes(ecdsa_key.d).zfill(zero_fill)))
-        params_seq.setComponentByPosition(2, PublicPoint(ecdsa_key.format_public_point()))
+        params_seq.setComponentByPosition(1, OctetString(Bytes(self.key.d).zfill(zero_fill)))
+        params_seq.setComponentByPosition(2, PublicPoint(self.key.format_public_point()))
 
         param_oct = OctetString(encoder.encode(params_seq))
 
@@ -62,4 +62,4 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
         ecdsa = ECDSA(d=d, G=curve.G)
         ecdsa.Q = curve(x, y)
 
-        return ecdsa
+        return PKCS8ECDSAPrivateKey(ecdsa)

@@ -4,15 +4,12 @@ from samson.math.algebra.curves.twisted_edwards_curve import TwistedEdwardsPoint
 from samson.math.algebra.curves.named import EdwardsCurve25519
 from samson.hashes.sha2 import SHA512
 
-from samson.encoding.openssh.openssh_eddsa_private_key import OpenSSHEdDSAPrivateKey
-from samson.encoding.openssh.openssh_eddsa_public_key import OpenSSHEdDSAPublicKey
-from samson.encoding.openssh.ssh2_eddsa_public_key import SSH2EdDSAPublicKey
+from samson.encoding.openssh.openssh_eddsa_key import OpenSSHEdDSAPrivateKey, OpenSSHEdDSAPublicKey, SSH2EdDSAPublicKey
 from samson.encoding.pkcs8.pkcs8_eddsa_private_key import PKCS8EdDSAPrivateKey
 from samson.encoding.x509.x509_eddsa_public_key import X509EdDSAPublicKey
 from samson.encoding.jwk.jwk_eddsa_private_key import JWKEdDSAPrivateKey
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
-from samson.encoding.dns_key.dns_key_eddsa_public_key import DNSKeyEdDSAPublicKey
-from samson.encoding.dns_key.dns_key_eddsa_private_key import DNSKeyEdDSAPrivateKey
+from samson.encoding.dns_key.dns_key_eddsa_key import DNSKeyEdDSAPublicKey, DNSKeyEdDSAPrivateKey
 from samson.encoding.general import PKIEncoding
 from samson.core.primitives import Primitive
 from samson.core.metadata import SizeType, SizeSpec, FrequencyType
@@ -74,11 +71,8 @@ class EdDSA(DSA):
 
 
 
-    def __repr__(self):
-        return f"<EdDSA: d={self.d}, a={self.a}, A={self.A}, curve={self.curve}, H={self.H}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['d', 'a', 'A', 'curve', 'H']
 
 
     def encode_point(self, P: TwistedEdwardsPoint) -> Bytes:

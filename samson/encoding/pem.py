@@ -9,13 +9,33 @@ import re
 import base64
 import math
 
-RFC1423_ALGOS = {
-    "DES-CBC":      (DES, 8),
-    "DES-EDE3-CBC": (TDES, 24),
-    "AES-128-CBC":  (Rijndael, 16),
-    "AES-192-CBC":  (Rijndael, 24),
-    "AES-256-CBC":  (Rijndael, 32)
-}
+
+
+from enum import Enum 
+class RFC1423Algorithms(Enum): 
+    DES_CBC = (DES, 8) 
+    DES_EDE3_CBC = (TDES, 24) 
+    AES_128_CBC  = (Rijndael, 16) 
+    AES_192_CBC  = (Rijndael, 24) 
+    AES_256_CBC  = (Rijndael, 32) 
+
+
+def _get_alg_params(algo: str):
+    if type(algo) is RFC1423Algorithms:
+        return algo.value
+    else:
+        return RFC1423Algorithms.__members__[algo.replace('-', '_')].value
+
+
+def _get_alg_name(algo: str):
+    if type(algo) is RFC1423Algorithms:
+        name = algo.name
+    else:
+        name = RFC1423Algorithms.__members__[algo.replace('-', '_')].name
+    
+    return name.replace('_', '-')
+
+
 
 
 def derive_pem_key(passphrase: bytes, salt: bytes, key_size: int) -> Bytes:
@@ -53,7 +73,7 @@ def create_pem_cbc_obj(passphrase: bytes, algo: str, iv: bytes=None) -> CBC:
         CBC: Valid CBC cryptor.
     """
     try:
-        cipher, key_size = RFC1423_ALGOS[algo]
+        cipher, key_size = _get_alg_params(algo)
     except KeyError as _:
         raise ValueError(f'Unsupported cipher "{algo}"')
 
@@ -144,7 +164,7 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=Non
 
         cbc = create_pem_cbc_obj(passphrase, encryption, iv)
         der_bytes = cbc.encrypt(der_bytes)
-        additional_headers = f'Proc-Type: 4,ENCRYPTED\nDEK-Info: {encryption},{cbc.iv.hex().upper().decode()}\n\n'
+        additional_headers = f'Proc-Type: 4,ENCRYPTED\nDEK-Info: {_get_alg_name(encryption)},{cbc.iv.hex().upper().decode()}\n\n'
 
     data = b'\n'.join(get_blocks(base64.b64encode(der_bytes), block_size=width, allow_partials=True))
 
@@ -158,7 +178,12 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=Non
     return f"{begin_delim}BEGIN {marker}{end_delim}\n{additional_headers}".encode('utf-8') + data + f"\n{begin_delim}END {marker}{end_delim}".encode('utf-8')
 
 
-class PEMEncodable(object):
+from samson.core.base_object import BaseObject
+class PEMEncodable(BaseObject):
+
+    def __init__(self, key, **kwargs):
+        self.key = key
+
 
     @classmethod
     def transport_encode(cls, buffer: bytes, **kwargs):

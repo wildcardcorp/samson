@@ -1,4 +1,4 @@
-from samson.auxiliary.console_colors import ConsoleColors, PREFIX, SUFFIX
+from samson.auxiliary.console_colors import ConsoleColors, color_format
 from types import FunctionType
 from pygments.styles.monokai import MonokaiStyle
 from pygments.lexers import Python3Lexer
@@ -17,15 +17,6 @@ FORMATTER = TerminalTrueColorFormatter(style=MonokaiStyle)
 NEWLINE = '\n'
 TAB     = '\t'
 QUOTE   = '\"'
-
-def color_format(color: ConsoleColors, text: str):
-    from samson.utilities.runtime import RUNTIME
-    if RUNTIME.use_color:
-        formatted = f"{PREFIX}{color.value}m{text}{SUFFIX}"
-    else:
-        formatted = text
-
-    return formatted
 
 
 def type_format(cls):

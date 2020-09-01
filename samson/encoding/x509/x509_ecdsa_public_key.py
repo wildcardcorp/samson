@@ -17,11 +17,11 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
             return False
 
 
-    @staticmethod
-    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
+
+    def encode(self, **kwargs) -> bytes:
         curve_seq = [
             ObjectIdentifier([1, 2, 840, 10045, 2, 1]),
-            X509ECDSAParams.encode(ecdsa_key)
+            X509ECDSAParams.encode(self.key)
         ]
 
         encoded = SequenceOf()
@@ -29,7 +29,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, encoded)
-        top_seq.setComponentByPosition(1, X509ECDSASubjectPublicKey.encode(ecdsa_key))
+        top_seq.setComponentByPosition(1, X509ECDSASubjectPublicKey.encode(self.key))
 
         encoded = encoder.encode(top_seq)
         return X509ECDSAPublicKey.transport_encode(encoded, **kwargs)
@@ -45,7 +45,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
         d = 1
 
         x, y, curve = parse_ec_params(items, 0, 1)
-        ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
+        ecdsa   = ECDSA(G=curve.G, hash_obj=None, d=d)
         ecdsa.Q = curve(x, y)
 
-        return ecdsa
+        return X509ECDSAPublicKey(ecdsa)

@@ -2,7 +2,7 @@ from samson.math.algebra.curves.named import P192, P224, P384, P256, P521
 from samson.utilities.bytes import Bytes
 from samson.public_key.ecdsa import ECDSA
 from samson.encoding.general import PKIEncoding
-from samson.encoding.pem import RFC1423_ALGOS
+from samson.encoding.pem import RFC1423Algorithms
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 import json
@@ -290,9 +290,9 @@ class ECDSATestCase(unittest.TestCase):
 
 
     def test_import_export_private(self):
-        ecdsa = ECDSA.import_key(TEST_PRIV)
-        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1)
-        new_ecdsa = ECDSA.import_key(der_bytes)
+        ecdsa     = ECDSA.import_key(TEST_PRIV).key
+        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1).encode()
+        new_ecdsa = ECDSA.import_key(der_bytes).key
 
         self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
         self.assertEqual((ecdsa.G.curve, ecdsa.d, ecdsa.Q), (EXPECTED_CURVE, EXPECTED_PRIV, PUB_POINT))
@@ -300,9 +300,9 @@ class ECDSATestCase(unittest.TestCase):
 
 
     def test_import_export_private_521(self):
-        ecdsa = ECDSA.import_key(TEST_PRIV_521)
-        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1)
-        new_ecdsa = ECDSA.import_key(der_bytes)
+        ecdsa     = ECDSA.import_key(TEST_PRIV_521).key
+        der_bytes = ecdsa.export_private_key(encoding=PKIEncoding.PKCS1).encode()
+        new_ecdsa = ECDSA.import_key(der_bytes).key
 
         self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (new_ecdsa.G, new_ecdsa.d, new_ecdsa.Q))
         self.assertEqual((ecdsa.G.curve, ecdsa.d, ecdsa.Q), (EXPECTED_CURVE_521, EXPECTED_PRIV_521, PUB_POINT_521))
@@ -311,11 +311,11 @@ class ECDSATestCase(unittest.TestCase):
 
 
     def test_import_export_public(self):
-        ecdsa_pub  = ECDSA.import_key(TEST_PUB)
-        ecdsa_priv = ECDSA.import_key(TEST_PRIV)
+        ecdsa_pub  = ECDSA.import_key(TEST_PUB).key
+        ecdsa_priv = ECDSA.import_key(TEST_PRIV).key
 
-        der_bytes = ecdsa_pub.export_public_key(encoding=PKIEncoding.X509)
-        new_pub  = ECDSA.import_key(der_bytes)
+        der_bytes = ecdsa_pub.export_public_key(encoding=PKIEncoding.X509).encode()
+        new_pub  = ECDSA.import_key(der_bytes).key
 
         self.assertEqual(ecdsa_pub.Q, ecdsa_priv.Q)
         self.assertEqual(new_pub.Q, ecdsa_priv.Q)
@@ -325,10 +325,10 @@ class ECDSATestCase(unittest.TestCase):
 
     def _run_import_pem_enc(self, enc_priv):
         with self.assertRaises(ValueError):
-            ECDSA.import_key(enc_priv)
+            ECDSA.import_key(enc_priv).key
 
-        enc_ecdsa = ECDSA.import_key(enc_priv, PEM_PASSPHRASE)
-        dec_ecdsa = ECDSA.import_key(TEST_PEM_DEC)
+        enc_ecdsa = ECDSA.import_key(enc_priv, PEM_PASSPHRASE).key
+        dec_ecdsa = ECDSA.import_key(TEST_PEM_DEC).key
         self.assertEqual((enc_ecdsa.G, enc_ecdsa.d, enc_ecdsa.Q), (dec_ecdsa.G, dec_ecdsa.d, dec_ecdsa.Q))
 
 
@@ -349,29 +349,28 @@ class ECDSATestCase(unittest.TestCase):
 
 
     def test_import_enc_gauntlet(self):
-        supported_algos = RFC1423_ALGOS.keys()
-        for algo in supported_algos:
+        for algo in RFC1423Algorithms:
             for _ in range(10):
-                ecdsa = ECDSA(G=P256.G, hash_obj=None)
-                key = Bytes.random(Bytes.random(1).int() + 1)
-                enc_pem = ecdsa.export_private_key(encryption=algo, passphrase=key)
-                dec_ecdsa = ECDSA.import_key(enc_pem, key)
+                ecdsa     = ECDSA(G=P256.G, hash_obj=None)
+                key       = Bytes.random(Bytes.random(1).int() + 1)
+                enc_pem   = ecdsa.export_private_key(encryption=algo, passphrase=key).encode()
+                dec_ecdsa = ECDSA.import_key(enc_pem, key).key
 
                 self.assertEqual((ecdsa.G, ecdsa.d, ecdsa.Q), (dec_ecdsa.G, dec_ecdsa.d, dec_ecdsa.Q))
 
 
 
     def test_import_ssh(self):
-        ecdsa_pub      = ECDSA.import_key(TEST_SSH_PUB)
-        ecdsa_ssh2_pub = ECDSA.import_key(TEST_SSH2_PUB)
-        ecdsa_priv     = ECDSA.import_key(TEST_SSH_PRIV)
+        ecdsa_pub      = ECDSA.import_key(TEST_SSH_PUB).key
+        ecdsa_ssh2_pub = ECDSA.import_key(TEST_SSH2_PUB).key
+        ecdsa_priv     = ECDSA.import_key(TEST_SSH_PRIV).key
 
         self.assertEqual((ecdsa_pub.G, ecdsa_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
         self.assertEqual((ecdsa_ssh2_pub.G, ecdsa_ssh2_pub.Q), (ecdsa_priv.G, ecdsa_priv.Q))
         self.assertEqual(ecdsa_priv.d * ecdsa_priv.G, ecdsa_priv.Q)
 
-        self.assertEqual(ecdsa_pub.export_public_key(encoding=PKIEncoding.OpenSSH).replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
-        self.assertEqual(ecdsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
+        self.assertEqual(ecdsa_pub.export_public_key(encoding=PKIEncoding.OpenSSH).encode().replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
+        self.assertEqual(ecdsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).encode().replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
 
 
 
@@ -379,9 +378,9 @@ class ECDSATestCase(unittest.TestCase):
         for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
             if passphrase:
                 with self.assertRaises(ValueError):
-                    ECDSA.import_key(key)
+                    ECDSA.import_key(key).key
 
-            ecdsa = ECDSA.import_key(key, passphrase=passphrase)
+            ecdsa = ECDSA.import_key(key, passphrase=passphrase).key
             self.assertEqual(ecdsa.d * ecdsa.G, ecdsa.Q)
             self.assertLess(ecdsa.d, ecdsa.q)
 
@@ -389,22 +388,25 @@ class ECDSATestCase(unittest.TestCase):
 
     def test_openssh_gauntlet(self):
         num_runs = 6
-        num_enc = num_runs // 3
-        curves = [P192, P224, P256, P384, P521]
+        num_enc  = num_runs // 3
+        curves   = [P192, P224, P256, P384, P521]
+    
         for i in range(num_runs):
             curve = random.choice(curves)
             ecdsa = ECDSA(curve.G)
             passphrase = None
+
+
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = ecdsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = ecdsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-            pub_ssh2    = ecdsa.export_public_key(encoding=PKIEncoding.SSH2)
+            priv        = ecdsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase).encode()
+            pub_openssh = ecdsa.export_public_key(encoding=PKIEncoding.OpenSSH).encode()
+            pub_ssh2    = ecdsa.export_public_key(encoding=PKIEncoding.SSH2).encode()
 
-            new_priv = ECDSA.import_key(priv, passphrase=passphrase)
-            new_pub_openssh = ECDSA.import_key(pub_openssh)
-            new_pub_ssh2 = ECDSA.import_key(pub_ssh2)
+            new_priv         = ECDSA.import_key(priv, passphrase=passphrase).key
+            new_pub_openssh  = ECDSA.import_key(pub_openssh).key
+            new_pub_ssh2     = ECDSA.import_key(pub_ssh2).key
 
             self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
             self.assertEqual((new_pub_openssh.G, new_pub_openssh.Q), (ecdsa.G, ecdsa.Q))
@@ -412,12 +414,12 @@ class ECDSATestCase(unittest.TestCase):
 
 
     def test_import_jwk(self):
-        ec = ECDSA.import_key(TEST_JWK)
-        jwk = ec.export_public_key(encoding=PKIEncoding.JWK)
+        ec = ECDSA.import_key(TEST_JWK).key
+        jwk = ec.export_public_key(encoding=PKIEncoding.JWK).encode()
         self.assertEqual(jwk, TEST_JWK)
 
-        ec = ECDSA.import_key(TEST_JWK_PRIV)
-        jwk = ec.export_private_key(encoding=PKIEncoding.JWK)
+        ec  = ECDSA.import_key(TEST_JWK_PRIV).key
+        jwk = ec.export_private_key(encoding=PKIEncoding.JWK).encode()
 
         as_dict = json.loads(TEST_JWK_PRIV.decode())
         del as_dict['use']
@@ -433,11 +435,11 @@ class ECDSATestCase(unittest.TestCase):
             curve = random.choice(curves)
             ecdsa = ECDSA(curve.G)
 
-            priv = ecdsa.export_private_key(encoding=PKIEncoding.JWK)
-            pub  = ecdsa.export_public_key(encoding=PKIEncoding.JWK)
+            priv = ecdsa.export_private_key(encoding=PKIEncoding.JWK).encode()
+            pub  = ecdsa.export_public_key(encoding=PKIEncoding.JWK).encode()
 
-            new_priv = ECDSA.import_key(priv)
-            new_pub  = ECDSA.import_key(pub)
+            new_priv = ECDSA.import_key(priv).key
+            new_pub  = ECDSA.import_key(pub).key
 
             self.assertEqual((new_priv.d, new_priv.G, new_priv.Q), (ecdsa.d, ecdsa.G, ecdsa.Q))
             self.assertEqual((new_pub.G, new_pub.Q), (ecdsa.G, ecdsa.Q))
@@ -446,25 +448,25 @@ class ECDSATestCase(unittest.TestCase):
     def test_import_x509_cert(self):
         from subprocess import check_call
 
-        ec = ECDSA.import_key(TEST_X509_CERT)
+        ec = ECDSA.import_key(TEST_X509_CERT).key
         self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
 
-        cert = ec.export_public_key(encoding=PKIEncoding.X509_CERT).decode()
+        cert = ec.export_public_key(encoding=PKIEncoding.X509_CERT).encode().decode()
         check_call([f'echo -n \"{cert}\" | openssl x509 -text'], shell=True)
 
 
 
     def test_import_x509(self):
-        ec = ECDSA.import_key(TEST_X509)
-        ec_bytes = ec.export_public_key(encoding=PKIEncoding.X509)
+        ec = ECDSA.import_key(TEST_X509).key
+        ec_bytes = ec.export_public_key(encoding=PKIEncoding.X509).encode()
         self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
         self.assertEqual(ec_bytes.replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
 
 
 
     def test_import_pkcs8(self):
-        ec = ECDSA.import_key(TEST_PKCS8)
-        ec_bytes = ec.export_private_key(encoding=PKIEncoding.PKCS8)
+        ec       = ECDSA.import_key(TEST_PKCS8).key
+        ec_bytes = ec.export_private_key(encoding=PKIEncoding.PKCS8).encode()
 
         self.assertEqual(ec.d, 2282649980877248464928985540593193992740494509534471044083643023670157012821680477618689736007052097550343217684448593053345246736083446705198105618319263331)
         self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
@@ -475,8 +477,8 @@ class ECDSATestCase(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.2.5
     def _run_test(self, curve, x, message, H, k, expected_sig):
         ecdsa = ECDSA(curve.G, H, d=x)
-        r,s = ecdsa.sign(message, k=k)
-        sig = (int(r), int(s))
+        r,s   = ecdsa.sign(message, k=k)
+        sig   = (int(r), int(s))
 
         self.assertEqual(sig, expected_sig)
         self.assertTrue(ecdsa.verify(message, sig))

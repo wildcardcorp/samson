@@ -55,10 +55,10 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
             return False
 
 
-    @staticmethod
-    def encode(ecdsa_key: 'ECDSA', **kwargs) -> bytes:
-        zero_fill = math.ceil(ecdsa_key.G.curve.q.bit_length() / 8)
-        encoded = export_der([1, Bytes(ecdsa_key.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(ecdsa_key.G.curve.oid)]) + ecdsa_key.G.curve.oid)[0].asTuple(), ecdsa_key.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
+
+    def encode(self, **kwargs) -> bytes:
+        zero_fill = math.ceil(self.key.G.curve.q.bit_length() / 8)
+        encoded = export_der([1, Bytes(self.key.d).zfill(zero_fill), ber_decoder.decode(b'\x06' + bytes([len(self.key.G.curve.oid)]) + self.key.G.curve.oid)[0].asTuple(), self.key.format_public_point()], item_types=[Integer, OctetString, NamedCurve, PublicPoint])
         encoded = PKCS1ECDSAPrivateKey.transport_encode(encoded, **kwargs)
         return encoded
 
@@ -74,4 +74,4 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=d)
         ecdsa.Q = curve(x, y)
 
-        return ecdsa
+        return PKCS1ECDSAPrivateKey(ecdsa)

@@ -1,6 +1,6 @@
 from samson.public_key.rsa import RSA
 from samson.utilities.bytes import Bytes
-from samson.encoding.pem import RFC1423_ALGOS
+from samson.encoding.pem import RFC1423Algorithms
 from samson.encoding.general import PKIEncoding
 from samson.math.general import mod_inv, is_prime
 import unittest
@@ -622,8 +622,7 @@ class RSATestCase(unittest.TestCase):
 
 
     def test_import_enc_gauntlet(self):
-        supported_algos = RFC1423_ALGOS.keys()
-        for algo in supported_algos:
+        for algo in RFC1423Algorithms:
             for _ in range(10):
                 rsa = RSA(512)
                 key = Bytes.random(Bytes.random(1).int() + 1)

@@ -19,9 +19,9 @@ class PKCS1DSAPrivateKey(PEMEncodable):
             return False
 
 
-    @staticmethod
-    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
-        encoded = export_der([0, dsa_key.p, dsa_key.q, dsa_key.g, dsa_key.y, dsa_key.x])
+
+    def encode(self, **kwargs) -> bytes:
+        encoded = export_der([0, self.key.p, self.key.q, self.key.g, self.key.y, self.key.x])
         encoded = PKCS1DSAPrivateKey.transport_encode(encoded, **kwargs)
         return encoded
 
@@ -35,4 +35,4 @@ class PKCS1DSAPrivateKey(PEMEncodable):
         dsa = DSA(None, p=p, q=q, g=g, x=x)
         dsa.y = y
 
-        return dsa
+        return PKCS1DSAPrivateKey(dsa)

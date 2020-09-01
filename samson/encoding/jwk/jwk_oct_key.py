@@ -1,14 +1,12 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
-class JWKOctKey(object):
+class JWKOctKey(JWKBase):
     """
     JWK encoder for octect keys
     """
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -31,8 +29,7 @@ class JWKOctKey(object):
             return False
 
 
-    @staticmethod
-    def encode(key: bytes, **kwargs) -> str:
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -44,7 +41,7 @@ class JWKOctKey(object):
         """
         jwk = {
             'kty': 'oct',
-            'k': url_b64_encode(key).decode()
+            'k': url_b64_encode(self.key).decode()
         }
         return json.dumps(jwk).encode('utf-8')
 
@@ -64,4 +61,4 @@ class JWKOctKey(object):
             buffer = buffer.decode()
 
         jwk = json.loads(buffer)
-        return Bytes(url_b64_decode(jwk['k'].encode()))
+        return JWKOctKey(Bytes(url_b64_decode(jwk['k'].encode())))

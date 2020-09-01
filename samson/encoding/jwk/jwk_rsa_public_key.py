@@ -1,15 +1,12 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
-class JWKRSAPublicKey(object):
+class JWKRSAPublicKey(JWKBase):
     """
     JWK encoder for RSA public keys
     """
-
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -52,8 +49,8 @@ class JWKRSAPublicKey(object):
         return jwk
 
 
-    @staticmethod
-    def encode(rsa_key: 'RSA', **kwargs) -> str:
+
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -63,7 +60,7 @@ class JWKRSAPublicKey(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKRSAPublicKey.build_pub(rsa_key)
+        jwk = JWKRSAPublicKey.build_pub(self.key)
         return json.dumps(jwk).encode('utf-8')
 
 
@@ -99,4 +96,4 @@ class JWKRSAPublicKey(object):
         rsa.n = n
         rsa.bits = rsa.n.bit_length()
 
-        return rsa
+        return JWKRSAPublicKey(rsa)

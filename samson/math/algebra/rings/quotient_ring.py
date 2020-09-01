@@ -41,13 +41,13 @@ class QuotientElement(RingElement):
     @left_expression_intercept
     def __add__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
-        return QuotientElement((self.val + other.val) % self.ring.quotient, self.ring)
+        return QuotientElement(self.val + other.val, self.ring)
 
 
     @left_expression_intercept
     def __sub__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
-        return QuotientElement((self.val - other.val) % self.ring.quotient, self.ring)
+        return QuotientElement(self.val - other.val, self.ring)
 
 
     def __mul__(self, other: 'QuotientElement') -> 'QuotientElement':
@@ -56,13 +56,13 @@ class QuotientElement(RingElement):
             return gmul
 
         other = self.ring.coerce(other)
-        return QuotientElement((self.val * other.val) % self.ring.quotient, self.ring)
+        return QuotientElement(self.val * other.val, self.ring)
 
 
     @left_expression_intercept
     def __mod__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
-        return QuotientElement((self.val % other.val) % self.ring.quotient, self.ring)
+        return QuotientElement(self.val % other.val, self.ring)
 
     def __invert__(self) -> 'QuotientElement':
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
@@ -77,14 +77,14 @@ class QuotientElement(RingElement):
     @left_expression_intercept
     def __floordiv__(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
-        return QuotientElement((self.val // other.val) % self.ring.quotient, self.ring)
+        return QuotientElement(self.val // other.val, self.ring)
 
     def __divmod__(self, other):
         return self // other, self % other
 
 
     def __neg__(self) -> 'QuotientElement':
-        return QuotientElement((-self.val) % self.ring.quotient, self.ring)
+        return QuotientElement((-self.val), self.ring)
 
 
     def __eq__(self, other: 'QuotientElement') -> bool:

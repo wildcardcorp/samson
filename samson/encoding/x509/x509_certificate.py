@@ -23,6 +23,26 @@ class X509Certificate(PEMEncodable):
     USE_RFC_4716 = False
 
 
+    def __init__(
+        self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
+        issuer_unique_id: int=10, subject_unique_id: int=11, not_before: datetime=None, not_after: datetime=None,
+        signing_key: object=None, signing_alg: object=None, is_ca: bool=False, signature_value: bytes=None, **kwargs
+    ):
+        self.key = key
+        self.version = version
+        self.serial_number = serial_number
+        self.issuer = issuer
+        self.subject = subject
+        self.issuer_unique_id = issuer_unique_id
+        self.subject_unique_id = subject_unique_id
+        self.not_before = not_before or datetime.now()
+        self.not_after = not_after or self.not_before.replace(year=self.not_before.year + 1)
+        self.signing_key = signing_key or key
+        self.signing_alg = signing_alg or self.signing_key.X509_SIGNING_DEFAULT.value
+        self.signature_value = signature_value
+        self.is_ca = is_ca
+
+
     @classmethod
     def check(cls, buffer: bytes, **kwargs) -> bool:
         try:
@@ -32,66 +52,58 @@ class X509Certificate(PEMEncodable):
             return False
 
 
-    @classmethod
-    def encode(cls, pki_key: object, **kwargs) -> bytes:
+    def encode(self, **kwargs) -> bytes:
         # Algorithm ID
-        alg_oid = cls.ALG_OID if type(cls.ALG_OID) is str else cls.ALG_OID(pki_key)
+        alg_oid = self.ALG_OID if type(self.ALG_OID) is str else self.ALG_OID(self.key)
 
         alg_id = rfc2459.AlgorithmIdentifier()
         alg_id['algorithm']  = ObjectIdentifier(alg_oid)
 
-        if cls.PARAM_ENCODER:
-            alg_id['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
+        if self.PARAM_ENCODER:
+            alg_id['parameters'] = Any(encoder.encode(self.PARAM_ENCODER.encode(self.key)))
 
 
         # Serial number
-        serial_num = rfc2459.CertificateSerialNumber(kwargs.get('serial_number') or 0)
-
+        serial_num = rfc2459.CertificateSerialNumber(self.serial_number)
 
         # Validity (time valid)
-        not_before = kwargs.get('not_before') or datetime.now()
-        not_after = kwargs.get('not_after') or not_before.replace(year=not_before.year + 1)
-
         validity = rfc2459.Validity()
         validity['notBefore'] = rfc2459.Time()
-        validity['notBefore']['utcTime'] = UTCTime.fromDateTime(not_before)
+        validity['notBefore']['utcTime'] = UTCTime.fromDateTime(self.not_before)
 
         validity['notAfter']  = rfc2459.Time()
-        validity['notAfter']['utcTime'] = UTCTime.fromDateTime(not_after)
+        validity['notAfter']['utcTime'] = UTCTime.fromDateTime(self.not_after)
 
 
         # Public key serialization
         pub_info = rfc2459.SubjectPublicKeyInfo()
         pub_info['algorithm']        = alg_id
-        pub_info['subjectPublicKey'] = cls.PUB_KEY_ENCODER.encode(pki_key)
+        pub_info['subjectPublicKey'] = self.PUB_KEY_ENCODER.encode(self.key)
 
         # Issuer RDN
         issuer = rfc2459.Name()
-        issuer.setComponentByPosition(0, parse_rdn(kwargs.get('issuer') or 'CN=ca'))
+        issuer.setComponentByPosition(0, parse_rdn(self.issuer))
 
         # Subject RDN
         subject = rfc2459.Name()
-        subject.setComponentByPosition(0, parse_rdn(kwargs.get('subject') or 'CN=ca'))
+        subject.setComponentByPosition(0, parse_rdn(self.subject))
 
         # Signature algorithm
-        signing_key = kwargs.get('signing_key') or pki_key
-
-        if not (kwargs.get('signing_alg') or hasattr(signing_key, "X509_SIGNING_DEFAULT")):
+        if not self.signing_alg or not hasattr(self.signing_key, "X509_SIGNING_DEFAULT"):
             raise ValueError("'signing_alg' not specified and 'signing_key' has no default algorithm")
 
-        signing_alg = (kwargs.get('signing_alg') or signing_key.X509_SIGNING_DEFAULT).value
 
         signature_alg = rfc2459.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
+        signature_alg['algorithm'] = SIGNING_ALG_OIDS[self.signing_alg.name]
 
-        if cls.PARAM_ENCODER:
-            signature_alg['parameters'] = Any(encoder.encode(cls.PARAM_ENCODER.encode(pki_key)))
+        if self.PARAM_ENCODER:
+            signature_alg['parameters'] = Any(encoder.encode(self.PARAM_ENCODER.encode(self.key)))
 
 
         # Extensions
         extensions = rfc2459.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
 
-        if kwargs.get('ca') and kwargs.get('ca') == True:
+        if self.is_ca == True:
             # SKI
             pkey_bytes = Bytes(int(pub_info['subjectPublicKey']))
 
@@ -114,26 +126,26 @@ class X509Certificate(PEMEncodable):
 
         # Put together the TBSCert
         tbs_cert = rfc2459.TBSCertificate()
-        tbs_cert['version']              = 2
+        tbs_cert['version']              = self.version
         tbs_cert['serialNumber']         = serial_num
         tbs_cert['signature']            = signature_alg
         tbs_cert['issuer']               = issuer
         tbs_cert['validity']             = validity
         tbs_cert['subject']              = subject
         tbs_cert['subjectPublicKeyInfo'] = pub_info
-        tbs_cert['issuerUniqueID']       = kwargs.get('issuer_unique_id') or 10
-        tbs_cert['subjectUniqueID']      = kwargs.get('subject_unique_id') or 11
+        tbs_cert['issuerUniqueID']       = self.issuer_unique_id
+        tbs_cert['subjectUniqueID']      = self.subject_unique_id
 
         if len(extensions):
             tbs_cert['extensions'] = extensions
 
 
         # Inject or compute the TBSCert signature
-        if kwargs.get('signature_value') is not None:
-            sig_value = Bytes.wrap(kwargs.get('signature_value')).int()
+        if self.signature_value is not None:
+            sig_value = Bytes.wrap(self.signature_value).int()
         else:
             encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
-            sig_value   = signing_alg.sign(signing_key, encoded_tbs)
+            sig_value   = self.signing_alg.sign(self.signing_key, encoded_tbs)
 
 
         # Build the Cert object
@@ -163,16 +175,15 @@ class X509Certificate(PEMEncodable):
         return alg.verify(verification_key, encoded_tbs, sig_value)
 
 
-
     @classmethod
-    def get_attributes(cls, buffer: bytes) -> dict:
+    def decode(cls, buffer: bytes, **kwargs) -> object:
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
 
         signature    = Bytes(int(cert['signatureValue']))
         cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])]
 
-        tbs_cert  = cert['tbsCertificate']
-        version   = int(tbs_cert['version'])
+        tbs_cert = cert['tbsCertificate']
+        version  = int(tbs_cert['version'])
 
         serial_num        = int(tbs_cert['serialNumber'])
         issuer_unique_id  = int(tbs_cert['issuerUniqueID']) if tbs_cert['issuerUniqueID'].hasValue() else None
@@ -182,40 +193,30 @@ class X509Certificate(PEMEncodable):
         issuer  = rdn_to_str(tbs_cert['issuer'][0])
         subject = rdn_to_str(tbs_cert['subject'][0])
 
-        sig_params = bytes(tbs_cert['signature']['parameters'])
+        if tbs_cert['signature']['parameters'].hasValue():
+            sig_params = bytes(tbs_cert['signature']['parameters'])
+        else:
+            sig_params = None
+
         validity   = tbs_cert['validity']
         not_before = validity['notBefore']['utcTime'].asDateTime
         not_after  = validity['notAfter']['utcTime'].asDateTime
 
-        subjectPublicKeyInfo = cls.decode(buffer)
-
-        cert_dict = {
-            'signatureAlgorithm': cert_sig_alg,
-            'signatureValue': signature,
-            'tbsCertificate': {
-                'version': version,
-                'serialNumber': serial_num,
-                'issuer': issuer,
-                'subject': subject,
-                'issuerUniqueID': issuer_unique_id,
-                'subjectUniqueID': subject_unique_id,
-                'subjectPublicKeyInfo': subjectPublicKeyInfo,
-                'signature': {
-                    'algorithm': cert_sig_alg,
-                    'parameters': sig_params
-                },
-                'validity': {
-                    'notBefore': not_before,
-                    'notAfter': not_after
-                },
-            }
-        }
-
-        return cert_dict
+        is_ca = False
+        if 'extensions' in tbs_cert:
+            for ext in tbs_cert['extensions']:
+                if str(ext['extnID']) == '2.5.29.19':
+                    ext_val, _ = decoder.decode(bytes(ext['extnValue']))
+                    is_ca = bool(ext_val[0])
+                    break
 
 
-    @classmethod
-    def decode(cls, buffer: bytes, **kwargs) -> object:
-        cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
-        buffer = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
-        return cls.PUB_KEY_DECODER.decode(buffer)
+        buffer      = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
+        key         = cls.PUB_KEY_DECODER.decode(buffer).key
+        signing_alg = key.X509_SIGNING_ALGORITHMS.__members__[cert_sig_alg.replace('-', '_')].value
+
+        return cls(
+            key=key, version=version, serial_number=serial_num, issuer=issuer, subject=subject,
+            issuer_unique_id=issuer_unique_id, subject_unique_id=subject_unique_id, not_before=not_before, not_after=not_after,
+            signing_key=None, signing_alg=signing_alg, is_ca=is_ca, signature_value=signature
+        )

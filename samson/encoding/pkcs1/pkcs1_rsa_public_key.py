@@ -17,9 +17,9 @@ class PKCS1RSAPublicKey(PEMEncodable):
             return False
 
 
-    @staticmethod
-    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
-        encoded = export_der([rsa_key.n, rsa_key.e])
+
+    def encode(self, **kwargs) -> bytes:
+        encoded = export_der([self.key.n, self.key.e])
         encoded = PKCS1RSAPublicKey.transport_encode(encoded, **kwargs)
         return encoded
 
@@ -33,4 +33,4 @@ class PKCS1RSAPublicKey(PEMEncodable):
         n, e = items
 
         rsa = RSA(n=n, e=e)
-        return rsa
+        return PKCS1RSAPublicKey(rsa)

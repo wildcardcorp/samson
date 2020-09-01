@@ -17,13 +17,12 @@ class X509RSAPublicKey(X509PublicKeyBase):
             return False
 
 
-    @staticmethod
-    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
+    def encode(self, **kwargs) -> bytes:
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
         seq.setComponentByPosition(1, Null())
 
-        param_bs = X509RSASubjectPublicKey.encode(rsa_key)
+        param_bs = X509RSASubjectPublicKey.encode(self.key)
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, seq)
@@ -47,4 +46,4 @@ class X509RSAPublicKey(X509PublicKeyBase):
 
         n, e = [int(item) for item in items]
         rsa = RSA(n=n, e=e)
-        return rsa
+        return X509RSAPublicKey(rsa)

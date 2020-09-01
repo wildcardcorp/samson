@@ -21,9 +21,9 @@ class PKCS1DiffieHellmanParameters(PEMEncodable):
             return False
 
 
-    @staticmethod
-    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
-        encoded = export_der([dh_key.p, dh_key.g])
+
+    def encode(self, **kwargs) -> bytes:
+        encoded = export_der([self.key.p, self.key.g])
         encoded = PKCS1DiffieHellmanParameters.transport_encode(encoded, **kwargs)
         return encoded
 
@@ -34,4 +34,4 @@ class PKCS1DiffieHellmanParameters(PEMEncodable):
         items = bytes_to_der_sequence(buffer)
 
         p, g = [int(item) for item in items]
-        return DiffieHellman(g=g, p=p)
+        return PKCS1DiffieHellmanParameters(DiffieHellman(g=g, p=p))

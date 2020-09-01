@@ -14,7 +14,8 @@ requires = [
     "tqdm",
     "z3-solver",
     "sortedcontainers",
-    "rich"
+    "rich",
+    "dill"
 ]
 
 tests_require = [

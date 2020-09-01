@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
 from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448, Curve25519, Curve448
 from samson.encoding.general import url_b64_decode, url_b64_encode
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
 JWK_CURVE_NAME_LOOKUP = {
@@ -12,14 +13,10 @@ JWK_CURVE_NAME_LOOKUP = {
 
 JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
 
-class JWKEdDSAPublicKey(object):
+class JWKEdDSAPublicKey(JWKBase):
     """
     JWK encoder for EdDSA public keys
     """
-
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -63,8 +60,7 @@ class JWKEdDSAPublicKey(object):
         return jwk
 
 
-    @staticmethod
-    def encode(eddsa_key: 'EdDSA', **kwargs) -> str:
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -74,7 +70,7 @@ class JWKEdDSAPublicKey(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKEdDSAPublicKey.build_pub(eddsa_key)
+        jwk = JWKEdDSAPublicKey.build_pub(self.key)
         return json.dumps(jwk).encode('utf-8')
 
 
@@ -112,4 +108,4 @@ class JWKEdDSAPublicKey(object):
         else:
             eddsa   = DH25519(curve=curve, d=d, pub=x.int())
 
-        return eddsa
+        return JWKEdDSAPublicKey(eddsa)

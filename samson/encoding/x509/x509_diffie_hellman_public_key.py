@@ -18,15 +18,15 @@ class X509DiffieHellmanPublicKey(X509PublicKeyBase):
             return False
 
 
-    @staticmethod
-    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
-        dh_params = X509DiffieHellmanParams.encode(dh_key)
+
+    def encode(self, **kwargs) -> bytes:
+        dh_params = X509DiffieHellmanParams.encode(self.key)
 
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 3, 1]))
         seq.setComponentByPosition(1, dh_params)
 
-        y_bits = X509DiffieHellmanSubjectPublicKey.encode(dh_key)
+        y_bits = X509DiffieHellmanSubjectPublicKey.encode(self.key)
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, seq)
@@ -45,9 +45,5 @@ class X509DiffieHellmanPublicKey(X509PublicKeyBase):
         y    = int(decoder.decode(y_sequence_bytes)[0])
         p, g = [int(item) for item in items[0][1]]
 
-        dh = DiffieHellman(p=p, g=g)
-
-        # Err, where do we put this?
-        dh.y = y
-
-        return dh
+        dh = DiffieHellman(p=p, g=g, y=y)
+        return X509DiffieHellmanPublicKey(dh)

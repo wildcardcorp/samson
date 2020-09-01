@@ -18,14 +18,13 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
             return False
 
 
-    @staticmethod
-    def encode(eddsa_key: 'EdDSA', **kwargs) -> bytes:
+    def encode(self, **kwargs) -> bytes:
         alg_id = SequenceOf()
-        alg_id.setComponentByPosition(0, ObjectIdentifier(eddsa_key.curve.oid))
+        alg_id.setComponentByPosition(0, ObjectIdentifier(self.key.curve.oid))
 
         seq = Sequence()
         seq.setComponentByPosition(0, alg_id)
-        seq.setComponentByPosition(1, X509EdDSASubjectPublicKey.encode(eddsa_key))
+        seq.setComponentByPosition(1, X509EdDSASubjectPublicKey.encode(self.key))
 
         encoded = encoder.encode(seq)
         return X509EdDSAPublicKey.transport_encode(encoded, **kwargs)
@@ -44,4 +43,4 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
         eddsa = EdDSA(curve=curve)
         eddsa.A = eddsa.decode_point(pub_point)
 
-        return eddsa
+        return X509EdDSAPublicKey(eddsa)

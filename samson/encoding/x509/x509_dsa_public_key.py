@@ -18,15 +18,14 @@ class X509DSAPublicKey(X509PublicKeyBase):
             return False
 
 
-    @staticmethod
-    def encode(dsa_key: 'DSA', **kwargs) -> bytes:
-        dsa_params = X509DSAParams.encode(dsa_key)
+    def encode(self, **kwargs) -> bytes:
+        dsa_params = X509DSAParams.encode(self.key)
 
         seq = Sequence()
         seq.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10040, 4, 1]))
         seq.setComponentByPosition(1, dsa_params)
 
-        y_bits = X509DSASubjectPublicKey.encode(dsa_key)
+        y_bits = X509DSASubjectPublicKey.encode(self.key)
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, seq)
@@ -48,4 +47,4 @@ class X509DSAPublicKey(X509PublicKeyBase):
         dsa = DSA(None, p=p, q=q, g=g, x=0)
         dsa.y = y
 
-        return dsa
+        return X509DSAPublicKey(dsa)

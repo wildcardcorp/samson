@@ -15,9 +15,9 @@ class PKCS1RSAPrivateKey(PEMEncodable):
             return False
 
 
-    @staticmethod
-    def encode(rsa_key: 'RSA', **kwargs) -> bytes:
-        encoded = export_der([0, rsa_key.n, rsa_key.e, rsa_key.alt_d, rsa_key.p, rsa_key.q, rsa_key.dP, rsa_key.dQ, rsa_key.Qi])
+
+    def encode(self, **kwargs) -> bytes:
+        encoded = export_der([0, self.key.n, self.key.e, self.key.alt_d, self.key.p, self.key.q, self.key.dP, self.key.dQ, self.key.Qi])
         encoded = PKCS1RSAPrivateKey.transport_encode(encoded, **kwargs)
         return encoded
 
@@ -36,4 +36,4 @@ class PKCS1RSAPrivateKey(PEMEncodable):
         rsa = RSA(0, p=p, q=q, e=e)
         rsa.bits = rsa.n.bit_length()
 
-        return rsa
+        return PKCS1RSAPrivateKey(rsa)

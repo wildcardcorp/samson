@@ -14,17 +14,17 @@ class PKCS8DiffieHellmanPrivateKey(PKCS8Base):
             return False
 
 
-    @staticmethod
-    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
+
+    def encode(self, **kwargs) -> bytes:
         dh_params = SequenceOf()
-        dh_params.setComponentByPosition(0, Integer(dh_key.p))
-        dh_params.setComponentByPosition(1, Integer(dh_key.g))
+        dh_params.setComponentByPosition(0, Integer(self.key.p))
+        dh_params.setComponentByPosition(1, Integer(self.key.g))
 
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 3, 1]))
         alg_id.setComponentByPosition(1, dh_params)
 
-        param_oct = OctetString(encoder.encode(Integer(dh_key.key)))
+        param_oct = OctetString(encoder.encode(Integer(self.key.key)))
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, Integer(0))
@@ -46,4 +46,4 @@ class PKCS8DiffieHellmanPrivateKey(PKCS8Base):
         key    = int(key)
         dh     = DiffieHellman(p=p, g=g, key=key)
 
-        return dh
+        return PKCS8DiffieHellmanPrivateKey(dh)

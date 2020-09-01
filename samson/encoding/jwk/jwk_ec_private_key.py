@@ -1,16 +1,13 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_encode
 from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
+from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
-class JWKECPrivateKey(object):
+class JWKECPrivateKey(JWKBase):
     """
     JWK encoder for ECDSA private keys
     """
-
-    DEFAULT_MARKER = None
-    DEFAULT_PEM = False
-    USE_RFC_4716 = False
 
     @staticmethod
     def check(buffer: bytes, **kwargs) -> bool:
@@ -33,8 +30,8 @@ class JWKECPrivateKey(object):
             return False
 
 
-    @staticmethod
-    def encode(ec_key: 'ECDSA', **kwargs) -> str:
+
+    def encode(self, **kwargs) -> str:
         """
         Encodes the key as a JWK JSON string.
 
@@ -44,8 +41,8 @@ class JWKECPrivateKey(object):
         Returns:
             str: JWK JSON string.
         """
-        jwk = JWKECPublicKey.build_pub(ec_key)
-        jwk['d'] = url_b64_encode(Bytes(ec_key.d)).decode()
+        jwk = JWKECPublicKey.build_pub(self.key)
+        jwk['d'] = url_b64_encode(Bytes(self.key.d)).decode()
 
         return json.dumps(jwk).encode('utf-8')
 
@@ -61,4 +58,4 @@ class JWKECPrivateKey(object):
         Returns:
             ECDSA: ECDSA object.
         """
-        return JWKECPublicKey.decode(buffer)
+        return JWKECPrivateKey(JWKECPublicKey.decode(buffer).key)
