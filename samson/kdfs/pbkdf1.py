@@ -1,28 +1,29 @@
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
 from types import FunctionType
 
-class PBKDF1(object):
+@register_primitive()
+class PBKDF1(KDF):
     """
     Password-based Key Derivation Function v1.
     """
 
-    def __init__(self, hash_fn: FunctionType, desired_len: int, num_iters: int):
+    def __init__(self, hash_obj: 'Hash', desired_len: int, num_iters: int):
         """
         Parameters:
-            hash_fn    (func): Function that takes in bytes and returns them hashed.
+            hash_obj   (Hash): Instantiated object with compatible hash interface.
             desired_len (int): Desired output length.
             num_iters   (int): Number of iterations to perform.
         """
-        self.hash_fn = hash_fn
-        self.num_iters = num_iters
+        self.hash_obj    = hash_obj
+        self.num_iters   = num_iters
         self.desired_len = desired_len
+        Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<PBKDF1: hash_fn={self.hash_fn}, desired_len={self.desired_len} num_iters={self.num_iters}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['hash_obj', 'desired_len', 'num_iters']
 
 
     def derive(self, password: bytes, salt: bytes) -> Bytes:
@@ -38,6 +39,6 @@ class PBKDF1(object):
         """
         last_result = password + salt
         for _ in range(self.num_iters):
-            last_result = self.hash_fn(last_result)
+            last_result = self.hash_obj.hash(last_result)
 
         return last_result[:self.desired_len]

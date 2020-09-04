@@ -1,7 +1,6 @@
 from samson.encoding.dns_key.dns_key_private_base import DNSKeyPrivateBase
 from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm
-from samson.encoding.general import EncodingScheme
 from samson.utilities.bytes import Bytes
 
 class DNSKeyRSABase(object):
@@ -46,11 +45,11 @@ class DNSKeyRSAPrivateKey(DNSKeyPrivateBase, DNSKeyRSABase):
 # https://tools.ietf.org/html/rfc5702
 class DNSKeyRSAPublicKey(DNSKeyPublicBase, DNSKeyRSABase):
 
-    def encode(self, **kwargs) -> bytes:
+    def encode(self, spacing: int=32, **kwargs) -> bytes:
         n = Bytes(self.key.n)
         e = Bytes(self.key.e)
 
-        return self.build(Bytes(len(e)) + e + n)
+        return self.build(Bytes(len(e)) + e + n, spacing=spacing)
 
 
     @staticmethod

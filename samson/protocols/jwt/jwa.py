@@ -294,7 +294,7 @@ class JWA_ECDH_ES(JWAKeyEncryptionImplementation):
         # 2) priv: Pull 'epk from header. Used in decryption.
         elif 'epk' in header:
             priv_key = kek
-            peer_pub = PKIAutoParser.import_key(json.dumps(header['epk']).encode('utf-8'))
+            peer_pub = PKIAutoParser.import_key(json.dumps(header['epk']).encode('utf-8')).key
 
         # 3) pub: Ephemeral private key.
         else:
@@ -316,9 +316,9 @@ class JWA_ECDH_ES(JWAKeyEncryptionImplementation):
         # Add 'epk' header if not present
         if not 'epk' in header:
             if type(priv_key) in [ECDSA, ECDHE]:
-                encoded_key = ECDSA(G=priv_key.G, d=priv_key.d).export_public_key(encoding=PKIEncoding.JWK)
+                encoded_key = ECDSA(G=priv_key.G, d=priv_key.d).export_public_key(encoding=PKIEncoding.JWK).encode()
             else:
-                encoded_key = JWKEdDSAPublicKey.encode(priv_key)
+                encoded_key = JWKEdDSAPublicKey(priv_key).encode()
 
             header['epk'] = json.loads(encoded_key.decode())
 

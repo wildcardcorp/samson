@@ -80,31 +80,38 @@ def export_pki(pki_obj, arguments):
         encoding_args = {k: PARSE_METHOD(v) for k,v in processed_args}
         if 'signing_key' in encoding_args:
             with open(encoding_args['signing_key'], 'rb') as f:
-                encoding_args['signing_key'] = PKIAutoParser.import_key(f.read())
+                encoding_args['signing_key'] = PKIAutoParser.import_key(f.read()).key
 
 
     else:
         encoding_args = {}
 
 
+    # Handle request for pub
     if arguments.pub:
-        if arguments.encoding:
-            print(pki_obj.export_public_key(encoding=encoding, **encoding_args).decode())
-        else:
-            print(pki_obj.export_public_key().decode())
+        export_func = pki_obj.export_public_key
     else:
-        if arguments.encoding:
-            print(pki_obj.export_private_key(encoding=encoding, **encoding_args).decode())
-        else:
-            print(pki_obj.export_private_key().decode())
+        export_func = pki_obj.export_private_key
+    
+
+    # Handle request for specific encoding
+    if arguments.encoding:
+        encoded_key = export_func(encoding=encoding, **encoding_args)
+    else:
+        encoded_key = export_func(**encoding_args)
+
+
+    print(encoded_key.encode(**encoding_args).decode())
 
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         start_repl()
+
     elif len(sys.argv) == 3:
         with open(arguments.loadfile) as f:
             exec(start_exec + "\n" + f.read())
+
     else:
         if arguments.eval:
             PARSE_METHOD = eval
@@ -130,6 +137,7 @@ if __name__ == '__main__':
 
             hash_obj = hash_cls(**dict_args)
             print(hash_obj.hash(text).hex().decode())
+
 
         elif arguments.command == 'pki':
             pki_type = arguments.type.lower()

@@ -21,12 +21,6 @@ class KW(BlockCipherMode):
         self.iv     = iv
 
 
-    def __repr__(self):
-        return f"<KW: cipher={self.cipher}, iv={self.iv}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def encrypt(self, plaintext: bytes, pad: bool=False) -> Bytes:
         """

@@ -12,11 +12,11 @@ class HMAC(MAC):
 
     USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
-    def __init__(self, key: bytes, hash_obj: object):
+    def __init__(self, key: bytes, hash_obj: 'Hash'):
         """
         Parameters:
-            key       (bytes): Bytes-like object to key the HMAC.
-            hash_obj (object): Instantiated object with compatible hash interface.
+            key     (bytes): Bytes-like object to key the HMAC.
+            hash_obj (Hash): Instantiated object with compatible hash interface.
         """
         Primitive.__init__(self)
 
@@ -32,11 +32,8 @@ class HMAC(MAC):
         self.inner_key_pad = self.key_prime ^ Bytes(b'\x36').stretch(self.hash_obj.block_size)
 
 
-    def __repr__(self):
-        return f"<HMAC: key={self.key}, key_prime={self.key_prime}, outer_key_pad={self.outer_key_pad}, inner_key_pad={self.inner_key_pad}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'key_prime', 'outer_key_pad', 'inner_key_pad']
 
 
     def generate(self, message: bytes) -> Bytes:

@@ -94,15 +94,15 @@ class EdDSATestCase(unittest.TestCase):
 
 
     def test_import_ssh(self):
-        priv  = EdDSA.import_key(TEST_SSH_PRIV)
-        pubv1 = EdDSA.import_key(TEST_SSH_PUB)
-        pubv2 = EdDSA.import_key(TEST_SSH2_PUB)
+        priv  = EdDSA.import_key(TEST_SSH_PRIV).key
+        pubv1 = EdDSA.import_key(TEST_SSH_PUB).key
+        pubv2 = EdDSA.import_key(TEST_SSH2_PUB).key
 
         self.assertEqual(priv.A, pubv1.A)
         self.assertEqual(priv.A, pubv2.A)
 
-        self.assertEqual(pubv1.export_public_key(encoding=PKIEncoding.OpenSSH).replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
-        self.assertEqual(pubv2.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
+        self.assertEqual(pubv1.export_public_key(encoding=PKIEncoding.OpenSSH).encode().replace(b'\n', b''), TEST_SSH_PUB.replace(b'\n', b''))
+        self.assertEqual(pubv2.export_public_key(encoding=PKIEncoding.SSH2).encode().replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
 
 
 
@@ -110,9 +110,9 @@ class EdDSATestCase(unittest.TestCase):
         for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
             if passphrase:
                 with self.assertRaises(ValueError):
-                    EdDSA.import_key(key)
+                    EdDSA.import_key(key).key
 
-            eddsa = EdDSA.import_key(key, passphrase=passphrase)
+            eddsa = EdDSA.import_key(key, passphrase=passphrase).key
 
             # EdDSA's little-endian causes a pretty big headache
             other_eddsa = EdDSA(h=eddsa.h[:32][::-1], clamp=False)
@@ -130,13 +130,13 @@ class EdDSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = eddsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = eddsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-            pub_ssh2    = eddsa.export_public_key(encoding=PKIEncoding.SSH2)
+            priv        = eddsa.export_private_key(encoding=PKIEncoding.OpenSSH).encode(encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = eddsa.export_public_key(encoding=PKIEncoding.OpenSSH).encode()
+            pub_ssh2    = eddsa.export_public_key(encoding=PKIEncoding.SSH2).encode()
 
-            new_priv = EdDSA.import_key(priv, passphrase=passphrase)
-            new_pub_openssh = EdDSA.import_key(pub_openssh)
-            new_pub_ssh2 = EdDSA.import_key(pub_ssh2)
+            new_priv        = EdDSA.import_key(priv, passphrase=passphrase).key
+            new_pub_openssh = EdDSA.import_key(pub_openssh).key
+            new_pub_ssh2    = EdDSA.import_key(pub_ssh2).key
 
             self.assertEqual((new_priv.h, new_priv.a, new_priv.A), (eddsa.h, eddsa.a, eddsa.A))
             self.assertEqual((new_pub_openssh.a, new_pub_openssh.A), (eddsa.a, eddsa.A))
@@ -145,27 +145,27 @@ class EdDSATestCase(unittest.TestCase):
 
 
     def test_import_pkcs8(self):
-        priv = EdDSA.import_key(TEST_PKCS8)
+        priv = EdDSA.import_key(TEST_PKCS8).key
 
-        priv_out = priv.export_private_key(encoding=PKIEncoding.PKCS8)
+        priv_out = priv.export_private_key(encoding=PKIEncoding.PKCS8).encode()
 
         self.assertEqual((priv.d, priv.curve), (Bytes(0xD4EE72DBF913584AD5B6D8F1F769F8AD3AFE7C28CBF1D4FBE097A88F44755842), EdwardsCurve25519))
         self.assertEqual(priv_out.replace(b'\n', b''), TEST_PKCS8.replace(b'\n', b''))
 
 
     def test_import_x509(self):
-        eddsa = EdDSA.import_key(TEST_X509)
+        eddsa = EdDSA.import_key(TEST_X509).key
 
         self.assertEqual((eddsa.A.x, eddsa.A.y), (14952151952356719083710889065620775312428310390022181962301901207657981878023, 44054905936511465773410409843262024357620586324426155423091388570442095968025))
-        self.assertEqual(eddsa.export_public_key(encoding=PKIEncoding.X509).replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
+        self.assertEqual(eddsa.export_public_key(encoding=PKIEncoding.X509).encode().replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
 
 
     def test_import_jwk(self):
-        eddsa = EdDSA.import_key(TEST_JWK)
+        eddsa = EdDSA.import_key(TEST_JWK).key
 
         self.assertEqual((eddsa.A.x, eddsa.A.y), (38815646466658113194383306759739515082307681141926459231621296960732224964046, 11903303657706407974989296177215005343713679411332034699907763981919547054807))
         self.assertEqual(eddsa.d, b'\x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`')
-        self.assertEqual(eddsa.export_private_key(encoding=PKIEncoding.JWK).replace(b'\n', b'').replace(b' ', b''), TEST_JWK)
+        self.assertEqual(eddsa.export_private_key(encoding=PKIEncoding.JWK).encode().replace(b'\n', b'').replace(b' ', b''), TEST_JWK)
 
 
 

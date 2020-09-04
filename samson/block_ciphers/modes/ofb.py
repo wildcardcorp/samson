@@ -23,13 +23,6 @@ class OFB(StreamingBlockCipherMode):
         self.cbc    = CBC(cipher, iv)
 
 
-    def __repr__(self):
-        return f"<OFB: cipher={self.cipher}, iv={self.iv}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.

@@ -25,13 +25,6 @@ class CTR(StreamingBlockCipherMode):
         self.byteorder = self.nonce.byteorder
 
 
-    def __repr__(self):
-        return f"<CTR: cipher={self.cipher}, nonce={self.nonce}, counter={self.counter}, byteorder={self.byteorder}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def encrypt(self, plaintext: bytes) -> Bytes:
         """

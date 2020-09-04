@@ -679,8 +679,5 @@ class Whirlpool(MerkleDamgardConstruction):
         Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<Whirlpool: initial_state={self.initial_state}, block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['initial_state', 'block_size']

@@ -152,12 +152,8 @@ class KASUMI(FeistelNetwork, BlockCipher):
 
 
 
-    def __repr__(self):
-        return f"<KASUMI: key={self.key}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['key']
 
     # For some reason KASUMI reverses the L_0 and R_0, so we need to feed it correctly into the FeistelNetwork
     def encrypt(self, plaintext: bytes) -> Bytes:

@@ -1,19 +1,14 @@
 from samson.block_ciphers.des import DES
 from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
+from samson.core.base_object import BaseObject
 import itertools
 import string
 
-class LM(object):
+class LM(BaseObject):
     def __init__(self, plaintext: bytes=b'KGS!@#$%'):
         self.plaintext  = plaintext
         self.block_size = 7
-
-    def __repr__(self):
-        return f"<LM: plaintext={self.plaintext}, block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def hash(self, message: bytes) -> Bytes:

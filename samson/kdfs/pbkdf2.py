@@ -1,8 +1,11 @@
-from math import ceil
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
 from types import FunctionType
+from math import ceil
 
-class PBKDF2(object):
+@register_primitive()
+class PBKDF2(KDF):
     def __init__(self, hash_fn: FunctionType, desired_len: int, num_iters: int):
         """
         Parameters:
@@ -13,13 +16,12 @@ class PBKDF2(object):
         self.hash_fn     = hash_fn
         self.desired_len = desired_len
         self.num_iters   = num_iters
+        Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<PBKDF2: hash_fn={self.hash_fn}, desired_len={self.desired_len}, num_iters={self.num_iters}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['hash_fn', 'desired_len', 'num_iters']
 
 
     def derive(self, password: bytes, salt: bytes) -> Bytes:

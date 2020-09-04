@@ -267,11 +267,8 @@ class Blowfish(BlockCipher):
             self.key_schedule()
 
 
-    def __repr__(self):
-        return f"<Blowfish: key={self.key}, P={self.P}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'P']
 
 
     def key_schedule(self):

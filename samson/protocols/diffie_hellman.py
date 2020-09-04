@@ -62,13 +62,6 @@ class DiffieHellman(KeyExchangeAlg, EncodablePKI):
         self.y = y or self.get_challenge()
 
 
-    def __repr__(self):
-        return f"<DiffieHellman: key={self.key}, g={self.g}, p={self.p}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def get_challenge(self) -> int:
         """

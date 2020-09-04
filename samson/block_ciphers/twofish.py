@@ -148,12 +148,8 @@ class Twofish(BlockCipher):
 
 
 
-    def __repr__(self):
-        return f"<Twofish: key={self.key}, key_size={len(self.key) * 8}, S={self.S}, K={self.K}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['key', 'S', 'K']
 
 
     def _key_schedule(self):

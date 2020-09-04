@@ -144,7 +144,7 @@ def gen_doc(description: str=None, parameters: list=None, returns: DocReturns=No
                 d_str = d_str.replace(f'`{param.name}`', param_format(param.name))
 
             return d_str
-        
+
 
         def undefined_parameterize(d_str):
             return UNDEFINED_PARAM_RE.sub(lambda match: undefined_param_format(match.group()[1:-1]), d_str)

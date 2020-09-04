@@ -39,11 +39,8 @@ class RC5(BlockCipher):
         self.S = self._key_expansion()
 
 
-    def __repr__(self):
-        return f"<RC5: key={self.key}, num_rounds={self.num_rounds}, block_size={self.block_size}, S={self.S}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'num_rounds', 'block_size', 'S']
 
 
 

@@ -37,7 +37,7 @@ NKHz+JZA2I3xi+p6owN253+b55iLtv/gIMPTfY/urpEaC73g9wKBgEX6rMznPj9NT/Tgfb
 VButVCSJwqQeYG4x6TJDi5xcS005Dw7sGSFntMeFTqp88BewSxx0P6PuDebNQBj8zKCOaA
 kmLKOEeAhDcL3QYsFCv/UTMUnTdXoHTdginKg8Vd80jIJsRgVFE7FV3PB6D6faP9izeHNE
 fQdk9Ui+yY2YKX
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 RS2_KEY = RSA.import_key(b"""-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDNenZJKQm0RuL9Vlqc2y
@@ -64,7 +64,7 @@ G48rWZPgz9wArJU5dhzRy7bXp2ylYzQ9MXc9GyGAm3o0SfHZAoGAGdZwNSRW91kaDQJG50
 XUsyMh9eKXR0iWsG1cs1e9bu+vojEvm8sgy202dsxoHAsAITe2u8qPxlftnaScLzOkDwbv
 5/Z3C0oLNrukH0ZQWy8Q1nmanJuPoSnUODkSAJ1rBvqdkF9Re9ifClcqToggOD0fXVXK3h
 md+YiysdT80x0=
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 RS3_KEY = RSA.import_key(b"""-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDWvtueGyJRIYKmYZ/VME
@@ -91,13 +91,13 @@ jIl4avgHLYEQwY2Upht/Zkaka6lhVKoKFpMvX1QSu7ezukUCgYEA4evL4ELaxSYTSVX+Vz
 Q2z8l7riPWLFEqPvMHsgW5wKVkXHnpRx+PoeZQK/+AIdEOMh0zeXEecLg7uQ1T4qmWPDxB
 uDbtNosYyMryoNAwfQfTcMcc9QvnLXNMqLC7vm/hPlzwvogWyyWeYbOvsjPGSzfaw+DfbU
 pVYpArfNuzoBM=
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 ES1_KEY = ECDSA.import_key(b"""-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgpR4yjoqJ09GAriF++Pxu+I
 O1FxF9uAGsniq77Lc6woehRANCAAQbdf1V9k89vTxPbWlzYoiJnk+RZpufb5AX7D4mRJN+
 o0NjMxFrNFUyiq3Y7+wa9k06Lg7KL06HN+kaax2/Fp3M
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 ES1_KEY.hash_obj = SHA256()
 
@@ -107,7 +107,7 @@ MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDDxg/XHeJj3sTTsO8Jnczsxzc
 jLfwmbJlYMDg2SupAvsrck9iNktrlRlKDX3prWaquhZANiAASzOq9L0SGAfmP1NUxMKunV
 mxF707SBdr17rYhes0Q+SpnQ7GWliRcGivg501bxcKxri6EIqPlTSstDmtgCPE7rowKVMt
 jHB2itCKnpa4Zw6373AEe8xrxLrYvSlg1uPmw=
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 ES2_KEY.hash_obj = SHA384()
 
@@ -118,7 +118,7 @@ MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIB94Phb9b/eV0mEt4QHOLB/U
 gYYABADYqohYc8LARgtRRE3XVKZ6oRduzHBhiemYBii196XaSSlsSqAApCEvdGzSJPOFMW
 PeYxI1nnhsQEtveORMOp6j/QCWMbCkJkoz7q7iivE9i1y56Tm5G9CgqCxJ9mdjOnm0fE0n
 bOsQ44F+Gb9beySSMIV3O9seMrQgZicBIKJ2uSx94w==
------END PRIVATE KEY-----""")
+-----END PRIVATE KEY-----""").key
 
 ES3_KEY.hash_obj = SHA512()
 
@@ -216,7 +216,7 @@ PS384_TESTS = [
 # print(encoded)
 # print(payload)
 
-RSA_JWK = RSA.import_key(b'{"d":"0WxnT9XCBIHEVDdFg7deP60CbNbepTGawsRItyEei6SrYCpPxwXgk3yryPhq_nDTtOGjR2W8oKaMRcJbb94EYYdWzhyiToJUZF-cdiwfFEZR_1beudFPS0w3l5-Wnzp5NDqSQ87B9lCpOSycMr2cRDQjI6RftLMxEnGLuDrm9MOxdrW741cpLCNuq0O3nkcgx32-bOmOAO4I1rMuJHccWxR8ytTedoIKZLv-ik4QGnB9eTMkGpqS78--bu3QZRssUyngEZ1kb4YKXqZ-qstx-87kLCu5RldIkZLEOTZR2OUIhG6wLmJqpMbgubKEsu7kPrx-XeETUO2buniPMxTrsQ","dp":"2JDZLdRuKAZKqGk4SMA5ocEyoyNfR_eYi7LMGtg-p5Azwpc_r1trlu95vo5OqgOYqsHSkwq3UbAb2c0jX_7ELCFCe1JsNaHVDUqFp-N17Au3hzcncV_6WN4_0QfhZo7_IQn2ZkdlwR4KDlrXMqGKoET0YkBkRdHvvYTcLWloWmk","dq":"mP49edxp3N_p1d-_8wK7oqu_eTYnNaj0jzG89UymFMqU8C95ri9_VC5CxLEjbZPr_joM_wQkALaH9pli08nTNz_VMwbXqMjg_2VVQ4uJwtOBflB-_iWNZb_PVt1W5KtmxN7KaeqonHDoCSU57pWGfoQPM1pKrIZ33VxHtTeyh_U","e":"AQAB","kty":"RSA","n":"8mASEPU3mkfgKhPx0XLcL7NDopsbUc4inz7sPvTBWXoUgEpJJMsXVDud_wiRGEV8TGPEGEpXIHghlPx3Ml0oLvX_OE3eTEl8P6ctylKQkXxtcoL1i-WMmsEUL0izRZ71TWr6ayOJfLyNSu6D4yEVVTbwPnUTuFlkvFAL1Z_t18scGXXxIB5VXdtEWkRmdYqBaZ-Zvv5RdGtuAeAD6UD9ftWngiPROpFWKLpSkO07r6Hx3LiO4-Dp9Q2CUpzvExGrOnlZFoo8YLQSYupHY-ftvoDlYplYtWis9436D9k4aLiEsp-UXq1opyCSUXsoDQw57vW59KnGNJ0Vl-xGXxBzyw","p":"-_MVaWowZmWGbma3P5xAhXkUEKjq3rwBH7G57HOZKxbjGL1igweB0le4HeJd7y_XkMOm3GHcYf4yxQpz83w_1bUJy7v-0ZaSqYNzhB_kS4kUfrXQyTlA8qyJODerwf94r5nNh-ruqlnENN1WeRyc3OkmLts5eVv7N4Do5urj4gk","q":"9kWVVcOvoBXFz8ufL5CfZBwh4m6-JArhE-V3cummPrSrv7D8s_0EPGXOCx2964xQpdVwhRtFKH8eICBabOh9ddBqwlE6ycpQTx1eNXN20NzAuASCoEQUvsdA5NqMblOy_TsJn-4B-zSoH18Nd5o4cHD21CiU1iSsNUvGNlkCDDM","qi":"EsaowWzI_yZ7ufGejoVgKMSzvG1ZQewF3iAY31yly1s9YHDgdybsCUurLdH4R1UNv4JXsQ_a8AT8FTkdH8mxslqNbE6-qQ99yL9_1_rtrdnsMZKmFjfVTmnaR_h_hZ_v2yU54js0FgC1AGRwlnegpTYFjsYp6HjUKyPk6Tu8pWg"}')
+RSA_JWK = RSA.import_key(b'{"d":"0WxnT9XCBIHEVDdFg7deP60CbNbepTGawsRItyEei6SrYCpPxwXgk3yryPhq_nDTtOGjR2W8oKaMRcJbb94EYYdWzhyiToJUZF-cdiwfFEZR_1beudFPS0w3l5-Wnzp5NDqSQ87B9lCpOSycMr2cRDQjI6RftLMxEnGLuDrm9MOxdrW741cpLCNuq0O3nkcgx32-bOmOAO4I1rMuJHccWxR8ytTedoIKZLv-ik4QGnB9eTMkGpqS78--bu3QZRssUyngEZ1kb4YKXqZ-qstx-87kLCu5RldIkZLEOTZR2OUIhG6wLmJqpMbgubKEsu7kPrx-XeETUO2buniPMxTrsQ","dp":"2JDZLdRuKAZKqGk4SMA5ocEyoyNfR_eYi7LMGtg-p5Azwpc_r1trlu95vo5OqgOYqsHSkwq3UbAb2c0jX_7ELCFCe1JsNaHVDUqFp-N17Au3hzcncV_6WN4_0QfhZo7_IQn2ZkdlwR4KDlrXMqGKoET0YkBkRdHvvYTcLWloWmk","dq":"mP49edxp3N_p1d-_8wK7oqu_eTYnNaj0jzG89UymFMqU8C95ri9_VC5CxLEjbZPr_joM_wQkALaH9pli08nTNz_VMwbXqMjg_2VVQ4uJwtOBflB-_iWNZb_PVt1W5KtmxN7KaeqonHDoCSU57pWGfoQPM1pKrIZ33VxHtTeyh_U","e":"AQAB","kty":"RSA","n":"8mASEPU3mkfgKhPx0XLcL7NDopsbUc4inz7sPvTBWXoUgEpJJMsXVDud_wiRGEV8TGPEGEpXIHghlPx3Ml0oLvX_OE3eTEl8P6ctylKQkXxtcoL1i-WMmsEUL0izRZ71TWr6ayOJfLyNSu6D4yEVVTbwPnUTuFlkvFAL1Z_t18scGXXxIB5VXdtEWkRmdYqBaZ-Zvv5RdGtuAeAD6UD9ftWngiPROpFWKLpSkO07r6Hx3LiO4-Dp9Q2CUpzvExGrOnlZFoo8YLQSYupHY-ftvoDlYplYtWis9436D9k4aLiEsp-UXq1opyCSUXsoDQw57vW59KnGNJ0Vl-xGXxBzyw","p":"-_MVaWowZmWGbma3P5xAhXkUEKjq3rwBH7G57HOZKxbjGL1igweB0le4HeJd7y_XkMOm3GHcYf4yxQpz83w_1bUJy7v-0ZaSqYNzhB_kS4kUfrXQyTlA8qyJODerwf94r5nNh-ruqlnENN1WeRyc3OkmLts5eVv7N4Do5urj4gk","q":"9kWVVcOvoBXFz8ufL5CfZBwh4m6-JArhE-V3cummPrSrv7D8s_0EPGXOCx2964xQpdVwhRtFKH8eICBabOh9ddBqwlE6ycpQTx1eNXN20NzAuASCoEQUvsdA5NqMblOy_TsJn-4B-zSoH18Nd5o4cHD21CiU1iSsNUvGNlkCDDM","qi":"EsaowWzI_yZ7ufGejoVgKMSzvG1ZQewF3iAY31yly1s9YHDgdybsCUurLdH4R1UNv4JXsQ_a8AT8FTkdH8mxslqNbE6-qQ99yL9_1_rtrdnsMZKmFjfVTmnaR_h_hZ_v2yU54js0FgC1AGRwlnegpTYFjsYp6HjUKyPk6Tu8pWg"}').key
 
 PS512_TESTS = [
     (b'eyJhbGciOiJQUzUxMiJ9.aoUpbpm4jMzrF35JPNtoEwQ-fIOkfEYc-9gJsfGjTc_drqJ9llNqj78tox-T3ym5HI-Cnf7TTjc783S_87ev15FiIjFHBA.Y_pICxKy4iO86pN4ArAxuMhqLUgA-QXMaoG3rt44_Fbu-vrAOGIuNlHH01HV92glblPVKrDBHb5y_03SuPUWAFn-BTRgRImrSJbkSJCrKGzFiRi9z3sxNusdD-MAyxMcp2X93YJBriyQUTvY8pp-hBxdtAugEKkec0auG58ad55ZGRRTP9WDdD82N8i5UszRLr6acFMwjXkQ7NkBEwvrplhTjomtnt_6nw5eCDWDG6URxjs2NnaIjTzIikC_exr6lDWFyGUTtzLbpVwdfIff1EluuoeeZPyh7e_ykI69CERHOmauaGCett8GrSpM8G2OxlaT-CJEzr9ASgcb_PKzqA', RSA_JWK),
@@ -285,7 +285,7 @@ class JWSTestCase(unittest.TestCase):
         key   = json.dumps({"kty":"OKP","crv":"Ed25519","d":"nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A","x":"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"}).encode('utf-8')
         token = b'eyJhbGciOiJFZERTQSJ9.RXhhbXBsZSBvZiBFZDI1NTE5IHNpZ25pbmc.hgyY0il_MGCjP0JzlnLWG1PPOt7-09PGcvMg3AIbQR6dWbhijcNR4ki4iylGjg5BhVsPt9g7sVvpAr_MuM0KAg'
         jws   = JWS.parse(token)
-        self.assertTrue(jws.verify(EdDSA.import_key(key)))
+        self.assertTrue(jws.verify(EdDSA.import_key(key).key))
 
 
     def test_gauntlet(self):
@@ -410,9 +410,9 @@ class JWSTestCase(unittest.TestCase):
 
         jwsset = JWSSet.parse(token)
 
-        ecdsa_key_a          = PKIAutoParser.import_key(key_a)
+        ecdsa_key_a          = PKIAutoParser.import_key(key_a).key
         ecdsa_key_a.hash_obj = SHA256()
 
         self.assertTrue(jwsset.verify(ecdsa_key_a))
-        self.assertTrue(jwsset.verify(JWKOctKey.decode(key_b)))
-        self.assertTrue(jwsset.verify(PKIAutoParser.import_key(key_c)))
+        self.assertTrue(jwsset.verify(JWKOctKey.decode(key_b).key))
+        self.assertTrue(jwsset.verify(PKIAutoParser.import_key(key_c).key))

@@ -66,12 +66,8 @@ class ECDSA(DSA):
         self.hash_obj = hash_obj
 
 
-    def __repr__(self):
-        return f"<ECDSA: d={self.d}, G={self.G}, Q={self.Q}, hash_obj={self.hash_obj}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['d', 'G', 'Q', 'hash_obj']
 
 
     def sign(self, message: bytes, k: int=None) -> (int, int):

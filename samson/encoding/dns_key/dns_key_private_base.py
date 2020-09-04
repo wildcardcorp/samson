@@ -1,4 +1,3 @@
-from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm
 from samson.encoding.general import EncodingScheme
 from samson.core.base_object import BaseObject
@@ -20,7 +19,7 @@ class DNSKeyPrivateBase(BaseObject):
 
         if type(algorithm) is int:
             algorithm = DNSKeyAlgorithm(algorithm)
-        
+
         if not algorithm:
             algorithm = self.get_default_alg(key)
 

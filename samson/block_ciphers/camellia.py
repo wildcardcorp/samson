@@ -153,12 +153,8 @@ class Camellia(BlockCipher):
         self.key_schedule()
 
 
-
-    def __repr__(self):
-        return f"<Camellia: key={self.key}, key_len={len(self.key)}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key']
 
 
     def F(self, F_IN, KE):

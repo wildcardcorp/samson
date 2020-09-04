@@ -28,7 +28,7 @@ def gen_M(bit_size):
     for _ in range(n):
         p = next_prime(p+1)
         M *= p
-    
+
     return M
 
 
@@ -47,7 +47,7 @@ def check_roca(N):
     try:
         Zm = (ZZ/ZZ(Mp)).mul_group()
         g  = Zm(65537)
-        cp = pohlig_hellman(g, Zm(N))
+        _  = pohlig_hellman(g, Zm(N))
         return True
     except SearchspaceExhaustedException:
         return False

@@ -1,8 +1,9 @@
 from math import ceil
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
-class SpongeConstruction(object):
+class SpongeConstruction(BaseObject):
     """
     "The sponge construction is a mode of operation, based on a fixed-length permutation (or transformation) and on a padding rule, which builds a function mapping variable-length input to variable-length output"
     https://keccak.team/sponge_duplex.html
@@ -27,12 +28,9 @@ class SpongeConstruction(object):
         self.S = [[0] * 5 for _ in range(5)]
 
 
-    def __repr__(self):
-        return f"<Sponge: r={self.r}, c={self.c}, block_size={self.block_size}, S={self.S}, pad_func={self.pad_func}>"
 
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['r', 'c', 'block_size', 'S', 'pad_func']
 
     def reset(self):
         """

@@ -67,13 +67,6 @@ class Salsa(StreamCipher):
 
 
 
-    def __repr__(self):
-        return f"<Salsa: key={self.key}, counter={self.counter}, nonce={self.nonce}, rounds={self.rounds}, constant={self.constant}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def full_round(self, block_num: int, state: list=None) -> Bytes:
         """

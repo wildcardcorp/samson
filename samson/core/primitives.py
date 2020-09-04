@@ -76,6 +76,17 @@ class MAC(Primitive):
         return RUNTIME.compare_bytes(self.generate(message), signature)
 
 
+class KDF(Primitive):
+    PRIMITIVE_TYPE = PrimitiveType.KDF
+    INPUT_SIZE     = SizeSpec(size_type=SizeType.ARBITRARY)
+    BLOCK_SIZE     = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda cipher: cipher.hash_obj.BLOCK_SIZE)
+    OUTPUT_SIZE    = SizeSpec(size_type=SizeType.ARBITRARY)
+
+
+    @abstractmethod
+    def derive(self, *args, **kwargs):
+        pass
+
 
 class Hash(Primitive):
     PRIMITIVE_TYPE     = PrimitiveType.HASH
@@ -171,6 +182,7 @@ class BlockCipher(EncryptionAlg):
         return cls.BLOCK_SIZE
 
 
+_bcm_attr_set = {'underlying_mode', 'cipher', 'H', 'sector_encryptor', 'nonce', 'iv', 'counter', 'byteorder'}
 class BlockCipherMode(EncryptionAlg):
     SYMMETRY_TYPE    = SymmetryType.SYMMETRIC
     KEY_SIZE         = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda mode: mode.cipher.KEY_SIZE)
@@ -178,6 +190,10 @@ class BlockCipherMode(EncryptionAlg):
     OUTPUT_SIZE      = SizeSpec(size_type=SizeType.ARBITRARY)
     BLOCK_SIZE       = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda mode: mode.cipher.BLOCK_SIZE)
     IO_RELATION_TYPE = IORelationType.EQUAL
+
+
+    def __reprdir__(self):
+        return [k for k in self.__dict__ if k in _bcm_attr_set]
 
     def check_ciphertext_length(self, ciphertext: bytes):
         if not len(ciphertext) or len(ciphertext) % self.cipher.block_size != 0:

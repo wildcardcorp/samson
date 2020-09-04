@@ -1,7 +1,6 @@
 from samson.encoding.dns_key.dns_key_private_base import DNSKeyPrivateBase
 from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm
-from samson.encoding.general import EncodingScheme
 from samson.utilities.bytes import Bytes
 
 
@@ -16,14 +15,13 @@ class DNSKeyDHBase(object):
 
 class DNSKeyDHPrivateKey(DNSKeyPrivateBase, DNSKeyDHBase):
 
-    @staticmethod
-    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
+    def encode(self, **kwargs) -> bytes:
         return self.build(
             fields={
-                'Prime(p)': dh_key.p,
-                'Generator(g)': dh_key.g,
-                'Private_value(x)': dh_key.key,
-                'Public_value(y)': dh_key.y
+                'Prime(p)': self.key.p,
+                'Generator(g)': self.key.g,
+                'Private_value(x)': self.key.key,
+                'Public_value(y)': self.key.y
             }
         )
 
@@ -38,7 +36,7 @@ class DNSKeyDHPrivateKey(DNSKeyPrivateBase, DNSKeyDHBase):
         x = fields[b'Private_value(x)'].int()
         y = fields[b'Public_value(y)'].int()
 
-        full_key = DNSKeyDHPrivateKey(DiffieHellman(g=g, p=p, key=x, y=y), alg, version, *DNSKeyDHPrivateKey.get_metadata(buffer))
+        full_key = DNSKeyDHPrivateKey(DiffieHellman(g=g, p=p, key=x, y=y), alg, version, *DNSKeyDHPrivateKey.get_metadata(fields))
         return full_key
 
 
@@ -47,23 +45,19 @@ class DNSKeyDHPrivateKey(DNSKeyPrivateBase, DNSKeyDHBase):
 # https://tools.ietf.org/html/rfc2539#section-2
 class DNSKeyDHPublicKey(DNSKeyPublicBase, DNSKeyDHBase):
 
-    @staticmethod
-    def encode(dh_key: 'DiffieHellman', **kwargs) -> bytes:
-        from samson.protocols.diffie_hellman import DHModToGroup, DHGroupToMod
-        y = Bytes(dh_key.y)
-        p = Bytes(dh_key.p)
-        g = Bytes(dh_key.g)
+    def encode(self, spacing: int=56, **kwargs) -> bytes:
+        from samson.protocols.diffie_hellman import DHModToGroup
+        y = Bytes(self.key.y)
+        p = Bytes(self.key.p)
+        g = Bytes(self.key.g)
 
-        if dh_key.p in DHModToGroup and not kwargs.get('explicit_group', False):
-            p = Bytes(DHModToGroup[dh_key.p])
+        if self.key.p in DHModToGroup and not kwargs.get('explicit_group', False):
+            p = Bytes(DHModToGroup[self.key.p])
             g = Bytes()
 
         payload = Bytes(len(p)).zfill(2) + p + Bytes(len(g)).zfill(2) + g + Bytes(len(y)).zfill(2) + y
 
-        if 'spacing' not in kwargs:
-            kwargs['spacing'] = 56
-
-        return self.build(payload)
+        return self.build(payload, spacing=spacing)
 
 
     @staticmethod

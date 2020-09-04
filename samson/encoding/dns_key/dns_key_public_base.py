@@ -38,11 +38,13 @@ class DNSKeyPublicBase(BaseObject):
             return False
 
 
-    def build(self, pub_bytes: bytes) -> bytes:
+    def build(self, pub_bytes: bytes, spacing: int=32) -> bytes:
+        alg = self.alg
+
         if type(alg) is DNSKeyAlgorithm:
             alg = alg.value
 
-        return f'{int(self.flags)} {self.proto} {self.alg} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(kwargs.get('spacing', 32), allow_partials=True))
+        return f'{int(self.flags)} {self.proto} {alg} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(spacing, allow_partials=True))
 
 
     @staticmethod
@@ -55,4 +57,3 @@ class DNSKeyPublicBase(BaseObject):
     def get_pub_bytes(buffer: bytes):
         pub_key   = b''.join(DNSKeyPublicBase.prune_buffer(buffer).split(b' ')[3:])
         return EncodingScheme.BASE64.decode(pub_key)
-

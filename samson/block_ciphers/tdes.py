@@ -35,12 +35,8 @@ class TDES(BlockCipher):
         self.block_size = 8
 
 
-
-    def __repr__(self):
-        return f"<TDES: key={self.key}, des_arr={self.des_arr}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'des_arr']
 
 
     def encrypt(self, plaintext: bytes) -> Bytes:

@@ -35,13 +35,6 @@ class Dragonfly(KeyExchangeAlg):
         self.H = H
 
 
-    def __repr__(self):
-        return f"<Dragonfly: key={self.key}, H={self.H}, A={self.A}, a={self.a}, q={self.q}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
     def get_challenge(self) -> (int, int):
         """
         Gets the challenge.

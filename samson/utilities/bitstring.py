@@ -86,7 +86,7 @@ class Bitstring(UserString):
 
 
     def __repr__(self):
-        return f'<Bitstring: {" ".join([str(chunk) for chunk in self.zfill(math.ceil(max(1, len(self)) / 8) * 8).chunk(8)])}, byteorder={self.byteorder}>'
+        return f'<Bitstring: {" ".join([str(chunk) for chunk in self.zfill(math.ceil(max(1, len(self)) / 8) * 8).chunk(8)])}, byteorder=\'{self.byteorder}\'>'
 
 
     # Byte order will be the downfall of humanity.

@@ -30,13 +30,8 @@ class PMAC(MAC):
             self.L.append(dbl(self.L[i-1]))
 
 
-
-    def __repr__(self):
-        return f"<PMAC: cipher={self.cipher}, L={self.L}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['cipher']
 
 
     def ntz(self, i):

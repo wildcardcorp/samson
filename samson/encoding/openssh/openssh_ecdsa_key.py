@@ -1,4 +1,3 @@
-from samson.encoding.openssh.general import parse_openssh_key
 from samson.encoding.openssh.core.ecdsa_private_key import ECDSAPrivateKey
 from samson.encoding.openssh.core.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.openssh_base import OpenSSHPrivateBase, OpenSSHPublicBase, OpenSSH2PublicBase

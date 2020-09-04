@@ -111,7 +111,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         self.q   = q
         self.phi = phi
 
-        self.bits = bits
+        self.bits = bits or n.bit_length()
 
         if self.p and self.q:
             self.d     = mod_inv(self.e, phi)
@@ -293,7 +293,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         c1, c2  = [Bytes.wrap(item).int() for item in [c1, c2]]
 
         Zn = ZZ/ZZ(n)
-        P  = Zn[x]
+        _  = Zn[x]
 
         f = a*x + b
         f = f.monic()

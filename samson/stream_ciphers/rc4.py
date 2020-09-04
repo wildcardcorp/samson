@@ -32,13 +32,6 @@ class RC4(StreamCipher):
         self.j = 0
 
 
-    def __repr__(self):
-        return f"<RC4: key={self.key}, S={self.S}, i={self.i}, j={self.j}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def key_schedule(self, key: bytes) -> list:
         """

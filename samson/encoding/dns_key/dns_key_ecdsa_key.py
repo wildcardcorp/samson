@@ -1,7 +1,6 @@
 from samson.encoding.dns_key.dns_key_private_base import DNSKeyPrivateBase
 from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm, EC_CURVE_MAP, EC_CURVE_MAP_INV
-from samson.encoding.general import EncodingScheme
 from samson.utilities.bytes import Bytes
 
 class DNSKeyECDSAKey(object):
@@ -9,6 +8,9 @@ class DNSKeyECDSAKey(object):
 
     @staticmethod
     def get_default_alg(ec_key: 'ECDSA') -> DNSKeyAlgorithm:
+        if ec_key.G.curve not in EC_CURVE_MAP_INV:
+            raise NotImplementedError(f'{ec_key.G.curve} is not a valid curve for DNS_KEY')
+
         return EC_CURVE_MAP_INV[ec_key.G.curve]
 
 
@@ -39,9 +41,9 @@ class DNSKeyECDSAPrivateKey(DNSKeyPrivateBase, DNSKeyECDSAKey):
 # https://tools.ietf.org/html/rfc6605
 class DNSKeyECDSAPublicKey(DNSKeyPublicBase, DNSKeyECDSAKey):
 
-    def encode(self) -> bytes:
-        size = (ec_key.G.curve.order.bit_length() + 7) // 8
-        return self.build(Bytes(int(ec_key.Q.x)).zfill(size) + Bytes(int(ec_key.Q.y)).zfill(size))
+    def encode(self, spacing: int=32) -> bytes:
+        size = (self.key.G.curve.order.bit_length() + 7) // 8
+        return self.build(Bytes(int(self.key.Q.x)).zfill(size) + Bytes(int(self.key.Q.y)).zfill(size), spacing=spacing)
 
 
     @staticmethod
@@ -53,7 +55,7 @@ class DNSKeyECDSAPublicKey(DNSKeyPublicBase, DNSKeyECDSAKey):
         size  = len(pub_bytes) // 2
         x, y  = pub_bytes[:size].int(), pub_bytes[size:].int()
         curve = EC_CURVE_MAP[alg]
-    
+
         ecdsa = ECDSA(G=curve.G, hash_obj=None, d=1)
         ecdsa.Q = curve(x, y)
 

@@ -20,7 +20,7 @@ class PKCS8RSAPrivateKey(PKCS8Base):
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 113549, 1, 1, 1]))
         alg_id.setComponentByPosition(1, Null())
 
-        param_oct = OctetString(PKCS1RSAPrivateKey.encode(self.key, encode_pem=False))
+        param_oct = OctetString(PKCS1RSAPrivateKey(self.key).encode(encode_pem=False))
 
         top_seq = Sequence()
         top_seq.setComponentByPosition(0, Integer(0))
@@ -35,4 +35,4 @@ class PKCS8RSAPrivateKey(PKCS8Base):
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> 'RSA':
         items = bytes_to_der_sequence(buffer)
-        return PKCS8RSAPrivateKey(PKCS1RSAPrivateKey.decode(bytes(items[2])))
+        return PKCS8RSAPrivateKey(PKCS1RSAPrivateKey.decode(bytes(items[2])).key)

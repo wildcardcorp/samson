@@ -1,7 +1,9 @@
 from samson.macs.cmac import CMAC
 from samson.utilities.bytes import Bytes
 from samson.block_ciphers.rijndael import Rijndael
-from samson.core.primitives import EncryptionAlg
+from samson.core.primitives import EncryptionAlg, KDF, Primitive
+from samson.core.metadata import SizeType, SizeSpec
+from samson.ace.decorators import register_primitive
 from copy import deepcopy
 
 def dbl(bytestring):
@@ -13,10 +15,13 @@ def dbl(bytestring):
     return bytestring
 
 
-class S2V(object):
+@register_primitive()
+class S2V(KDF):
     """
     S2V KDF described in RFC5297 (https://tools.ietf.org/html/rfc5297)
     """
+
+    BLOCK_SIZE = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda s2v: s2v.cipher.BLOCK_SIZE)
 
     def __init__(self, cipher: EncryptionAlg=None, iv: bytes=b'\x00'*16):
         """
@@ -26,13 +31,11 @@ class S2V(object):
         """
         self.cmac = CMAC(cipher or Rijndael(Bytes.random(32)))
         self.iv   = iv
+        Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<S2V: cmac={self.cmac}, iv={self.iv}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['cmac', 'iv']
 
 
     def derive(self, *strings: bytes) -> Bytes:

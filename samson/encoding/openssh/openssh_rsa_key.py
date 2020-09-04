@@ -1,4 +1,3 @@
-from samson.encoding.openssh.general import parse_openssh_key
 from samson.math.general import mod_inv
 from samson.encoding.openssh.core.rsa_private_key import RSAPrivateKey
 from samson.encoding.openssh.core.rsa_public_key import RSAPublicKey
@@ -14,10 +13,10 @@ class OpenSSHRSAKey(OpenSSHPrivateBase):
     @classmethod
     def extract_key(cls, priv, pub):
         from samson.public_key.rsa import RSA
-    
-        n, e, p, q = pub.n, pub.e, priv.p if priv else 2, priv.q if prive else 3
 
-        rsa   = RSA(8, p=p, q=q, e=e)
+        n, e, p, q = pub.n, pub.e, priv.p if priv else 2, priv.q if priv else 3
+
+        rsa   = RSA(n.bit_length(), p=p, q=q, e=e)
         rsa.n = n
 
         return rsa

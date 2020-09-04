@@ -29,11 +29,8 @@ class Poly1305(MAC):
         self.cipher = cipher
 
 
-    def __repr__(self):
-        return f"<Poly1305: key={self.key}, nonce={self.nonce}, r={self.r}, cipher={self.cipher}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'nonce', 'r', 'cipher']
 
 
     def generate(self, message: bytes) -> Bytes:

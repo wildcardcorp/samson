@@ -8,15 +8,15 @@ class JWKOctKeyTestCase(unittest.TestCase):
         correct_decoding = url_b64_decode(b'QqzzWH1tYqQO48IDvW7VH7gvJz89Ita7G6APhV-uLMo')
 
         # Decode as string
-        decoded = JWKOctKey.decode(known_jwk)
+        decoded = JWKOctKey.decode(known_jwk).key
         self.assertEqual(decoded, correct_decoding)
 
         # Decode as bytes
-        decoded = JWKOctKey.decode(known_jwk.encode('utf-8'))
+        decoded = JWKOctKey.decode(known_jwk.encode('utf-8')).key
         self.assertEqual(decoded, correct_decoding)
 
         # Encode
-        encoded = JWKOctKey.encode(decoded)
+        encoded = JWKOctKey(decoded).encode()
         self.assertEqual(encoded, known_jwk.encode('utf-8'))
 
         # Check function

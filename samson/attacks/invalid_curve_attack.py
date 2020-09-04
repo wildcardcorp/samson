@@ -113,7 +113,6 @@ class InvalidCurveAttack(object):
         for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
             n, _ = crt(residue_subset)
             if G_cache * (int(n) % cardinality) == public_key:
-                print(residue_subset)
                 break
 
         return n.val

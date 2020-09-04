@@ -27,13 +27,6 @@ class OCB2(StreamingBlockCipherMode, AuthenticatedCipher):
         self.cipher = cipher
 
 
-    def __repr__(self):
-        return f"<OCB2: cipher={self.cipher}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
     # TODO: We already have a PMAC class, but it doesn't seem to produce
     # the same results. Is there some trivial tweak we can do so we don't
     # have to have two implementations?

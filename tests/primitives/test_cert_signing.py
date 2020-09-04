@@ -14,8 +14,8 @@ sys.setrecursionlimit(50)
 
 class CertSigningTestCase(unittest.TestCase):
     def _run_test(self, ca, leaf):
-        leaf_crt = leaf.export_public_key(encoding=PKIEncoding.X509_CERT, signing_key=ca, subject='CN=leaf')
-        ca_crt   = ca.export_public_key(encoding=PKIEncoding.X509_CERT, ca=True)
+        leaf_crt = leaf.export_public_key(encoding=PKIEncoding.X509_CERT, subject='CN=leaf').encode(signing_key=ca)
+        ca_crt   = ca.export_public_key(encoding=PKIEncoding.X509_CERT, is_ca=True).encode()
 
         # OpenSSL verification test
         with NamedTemporaryFile(delete=False) as f:

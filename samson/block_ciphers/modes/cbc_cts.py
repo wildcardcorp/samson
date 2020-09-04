@@ -22,12 +22,6 @@ class CBCCTS(BlockCipherMode):
         self.underlying_mode = CBC(cipher, iv)
 
 
-    def __repr__(self):
-        return f"<CBCCTS: underlying_mode={self.underlying_mode}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def encrypt(self, plaintext: bytes) -> Bytes:
         """

@@ -324,12 +324,8 @@ class Serpent(BlockCipher):
         self.K, self.K_hat = self.make_subkeys()
 
 
-    def __repr__(self):
-        return f"<Serpent: key={self.key}, K={self.K}, K_hat={self.K_hat}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['key', 'K', 'K_hat']
 
     def _stretch_key(self):
         if len(self.key) != 32:

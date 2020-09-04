@@ -462,7 +462,7 @@ class DSATestCase(unittest.TestCase):
         dsa_priv = DSA.import_key(TEST_PRIV).key
 
         der_bytes = dsa_pub.export_public_key().encode()
-        new_pub  = DSA.import_key(der_bytes).key
+        new_pub   = DSA.import_key(der_bytes).key
 
         self.assertEqual((dsa_pub.p, dsa_pub.q, dsa_pub.g, dsa_pub.y), (dsa_priv.p, dsa_priv.q, dsa_priv.g, dsa_priv.y))
         self.assertEqual((new_pub.p, new_pub.q, new_pub.g, new_pub.y), (dsa_priv.p, dsa_priv.q, dsa_priv.g, dsa_priv.y))
@@ -499,8 +499,8 @@ class DSATestCase(unittest.TestCase):
             for _ in range(10):
                 dsa = DSA(None)
                 key = Bytes.random(Bytes.random(1).int() + 1)
-                enc_pem = dsa.export_private_key(encryption=algo, passphrase=key).encode()
-                dec_dsa = DSA.import_key(enc_pem, key).key
+                enc_pem = dsa.export_private_key().encode(encryption=algo, passphrase=key)
+                dec_dsa = DSA.import_key(enc_pem, passphrase=key).key
 
                 self.assertEqual((dsa.p, dsa.q, dsa.g, dsa.y), (dec_dsa.p, dec_dsa.q, dec_dsa.g, dec_dsa.y))
 
@@ -542,7 +542,7 @@ class DSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = dsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase).encode()
+            priv        = dsa.export_private_key(encoding=PKIEncoding.OpenSSH).encode(encryption=b'aes256-ctr', passphrase=passphrase)
             pub_openssh = dsa.export_public_key(encoding=PKIEncoding.OpenSSH).encode()
             pub_ssh2    = dsa.export_public_key(encoding=PKIEncoding.SSH2).encode()
 

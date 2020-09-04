@@ -1,8 +1,5 @@
 from samson.analyzers.analyzer import Analyzer
 from samson.analysis.general import chisquare
-from samson.auxiliary.tokenizer import Tokenizer
-from samson.auxiliary.token_list_handler import TokenListHandler
-#from samson.auxiliary.english_data import CRACKLIB_WORDLIST, FIRST_LETTER_FREQUENCIES, MOST_COMMON_WORDS, MOST_COMMON_BIGRAMS_LOWER, CHAR_FREQ, ENGLISH_ONE_GRAMS
 from collections import Counter
 import string
 import re
@@ -30,9 +27,6 @@ def weighted_token_ratio(in_bytes, weighted_dict, in_bytes_len):
 def key_count(in_bytes, key):
     return (key, in_bytes.count(key))
 
-
-# TOKENIZER = Tokenizer([word for word, _ in _eng_data.WORDLIST.items() if len(word) > 2], TokenListHandler, delimiter=' ')
-# TOKENIZE  = TOKENIZER.tokenize
 
 class EnglishAnalyzer(Analyzer):
     """

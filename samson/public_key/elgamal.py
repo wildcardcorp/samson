@@ -29,12 +29,6 @@ class ElGamal(NumberTheoreticalAlg):
         self.pub = pow(self.g, self.key, self.p)
 
 
-    def __repr__(self):
-        return f"<ElGamal: key={self.key}, g={self.g}, p={self.p}, pub={self.pub}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def encrypt(self, plaintext: bytes, k: int=None) -> (int, int):
         """

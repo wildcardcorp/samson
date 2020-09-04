@@ -100,13 +100,6 @@ class ZUC(StreamCipher):
 
 
 
-    def __repr__(self):
-        return f"<ZUC: key={self.key}, iv={self.iv}, lfsr_states={self.lfsr_states}, R={self.R}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
     def reorganize_bits(self):
         self.X[0] = ((self.lfsr_states[15] & 0x7FFF8000) << 1) | (self.lfsr_states[14] & 0xFFFF)
         self.X[1] = ((self.lfsr_states[11] & 0xFFFF) << 16) | (self.lfsr_states[9] >> 15)

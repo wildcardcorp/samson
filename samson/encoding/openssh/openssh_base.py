@@ -8,7 +8,7 @@ class OpenSSHPrivateBase(BaseObject):
     PRIVATE_DECODER = None
     PUBLIC_DECODER  = None
 
-    def __init__(self, key: object, user: bytes=b'nohost@localhost' **kwargs):
+    def __init__(self, key: object, user: bytes=b'nohost@localhost', **kwargs):
         self.key  = key
 
         if user and type(user) is str:
@@ -31,7 +31,7 @@ class OpenSSHPrivateBase(BaseObject):
             return False
 
 
-    def encode(self, encode_pem: bool=None, marker: bytes=None, encryption: bytes=None, iv: bytes=None, passphrase: bytes=None, **kwargs):
+    def encode(self, encode_pem: bool=True, marker: str=None, encryption: bytes=None, iv: bytes=None, passphrase: bytes=None, **kwargs):
         public_key, private_key = self.build_keys(self.user)
         encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
         return encoded
@@ -47,7 +47,7 @@ from samson.encoding.openssh.general import generate_openssh_public_key_params
 from samson.encoding.pem import PEMEncodable
 from samson.encoding.general import PKIEncoding
 
-class OpenSSHPublicBase(PEMEncodable, OpenSSHPrivateBase):
+class OpenSSHPublicBase(OpenSSHPrivateBase, PEMEncodable):
     DEFAULT_MARKER = None
     DEFAULT_PEM    = False
     USE_RFC_4716   = False
@@ -66,12 +66,12 @@ class OpenSSHPublicBase(PEMEncodable, OpenSSHPrivateBase):
 
 
     def encode(self, **kwargs) -> bytes:
-        return self._actual_encode(self.user)
+        return self._actual_encode(self.user, encode_pem=False)
 
 
-    def _actual_encode(self, user: bytes):
-        public_key = self.build_pub(**kwargs)
-        encoded = generate_openssh_public_key_params(self.ENCODING, self.parameterize_header(public_key), public_key, user=user)
+    def _actual_encode(self, user: bytes, **kwargs):
+        public_key = self.build_pub()
+        encoded    = generate_openssh_public_key_params(self.ENCODING, self.parameterize_header(public_key), public_key, user=user)
         return self.transport_encode(encoded, **kwargs)
 
 

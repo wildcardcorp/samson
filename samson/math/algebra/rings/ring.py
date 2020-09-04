@@ -2,11 +2,11 @@ from samson.math.general import fast_mul, square_and_mul, is_prime
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
-from abc import ABC, abstractmethod
 from functools import wraps
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.utilities.exceptions import CoercionException, NotInvertibleException
+from samson.core.base_object import BaseObject
 
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
 _quot = LazyLoader('_quot', globals(), 'samson.math.algebra.rings.quotient_ring')
@@ -53,9 +53,8 @@ def left_expression_intercept(func: FunctionType) -> object:
     return poly_build
 
 
-class Ring(ABC):
+class Ring(BaseObject):
 
-    @abstractmethod
     def shorthand(self) -> str:
         pass
 
@@ -202,7 +201,7 @@ class Ring(ABC):
 
 
 
-class RingElement(ABC):
+class RingElement(BaseObject):
     def __init__(self, ring: Ring):
         self.ring = ring
 
@@ -221,14 +220,12 @@ class RingElement(ABC):
     def __hash__(self) -> int:
         return hash((self.ring, self.val))
 
-    @abstractmethod
     def __add__(self, other: 'RingElement') -> 'RingElement':
         pass
 
     def __radd__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) + self
 
-    @abstractmethod
     def __sub__(self, other: 'RingElement') -> 'RingElement':
         pass
 

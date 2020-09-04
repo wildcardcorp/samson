@@ -23,11 +23,8 @@ class CBCMAC(MAC):
         self.cbc = CBC(cipher or Rijndael(Bytes.random(32)), iv)
 
 
-    def __repr__(self):
-        return f"<CBCMAC: cbc={self.cbc}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['cbc']
 
 
     def generate(self, message: bytes, pad: bool=True) -> Bytes:

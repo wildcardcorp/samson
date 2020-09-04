@@ -45,14 +45,6 @@ class A51(StreamCipher):
 
 
 
-    def __repr__(self):
-        return f"<A51: key={self.key}, frame_num={self.frame_num}, lfsr_regs={self.lfsr_regs}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
     def clock(self):
         """
         Performs the majority-vote clocking.

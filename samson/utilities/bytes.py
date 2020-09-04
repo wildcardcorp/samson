@@ -57,7 +57,7 @@ class Bytes(bytearray):
 
 
     def __repr__(self):
-        return f'<Bytes: {str(bytes(self))}, byteorder={self.byteorder}>'
+        return f"<Bytes: {str(bytes(self))}, byteorder='{self.byteorder}'>"
 
     def __str__(self):
         return self.__repr__()

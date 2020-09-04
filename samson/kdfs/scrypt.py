@@ -1,9 +1,11 @@
 from samson.utilities.bytes import Bytes
-from types import FunctionType
 from samson.kdfs.pbkdf2 import PBKDF2
 from samson.macs.hmac import HMAC
 from samson.hashes.sha2 import SHA256
 from samson.stream_ciphers.salsa import Salsa
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
+from types import FunctionType
 
 NULL_SALSA = Salsa(key=Bytes(b'').zfill(8), nonce=Bytes(b'').zfill(8), rounds=8)
 
@@ -43,14 +45,17 @@ def ROMix(block, iterations):
     return X
 
 
-class Scrypt(object):
+_sha256 = SHA256()
+
+@register_primitive()
+class Scrypt(KDF):
     """
     scrypt KDF described in RFC7914
     https://en.wikipedia.org/wiki/Scrypt
     https://tools.ietf.org/html/rfc7914
     """
 
-    def __init__(self, desired_len: int, cost: int, parallelization_factor: int, block_size_factor: int=8, hash_fn: FunctionType=lambda passwd, msg: HMAC(passwd, SHA256()).generate(msg)):
+    def __init__(self, desired_len: int, cost: int, parallelization_factor: int, block_size_factor: int=8, hash_fn: FunctionType=lambda passwd, msg: HMAC(passwd, _sha256).generate(msg)):
         """
         Parameters:
             desired_len       (int): Desired output length.
@@ -66,12 +71,11 @@ class Scrypt(object):
         self.block_size_factor = block_size_factor
         self.parallelization_factor = parallelization_factor
 
+        Primitive.__init__(self)
 
-    def __repr__(self):
-        return f"<Scrypt: pbkdf2={self.pbkdf2}, desired_len={self.desired_len}, cost={self.cost}, block_size={self.block_size}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['pbkdf2', 'desired_len', 'cost', 'block_size']
 
 
     def derive(self, password: bytes, salt: bytes) -> Bytes:

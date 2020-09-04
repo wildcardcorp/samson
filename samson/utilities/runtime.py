@@ -61,8 +61,8 @@ class RuntimeConfiguration(object):
         self.default_short_printer = lambda elem: elem.tinyhand()
         self.enable_poly_intercept = False
         self.auto_promote = True
-        
-        
+
+
         # Find mseive
         import distutils.spawn
         self.msieve_loc = distutils.spawn.find_executable("msieve")
@@ -182,7 +182,7 @@ class RuntimeConfiguration(object):
         else:
             self._build_prims_ascii_table(columns, filtered_prims)
 
-    
+
 
     def _build_prims_ascii_table(self, col_names, primitives):
         lines = []
@@ -201,11 +201,9 @@ class RuntimeConfiguration(object):
         table = '=' * len(lines[-1]) + '\n' + '\n'.join(lines)
         print(table)
 
-    
+
     def _build_prims_rich_table(self, col_names, primitives):
         from rich.table import Table
-        from rich.table import Column
-        from rich import box
         from rich import print
 
         table = Table(title="Matching Cryptographic Primitives", show_lines=True)

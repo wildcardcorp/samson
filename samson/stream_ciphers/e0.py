@@ -86,12 +86,8 @@ class E0(StreamCipher):
         self.key_schedule()
 
 
-
-    def __repr__(self):
-        return f"<E0: key={self.key}, state={self.state}, kc={self.kc}, addr={self.addr}, master_clk={self.master_clk}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'state', 'kc', 'addr', 'master_clk']
 
 
     def key_schedule(self):

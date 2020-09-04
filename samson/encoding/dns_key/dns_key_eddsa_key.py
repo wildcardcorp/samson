@@ -1,8 +1,6 @@
 from samson.encoding.dns_key.dns_key_private_base import DNSKeyPrivateBase
 from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
 from samson.encoding.dns_key.general import DNSKeyAlgorithm, ED_CURVE_MAP, ED_CURVE_MAP_INV
-from samson.encoding.general import EncodingScheme
-from samson.utilities.bytes import Bytes
 
 class DNSKeyEdDSAKey(object):
     ALGS = [DNSKeyAlgorithm.ED25519, DNSKeyAlgorithm.ED448]
@@ -39,8 +37,8 @@ class DNSKeyEdDSAPrivateKey(DNSKeyPrivateBase, DNSKeyEdDSAKey):
 # https://tools.ietf.org/html/rfc6605
 class DNSKeyEdDSAPublicKey(DNSKeyPublicBase, DNSKeyEdDSAKey):
 
-    def encode(self, **kwargs) -> bytes:
-        return self.build(self.key.encode_point(self.key.A))
+    def encode(self, spacing: int=32, **kwargs) -> bytes:
+        return self.build(self.key.encode_point(self.key.A), spacing=spacing)
 
 
     @staticmethod
@@ -52,5 +50,5 @@ class DNSKeyEdDSAPublicKey(DNSKeyPublicBase, DNSKeyEdDSAKey):
         curve    = ED_CURVE_MAP[alg]
         eddsa    = EdDSA(d=1, curve=curve)
         eddsa.A  = eddsa.decode_point(pub_bytes)
-        full_key = DNSKeyEdDSAPublicKey(eddsa, *DNSKeyPublicBase.get_metadata(fields))
-        return eddsa
+        full_key = DNSKeyEdDSAPublicKey(eddsa, *DNSKeyPublicBase.get_metadata(buffer))
+        return full_key

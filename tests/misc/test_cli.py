@@ -11,7 +11,7 @@ HASH_PARAMS = {
 
 PKI_PARAMS = {
     'rsa': 'bits=1024',
-    'ecdsa': 'curve=nistp192',
+    'ecdsa': 'curve=nistp256',
 }
 
 

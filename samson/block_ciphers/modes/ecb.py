@@ -18,12 +18,6 @@ class ECB(BlockCipherMode):
         self.padder = PKCS7(self.cipher.block_size)
 
 
-    def __repr__(self):
-        return f"<ECB: cipher={self.cipher}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def encrypt(self, plaintext: bytes, pad: bool=True) -> Bytes:
         """

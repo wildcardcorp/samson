@@ -1,10 +1,13 @@
-import math
 from samson.macs.hmac import HMAC
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
+import math
 
 # https://en.wikipedia.org/wiki/HKDF
 # https://tools.ietf.org/html/rfc5869
-class HKDF(object):
+@register_primitive()
+class HKDF(KDF):
     """
     Key derivation function based on HMAC. Formally described in RFC5869 (https://tools.ietf.org/html/rfc5869).
     """
@@ -17,13 +20,11 @@ class HKDF(object):
         """
         self.hash_obj    = hash_obj
         self.desired_len = desired_len
+        Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<HKDF: hash_obj={self.hash_obj}, desired_len={self.desired_len}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['hash_obj', 'desired_len']
 
 
     def derive(self, key: bytes, salt: bytes, info: bytes=b'') -> Bytes:

@@ -17,7 +17,7 @@ class PKIAutoTestCase(unittest.TestCase):
 
 
         try:
-            parsed = PKIAutoParser.import_key(key, passphrase=passphrase)
+            parsed = PKIAutoParser.import_key(key, passphrase=passphrase).key
         except Exception as e:
             print((key, passphrase))
             print(expected_type)

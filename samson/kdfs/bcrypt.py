@@ -2,24 +2,22 @@ from samson.block_ciphers.blowfish import Blowfish
 from samson.block_ciphers.modes.ecb import ECB
 from samson.encoding.general import bcrypt_b64_encode
 from samson.utilities.bytes import Bytes
-from samson.core.metadata import PrimitiveType, SecurityProofType, CipherType, SymmetryType
-#from samson.ace.decorators import register_primitive
+from samson.core.primitives import KDF, Primitive
+from samson.core.metadata import SizeSpec, SizeType
+from samson.ace.decorators import register_primitive
 
 CONSTANT = b"OrpheanBeholderScryDoubt"
 
 # https://en.wikipedia.org/wiki/Bcrypt
 # Tested against https://github.com/fwenzel/python-bcrypt
-#@register_primitive()
-class Bcrypt(object):
+@register_primitive()
+class Bcrypt(KDF):
     """
     Blowfish based password-hashing algorithm
     """
+    BLOCK_SIZE  = SizeSpec(size_type=SizeType.SINGLE, sizes=8)
+    OUTPUT_SIZE = SizeSpec(size_type=SizeType.ARBITRARY)
 
-    PRIMITIVE_TYPE     = PrimitiveType.KDF
-    CIPHER_TYPE        = CipherType.NONE
-    SYMMETRY_TYPE      = SymmetryType.NONE
-    CONSTRUCTION_TYPES = []
-    SECURITY_PROOF     = SecurityProofType.NONE
 
     def __init__(self, cost: int, constant: bytes=CONSTANT, output_size: int=23, version: str='2a', use_specs_eks: bool=False):
         """
@@ -30,18 +28,12 @@ class Bcrypt(object):
             version        (str): Version of bcrypt to use. Only supports '2a' for now (pads with a NUL byte if '2a').
             use_specs_eks (bool): Use the original specification's order for processing salt and password.
         """
+        self.version = version
         self.cost = cost
         self.constant = Bytes.wrap(constant)
         self.output_size = output_size
-        self.version = version
         self.use_specs_eks = use_specs_eks
-
-
-    def __repr__(self):
-        return f"<Bcrypt: version={self.version}, cost={self.cost}, constant={self.constant}, output_size={self.output_size}>"
-
-    def __str__(self):
-        return self.__repr__()
+        Primitive.__init__(self)
 
 
     def eks_blowfish_setup(self, salt: bytes, password: bytes) -> Blowfish:

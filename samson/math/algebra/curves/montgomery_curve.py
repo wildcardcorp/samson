@@ -133,6 +133,10 @@ class MontgomeryPoint(RingElement):
         return self.curve
 
 
+    def tinyhand(self):
+        return str(self.x) if type(self.x) is int else self.x.val.tinyhand()
+
+
     def __eq__(self, other: 'MontgomeryPoint') -> bool:
         return self.x == other.x and self.curve == other.curve
 

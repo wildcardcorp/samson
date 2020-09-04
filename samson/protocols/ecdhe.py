@@ -32,13 +32,6 @@ class ECDHE(KeyExchangeAlg):
 
 
 
-    def __repr__(self):
-        return f"<ECDHE: d={self.d}, pub={self.pub}, G={self.G}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
     def recompute_pub(self) -> WeierstrassPoint:
         """
         Gets the challenge.

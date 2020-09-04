@@ -107,11 +107,8 @@ class Rijndael(BlockCipher):
         self.num_rounds = NUM_ROUNDS[(Nk - 4) // 2][(Nb - 4) // 2] + 1
 
 
-    def __repr__(self):
-        return f"<Rijndael: key={self.key}, key_size={len(self.key)}, block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'block_size']
 
 
     # https://en.wikipedia.org/wiki/Rijndael_key_schedule

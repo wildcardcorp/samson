@@ -4,7 +4,6 @@ from samson.math.factorization.general import factor as factor_int, pk_1_smalles
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
-from samson.utilities.exceptions import NotInvertibleException
 from types import FunctionType
 import itertools
 
@@ -377,19 +376,19 @@ class Polynomial(RingElement):
         #f = self.monic()
         f = cond_monic(self)
         c = gcd(f, cond_monic(f.derivative())).monic()
-        w = f / c
+        w = f // c
 
         factors = {}
 
         i = 1
         while w != self.ring.one:
             y = gcd(w, c).monic()
-            fac = cond_monic(w / y)
+            fac = cond_monic(w // y)
 
             if fac != self.ring.one:
                 add_or_increment(factors, fac, i)
 
-            w, c, i = y, c / y, i + 1
+            w, c, i = y, c // y, i + 1
 
         if c != self.ring.one:
             if self.coeff_ring.characteristic:
@@ -541,7 +540,7 @@ class Polynomial(RingElement):
                         if u in irreducibility_cache:
                             del irreducibility_cache[u]
 
-                        u_gcd_g_u = u / gcd_g_u
+                        u_gcd_g_u = u // gcd_g_u
                         S.extend([gcd_g_u, u_gcd_g_u])
 
                         # Cache irreducibility results
@@ -683,18 +682,18 @@ class Polynomial(RingElement):
 
         subgroups = {n // fac for fac in factor_int(n)}
 
-        bases  = frobenius_monomial_base(poly)
+        bases  = frobenius_monomial_base(f)
         h      = bases[1]
         x_poly = P(x)
         one    = P.one
 
         for idx in range(1, n):
             if idx in subgroups:
-                if gcd(poly, h - x_poly).monic() != one:
+                if gcd(f, h - x_poly).monic() != one:
                     return False
 
 
-            h = frobenius_map(h, poly, bases=bases)
+            h = frobenius_map(h, f, bases=bases)
 
         return h == x_poly
 
@@ -1212,7 +1211,7 @@ class Polynomial(RingElement):
         R = self.coeff_ring
         if R.is_field():
             return super().gcd(other)
-        
+
         elif use_naive:
             # Assumes invertibility despite not being a field
             # We use monic to reduce the leading coefficient so the algorithm will terminate

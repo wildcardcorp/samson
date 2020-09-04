@@ -15,7 +15,7 @@ def gen_num_field(n, d):
 
         f = int_to_poly(n, m)
         print(f, m)
-    
+
     return f.peel_coeffs(), m
 
 
@@ -45,7 +45,7 @@ def num_req_primes(n, m, nfs_poly, smooths):
     max_u = 0
     for smooth in smooths:
         max_u = max(max_u, *smooth)
-    
+
     b = 2 * max_u * kth_root(d, 2)*m
     return longest + math.ceil(len(smooths)*math.log(b, 2) / 2)
 
@@ -67,7 +67,7 @@ def gen_primes(primes, f, couv_bound):
         primes_prod *= p
         sum_bound    = primes_prod.bit_length()
         primes.append(p)
-    
+
     return primes, primes_prod
 
 
@@ -77,7 +77,7 @@ def calc_norm(a, b, f):
     for i in range(d+1):
         sign   = -1 + 2*(i % 2)
         total += sign * (f.coeffs[d-i]*(a**(d-i))*(b**i))
-    
+
     return total
 
 
@@ -88,9 +88,9 @@ def gen_exp_vec(num, base):
         while not num % prime:
             total += 1
             num  //= prime
-        
+
         exps.append(total)
-    
+
     return exps
 
 
@@ -110,7 +110,7 @@ def sqrt_mod_n(prime_exps, base, n):
     for p_exp, b in zip(prime_exps, base):
         p_power = pow(b, p_exp // 2, n)
         prod = (prod * p_power) % n
-    
+
     return prod
 
 
@@ -122,7 +122,7 @@ def find_non_residue(nfp, p, e):
         test = non_res**((p**e-1) // 2)
         if test == nfp([p-1]):
             return non_res
-        
+
         non_res += nfp.one
 
 
@@ -134,7 +134,7 @@ def get_s_r(p, e):
     while not q % 2:
         ctr += 1
         q  //= 2
-    
+
     return q, ctr
 
 
@@ -152,10 +152,10 @@ def nfp_sqrt(poly, p, d):
         m = 1
         while (lamb ** (2**m)).val[0] != one:
             m += 1
-        
+
         w    *= zeta**(2**(r-m-1))
         lamb *= zeta**(2**(r-m))
-    
+
     return w
 
 
@@ -201,7 +201,7 @@ def alg_sqrt(f, n, m, d, smooths, base):
 
     if math.log(total) > math.log(primes_prod) // 2:
         total = -total % primes_prod
-    
+
     return total % n
 
 
@@ -254,7 +254,7 @@ def sieve(m, f_q, num_required, R, A, Q, d):
             else:
                 del r_facs
                 del a_facs
-    
+
     return pairs, facs
 
 
@@ -277,12 +277,12 @@ def build_matrix(facs, R, A, num_cols):
             exp_vec.append(0)
             if q in rat_facs:
                 exp_vec[-1] = rat_facs[q] % 2
-        
+
 
         # ALGEBRAIC
         for (r, p) in A:
             exp_vec.append(int((r,p) in a_facs))
-        
+
 
         exp_vec.extend(q_facs)
         exp_vecs.append(exp_vec)
@@ -356,4 +356,3 @@ def gnfs(n, d, R_size=30, A_size=90, Q_size=108):
 
                 if found:
                     break
-

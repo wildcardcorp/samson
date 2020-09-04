@@ -1,10 +1,13 @@
 from samson.hashes.sha2 import SHA512
 from samson.kdfs.bcrypt import Bcrypt
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
 
 # OpenSSH's custom PBKDF2
 # https://github.com/openssh/openssh-portable/blob/90e51d672711c19a36573be1785caf35019ae7a8/openbsd-compat/bcrypt_pbkdf.c
-class BcryptPBKDF(object):
+@register_primitive()
+class BcryptPBKDF(KDF):
     """
     The 'bcrypt_pbkdf' function in OpenSSH.
     """
@@ -17,6 +20,7 @@ class BcryptPBKDF(object):
         """
         self.rounds   = rounds
         self.hash_obj = hash_obj
+        Primitive.__init__(self)
 
 
     def derive(self, password: bytes, salt: bytes, key_len: int=48) -> Bytes:

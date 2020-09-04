@@ -18,14 +18,6 @@ class ECBCTS(BlockCipherMode):
         self.underlying_mode = ECB(cipher)
 
 
-    def __repr__(self):
-        return f"<ECBCTS: underlying_mode={self.underlying_mode}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
         Encrypts `plaintext`.

@@ -25,11 +25,9 @@ class CMAC(MAC):
         self.cbc_mac = CBCMAC(cipher, iv)
 
 
-    def __repr__(self):
-        return f"<CMAC: cipher={self.cipher}, k1={self.k1}, k2={self.k2}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['cipher', 'k1', 'k2']
 
 
     # https://tools.ietf.org/html/rfc4493#section-2.3

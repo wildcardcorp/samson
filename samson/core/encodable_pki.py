@@ -27,7 +27,7 @@ class EncodablePKI(object):
 
                 if encoding in encoding_type:
                     encoder = encoding_type[encoding]
-    
+
                     if encoder.check(buffer, passphrase=passphrase):
                         return encoder.decode(buffer, passphrase=passphrase)
 
@@ -35,25 +35,20 @@ class EncodablePKI(object):
 
 
 
-    def export_public_key(self, encode_pem: bool=None, encoding: PKIEncoding=PKIEncoding.X509, marker: str=None, **kwargs) -> bytes:
+    def export_public_key(self, encoding: PKIEncoding=PKIEncoding.X509, **kwargs) -> bytes:
         """
         Exports the only the public parameters of the PKI instance into encoded bytes.
 
         Parameters:
-            encode_pem      (bool): Whether or not to PEM-encode as well.
             encoding (PKIEncoding): Encoding scheme to use. Support dependent on PKI type.
-            marker           (str): Marker to use in PEM formatting (if applicable).
 
         Returns:
-            bytes: Encoding of PKI instance.
+            object: Encoding of PKI instance.
         """
         if encoding not in self.PUB_ENCODINGS:
             raise ValueError(f'Unsupported public encoding "{encoding}" for "{self.__class__}"')
 
-        encoder = self.PUB_ENCODINGS[encoding]
-        encoded = encoder(self, encode_pem=encode_pem, marker=marker, **kwargs)
-
-        return encoded
+        return self.PUB_ENCODINGS[encoding](self, **kwargs)
 
 
 
@@ -63,7 +58,7 @@ class EncodablePKI(object):
 
         Parameters:
             encode_pem      (bool): Whether or not to PEM-encode as well.
-            encoding (PKIEncoding): Encoding scheme to use.
+            encoding (PKIEncoding): Encoding scheme to use. Support dependent on PKI type.
             marker           (str): Marker to use in PEM formatting (if applicable).
             encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
@@ -75,6 +70,4 @@ class EncodablePKI(object):
         if encoding not in self.PRIV_ENCODINGS:
             raise ValueError(f'Unsupported private encoding "{encoding}" for "{self.__class__}"')
 
-        encoder = self.PRIV_ENCODINGS[encoding]
-        encoded = encoder(self, encode_pem=encode_pem, marker=marker, encryption=encryption, passphrase=passphrase, iv=iv, **kwargs)
-        return encoded
+        return self.PRIV_ENCODINGS[encoding](self, **kwargs)

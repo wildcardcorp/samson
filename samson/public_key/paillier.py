@@ -27,14 +27,9 @@ class Paillier(EncryptionAlg):
 
     def L(self, x: int) -> int:
         return (x - 1) // self.n
-
-
-    def __repr__(self):
-        return f"<Paillier: priv={self.priv}, p={self.p}, q={self.q}, n={self.n}, g={self.g}, phi={self.phi}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    
+    def __reprdir__(self):
+        return ['priv', 'p', 'q', 'n', 'g', 'phi']
 
 
     def encrypt(self, plaintext: bytes) -> int:

@@ -12,5 +12,5 @@ class PBKDF2TestCase(unittest.TestCase):
         salt            = Bytes(0x78578E5A5D63CB06)
         expected_result = Bytes(0xDC19847E05C64D2FAF10EBFB4A3D2A20)
 
-        kdf = PBKDF1(SHA1().hash, 16, 1000)
+        kdf = PBKDF1(SHA1(), 16, 1000)
         self.assertEqual(kdf.derive(password, salt), expected_result)

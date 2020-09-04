@@ -565,17 +565,17 @@ class RSATestCase(unittest.TestCase):
 
             should_pem_encode = Bytes.random(1).int() & 1
 
-            der_bytes = rsa.export_private_key(should_pem_encode)
-            recovered_rsa = RSA.import_key(der_bytes)
+            der_bytes     = rsa.export_private_key().encode(encode_pem=should_pem_encode)
+            recovered_rsa = RSA.import_key(der_bytes).key
 
             self.assertEqual((rsa.d, rsa.e, rsa.n, rsa.p, rsa.q), (recovered_rsa.d, recovered_rsa.e, recovered_rsa.n, recovered_rsa.p, recovered_rsa.q))
 
 
 
     def test_import_export_private(self):
-        rsa = RSA.import_key(TEST_PRIV)
-        der_bytes = rsa.export_private_key(encoding=PKIEncoding.PKCS1)
-        new_rsa = RSA.import_key(der_bytes)
+        rsa = RSA.import_key(TEST_PRIV).key
+        der_bytes = rsa.export_private_key(encoding=PKIEncoding.PKCS1).encode()
+        new_rsa = RSA.import_key(der_bytes).key
 
         self.assertEqual((rsa.n, rsa.e, rsa.alt_d), (0x545702789299c59544f0a48037d5fcbe285b5c214d26469f7f52423763d01b331d0f7c9dfd5e98435b362e083875d101e10bf862a34a20cd38cd68743770b1ee57ce7f04e4335729aecacdc662b9b1e0f438f1a691538001d9c8f3374dc1dabf2e9fb316be636b0d2393f511c5bc7373c1666562322dc3911163e338b83bdf7d9a622c81b9edd19cd1699cae8c2def325de313e070d7733fc7ca95e0b12ef6a43095626e1fa3b19681a6e6b2828eb6b3487cb7bb58370086b108e9eaf9f20a53b8f44c9fe7ab7ad545d70b3c5f470190ece9e7172824e05747e1c431a664ab6bd2f914bf64e4dcac0575c493f52a488737f85742fb52aa4555f144ab8e601713, 0x10001, 7637900981413881127344732199207423148450857019726723094659043462794313258767201253269496359678839942555541437712415706663660985252940123204794095993626699211163986533562336773310103190916142252882331767886927729021516529141672972169957951166501750445256177733568843099186777096376892875529534391517354389358568809006385725873288954661635538351606457829485241023554979084645466210495420866845750976009860684015622002855709494103022482640146893844516679296838305756556603312962721311081086887412291530082263197989863828789712221961262494351622769754044860656696333724061992404959980518191241190042534000830303328685273))
         self.assertEqual((rsa.d, rsa.e, rsa.p, rsa.q), (new_rsa.d, new_rsa.e, new_rsa.p, new_rsa.q))
@@ -584,11 +584,11 @@ class RSATestCase(unittest.TestCase):
 
 
     def test_import_export_public(self):
-        rsa_pub  = RSA.import_key(TEST_PUB)
-        rsa_priv = RSA.import_key(TEST_PRIV)
+        rsa_pub  = RSA.import_key(TEST_PUB).key
+        rsa_priv = RSA.import_key(TEST_PRIV).key
 
-        der_bytes = rsa_pub.export_public_key(encoding=PKIEncoding.X509)
-        new_pub   = RSA.import_key(der_bytes)
+        der_bytes = rsa_pub.export_public_key(encoding=PKIEncoding.X509).encode()
+        new_pub   = RSA.import_key(der_bytes).key
 
         self.assertEqual((rsa_pub.n, rsa_pub.e), (rsa_priv.n, rsa_priv.e))
         self.assertEqual((rsa_pub.n, rsa_pub.e), (new_pub.n, new_pub.e))
@@ -598,10 +598,10 @@ class RSATestCase(unittest.TestCase):
 
     def _run_import_pem_enc(self, enc_priv):
         with self.assertRaises(ValueError):
-            RSA.import_key(enc_priv)
+            RSA.import_key(enc_priv).key
 
-        enc_rsa = RSA.import_key(enc_priv, PEM_PASSPHRASE)
-        dec_rsa = RSA.import_key(TEST_PEM_DEC)
+        enc_rsa = RSA.import_key(enc_priv, PEM_PASSPHRASE).key
+        dec_rsa = RSA.import_key(TEST_PEM_DEC).key
         self.assertEqual((enc_rsa.d, enc_rsa.e, enc_rsa.p, enc_rsa.q), (dec_rsa.d, dec_rsa.e, dec_rsa.p, dec_rsa.q))
 
 
@@ -626,16 +626,16 @@ class RSATestCase(unittest.TestCase):
             for _ in range(10):
                 rsa = RSA(512)
                 key = Bytes.random(Bytes.random(1).int() + 1)
-                enc_pem = rsa.export_private_key(encryption=algo, passphrase=key)
-                dec_rsa = RSA.import_key(enc_pem, key)
+                enc_pem = rsa.export_private_key().encode(encryption=algo, passphrase=key)
+                dec_rsa = RSA.import_key(enc_pem, key).key
 
                 self.assertEqual((rsa.d, rsa.e, rsa.p, rsa.q), (dec_rsa.d, dec_rsa.e, dec_rsa.p, dec_rsa.q))
 
 
     def test_import_ssh(self):
-        rsa_pub      = RSA.import_key(TEST_SSH_PUB)
-        rsa_ssh2_pub = RSA.import_key(TEST_SSH2_PUB)
-        rsa_priv     = RSA.import_key(TEST_SSH_PRIV)
+        rsa_pub      = RSA.import_key(TEST_SSH_PUB).key
+        rsa_ssh2_pub = RSA.import_key(TEST_SSH2_PUB).key
+        rsa_priv     = RSA.import_key(TEST_SSH_PRIV).key
 
         self.assertEqual((rsa_pub.n, rsa_pub.e), (rsa_priv.n, rsa_priv.e))
         self.assertEqual((rsa_ssh2_pub.n, rsa_ssh2_pub.e), (rsa_priv.n, rsa_priv.e))
@@ -644,7 +644,7 @@ class RSATestCase(unittest.TestCase):
         self.assertEqual(rsa_priv.q, 147975660846396990587026799132395215581845148822588177668939892854130080870127891229734413269282872842954263443501467315040323804831400031921589112815742747614415764378548901698763469577356909867186752247509564255224167675065755796937983163876790155687818626513794653480829583948160749345458911841406938261219)
         self.assertEqual(rsa_priv.alt_d, 19762369934989515131049274315841316326050549933114536766674916078250573730800216520650633877972440419194814420402043176472759537753254149225125134250003994948721187698467807920387489440310994705791482721107511012797884534895932222871683633147680034924999627916905359454912445366494543706676734716375543152258328317139760580320162173490414588340925370831975060554770385250590880497700813834231770436219310405458193997653119990344803085718020467915664214557758416316811073003911746514622779992001874409075037973245976299609023867178313200550274791579981490063847585903047671618462828834780979891650959756006736369309609)
 
-        self.assertEqual(rsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
+        self.assertEqual(rsa_ssh2_pub.export_public_key(encoding=PKIEncoding.SSH2).encode().replace(b'\n', b''), TEST_SSH2_PUB_NO_CMT.replace(b'\n', b''))
 
 
 
@@ -652,9 +652,9 @@ class RSATestCase(unittest.TestCase):
         for key, passphrase in [TEST_OPENSSH0, TEST_OPENSSH1, TEST_OPENSSH2, TEST_OPENSSH3]:
             if passphrase:
                 with self.assertRaises(ValueError):
-                    RSA.import_key(key)
+                    RSA.import_key(key).key
 
-            rsa = RSA.import_key(key, passphrase=passphrase)
+            rsa = RSA.import_key(key, passphrase=passphrase).key
             self.assertEqual(rsa.p * rsa.q, rsa.n)
             self.assertEqual(rsa.alt_d, mod_inv(rsa.e, (rsa.p - 1) * (rsa.q - 1)))
             self.assertTrue(is_prime(rsa.p))
@@ -672,13 +672,13 @@ class RSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase)
-            pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH)
-            pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2)
+            priv        = rsa.export_private_key(encoding=PKIEncoding.OpenSSH).encode(encryption=b'aes256-ctr', passphrase=passphrase)
+            pub_openssh = rsa.export_public_key(encoding=PKIEncoding.OpenSSH).encode()
+            pub_ssh2    = rsa.export_public_key(encoding=PKIEncoding.SSH2).encode()
 
-            new_priv = RSA.import_key(priv, passphrase=passphrase)
-            new_pub_openssh = RSA.import_key(pub_openssh)
-            new_pub_ssh2 = RSA.import_key(pub_ssh2)
+            new_priv        = RSA.import_key(priv, passphrase=passphrase).key
+            new_pub_openssh = RSA.import_key(pub_openssh).key
+            new_pub_ssh2    = RSA.import_key(pub_ssh2).key
 
             self.assertEqual((new_priv.d, new_priv.e, new_priv.n, new_priv.p, new_priv.q), (rsa.d, rsa.e, rsa.n, rsa.p, rsa.q))
             self.assertEqual((new_pub_openssh.e, new_pub_openssh.n), (rsa.e, rsa.n))
@@ -687,8 +687,8 @@ class RSATestCase(unittest.TestCase):
 
 
     def test_import_jwk(self):
-        rsa = RSA.import_key(TEST_JWK)
-        priv_jwk = rsa.export_private_key(encoding=PKIEncoding.JWK)
+        rsa      = RSA.import_key(TEST_JWK).key
+        priv_jwk = rsa.export_private_key(encoding=PKIEncoding.JWK).encode()
 
         self.assertEqual(priv_jwk, TEST_JWK)
 
@@ -698,11 +698,11 @@ class RSATestCase(unittest.TestCase):
         for _ in range(100):
             rsa = RSA(1024)
 
-            priv = rsa.export_private_key(encoding=PKIEncoding.JWK)
-            pub  = rsa.export_public_key(encoding=PKIEncoding.JWK)
+            priv = rsa.export_private_key(encoding=PKIEncoding.JWK).encode()
+            pub  = rsa.export_public_key(encoding=PKIEncoding.JWK).encode()
 
-            new_priv = RSA.import_key(priv)
-            new_pub  = RSA.import_key(pub)
+            new_priv = RSA.import_key(priv).key
+            new_pub  = RSA.import_key(pub).key
 
             self.assertEqual((new_priv.d, new_priv.n, new_priv.e), (rsa.d, rsa.n, rsa.e))
             self.assertEqual((new_pub.n, new_pub.e), (rsa.n, rsa.e))
@@ -712,26 +712,26 @@ class RSATestCase(unittest.TestCase):
     def test_import_x509_cert(self):
         from subprocess import check_call
 
-        rsa = RSA.import_key(TEST_X509_CERT)
+        rsa = RSA.import_key(TEST_X509_CERT).key
         self.assertEqual((rsa.n, rsa.e), (20610613182366935712704430937310221613534562009948079789360453139910836064941977579908816718964543026281318436151676011110161911330939696498276776328767963169924766263613120148750878393738643775336834994232750269121171496638721145925440236992515720886919332303626091341082673908400068674399845813788179494391992902026084622226552237412130605804686837213484458829751479165161843145474359043291343036771933142460660698742069747900485297316236559451091673622347679667437351203815946583872835580939553583968621857705820720681124927525077143151996560098282758335232786356354477898597546915310745330577744741027892958321197, 65537))
 
-        cert = rsa.export_public_key(encoding=PKIEncoding.X509_CERT).decode()
+        cert = rsa.export_public_key(encoding=PKIEncoding.X509_CERT).encode(signing_key=RSA(512)).decode()
         check_call([f'echo -n \"{cert}\" | openssl x509 -text'], shell=True)
 
 
 
     def test_import_x509(self):
-        rsa = RSA.import_key(TEST_X509)
+        rsa = RSA.import_key(TEST_X509).key
         self.assertEqual((rsa.n, rsa.e), (24940683201879137993056120312454473942594318232290600735533280813657819079216867596712294845341701840650539113593082459581192282077758505643187412712080936552854003723249342272875345512981239150545161577739015704663222308367346717190651433566838090248539539684067138040760166497684693081358176609716700732118835147703707164874725475008676983042554525064000012095164085296963339592428935499593551005865083467668896772193959564280661680461005515765882973709774222632895423473512678883713520905183203401266909934112053801007749095605556769087928322759818966788666176216229944621540846530277052278166189462503753144895461, 65537))
-        self.assertEqual(rsa.export_public_key(encoding=PKIEncoding.X509).replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
+        self.assertEqual(rsa.export_public_key(encoding=PKIEncoding.X509).encode().replace(b'\n', b''), TEST_X509.replace(b'\n', b''))
 
 
     def test_import_pkcs1(self):
-        rsa_priv = RSA.import_key(TEST_PKCS1_PRIV)
-        rsa_pub  = RSA.import_key(TEST_PKCS1_PUB)
+        rsa_priv = RSA.import_key(TEST_PKCS1_PRIV).key
+        rsa_pub  = RSA.import_key(TEST_PKCS1_PUB).key
 
-        priv_out = rsa_priv.export_private_key(encoding=PKIEncoding.PKCS1, marker='RSA PRIVATE KEY')
-        pub_out  = rsa_priv.export_public_key(encoding=PKIEncoding.PKCS1, marker='RSA PUBLIC KEY')
+        priv_out = rsa_priv.export_private_key(encoding=PKIEncoding.PKCS1, marker='RSA PRIVATE KEY').encode()
+        pub_out  = rsa_priv.export_public_key(encoding=PKIEncoding.PKCS1, marker='RSA PUBLIC KEY').encode()
 
         self.assertEqual((rsa_priv.p, rsa_priv.q, rsa_priv.d, rsa_priv.e), (166139291584298120902443024169830845883823889075313984939917653208853637890905161126081148766441591539160401657770377684418968678267217917397922110840150169955546544901086157269951344598822644183037291254655299911780341794815716113854851191488541745191877611504429644948688088285889033976663223284567224856833, 150119113690962013024882886767787358736438702874024877639987005001513857060716647340813407248335373915813194132699511163987634021103271207272747869072785907538172094131387346081221837644849184613482205496553768651031911865532714182752679665482800511607578006666579667465077298743858640016483407400610361062117, 261443907406365378354663085808874736386503755521058985081882965637470767771213025297791271476414073951003560905113869260605140573834934363441563582910410964978725003553295056860481290987047183978890184230384420847820829849525721267527923689830443383138481525900699205548045140667247267145170931395629543661831064542899777508230897484324075615967481549633013603167452463475949339014097601443520652166671659780291518107163852587423275987949452420808289251299490423174099687524419810127240076379136338103470684200785820699599792642573784713209902559428358302232211377555678297104998775430839041504293459045414977936385, 65537))
         self.assertEqual((rsa_priv.n, rsa_priv.e), (rsa_pub.n, rsa_pub.e))
@@ -742,11 +742,9 @@ class RSATestCase(unittest.TestCase):
 
 
     def test_import_pkcs8(self):
-        from samson.encoding.pem import pem_decode
-        rsa_priv = RSA.import_key(TEST_PKCS8_PRIV)
+        rsa_priv = RSA.import_key(TEST_PKCS8_PRIV).key
 
-        priv_out = rsa_priv.export_private_key(encoding=PKIEncoding.PKCS8)
-        print(pem_decode(priv_out))
+        priv_out = rsa_priv.export_private_key(encoding=PKIEncoding.PKCS8).encode()
 
         self.assertEqual((rsa_priv.p, rsa_priv.q, rsa_priv.d, rsa_priv.e), (166139291584298120902443024169830845883823889075313984939917653208853637890905161126081148766441591539160401657770377684418968678267217917397922110840150169955546544901086157269951344598822644183037291254655299911780341794815716113854851191488541745191877611504429644948688088285889033976663223284567224856833, 150119113690962013024882886767787358736438702874024877639987005001513857060716647340813407248335373915813194132699511163987634021103271207272747869072785907538172094131387346081221837644849184613482205496553768651031911865532714182752679665482800511607578006666579667465077298743858640016483407400610361062117, 261443907406365378354663085808874736386503755521058985081882965637470767771213025297791271476414073951003560905113869260605140573834934363441563582910410964978725003553295056860481290987047183978890184230384420847820829849525721267527923689830443383138481525900699205548045140667247267145170931395629543661831064542899777508230897484324075615967481549633013603167452463475949339014097601443520652166671659780291518107163852587423275987949452420808289251299490423174099687524419810127240076379136338103470684200785820699599792642573784713209902559428358302232211377555678297104998775430839041504293459045414977936385, 65537))
         self.assertEqual(priv_out.replace(b'\n', b''), TEST_PKCS8_PRIV.replace(b'\n', b''))
@@ -759,7 +757,7 @@ class RSATestCase(unittest.TestCase):
             b_d = 0
 
             while a_d == b_d:
-                bits = max(1, Bytes.random(2).int() >> 4)
+                bits  = max(3, Bytes.random(2).int() >> 4)
                 rsa_a = RSA(bits, e=65537)
                 rsa_b = RSA(bits, e=65537, p=rsa_a.p)
 

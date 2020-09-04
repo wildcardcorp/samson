@@ -26,7 +26,7 @@ class X509Certificate(PEMEncodable):
     def __init__(
         self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
         issuer_unique_id: int=10, subject_unique_id: int=11, not_before: datetime=None, not_after: datetime=None,
-        signing_key: object=None, signing_alg: object=None, is_ca: bool=False, signature_value: bytes=None, **kwargs
+        signing_alg: object=None, is_ca: bool=False, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
@@ -37,8 +37,7 @@ class X509Certificate(PEMEncodable):
         self.subject_unique_id = subject_unique_id
         self.not_before = not_before or datetime.now()
         self.not_after = not_after or self.not_before.replace(year=self.not_before.year + 1)
-        self.signing_key = signing_key or key
-        self.signing_alg = signing_alg or self.signing_key.X509_SIGNING_DEFAULT.value
+        self.signing_alg = signing_alg
         self.signature_value = signature_value
         self.is_ca = is_ca
 
@@ -52,7 +51,17 @@ class X509Certificate(PEMEncodable):
             return False
 
 
-    def encode(self, **kwargs) -> bytes:
+    def encode(self, signing_key: 'EncodablePKI'=None, **kwargs) -> bytes:
+        """
+        Parameters:
+            signing_key (EncodablePKI): Key to sign the cert with.
+        """ \
+        + PEMEncodable.DOC_PARAMS + \
+        """
+
+        Returns:
+            X509Certificate: Certifcate.
+        """
         # Algorithm ID
         alg_oid = self.ALG_OID if type(self.ALG_OID) is str else self.ALG_OID(self.key)
 
@@ -88,13 +97,17 @@ class X509Certificate(PEMEncodable):
         subject = rfc2459.Name()
         subject.setComponentByPosition(0, parse_rdn(self.subject))
 
+        signing_key = signing_key or self.key
+
         # Signature algorithm
-        if not self.signing_alg or not hasattr(self.signing_key, "X509_SIGNING_DEFAULT"):
+        if not self.signing_alg and not hasattr(signing_key, "X509_SIGNING_DEFAULT"):
             raise ValueError("'signing_alg' not specified and 'signing_key' has no default algorithm")
+
+        signing_alg = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
 
 
         signature_alg = rfc2459.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[self.signing_alg.name]
+        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
 
         if self.PARAM_ENCODER:
             signature_alg['parameters'] = Any(encoder.encode(self.PARAM_ENCODER.encode(self.key)))
@@ -103,7 +116,7 @@ class X509Certificate(PEMEncodable):
         # Extensions
         extensions = rfc2459.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
 
-        if self.is_ca == True:
+        if self.is_ca:
             # SKI
             pkey_bytes = Bytes(int(pub_info['subjectPublicKey']))
 
@@ -145,7 +158,7 @@ class X509Certificate(PEMEncodable):
             sig_value = Bytes.wrap(self.signature_value).int()
         else:
             encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
-            sig_value   = self.signing_alg.sign(self.signing_key, encoded_tbs)
+            sig_value   = signing_alg.sign(signing_key, encoded_tbs)
 
 
         # Build the Cert object
@@ -186,13 +199,14 @@ class X509Certificate(PEMEncodable):
         version  = int(tbs_cert['version'])
 
         serial_num        = int(tbs_cert['serialNumber'])
-        issuer_unique_id  = int(tbs_cert['issuerUniqueID']) if tbs_cert['issuerUniqueID'].hasValue() else None
-        subject_unique_id = int(tbs_cert['subjectUniqueID']) if tbs_cert['subjectUniqueID'].hasValue() else None
+        issuer_unique_id  = int(tbs_cert['issuerUniqueID']) if tbs_cert['issuerUniqueID'].hasValue() else 10
+        subject_unique_id = int(tbs_cert['subjectUniqueID']) if tbs_cert['subjectUniqueID'].hasValue() else 11
 
         # Decode RDNs
         issuer  = rdn_to_str(tbs_cert['issuer'][0])
         subject = rdn_to_str(tbs_cert['subject'][0])
 
+        # TODO: What to do with 'sig_params'? Is it needed?
         if tbs_cert['signature']['parameters'].hasValue():
             sig_params = bytes(tbs_cert['signature']['parameters'])
         else:
@@ -207,7 +221,8 @@ class X509Certificate(PEMEncodable):
             for ext in tbs_cert['extensions']:
                 if str(ext['extnID']) == '2.5.29.19':
                     ext_val, _ = decoder.decode(bytes(ext['extnValue']))
-                    is_ca = bool(ext_val[0])
+                    if len(ext_val):
+                        is_ca = bool(ext_val[0])
                     break
 
 

@@ -31,12 +31,6 @@ class CCM(StreamingBlockCipherMode, AuthenticatedCipher):
         self.ctr = CTR(self.cipher, b'\x00' * 16)
 
 
-    def __repr__(self):
-        return f"<CCM: cipher={self.cipher}, ctr={self.ctr}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def _calculate_formatting_params(self, nonce: bytes, plaintext: bytes, data: bytes):
         data_len = len(data)

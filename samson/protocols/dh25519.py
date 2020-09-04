@@ -34,13 +34,6 @@ class DH25519(KeyExchangeAlg):
             self.recompute_public()
 
 
-    def __repr__(self):
-        return f"<DH25519: d={self.d}, key={self.key}, pub={self.pub}, base={self.base}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def recompute_public(self) -> int:
         """

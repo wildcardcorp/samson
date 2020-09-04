@@ -21,12 +21,6 @@ class SIV(StreamingBlockCipherMode, AuthenticatedCipher):
         self.cipher  = cipher
 
 
-    def __repr__(self):
-        return f"<SIV: cipher={self.cipher}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
     def encrypt(self, plaintext: bytes, additional_data: list=[]) -> Bytes:
         """

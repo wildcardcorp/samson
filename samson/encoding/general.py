@@ -105,7 +105,7 @@ def to_NAF(input_arg: bytes) -> list:
         else:
             z.append(0)
 
-        E /= 2
+        E //= 2
         i += 1
     return z[::-1]
 
@@ -344,7 +344,7 @@ class EncodingScheme(Enum):
 
             if char_re.fullmatch(text):
                 candidates.append(encoding)
-        
+
         return candidates
 
 
@@ -360,7 +360,7 @@ class EncodingScheme(Enum):
                     candidates[encoding] = decoded
             except:
                 pass
-        
+
         return candidates
 
 

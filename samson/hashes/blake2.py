@@ -157,13 +157,6 @@ class BLAKE2b(BLAKE2):
         super().__init__(key, desired_hash_len)
 
 
-    def __repr__(self):
-        return f"<BLAKE2b: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
 @register_primitive()
 class BLAKE2s(BLAKE2):
@@ -186,9 +179,3 @@ class BLAKE2s(BLAKE2):
         """
         super().__init__(key, desired_hash_len)
 
-
-    def __repr__(self):
-        return f"<BLAKE2s: iv={self.IV}, digest_size={self.digest_size}, key={self.key}>"
-
-    def __str__(self):
-        return self.__repr__()

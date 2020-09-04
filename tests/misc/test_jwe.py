@@ -89,8 +89,8 @@ class JWETestCase(unittest.TestCase):
         alice_key = b'{"kty":"EC", "crv":"P-256", "x":"gI0GAILBdu7T53akrFmMyGcsF3n5dO7MmwNBHKW5SV0", "y":"SLW_xSffzlPWrHEVI30DHM_4egVwt3NQqeUD7nMFpps", "d":"0_NxaRPUMQoAJt50Gz8YiTr8gRTwyEaCumd-MToTmIo"}'
         bob_key   = b'{"kty":"EC", "crv":"P-256", "x":"weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ", "y":"e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck", "d":"VEmDZpDXXK8p8N0Cndsxs924q6nS1RXFASRl6BfUqdw"}'
 
-        alice_jwk = PKIAutoParser.import_key(alice_key)
-        bob_jwk   = PKIAutoParser.import_key(bob_key)
+        alice_jwk = PKIAutoParser.import_key(alice_key).key
+        bob_jwk   = PKIAutoParser.import_key(bob_key).key
 
         alice_dh = ECDHE(d=alice_jwk.d, G=alice_jwk.G)
         bob_dh   = ECDHE(d=bob_jwk.d, G=bob_jwk.G)
@@ -106,7 +106,7 @@ class JWETestCase(unittest.TestCase):
         from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 
         alice_dh = DH25519(d=d.int(), curve=curve)
-        bob_dh   = JWKEdDSAPublicKey.decode(bob_jwk)
+        bob_dh   = JWKEdDSAPublicKey.decode(bob_jwk).key
         Z        = alice_dh.derive_key(bob_dh.pub)
 
         self.assertEqual(Z, expected_Z)
@@ -218,7 +218,7 @@ class JWETestCase(unittest.TestCase):
                 all_equal &= jweset.decrypt(key_e, 'Eve') == payload
                 all_equal &= jweset.decrypt(key_f, 'Fred') == payload
 
-                token = jweset.serialize()
+                token   = jweset.serialize()
                 new_set = JWESet.parse(token)
 
                 all_equal &= new_set.decrypt(key_a, 'Alice') == payload
@@ -309,8 +309,8 @@ class JWETestCase(unittest.TestCase):
         expected_plaintext = b'k\xb3\x03\xb3\xd0\xa2\xc6Y\xdaZ\xbae\xe7\xd8%\x9b\xc0/\xe1\xe1\xbb\xc6\xba\xb2\xf47ZJ}\x14\x91YP\x17_\xa7\x85%[\xbd\x8e~\t\xc2\xd5\x16G\xe6\xf8jl4\xd3\xb5\xef\x93\x02g\x8d\xb8\x9e\x89f\xb1n16\xc8y\xd6'
 
         jweset = JWESet.parse(token)
-        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
-        pt_b   = jweset.decrypt(PKIAutoParser.import_key(key_b))
+        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a).key)
+        pt_b   = jweset.decrypt(PKIAutoParser.import_key(key_b).key)
 
         self.assertEqual(pt_a, expected_plaintext)
         self.assertEqual(pt_b, expected_plaintext)
@@ -322,7 +322,7 @@ class JWETestCase(unittest.TestCase):
         expected_plaintext = b'\xac\xdd\xe2\x93A\x05\x82lC\xa2\x82\x84n=i\xb3\x8c>\xa4\xa6\x0b\xab\xe5\xf9\x15Zb\x99\xc2(\x97\x95\x92\xd2\r\x85\xc7\xb6l\xf4I\x960\x1f6\x15\xba \xe1Y9T\x9b\xf29-\xdd\xa7]\x9d\xb3\xafY\x0e\xbc\x83\x1a\x94\xdd3'
 
         jweset = JWESet.parse(token)
-        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a))
+        pt_a   = jweset.decrypt(PKIAutoParser.import_key(key_a).key)
 
         self.assertEqual(pt_a, expected_plaintext)
 
@@ -356,15 +356,15 @@ class JWETestCase(unittest.TestCase):
 
 
     def _run_oct_decrypt_test(self, jwk, token, expected_payload):
-        self._run_jwk_decrypt_test(JWKOctKey.decode(jwk), token, expected_payload)
+        self._run_jwk_decrypt_test(JWKOctKey.decode(jwk).key, token, expected_payload)
 
 
     def _run_pki_decrypt_test(self, jwk, token, expected_payload):
-        self._run_jwk_decrypt_test(PKIAutoParser.import_key(jwk), token, expected_payload)
+        self._run_jwk_decrypt_test(PKIAutoParser.import_key(jwk).key, token, expected_payload)
 
 
     def _run_ecdh_decrypt_test(self, jwk, token, expected_payload):
-        ecdsa = PKIAutoParser.import_key(jwk)
+        ecdsa = PKIAutoParser.import_key(jwk).key
         key   = ECDHE(d=ecdsa.d, G=ecdsa.G)
         jwe   = JWE.parse(token)
 

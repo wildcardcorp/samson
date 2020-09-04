@@ -56,12 +56,8 @@ class MerkleDamgardConstruction(Hash):
         self.encoded_size_length = encoded_size_length
 
 
-
-    def __repr__(self):
-        return f"<MerkleDamgardConstruction: initial_state={self.initial_state}, compression_func={self.compression_func}, block_size={self.block_size}, pad_func={self.pad_func}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['initial_state', 'compression_func', 'block_size']
 
 
     def pad_func(self, message: bytes) -> Bytes:

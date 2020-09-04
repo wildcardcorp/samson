@@ -201,11 +201,8 @@ class DES(FeistelNetwork, BlockCipher):
         self.block_size = 8
 
 
-    def __repr__(self):
-        return f"<DES: key={self.key}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key']
 
 
     def process_plaintext(self, plaintext):

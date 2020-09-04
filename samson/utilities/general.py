@@ -242,4 +242,3 @@ def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) ->
         cert = ssl.DER_cert_to_PEM_cert(cert).encode('utf-8')
 
     return cert
-

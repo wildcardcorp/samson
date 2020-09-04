@@ -1,4 +1,3 @@
-from samson.encoding.openssh.general import parse_openssh_key
 from samson.encoding.openssh.core.dsa_private_key import DSAPrivateKey
 from samson.encoding.openssh.core.dsa_public_key import DSAPublicKey
 from samson.encoding.openssh.openssh_base import OpenSSHPrivateBase, OpenSSHPublicBase, OpenSSH2PublicBase

@@ -95,12 +95,8 @@ class SHA2(MerkleDamgardConstruction):
             yield state[:self.digest_size]
 
 
-
-    def __repr__(self):
-        return "<SHA2: initial_state={}, block_size={}, digest_size={}>".format(self.initial_state, self.block_size, self.digest_size)
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['initial_state', 'block_size', 'digest_size']
 
 
     def compression_func(self, block: bytes, state: bytes) -> Bytes:

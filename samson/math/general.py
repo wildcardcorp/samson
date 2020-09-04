@@ -2410,6 +2410,21 @@ def carmichael_function(n: int, factors: dict=None) -> int:
 
 
 def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X: int=None, m: int=None, t: int=None) -> list:
+    """
+    Finds small roots of a polynomial in `ZZ`/`ZZ`(`N`) using Coppersmith's method.
+
+    Parameters:
+        N         (int): Modulus.
+        f  (Polynomial): Polynomial to find roots of.
+        beta    (float): 
+        epsilon (float): 
+        X         (int): 
+        m         (int): 
+        t         (int): 
+    
+    Returns:
+        list: List of small roots in Zn[x].
+    """
     ZZ = _integer_ring.ZZ
     Matrix = _mat.Matrix
 

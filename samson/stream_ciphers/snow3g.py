@@ -49,7 +49,7 @@ class SNOW3G(StreamCipher):
         self.key = Bytes.wrap(key)
         self.iv  = Bytes.wrap(iv)
 
-        k0, k1, k2, k3 = [chunk.to_int() for chunk in self.key.chunk(4)]
+        k0, k1, k2, k3     = [chunk.to_int() for chunk in self.key.chunk(4)]
         iv0, iv1, iv2, iv3 = [chunk.to_int() for chunk in self.iv.chunk(4)]
 
         s = [None] * 16
@@ -79,14 +79,6 @@ class SNOW3G(StreamCipher):
         for _ in range(32):
             F = self.clock_FSM()
             self.clock_lfsr(F)
-
-
-
-    def __repr__(self):
-        return f"<SNOW3G: key={self.key}, iv={self.iv}, s={self.s}, R1={self.self.R1}, R2={self.self.R2}, R3={self.self.R3}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 

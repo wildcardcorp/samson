@@ -43,7 +43,7 @@ class DNSKeyFlags(IntFlag):
 
 def to_wire(key: bytes):
     flags, proto, alg = key.split(b' ')[:3]
-    
+
     flags = Bytes(int(flags)).zfill(2)
     proto = Bytes(int(proto)).zfill(1)
     alg   = Bytes(int(alg)).zfill(1)
@@ -56,6 +56,6 @@ def calculate_key_tag(key: bytes):
     acc = 0
     for i in range(len(key)):
         acc += key[i] if (i & 1) else key[i] << 8
-    
+
     acc += (acc >> 16) & 0xFFFF
     return acc & 0xFFFF

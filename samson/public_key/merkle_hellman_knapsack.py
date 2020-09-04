@@ -30,12 +30,8 @@ class MerkleHellmanKnapsack(EncryptionAlg):
 
 
 
-    def __repr__(self):
-        return f"<MerkleHellmanKnapsack: priv={self.priv}, pub={self.pub}, q={self.q}, r={self.r}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['priv', 'pub', 'q', 'r']
 
 
     def encrypt(self, message: bytes) -> list:

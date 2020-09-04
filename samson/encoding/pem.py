@@ -11,13 +11,13 @@ import math
 
 
 
-from enum import Enum 
-class RFC1423Algorithms(Enum): 
-    DES_CBC = (DES, 8) 
-    DES_EDE3_CBC = (TDES, 24) 
-    AES_128_CBC  = (Rijndael, 16) 
-    AES_192_CBC  = (Rijndael, 24) 
-    AES_256_CBC  = (Rijndael, 32) 
+from enum import Enum
+class RFC1423Algorithms(Enum):
+    DES_CBC = (DES, 8)
+    DES_EDE3_CBC = (TDES, 24)
+    AES_128_CBC  = (Rijndael, 16)
+    AES_192_CBC  = (Rijndael, 24)
+    AES_256_CBC  = (Rijndael, 32)
 
 
 def _get_alg_params(algo: str):
@@ -32,7 +32,7 @@ def _get_alg_name(algo: str):
         name = algo.name
     else:
         name = RFC1423Algorithms.__members__[algo.replace('-', '_')].name
-    
+
     return name.replace('_', '-')
 
 
@@ -180,14 +180,35 @@ def pem_encode(der_bytes: bytes, marker: str, width: int=70, encryption: str=Non
 
 from samson.core.base_object import BaseObject
 class PEMEncodable(BaseObject):
+    DOC_PARAMS = """            buffer     (bytes): Buffer to encode.
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            marker       (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
+    """
 
     def __init__(self, key, **kwargs):
         self.key = key
 
 
     @classmethod
-    def transport_encode(cls, buffer: bytes, **kwargs):
-        if (kwargs.get('encode_pem') is None and cls.DEFAULT_PEM) or kwargs.get('encode_pem'):
-            buffer = pem_encode(buffer, kwargs.get('marker') or cls.DEFAULT_MARKER, encryption=kwargs.get('encryption'), passphrase=kwargs.get('passphrase'), iv=kwargs.get('iv'), use_rfc_4716=cls.USE_RFC_4716)
+    def transport_encode(cls, buffer: bytes, encode_pem: bool=True, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None, **kwargs):
+        """
+        Encodes the PKI.
+
+        Parameters:
+            buffer     (bytes): Buffer to encode.
+            encode_pem  (bool): Whether or not to PEM-encode as well.
+            marker       (str): Marker to use in PEM formatting (if applicable).
+            encryption   (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
+            passphrase (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).
+            iv         (bytes): (Optional) IV to use for CBC encryption.
+
+        Returns:
+            bytes: Encoded PKI.
+        """
+        if (encode_pem is None and cls.DEFAULT_PEM) or encode_pem:
+            buffer = pem_encode(buffer, marker or cls.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv, use_rfc_4716=cls.USE_RFC_4716)
 
         return buffer

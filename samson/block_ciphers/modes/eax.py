@@ -28,14 +28,6 @@ class EAX(StreamingBlockCipherMode, AuthenticatedCipher):
         self.cmac   = CMAC(self.cipher)
 
 
-    def __repr__(self):
-        return f"<EAX: cipher={self.cipher}, nonce={self.nonce}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
     def generate_tag(self, ciphertext: bytes, auth_data: bytes) -> Bytes:
         """
         Internal function. Generates a valid tag for the `ciphertext` and `auth_data`.

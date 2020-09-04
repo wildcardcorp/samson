@@ -1,7 +1,9 @@
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import KDF, Primitive
+from samson.ace.decorators import register_primitive
 
-
-class ConcatKDF(object):
+@register_primitive()
+class ConcatKDF(KDF):
     """
     One-step key derivation function
 
@@ -16,14 +18,11 @@ class ConcatKDF(object):
         """
         self.hash_obj    = hash_obj
         self.desired_len = desired_len
+        Primitive.__init__(self)
 
 
-    def __repr__(self):
-        return f"<ConcatKDF: hash_obj={self.hash_obj}, desired_len={self.desired_len}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+    def __reprdir__(self):
+        return ['hash_obj', 'desired_len']
 
     def derive(self, key: bytes, other_info: bytes=b'') -> Bytes:
         """

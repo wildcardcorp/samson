@@ -390,7 +390,7 @@ class ECDSATestCase(unittest.TestCase):
         num_runs = 6
         num_enc  = num_runs // 3
         curves   = [P192, P224, P256, P384, P521]
-    
+
         for i in range(num_runs):
             curve = random.choice(curves)
             ecdsa = ECDSA(curve.G)
@@ -400,7 +400,7 @@ class ECDSATestCase(unittest.TestCase):
             if i < num_enc:
                 passphrase = Bytes.random(Bytes.random(1).int())
 
-            priv        = ecdsa.export_private_key(encoding=PKIEncoding.OpenSSH, encryption=b'aes256-ctr', passphrase=passphrase).encode()
+            priv        = ecdsa.export_private_key(encoding=PKIEncoding.OpenSSH).encode(encryption=b'aes256-ctr', passphrase=passphrase)
             pub_openssh = ecdsa.export_public_key(encoding=PKIEncoding.OpenSSH).encode()
             pub_ssh2    = ecdsa.export_public_key(encoding=PKIEncoding.SSH2).encode()
 

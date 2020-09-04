@@ -1,8 +1,10 @@
 from samson.encoding.general import PKIAutoParser, PKIEncoding
-from samson.protocols.diffie_hellman import DiffieHellman
-from samson.public_key.rsa import RSA
-from samson.public_key.ecdsa import ECDSA
-from samson.public_key.eddsa import EdDSA
+
+# These have to be here so the auto parser works
+from samson.protocols.diffie_hellman import DiffieHellman # noqa: F401
+from samson.public_key.rsa import RSA # noqa: F401
+from samson.public_key.ecdsa import ECDSA # noqa: F401
+from samson.public_key.eddsa import EdDSA # noqa: F401
 import unittest
 
 # DH
@@ -134,8 +136,8 @@ PAIRS = [(DH_PUB_1, DH_PRIV_1), (DH_PUB_2, DH_PRIV_2), (RSA_PUB_1, RSA_PRIV_1), 
 class DNSKeyTestCase(unittest.TestCase):
     def test_keys(self):
         for pub_bytes, priv_bytes in PAIRS:
-            pub  = PKIAutoParser.import_key(pub_bytes)
-            assert b''.join(pub.export_public_key(encoding=PKIEncoding.DNS_KEY).split(b' ')[3:]) == b''.join(pub_bytes.split(b' ')[6:])
+            pub  = PKIAutoParser.import_key(pub_bytes).key
+            assert b''.join(pub.export_public_key(encoding=PKIEncoding.DNS_KEY).encode().split(b' ')[3:]) == b''.join(pub_bytes.split(b' ')[6:])
 
-            priv = PKIAutoParser.import_key(priv_bytes)
-            assert priv.export_private_key(encoding=PKIEncoding.DNS_KEY).split(b'\n')[2:-3] == priv_bytes.split(b'\n')[2:-3]
+            priv = PKIAutoParser.import_key(priv_bytes).key
+            assert priv.export_private_key(encoding=PKIEncoding.DNS_KEY).encode().split(b'\n')[2:-3] == priv_bytes.split(b'\n')[2:-3]

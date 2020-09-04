@@ -21,13 +21,6 @@ class CFB(StreamingBlockCipherMode):
         self.iv     = iv
 
 
-    def __repr__(self):
-        return f"<CFB: cipher={self.cipher}, iv={self.iv}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def encrypt(self, plaintext: bytes) -> Bytes:
         """
