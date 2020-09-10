@@ -2305,9 +2305,30 @@ def smoothness(n: int, factors: dict=None, **factor_kwargs) -> float:
 
 
 
+def is_safe_prime(p: int) -> bool:
+    """
+    Determines if `p` is a safe prime.
+
+    Parameters:
+        p (int): Prime to analyze.
+    
+    Returns:
+        bool: Whether `p` is a safe prime.
+    
+    Examples:
+        >>> from samson.math.general import is_safe_prime
+        >>> from samson.protocols.diffie_hellman import DiffieHellman
+        >>> is_sophie_germain_prime(DiffieHellman.MODP_2048)
+        True
+
+    """
+    q, r = divmod(p-1, 2)
+    return not r and is_prime(q) and is_prime(p)
+
+
 def is_sophie_germain_prime(p: int) -> bool:
     """
-    Determines if `p` is a Sophie Germain prime (safe prime).
+    Determines if `p` is a Sophie Germain prime.
 
     Parameters:
         p (int): Prime to analyze.
@@ -2318,15 +2339,11 @@ def is_sophie_germain_prime(p: int) -> bool:
     Examples:
         >>> from samson.math.general import is_sophie_germain_prime
         >>> from samson.protocols.diffie_hellman import DiffieHellman
-        >>> is_sophie_germain_prime(DiffieHellman.MODP_2048)
+        >>> is_sophie_germain_prime((DiffieHellman.MODP_2048-1)//2)
         True
 
     """
-    q, r = divmod(p-1, 2)
-    return not r and is_prime(q) and is_prime(p)
-
-
-is_safe_prime = is_sophie_germain_prime
+    return is_prime(2*p+1)
 
 
 def is_carmichael_number(n: int, factors: dict=None) -> bool:
@@ -2460,3 +2477,23 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
     roots = set(Zn(r) for r in R if abs(r) <= X)
     Nb    = N**beta
     return [root for root in roots if gcd(N, root) >= Nb]
+
+
+
+def prime_number_theorem(n: int) -> int:
+    """
+    Approximates the number of primes less than `n`.
+
+    Parameters:
+        n (int): Maximum bound.
+    
+    Returns:
+        int: Approximate number of primes less than `n`.
+    
+    References:
+        https://en.wikipedia.org/wiki/Prime_number_theorem
+    """
+    return n // math.floor(math.log(n))
+
+
+pnt = prime_number_theorem

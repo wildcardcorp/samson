@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import gaussian_elimination, lll, gram_schmidt
+from samson.math.general import gaussian_elimination, lll, gram_schmidt, product
 from shutil import get_terminal_size
 from types import FunctionType
 
@@ -169,6 +169,121 @@ class Matrix(RingElement):
 
         """
         return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
+
+
+    def change_ring(self, ring: 'Ring') -> 'Matrix':
+        """
+        Returns a new Matrix with the coefficients coerced into `ring`.
+
+        Parameters:
+            ring (Ring): Ring to embed into.
+        
+        Returns:
+            Matrix: Resultant Matrix.
+        """
+        return Matrix([[ring(col) for col in row] for row in self.rows], coeff_ring=ring)
+
+
+    def determinant(self) -> 'RingElement':
+        """
+        Finds the determinant of the matrix.
+
+        Examples:
+            >>> from samson.math.all import Matrix, ZZ
+            >>> A = Matrix([[2,1],[-1,0]], ZZ)
+            >>> A.determinant()
+            <IntegerElement: val=1, ring=ZZ>
+
+            >>> B = Matrix([[1, 0, 2, -1],[3, 0, 0, 5],[2, 1, 4, -3],[1, 0, 5, 0]], ZZ)
+            >>> B.determinant()
+            <IntegerElement: val=30, ring=ZZ>
+
+        References:
+            https://www.geeksforgeeks.org/determinant-of-a-matrix/
+        """
+        assert self.is_square()
+        mat = Matrix([[elem for elem in row] for row in self.rows], coeff_ring=self.coeff_ring)
+        R   = mat.coeff_ring
+
+        n     = len(mat)
+        temp  = [R.zero] * n
+        total = R.one
+        det   = R.one
+
+        for i in range(n):
+            idx = i
+
+            # Find first nonzero
+            while not mat[idx, i] and idx < n:
+                idx += 1
+        
+            if idx == n:
+                continue
+
+
+            if idx != i:
+                for j in range(n):
+                    mat[idx,j], mat[i,j] = mat[i,j], mat[idx,j]
+
+                
+                # Sign change when we shift rows
+                if idx-i % 2:
+                    det = -det
+
+            temp = [mat[i,j] for j in range(n)]
+            
+            for j in range(i+1, n):
+                a = temp[i]
+                b = mat[j,i]
+
+                for k in range(n):
+                    mat[j,k] = (a*mat[j,k]) - (b*temp[k])
+                
+                total *= a
+            
+        
+        # Multiply diagonals
+        for i in range(n):
+            det *= mat[i,i]
+
+        return det / total
+
+
+    det = determinant
+
+
+
+    def characteristic_polynomial(self, symbol: 'Symbol'=None) -> 'Polynomial':
+        """
+        Finds the characteristic polynomial `p_a` such that the roots of `p_a` are eigenvalues of `self`.
+
+        Parameters:
+            symbol (Symbol): Symbol to use for polynomial.
+
+        Returns:
+            Polynomial: Characteristic polynomial.
+
+        Examples:
+            >>> from samson.math.all import Matrix, ZZ
+            >>> A = Matrix([[2,1],[-1,0]], ZZ)
+            >>> A.characteristic_polynomial()
+            <Polynomial: x**2 + -2*x + 1, coeff_ring=ZZ>
+
+            >>> B = Matrix([[1, 0, 2, -1],[3, 0, 0, 5],[2, 1, 4, -3],[1, 0, 5, 0]], ZZ)
+            >>> B.characteristic_polynomial()
+            <Polynomial: x**4 + -5*x**3 + 16*x**2 + -34*x + 30, coeff_ring=ZZ>
+
+        References:
+            https://en.wikipedia.org/wiki/Characteristic_polynomial#Formal_definition
+        """
+        from samson.math.symbols import Symbol
+
+        x = symbol or Symbol('x')
+        R = self.coeff_ring
+        I = Matrix.identity(self.num_rows, R)
+        _ = R[x]
+        return (I*x - self).det()
+
 
 
     def row_join(self, other: 'Matrix') -> 'Matrix':

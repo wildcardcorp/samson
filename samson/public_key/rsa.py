@@ -278,6 +278,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             (Bytes, Bytes): Formatted as (plaintext of `c1`, plaintext of `c2`).
 
         Examples:
+            >>> from samson.public_key.rsa import RSA
+            >>> from samson.utilities.bytes import Bytes
             >>> n = 12888116222751572707240304314061489969911517689681896002815278735734599554528139201175828301306206875758015813657671194091088574408652687049044678022350881
             >>> e = 3
             >>> c1, c2 = (1069840764750984151382541524182133076049036437301406613777333377072807719543492846608433094574284616519736184031434837790828328968169604334545475452353520, 6128850605905061316574224955190498492830401383027566668909504849309619877251329707299254116186505675740734972894129266563268585885907678840482692103494952)
@@ -308,3 +310,85 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         m2 = int(-g3[0])
         return Bytes(int(f(m2))), Bytes(m2)
+
+
+    @staticmethod
+    def duplicate_ciphertext_key_selection(bits: int, plaintext: bytes, ciphertext: bytes, max_glue_size: int=20) -> 'RSA':
+        """
+        Generates an `RSA` key of size slightly greater than `bits` such that `ciphertext` decrypts to `plaintext`.
+
+        Parameters:
+            bits          (int): Minimum size of RSA key to generate.
+            plaintext   (bytes): Plaintext to decrypt to.
+            ciphertext  (bytes): Target ciphertext.
+            max_glue_size (int): Maximum bit size of prime divisors of `p-1` and `q-1`. Used internally.
+        
+        Returns:
+            RSA: RSA key that decrypts `ciphertext` to `plaintext`.
+
+        Examples:
+            >>> from samson.public_key.rsa import RSA
+            >>> rsa = RSA(256)
+            >>> ct  = rsa.encrypt(b'mymsg')
+            >>> dup = RSA.duplicate_ciphertext_key_selection(rsa.bits, b'malicious', ct)
+            >>> dup.decrypt(ct)
+            <Bytes: b'malicious', byteorder='big'>
+
+        References:
+            https://toadstyle.org/cryptopals/61.txt
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.general import pohlig_hellman, crt, next_prime
+        from samson.math.prime_gen import PrimeEngine
+        from samson.math.factorization.general import factor
+        from samson.utilities.exceptions import SearchspaceExhaustedException
+
+        pt = Bytes.wrap(plaintext).int()
+        ct = Bytes.wrap(ciphertext).int()
+        prime_size = (bits+1) // 2 + 1
+
+        def find_e_residue(p, m, s):
+            Zp  = ZZ/ZZ(p)
+            Zps = Zp.mul_group()
+            return pohlig_hellman(Zps(s), Zps(m))
+
+
+        def has_res(p):
+            try:
+                find_e_residue(p, pt, ct)
+                return True
+            except SearchspaceExhaustedException as e:
+                return False
+
+
+        # `pt` and `ct` must be in the same subgroup, so we'll just ensure they're
+        # primitive roots
+        constraints = [
+            PrimeEngine.CONSTRAINTS.HAS_PRIMITIVE_ROOT(pt),
+            PrimeEngine.CONSTRAINTS.HAS_PRIMITIVE_ROOT(ct),
+            has_res
+        ]
+
+        p_base = 3
+        while not pt % p_base or not ct % p_base:
+            p_base = next_prime(p_base+1)
+
+        # Generate smooth `p`
+        p = PrimeEngine.GENS.SMOOTH(prime_size, base=p_base, max_glue_size=max_glue_size).generate(constraints)
+
+        # Make sure `q` shares no factors with p except 2
+        p_1_facs = factor(p-1)
+        q_base   = p_base
+        while q_base in p_1_facs or not pt % q_base or not ct % q_base:
+            q_base = next_prime(q_base+1)
+
+
+        q = PrimeEngine.GENS.SMOOTH(prime_size, base=q_base, max_glue_size=max_glue_size, glue_prime_exclude={f for f in p_1_facs}).generate(constraints)
+
+
+        # Craft `e`
+        ep = find_e_residue(p, ct, pt)
+        eq = find_e_residue(q, ct, pt)
+
+        e_prime = crt([(ep, (p-1)//2), (eq, q-1)])[0]
+        return RSA(p=p, q=q, e=e_prime)

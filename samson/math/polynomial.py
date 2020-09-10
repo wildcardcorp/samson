@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, kth_root
+from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
@@ -117,6 +117,11 @@ class Polynomial(RingElement):
         return hash((self.coeff_ring, self.coeffs, self.__class__))
 
 
+    def __iter__(self):
+        for i in range(self.degree()+1):
+            yield self[i]
+
+
     def __getitem__(self, idx: int) -> object:
         vec = self.coeffs[idx]
         if type(vec) is SparseVector:
@@ -219,6 +224,47 @@ class Polynomial(RingElement):
             return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
 
 
+    def small_roots(self):
+        from samson.math.algebra.rings.integer_ring import ZZ
+        return coppersmiths(self.coeff_ring.characteristic, self.change_ring(ZZ))
+
+
+
+    def companion_matrix(self) -> 'Matrix':
+        """
+        Generates its companion matrix.
+
+        Returns:
+            Matrix: Companion matrix.
+
+        Examples:
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> from samson.math.symbols import Symbol
+            >>> x = Symbol('x')
+            >>> _ = ZZ[x]
+            >>> f = x**3 -2*x**2 -5*x + 6
+            >>> f.companion_matrix()
+            <Matrix: rows=
+            [ 0,  1,  0]
+            [ 0,  0,  1]
+            [ 6, -5, -2]>
+
+        References:
+            https://en.wikipedia.org/wiki/Companion_matrix
+
+        """
+        from samson.math.matrix import Matrix
+
+        d = self.degree()-1
+        R = self.coeff_ring
+
+        M = Matrix.identity(d, R)
+        c = Matrix.fill(R.zero, d, 1)
+        M = c.row_join(M)
+
+        return M.col_join(Matrix([list(self)[:-1]]))
+
+
     def valuation(self):
         from samson.math.algebra.symbols import oo
 
@@ -314,7 +360,6 @@ class Polynomial(RingElement):
             Polynomial: `k`-th root.
         
         Examples:
-            >>> from samson.math.polynomial import Polynomial
             >>> from samson.math.algebra.rings.integer_ring import ZZ
             >>> from samson.math.symbols import Symbol
             >>> x = Symbol('x')
@@ -363,7 +408,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> poly = -1*x**18 + x**7 + 3*x**3
             >>> poly.square_free_decomposition()
-            {<Polynomial: -1*x**15 + x**4 + 3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
+            {<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
         """
         is_field = self.coeff_ring.is_field()
@@ -371,18 +416,17 @@ class Polynomial(RingElement):
             if is_field:
                 return poly.monic()
             else:
-                return poly
+                return poly // poly.content()
 
-        #f = self.monic()
         f = cond_monic(self)
-        c = gcd(f, cond_monic(f.derivative())).monic()
+        c = cond_monic(gcd(f, cond_monic(f.derivative())))
         w = f // c
 
         factors = {}
 
         i = 1
         while w != self.ring.one:
-            y = gcd(w, c).monic()
+            y = cond_monic(gcd(w, c))
             fac = cond_monic(w // y)
 
             if fac != self.ring.one:
@@ -863,7 +907,7 @@ class Polynomial(RingElement):
 
         if self.coeff_ring == ZZ:
             f    = p // content
-            facs = [(poly._fac_ZZ(), num) for poly, num in f.sff().items()]
+            facs = [(poly._fac_ZZ(), num) for poly, num in f.sff().items() if poly.degree()]
 
             for partial_factors, num in facs:
                 for factor in partial_factors:
@@ -1068,7 +1112,7 @@ class Polynomial(RingElement):
         from samson.utilities.runtime import RUNTIME
 
         gmul = self.ground_mul(other)
-        if gmul:
+        if gmul is not None:
             return gmul
 
         other = self.ring.coerce(other)

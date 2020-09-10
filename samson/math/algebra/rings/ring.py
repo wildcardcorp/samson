@@ -250,11 +250,20 @@ class RingElement(BaseObject):
 
 
     def __truediv__(self, other: 'RingElement') -> 'RingElement':
-        if self.ring.coerce(other) == self.ring.one:
+        other = self.ring.coerce(other)
+        if other == self.ring.one:
             return self
 
+        elif other == self:
+            return self.ring.one
+
         if RUNTIME.auto_promote:
-            return _frac.FractionField(self.ring)((self, other))
+            elem = _frac.FractionField(self.ring)((self, other))
+
+            if elem.denominator == self.ring.one:
+                elem = elem.numerator
+
+            return elem
         else:
             raise NotInvertibleException("Non-unit division impossible", parameters={'a': other})
 
@@ -263,7 +272,7 @@ class RingElement(BaseObject):
         return self.ring.coerce(other) / self
 
     def __rfloordiv__(self, other: 'RingElement') -> 'RingElement':
-        return self.ring.coerce(other) / self
+        return self.ring.coerce(other) // self
 
     def __bool__(self) -> bool:
         return self != self.ring.zero

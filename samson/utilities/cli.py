@@ -4,6 +4,7 @@ logging.getLogger().setLevel(logging.WARNING)
 logging.getLogger("samson").setLevel(logging.INFO)
 
 from samson.all import *
+from tqdm import trange
 from samson.auxiliary.autodoc import autodoc
 autodoc(globals())
 x = Symbol('x')

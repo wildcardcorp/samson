@@ -44,7 +44,7 @@ class FiniteFieldElement(FieldElement):
 
     def __mul__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         gmul = self.ground_mul(other)
-        if gmul:
+        if gmul is not None:
             return gmul
 
         other = self.ring.coerce(other)

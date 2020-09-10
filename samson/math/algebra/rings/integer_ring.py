@@ -98,7 +98,7 @@ class IntegerElement(RingElement):
 
     def __mul__(self, other: 'IntegerElement') -> 'IntegerElement':
         gmul = self.ground_mul(other)
-        if gmul:
+        if gmul is not None:
             return gmul
 
         other = self.ring.coerce(other)

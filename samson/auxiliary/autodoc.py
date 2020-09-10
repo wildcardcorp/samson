@@ -87,7 +87,7 @@ class DocExample(object):
     def __repr__(self):
         lines   = self.code.splitlines()
         bg_size = max([len(l) for l in lines])+5
-        return NEWLINE.join([TAB + code_format(f'>>> {line}', bg_size=bg_size) for line in lines]) + f'{NEWLINE}{TAB}{code_format(str(self.result), bg_size=bg_size)}'
+        return NEWLINE.join([TAB + code_format(f'>>> {line}', bg_size=bg_size) for line in lines]) + NEWLINE + NEWLINE.join([TAB + code_format(line, bg_size=bg_size) for line in str(self.result).split('$N$')])
 
 
     def __str__(self):
@@ -228,7 +228,7 @@ def parse_doc(func):
             if example.code:
                 examples.append(example)
             else:
-                examples[-1].result += example.result
+                examples[-1].result += '$N$' + example.result
 
 
     references = []

@@ -34,7 +34,7 @@ PROC_DICT = {
     'str': str_color,
     'bytes': color_text(STR_COLOR),
     'Bytes': color_text(BYTES_COLOR),
-    str(type(None)): color_text(NONE_COLOR),
+    'NoneType': color_text(NONE_COLOR),
     'bool': color_text(BOOL_COLOR),
     'type': cls_color
 }

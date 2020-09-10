@@ -33,7 +33,7 @@ class FractionFieldElement(FieldElement):
         self.field       = field
 
         if self.ring.precision:
-            self.trim_to_precision(self.ring.precision)
+            self.trim_to_precision()
 
 
 
@@ -78,36 +78,44 @@ class FractionFieldElement(FieldElement):
             return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
 
 
-    def trim_to_precision(self, precision: 'FractionFieldElement') -> 'FractionFieldElement':
+    def trim_to_precision(self) -> 'FractionFieldElement':
         """
         WARNING: Side effect based.
 
-        Attempts to trim self so that the error is less than `precision`.
-
-        Parameters:
-            precision (FractionFieldElement): Element to determine if trim is acceptable.
+        Attempts to trim `self` so that the error is less than `precision`.
         """
-        if self.numerator != self.denominator and self.ring.ring.one not in [self.numerator, self.denominator]:
-            if self.numerator > self.denominator:
+        precision      = self.ring.precision
+        precision_type = self.ring.precision_type
+
+        if precision == 'relative':
+            if self.numerator != self.denominator and self.ring.ring.one not in [self.numerator, self.denominator]:
+                if self.numerator > self.denominator:
+                    q,r = divmod(self.numerator, self.denominator)
+                    den = self.ring.ring.one
+                    num = q
+
+                    compare_num = r
+                    compare_den = abs(q)
+
+
+                elif self.numerator < self.denominator:
+                    q,r = divmod(self.denominator, self.numerator)
+                    num = self.ring.ring.one
+                    den = q
+
+                    compare_num = r
+                    compare_den = self.denominator
+
+                if compare_num * precision.denominator < precision.numerator * compare_den:
+                    self.numerator   = num
+                    self.denominator = den
+        else:
+            if self.denominator > precision:
                 q,r = divmod(self.numerator, self.denominator)
-                den = self.ring.ring.one
-                num = q
+                c   = self.ring(r / self.denominator * precision)
 
-                compare_num = r
-                compare_den = abs(q)
-
-
-            elif self.numerator < self.denominator:
-                q,r = divmod(self.denominator, self.numerator)
-                num = self.ring.ring.one
-                den = q
-
-                compare_num = r
-                compare_den = self.denominator
-
-            if compare_num * precision.denominator < precision.numerator * compare_den:
-                self.numerator   = num
-                self.denominator = den
+                self.numerator   = q * precision + c.numerator // c.denominator
+                self.denominator = precision
 
 
     def gcd(self, other):
@@ -129,17 +137,20 @@ class FractionFieldElement(FieldElement):
 
     def __mul__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         gmul = self.ground_mul(other)
-        if gmul:
+        if gmul is not None:
             return gmul
 
         other = self.ring.coerce(other)
         return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
+
     @left_expression_intercept
     def __truediv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         return self * (~self.ring.coerce(other))
 
+
     __floordiv__ = __truediv__
+
 
     def __neg__(self) -> 'FractionFieldElement':
         return FractionFieldElement(-self.numerator, self.denominator, self.ring)
@@ -200,6 +211,7 @@ class FractionField(Field):
         self.ring      = ring
         self.simplify  = simplify
         self.precision = None
+        self.precision_type = None
 
         self.zero = FractionFieldElement(self.ring.zero, self.ring.one, self)
         self.one  = FractionFieldElement(self.ring.one, self.ring.one, self)
@@ -226,11 +238,12 @@ class FractionField(Field):
         return self.ring.order**2
 
 
-    def set_precision(self, precision: FractionFieldElement):
+    def set_precision(self, precision: FractionFieldElement, precision_type: str='absolute'):
         """
         Sets the element used for determine whether a trim is acceptable.
         """
         self.precision = precision
+        self.precision_type = precision_type
 
 
     def random(self, size: int=None) -> FractionFieldElement:
