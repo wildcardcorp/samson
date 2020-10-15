@@ -9,3 +9,4 @@ doc/_build
 scripts/performance/last_run*
 man/_build
 notebooks/.ipynb_checkpoints
+msieve.dat

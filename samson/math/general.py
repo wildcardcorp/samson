@@ -399,32 +399,6 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
     return s
 
 
-def sqrt_int(n: int) -> int:
-    """
-    Return the square root of `n`, rounded down to the nearest integer.
-
-    Parameters:
-        n (int): Integer to take square root of.
-    
-    Returns:
-        int: Square root of `n`.
-    
-    References:
-        https://github.com/skollmann/PyFactorise/blob/master/factorise.py#L478
-    """
-    a = n
-    s = 0
-    o = 1 << (int(math.log2(n)) & ~1)
-    while o != 0:
-        t = s + o
-        if a >= t:
-            a -= t
-            s = (s >> 1) + o
-        else:
-            s >>= 1
-        o >>= 2
-    return s
-
 
 def kth_root(n: int, k: int) -> int:
     """
@@ -447,18 +421,57 @@ def kth_root(n: int, k: int) -> int:
 
     References:
         https://stackoverflow.com/questions/23621833/is-cube-root-integer
+        https://github.com/sympy/sympy/blob/c0bfc81f3ffee97c6d6732ac5e5ccf399e5ab3e2/sympy/core/power.py#L84
+        https://en.wikipedia.org/wiki/Newton%27s_method
     """
-    ub = n
+    # Estimate the root using floating point exponentiation
+    # This typically is within 1e-10 of the actual root for large integers
+    try:
+        guess = int(n**(1/k))
 
-    for _ in range(k.bit_length()-1):
-        ub = sqrt_int(ub)
+    except OverflowError:
+        # If we overflow the float's precision, we can use a bit of math
+        # to calculate it at a lower precision and shift it.
+        # This still tends to be highly accurate
+        e = math.log2(n)/k
+        if e > 53:
+            shift = int(e - 53)
+            guess = int(2.0**(e - shift) + 1) << shift
+        else:
+            guess = int(2.0**e)
 
 
-    if is_power_of_two(k):
-        return ub + (ub**k < n)
+    # Use Newton's method to rapidly converge on the root
+    rprev, root, k_1 = -1, guess, k-1
+    while root > 2:
+        approx = root**k_1
+        rprev, root = root, (k_1*root + n//approx) // k
+        if abs(root - rprev) < 2:
+            break
 
 
-    lb = sqrt_int(ub)
+    t = root**k
+    if t == n:
+        return root
+
+    # If we're very close, then try incrementing/decrementing
+    diff = n-t
+    if abs(diff)/n < 0.1:
+        if diff > 0:
+            while t < n:
+                root += 1
+                t     = root**k
+        else:
+            while t > n:
+                root -= 1
+                t     = root**k
+
+        return root
+
+
+    # If we're still not there, use binary search to comb through the rest of the space
+    ub = root
+    lb = 0 if ub < 512 else ub // 2
 
     while lb < ub:
         guess = (lb + ub) // 2
@@ -478,10 +491,10 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
         n      (int/QQ): Integer.
         k         (int): Root (e.g. 2).
         precision (int): Bits of precision.
-    
+
     Returns:
         FractionFieldElement: `k`-th rational root of `n
-    
+
     Examples:
         >>> from samson.math.general import kth_root_qq
         >>> kth_root_qq(2, 2, 32)
@@ -526,7 +539,7 @@ def crt(residues: list) -> (object, object):
 
     Returns:
         (RingElement, RingElement): Formatted as (computed `x`, modulus).
-    
+
     Examples:
         >>> from samson.math.general import crt
         >>> from samson.math.algebra.all import ZZ
@@ -599,38 +612,41 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
         >>> rings = [ZZ/ZZ(quotient) for quotient in [229, 246, 93, 22, 408]]
         >>> crt_lll([r(x) for r in rings])
         <QuotientElement: val=684250860, ring=ZZ/ZZ(1306272792)>
-    
+
     References:
         https://grocid.net/2016/08/11/solving-problems-with-lattice-reduction/
     """
-    from samson.math.all import QQ
-    ZZ = _integer_ring.ZZ
+    from samson.math.algebra.fields.fraction_field import FractionField as Frac
+    import operator
     Matrix = _mat.Matrix
+
+    R = residues[0].ring.ring
+    Q = Frac(R)
 
     # Remove redundant subgroups to minimize result
     if remove_redundant:
         reduc_func = lcm
     else:
-        reduc_func = int.__mul__
+        reduc_func = operator.mul
 
     # Calculate composite modulus
-    L = reduce(reduc_func, [int(r.ring.quotient) for r in residues], 1)
+    L = reduce(reduc_func, [r.ring.quotient for r in residues])
 
 
     # Build the problem matrix
     r_len = len(residues)
 
     A = Matrix([
-        [1 for r in residues] + [QQ((1, L)), 0],
-        *[[0]*idx + [int(r.ring.quotient)] + [0]*(1+r_len-idx) for idx, r in enumerate(residues)],
-        [0 for r in residues] + [QQ.one, 0],
-        [-(int(r.val)) for r in residues] + [0, L]
-    ], QQ)
+        [Q.one for r in residues] + [Q((R.one, L)), Q.zero],
+        *[[Q.zero]*idx + [Q(r.ring.quotient)] + [Q.zero]*(1+r_len-idx) for idx, r in enumerate(residues)],
+        [Q.zero for r in residues] + [Q.one, Q.zero],
+        [Q(-r.val) for r in residues] + [Q.zero, L]
+    ], Q)
 
 
     B = A.LLL(0.99)
 
-    return (ZZ/ZZ(L))((B[-1, -2] * L).numerator)
+    return (R/R(L))((B[-1, -2] * L).numerator)
 
 
 class ResidueSymbol(Enum):
@@ -646,10 +662,10 @@ def legendre(a: int, p: int) -> ResidueSymbol:
     Parameters:
         a (int): Possible quadatric residue.
         p (int): Modulus.
-    
+
     Returns:
         ResidueSymbol: Legendre symbol.
-    
+
     Examples:
         >>> from samson.math.general import legendre
         >>> legendre(4, 7)
@@ -1906,12 +1922,13 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
 
 
 _FB_LARGE_MOD = 3989930175
-def is_square(n: int) -> bool:
+def is_square(n: int, heuristic_only: bool=False) -> bool:
     """
     Determines if `n` is a square using "fenderbender" tests first.
 
     Parameters:
-        n (int): Number to test.
+        n               (int): Number to test.
+        heuristic_only (bool): Whether or not to only use heuristic tests and not validate.
 
     Returns:
         bool: Whether or not `n` is a square.
@@ -1944,6 +1961,9 @@ def is_square(n: int) -> bool:
     m = n_mod % 25
     if ((m*0x1929fc1b) & (m*0x4c9ea3b2) & 0x51001005):
          return False
+
+    if heuristic_only:
+        return n % 10 not in {2,3,7,8}
 
     return kth_root(n, 2)**2 == n
 
@@ -2497,3 +2517,47 @@ def prime_number_theorem(n: int) -> int:
 
 
 pnt = prime_number_theorem
+
+
+def continued_fraction(frac: 'FractionFieldElement') -> list:
+    """
+    Calculates the continued fraction form of `frac`.
+
+    Parameters:
+        frac (FractionFieldElement): Fraction.
+    
+    Returns:
+        list: Continued fraction.
+    """
+    n, d = frac.numerator, frac.denominator
+    cf   = []
+
+    while True:
+        q,r = divmod(n, d)
+        cf.append(q)
+
+        if not r:
+            break
+        
+        n, d = d, r
+
+    return cf
+
+
+def eval_continued_fraction(cf: list) -> 'FractionFieldElement':
+    """
+    Derives the fraction form for `cf`.
+
+    Parameters:
+        cf (list): Continued fraction.
+    
+    Returns:
+        FractionFieldElement: Corresponding fraction.
+    """
+    from samson.math.all import QQ
+
+    w = QQ(cf[0])
+
+    if len(cf) > 1:
+        w += ~eval_continued_fraction(cf[1:])
+    return w

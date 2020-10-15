@@ -218,11 +218,11 @@ def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) ->
         port        (int): Port to connect to.
         parse_cert (bool): Whether or not to automatically parse the certificate.
         timeout     (int): Timeout for the TCP connection.
-    
+
     Returns:
         bytes/dict: Certificate (possibly decoded).
     """
-    context = ssl.create_default_context()
+    context = ssl._create_unverified_context()
     context.check_hostname = False
 
     conn = socket.create_connection((host, port), timeout=timeout)
@@ -237,7 +237,7 @@ def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) ->
     if parse_cert:
         from samson.encoding.pem import pem_decode
         from samson.encoding.general import PKIAutoParser
-        cert = PKIAutoParser.get_encoding(cert).get_attributes(pem_decode(cert))
+        cert = PKIAutoParser.import_key(cert)
     else:
         cert = ssl.DER_cert_to_PEM_cert(cert).encode('utf-8')
 

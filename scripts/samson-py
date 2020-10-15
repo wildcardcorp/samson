@@ -6,6 +6,7 @@ logging.getLogger('asyncio').setLevel(logging.WARNING)
 from samson.encoding.general import PKIAutoParser
 from samson.utilities.cli import start_repl, start_exec, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
 from samson.utilities.bytes import Bytes
+from samson.utilities.runtime import RUNTIME
 import argparse
 import sys
 
@@ -16,6 +17,10 @@ parser.add_argument('--eval', action='store_true')
 
 load_parser = subparsers.add_parser('load')
 load_parser.add_argument('loadfile')
+
+factor_parser = subparsers.add_parser('factor')
+factor_parser.add_argument('int_to_fac')
+factor_parser.add_argument('--args', nargs="?")
 
 hash_parser = subparsers.add_parser('hash')
 hash_parser.description = f"Available hash types: {', '.join([k for k,v in HASHES.items()])}"
@@ -58,6 +63,28 @@ def try_parse(val):
 PARSE_METHOD = try_parse
 
 
+
+import re
+_spec_re = re.compile(r'([%@])')
+
+def process_specials(arg):
+    curr = None
+    for cmd in [_ for _ in _spec_re.split(arg)[::-1] if _ ]:
+        if cmd == "@":
+            with open(curr, 'rb') as f:
+                curr = f.read()
+
+        elif cmd == "%":
+            curr = eval(curr)
+
+        else:
+            curr = cmd
+
+    return curr
+
+
+
+
 def export_pki(pki_obj, arguments):
     if arguments.encoding:
         encoding = ENCODING_MAPPING[arguments.encoding.upper()]
@@ -73,11 +100,12 @@ def export_pki(pki_obj, arguments):
                 literals[i] = f'#{i}'
 
 
-        processed_args = [arg.split('=') for arg in ''.join(literals).split(',')]
+        processed_args = [arg.strip().split('=') for arg in ''.join(literals).split(',')]
         for i, (_, v)in enumerate(processed_args):
             processed_args[i][1] = preprocessed_literals.get(v) or v
+        
 
-        encoding_args = {k: PARSE_METHOD(v) for k,v in processed_args}
+        encoding_args = {k: PARSE_METHOD(process_specials(v)) for k,v in processed_args}
         if 'signing_key' in encoding_args:
             with open(encoding_args['signing_key'], 'rb') as f:
                 encoding_args['signing_key'] = PKIAutoParser.import_key(f.read()).key
@@ -108,13 +136,22 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         start_repl()
 
-    elif len(sys.argv) == 3:
+    elif arguments.command == 'load':
         with open(arguments.loadfile) as f:
             exec(start_exec + "\n" + f.read())
 
     else:
+        RUNTIME.minimize_output = False
+
         if arguments.eval:
             PARSE_METHOD = eval
+
+        # Process arguments
+        if hasattr(arguments, 'args') and arguments.args:
+            dict_args = {k: PARSE_METHOD(process_specials(v)) for k,v in [arg.strip().split('=') for arg in arguments.args.split(',')]}
+        else:
+            dict_args = {}
+
 
         if arguments.command == 'hash':
             hash_cls = HASHES[arguments.type.lower()]
@@ -130,10 +167,6 @@ if __name__ == '__main__':
             if type(text) is str:
                 text = text.encode('utf-8')
 
-            if arguments.args:
-                dict_args = {k: int(v) for k,v in [arg.split('=') for arg in arguments.args.split(',')]}
-            else:
-                dict_args = {}
 
             hash_obj = hash_cls(**dict_args)
             print(hash_obj.hash(text).hex().decode())
@@ -141,17 +174,13 @@ if __name__ == '__main__':
 
         elif arguments.command == 'pki':
             pki_type = arguments.type.lower()
-            pki_cls = PKI[pki_type]
-
-            if arguments.args:
-                dict_args = {k: try_parse(v) for k,v in [arg.split('=') for arg in arguments.args.split(',')]}
-            else:
-                dict_args = {}
+            pki_cls  = PKI[pki_type]
 
             if "curve" in dict_args:
                 if pki_type == 'ecdsa':
                     dict_args["G"] = EC_CURVES[dict_args["curve"]].G
                     del dict_args["curve"]
+
                 elif pki_type == 'eddsa':
                     dict_args["curve"] = ED_CURVES[dict_args["curve"]]
 
@@ -161,10 +190,15 @@ if __name__ == '__main__':
                 pki_obj = pki_cls(**dict_args)
                 export_pki(pki_obj, arguments)
 
+
             elif arguments.action == 'parse':
                 if arguments.filename:
-                    with open(arguments.filename, 'rb') as f:
-                        key_to_parse = f.read()
+                    key_to_parse = PARSE_METHOD(process_specials(arguments.filename))
+
+                    if type(key_to_parse) is str:
+                        key_to_parse = key_to_parse.encode('utf-8')
+                    
+                    key_to_parse = key_to_parse.strip()
 
                 else:
                     key_to_parse = sys.stdin.read().encode('utf-8')
@@ -172,15 +206,19 @@ if __name__ == '__main__':
                 pki_obj = pki_cls.import_key(key_to_parse)
 
                 if arguments.encoding:
-                    export_pki(pki_obj, arguments)
+                    export_pki(pki_obj.key, arguments)
                 else:
                     print(pki_obj)
-            
+
             elif arguments.action == 'info':
                 print(f'Class: {pki_cls}\n')
                 print(f"Available private key encodings: {', '.join([str(k) for k,v in pki_cls.PRIV_ENCODINGS.items()])}")
                 print(f"Available public key encodings : {', '.join([str(k) for k,v in pki_cls.PUB_ENCODINGS.items()])}")
                 print(f'{pki_cls.__doc__}{pki_cls.__init__.__doc__}')
-            
+
             else:
                 raise Exception('Invalid action. Please choose from "generate" and "parse".')
+
+        elif arguments.command == 'factor':
+            from samson.math.factorization.general import factor
+            print(factor(PARSE_METHOD(process_specials(arguments.int_to_fac)), **dict_args))

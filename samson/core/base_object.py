@@ -1,4 +1,5 @@
 from samson.auxiliary.console_colors import ConsoleColors, color_format
+from samson.utilities.runtime import RUNTIME
 import dill
 
 FIELD_COLOR = '38;2;175;150;0'
@@ -11,7 +12,7 @@ BOOL_COLOR  = ConsoleColors.LAVENDER
 
 def int_proc(a):
     is_long = a.bit_length() > 256
-    if is_long:
+    if is_long and RUNTIME.minimize_output:
         a_str = f'...{str(a)[-70:]}'
     else:
         a_str = str(a)

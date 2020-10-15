@@ -190,6 +190,8 @@ class X509Certificate(PEMEncodable):
 
     @classmethod
     def decode(cls, buffer: bytes, **kwargs) -> object:
+        from samson.encoding.general import PKIAutoParser
+
         cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
 
         signature    = Bytes(int(cert['signatureValue']))
@@ -228,7 +230,7 @@ class X509Certificate(PEMEncodable):
 
         buffer      = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
         key         = cls.PUB_KEY_DECODER.decode(buffer).key
-        signing_alg = key.X509_SIGNING_ALGORITHMS.__members__[cert_sig_alg.replace('-', '_')].value
+        signing_alg = PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg.replace('-', '_')).value
 
         return cls(
             key=key, version=version, serial_number=serial_num, issuer=issuer, subject=subject,

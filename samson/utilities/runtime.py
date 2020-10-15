@@ -20,7 +20,7 @@ class RuntimeConfiguration(object):
     Global runtime configuration. Allows for the dynamic configuration of existing samson code.
     """
 
-    def __init__(self, log_fmt: str='%(asctime)s - %(name)s [%(levelname)s] %(message)s', use_color: bool=True, use_rich: bool=True):
+    def __init__(self, log_fmt: str='%(asctime)s - %(name)s [%(levelname)s] %(message)s', use_color: bool=True, use_rich: bool=True, minimize_output: bool=True):
         # Initialize reporter
         try:
             from samson.auxiliary.tqdm_handler import TqdmHandler
@@ -58,9 +58,18 @@ class RuntimeConfiguration(object):
 
         self.random = lambda size: URANDOM.read(size)
         self.poly_fft_heuristic = default_poly_fft_heuristic
-        self.default_short_printer = lambda elem: elem.tinyhand()
+
+        if minimize_output:
+            self.default_short_printer = lambda elem: elem.tinyhand()
+        else:
+            self.default_short_printer = lambda elem: elem.shorthand()
+        
+        self.minimize_output = minimize_output
+    
         self.enable_poly_intercept = False
         self.auto_promote = True
+
+        self.last_tb = None
 
 
         # Find mseive
@@ -261,6 +270,7 @@ class RuntimeConfiguration(object):
 
         def showtraceback(self, _type, exception, trace):
             _type, exception, trace = sys.exc_info()
+            RUNTIME.last_tb = trace
             traceback_console.print(
                 Traceback.from_exception(_type, exception, trace.tb_next)
             )

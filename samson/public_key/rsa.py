@@ -313,12 +313,12 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
 
     @staticmethod
-    def duplicate_ciphertext_key_selection(bits: int, plaintext: bytes, ciphertext: bytes, max_glue_size: int=20) -> 'RSA':
+    def duplicate_ciphertext_key_selection(n: int, plaintext: bytes, ciphertext: bytes, max_glue_size: int=20) -> 'RSA':
         """
-        Generates an `RSA` key of size slightly greater than `bits` such that `ciphertext` decrypts to `plaintext`.
+        Generates an `RSA` key of size greater than `n` such that `ciphertext` decrypts to `plaintext`.
 
         Parameters:
-            bits          (int): Minimum size of RSA key to generate.
+            n             (int): Target RSA modulus.
             plaintext   (bytes): Plaintext to decrypt to.
             ciphertext  (bytes): Target ciphertext.
             max_glue_size (int): Maximum bit size of prime divisors of `p-1` and `q-1`. Used internally.
@@ -330,7 +330,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             >>> from samson.public_key.rsa import RSA
             >>> rsa = RSA(256)
             >>> ct  = rsa.encrypt(b'mymsg')
-            >>> dup = RSA.duplicate_ciphertext_key_selection(rsa.bits, b'malicious', ct)
+            >>> dup = RSA.duplicate_ciphertext_key_selection(rsa.n, b'malicious', ct)
             >>> dup.decrypt(ct)
             <Bytes: b'malicious', byteorder='big'>
 
@@ -338,14 +338,15 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             https://toadstyle.org/cryptopals/61.txt
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import pohlig_hellman, crt, next_prime
+        from samson.math.general import pohlig_hellman, crt, next_prime, kth_root
         from samson.math.prime_gen import PrimeEngine
         from samson.math.factorization.general import factor
         from samson.utilities.exceptions import SearchspaceExhaustedException
 
-        pt = Bytes.wrap(plaintext).int()
-        ct = Bytes.wrap(ciphertext).int()
-        prime_size = (bits+1) // 2 + 1
+        pt   = Bytes.wrap(plaintext).int()
+        ct   = Bytes.wrap(ciphertext).int()
+        bits = n.bit_length()
+        prime_size = (bits+1) // 2
 
         def find_e_residue(p, m, s):
             Zp  = ZZ/ZZ(p)
@@ -357,8 +358,15 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             try:
                 find_e_residue(p, pt, ct)
                 return True
-            except SearchspaceExhaustedException as e:
+            except SearchspaceExhaustedException:
                 return False
+
+
+        # By ensuring both primes are greater than sqrt(n), we guarantee our modulus
+        # will be larger and thus large enough for the plaintext.
+        sqrt = kth_root(n, 2)
+        def is_greater(p):
+            return p > sqrt
 
 
         # `pt` and `ct` must be in the same subgroup, so we'll just ensure they're
@@ -366,7 +374,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         constraints = [
             PrimeEngine.CONSTRAINTS.HAS_PRIMITIVE_ROOT(pt),
             PrimeEngine.CONSTRAINTS.HAS_PRIMITIVE_ROOT(ct),
-            has_res
+            has_res,
+            is_greater
         ]
 
         p_base = 3
@@ -383,7 +392,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             q_base = next_prime(q_base+1)
 
 
-        q = PrimeEngine.GENS.SMOOTH(prime_size, base=q_base, max_glue_size=max_glue_size, glue_prime_exclude={f for f in p_1_facs}).generate(constraints)
+        q = PrimeEngine.GENS.SMOOTH(prime_size, base=q_base, max_glue_size=max_glue_size, glue_prime_exclude=set(p_1_facs)).generate(constraints)
 
 
         # Craft `e`

@@ -1,4 +1,6 @@
-from math import log, sqrt, pi
+from math import log, sqrt, pi, ceil, log1p
+from samson.math.general import random_int
+from tqdm import tqdm
 import operator as _operator
 import json
 import difflib as _difflib
@@ -189,8 +191,11 @@ def birthday_attack_analysis(bits: int, probability: float) -> float:
     
     Returns:
         float: Average number of attempts before collision.
+    
+    References:
+        https://en.wikipedia.org/wiki/Birthday_attack#Mathematics
     """
-    return sqrt(2 * 2**bits * log(1/(1-probability)))
+    return sqrt(2 * 2**bits * -log1p(-probability))
 
 
 EULER_MASCHERONI_CONSTANT = 0.577216
@@ -263,7 +268,7 @@ def probability_of_x_occurences(n: int, x: int, p: float) -> float:
     Returns:
         float: Probability of total event.
     """
-    return p**x*(1-p)**(n-x)
+    return ncr(n, x)*p**x*(1-p)**(n-x)
 
 
 
@@ -281,6 +286,79 @@ def probability_of_at_least_x_occurences(n: int, x: int, p: float) -> float:
     """
     return sum(ncr(n, k)*p**k*(1-p)**(n-k) for k in range(x,n))
 
+
+def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> int:
+    """
+    Calculates the minimum number of attempts of an event with probability `p` to occur with `desired_prob` probability.
+
+    Parameters:
+        p            (int): Probability event will occur.
+        desired_prob (int): Probability to reach.
+
+    Returns:
+        int: Number of attempts.
+    
+    Examples:
+        >>> from samson.analysis.general import number_of_attempts_to_reach_probability, simulate_event
+        >>> d = number_of_attempts_to_reach_probability(1/100, 0.5)
+        >>> # Note we're checking how many times it happens at least once, not the number of times it happens
+        >>> result = sum([simulate_event(1/100, d) > 0 for _ in range(10000)]) / 10000
+        >>> d, abs(result - 0.5) < 0.05
+        (69, True)
+
+    """
+    return ceil(log1p(-desired_prob)/log1p(-p))
+
+
+def simulate_event(p: float, attempts: int) -> int:
+    """
+    Simulates an event with probability `p` for `attempts` attempts and returns the number of times it occured.
+
+    Parameters:
+        p        (int): Probability event will occur.
+        attempts (int): Number of attempts.
+
+    Returns:
+        int: Number of occurences.
+    """
+    space = ceil(1/p)
+    total = 0
+
+    for _ in range(attempts):
+        total += not random_int(space)
+
+    return total
+
+
+def simulate_until_event(p: float, runs: int, visual: bool=False) -> float:
+    """
+    Simulates an event with probability `p` for `runs` runs and returns the average number of attempts until it occured.
+
+    Parameters:
+        p       (int): Probability event will occur.
+        runs    (int): Number of runs.
+        visual (bool): Whether or not to display a progress bar.
+
+    Returns:
+        float: Average number of attempts.
+    """
+    space = ceil(1/p)
+    total = 0
+
+    r_iter = range(runs)
+    if visual:
+        r_iter = tqdm(r_iter)
+
+    for _ in r_iter:
+        curr = 0
+        while True:
+            curr += 1
+            if not random_int(space):
+                break
+        
+        total += curr
+
+    return total / runs
 
 
 def generate_rc4_bias_map(ciphertexts):

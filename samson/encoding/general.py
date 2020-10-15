@@ -308,6 +308,22 @@ class PKIAutoParser(object):
             buffer = pem_decode(buffer, passphrase)
 
         return PKIAutoParser.get_encoding(buffer, passphrase=passphrase).decode(buffer, passphrase=passphrase)
+    
+
+    @staticmethod
+    def resolve_x509_signature_alg(name: str):
+        from samson.core.encodable_pki import EncodablePKI
+        subclasses = [EncodablePKI]
+
+        for subclass in subclasses:
+            subclasses.extend(subclass.__subclasses__())
+        
+        for subclass in subclasses:
+            if hasattr(subclass, 'X509_SIGNING_ALGORITHMS'):
+                try:
+                    return subclass.X509_SIGNING_ALGORITHMS[name]
+                except KeyError:
+                    pass
 
 
 

@@ -13,7 +13,13 @@ class Factors(object):
         return f'<Factors: {self.factors}>'
 
     def __str__(self):
-        return ' * '.join([f"({fac}){'**' + str(exponent) if exponent > 1 else ''}" for fac, exponent in self.factors.items()])
+        facs = list(self.factors.items())
+        if facs and type(facs[0][0]) is int:
+            fac_format = "{fac}"
+        else:
+            fac_format = "({fac})"
+
+        return ' * '.join([f"{fac_format.format(fac=fac)}{'**' + str(exponent) if exponent > 1 else ''}" for fac, exponent in facs])
 
 
     def __getitem__(self, idx: int):

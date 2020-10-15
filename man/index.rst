@@ -30,6 +30,8 @@ TOP-LEVEL
 
 **pki** - traverses to the 'pki' subcommand tree
 
+**factor** - traverses to the 'factor' subcommand tree
+
 
 LOAD SUBCOMMANDS
 ----------------
@@ -68,6 +70,12 @@ PKI SUBCOMMANDS
 
 **filename** - file to read PKI data from
 
+
+FACTOR SUBCOMMANDS
+----------------
+**-h** - shows the dynamic help menu
+
+**int_to_factor** - integer to factor
 
 
 EXAMPLES

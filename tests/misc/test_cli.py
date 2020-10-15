@@ -1,4 +1,5 @@
 from samson.utilities.cli import HASHES, PKI, ENCODING_MAPPING
+from copy import deepcopy
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 import unittest

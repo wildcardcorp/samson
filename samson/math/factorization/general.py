@@ -303,17 +303,15 @@ def williams_pp1(n: int, max_bound: int=None, max_attempts: int=50, exp_func: Fu
                 break
 
 
-
-def is_perfect_power(n: int, minimum_base: int=3) -> (bool, int, int):
+def is_perfect_power(n: int) -> (bool, int, int):
     """
     Determines if `n` is a perfect power. If it is, the root and exponent are returned.
 
     Parameters:
-        n            (int): Possible perfect power.
-        minimum_base (int): Minimum base to explicitly check for. Note: the algorithm may still find the correct base below this.
+        n (int): Possible perfect power.
 
     Returns:
-        (bool, int, int): Formatted as (is_prime_power, root, exponent).
+        (bool, int, int): Formatted as (is_perfect_power, root, exponent).
     
     Examples:
         >>> from samson.math.factorization.general import is_perfect_power
@@ -324,50 +322,40 @@ def is_perfect_power(n: int, minimum_base: int=3) -> (bool, int, int):
     References:
         https://mathoverflow.net/a/106316
     """
-    kth_root = _samson_math.kth_root
+    kth_root   = _samson_math.kth_root
     is_power_of_two = _samson_math.is_power_of_two
-    is_prime = _samson_math.is_prime
     next_prime = _samson_math.next_prime
+    is_square  = _samson_math.is_square
+    
+    logn  = math.log2(n)
+    max_p = int(logn) + 2
 
     if is_power_of_two(n):
-        return True, 2, int(math.log(n, 2))
+        return True, 2, int(logn)
 
-    e = 1
-    last_root = n
-    min_m1 = minimum_base-1
 
-    p = 2
-    while True:
-        is_root = True
+    p = 2 + (not is_square(n, heuristic_only=True))
+    while p < max_p:
+        # Heuristic to determine if exponent is even feasible
+        z = logn/p
+        if z < 40:
+            b = 2.0**z
+            if abs(round(b)-b) > 0.01:
+                p = next_prime(p+1)
+                continue
 
-        # Keep trying to remove `p` roots out
-        while is_root:
-            root    = kth_root(last_root, p)
-            is_root = root**p == last_root
+        root    = kth_root(n, p)
+        is_root = root**p == n
 
-            if is_root:
-                if is_prime(root):
-                    e = e*p
-                    return e > 1, root, e
-                else:
-                    last_root = root
-                    e         *= p
+        if is_root:
+            _, m, m_e = is_perfect_power(root)
+            e = m_e*p
+            return e > 1, m, e
 
-            elif root > min_m1:
-                # Make sure we don't overflow Python
-                if root.bit_length() < 1024:
-                    # We can calculate the minimum root that produces the next base
-                    # Imagine the following: n = 3**2113, p = 2003, root = 4
-                    # The next prime is 2011, but 'kth_root(n, 2011)' is also 4.
-                    # Thus, we've tried nothing new. The following calculations
-                    # allow us to skip redudant primes
-                    next_base = math.ceil(int(math.log(last_root, root-1)))
-                    p = max(next_prime(next_base), next_prime(p+1))
-                else:
-                    p = next_prime(p+1)
+        p = next_prime(p+1)
+    
+    return False, n, 1
 
-            else:
-                return e > 1, last_root, e
 
 
 
@@ -675,7 +663,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
     # It's relatively cheap and can instantly factor the rest
     def check_perfect_powers(n):
         if perfect_power_checks and not is_factored(n):
-            ipp, root, k = is_perfect_power(n, minimum_base=1009)
+            ipp, root, k = is_perfect_power(n)
             if ipp:
                 for fac, exponent in factor(root).items():
                     e_k = exponent*k

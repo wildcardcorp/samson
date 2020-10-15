@@ -205,16 +205,21 @@ class Polynomial(RingElement):
             https://crypto.stanford.edu/pbc/notes/numbertheory/poly.html
             https://math.stackexchange.com/questions/170128/roots-of-a-polynomial-mod-n
         """
-        from samson.math.general import crt
         from samson.math.algebra.rings.integer_ring import ZZ
 
         R = self.coeff_ring
+        is_field = R.is_field()
 
-        if R.is_field() or R == ZZ:
+        if is_field or R == ZZ:
+            if is_field and self.degree() == 1:
+                return [-self.monic()[0]]
+
             facs = self.factor()
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
         else:
+            from samson.math.general import crt
+
             all_facs = []
             q_facs   = R.quotient.factor()
             for fac in q_facs:
