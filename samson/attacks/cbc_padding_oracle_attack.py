@@ -23,20 +23,22 @@ class CBCPaddingOracleAttack(object):
         * The user has access to an oracle that attempts to decrypt arbitrary ciphertext
     """
 
-    def __init__(self, oracle: PaddingOracle, iv: bytes, block_size: int=16, alphabet=[byte for byte in range(256)], batch_requests: bool=False):
+    def __init__(self, oracle: PaddingOracle, iv: bytes, block_size: int=16, alphabet: list=[byte for byte in range(256)], batch_requests: bool=False, threads: int=1):
         """
         Parameters:
-            oracle (PaddingOracle): An oracle that takes in a bytes-like object and returns a boolean
-                                    indicating whether the padding was correct.
-            iv             (bytes): Initialization vector (or previous ciphertext block) of the ciphertext
-                                    to crack.
+            oracle (PaddingOracle): An oracle that takes in a bytes-like object and returns a boolean indicating whether the padding was correct.
+            iv             (bytes): Initialization vector (or previous ciphertext block) of the ciphertext to crack.
             block_size       (int): Block size of the block cipher being used.
+            alphabet        (list): Bytes range the plaintext is made out of.
+            batch_requests  (bool): Whether or not the oracle can take batch requests.
+            threads          (int): Number of threads to use.
         """
         self.oracle     = oracle
         self.iv         = Bytes.wrap(iv)
         self.block_size = block_size
         self.alphabet   = alphabet
         self.batch_requests = batch_requests
+        self.threads    = threads
 
 
     @RUNTIME.report
@@ -87,16 +89,14 @@ class CBCPaddingOracleAttack(object):
                     best_block = self.oracle.check_padding([k for k,v in exploit_blocks.items()])
                     last_working_char = exploit_blocks[best_block]
                     log.debug(f"Found working byte: {last_working_char}")
-                else:
-                    # Oracle can't handle batch requests. Feed blocks into it.
-                    for exploit_block, byte in exploit_blocks.items():
-                        if self.oracle.check_padding(exploit_block):
-                            log.debug(f"Found working byte: {byte}")
-                            last_working_char = byte
 
-                        # Early out optimization. Note, we're being careful about PKCS7 padding here.
-                        if last_working_char and ord(byte) >= self.block_size:
-                            break
+                else:
+                    @RUNTIME.threaded(threads=self.threads, starmap=True)
+                    def attempt_exploit_block(exploit_block, byte):
+                        if self.oracle.check_padding(exploit_block):
+                            return byte
+
+                    last_working_char = max([b for b in attempt_exploit_block(exploit_blocks.items()) if b is not None])
 
                 plaintext = last_working_char + plaintext
 

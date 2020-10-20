@@ -1,5 +1,5 @@
 from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv
-from samson.math.factorization.general import factor as factorint
+from samson.math.factorization.general import trial_division
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.oracle import Oracle
@@ -23,7 +23,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
     * The left over key space is small enough to solve DLP
     """
 
-    def __init__(self, oracle: Oracle, p: int, g: int, order: int):
+    def __init__(self, oracle: Oracle, p: int, g: int=None, order: int=None, threads: int=1):
         """
         Parameters:
             oracle (Oracle): Oracle that accepts (public_key: int, factor: int) and returns (residue: int).
@@ -34,11 +34,16 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         self.oracle = oracle
         self.p = p
         self.g = g
-        self.order = order
+        self._group  = (ZZ/ZZ(p)).mul_group()
+        self.order   = order or (self._group(g).order if g else self._group.order)
+        self.threads = threads
+
+        if order:
+            self._group.order_cache = order
 
 
     @RUNTIME.report
-    def execute(self, public_key: int, max_factor_size: int=2**16) -> int:
+    def execute(self, public_key: int, max_factor_size: int=2**16, t: int=0) -> int:
         """
         Executes the attack.
 
@@ -50,32 +55,52 @@ class DiffieHellmanSubgroupConfinementAttack(object):
             int: Private key.
         """
         # Factor as much as we can
-        factors = [r for r in factorint((self.p - 1) // self.order, use_rho=True, limit=max_factor_size, use_siqs=False) if r < max_factor_size]
-        log.debug(f'Found factors: {factors}')
+        facs = trial_division(self.p-1, limit=max_factor_size)
+        log.debug(f'Found factors: {facs}')
 
-        residues = []
+        if not t:
+            # If it's a primitive root, it will generate the full group
+            while not t or not t.is_primitive_root():
+                t = self._group(random_int_between(2, self.p))
+
+            t = int(t)
+
+            log.debug(f'Found primitive root: {t}')
+
 
         # Request residues from crafted public keys
-        for factor in RUNTIME.report_progress(factors, desc='Sending malicious public keys', unit='factor'):
-            h = 1
-            while h == 1:
-                h = pow(random_int_between(1, self.p), (self.p-1) // factor, self.p)
+        @RUNTIME.threaded(threads=self.threads, starmap=True)
+        def find_residues(fac, exponent):
+            res = 0
 
-            residue = self.oracle.request(h, factor)
-            residues.append((residue, factor))
+            for curr_e in range(1, exponent+1):
+                subgroup = fac**curr_e
+
+                h = pow(t, (self.p-1) // subgroup, self.p)
+
+                for i in range(res, subgroup+1, subgroup // fac):
+                    if self.oracle.request(h, pow(h, i, self.p)):
+                        res = i
+                        break
+
+                res %= subgroup
+
+            return res, subgroup
+
+        residues = find_residues(facs.items())
 
 
         # Build partials using CRT
         n, r = crt(residues)
 
         # Oh, I guess we already found it...
-        if r > self.order:
+        if r >= self.order:
             return n
 
         g_prime = pow(self.g, r, self.p)
         y_prime = (public_key * mod_inv(pow(self.g, n, self.p), self.p)) % self.p
 
-        log.info(f'Recovered {"%.2f"%math.log(reduce(int.__mul__, factors, 1), 2)}/{"%.2f"%math.log(self.order, 2)} bits')
+        log.info(f'Recovered {"%.2f"%math.log(reduce(int.__mul__, facs, 1), 2)}/{"%.2f"%math.log(self.order, 2)} bits')
         log.info(f'Found relation: x = {n} + m*{r}')
         log.debug(f"g' = {g_prime}")
         log.debug(f"y' = {y_prime}")

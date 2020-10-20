@@ -1,7 +1,9 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
+from samson.math.algebra.curves.named import _PRECOMPUTED_ICA_PLANS, _PRECOMPUTED_ICA_ORDERS
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import crt
-from samson.math.factorization.general import factor as factorint
+from samson.math.general import crt, tonelli, product, lcm
+from samson.math.factorization.general import factor
+from samson.protocols.ecdhe import ECDHE
 from samson.utilities.runtime import RUNTIME
 from typing import List
 import itertools
@@ -25,14 +27,16 @@ class InvalidCurveAttack(object):
     * The user has access to an oracle that accepts arbitrary public keys and returns the residue
     """
 
-    def __init__(self, oracle: 'Oracle', curve: WeierstrassCurve):
+    def __init__(self, oracle: 'Oracle', curve: WeierstrassCurve, threads: int=1):
         """
         Parameters:
             oracle          (Oracle): Oracle that accepts (public_key: WeierstrassPoint, factor: int) and returns (residue: int).
             curve (WeierstrassCurve): Curve that the victim is using.
         """
-        self.oracle = oracle
-        self.curve  = curve
+        self.oracle  = oracle
+        self.curve   = curve
+        self.threads = threads
+
 
 
     @RUNTIME.report
@@ -47,72 +51,147 @@ class InvalidCurveAttack(object):
         
         Returns:
             int: Private key.
+
+        References:
+            "Validation of Elliptic Curve Public Keys" (https://iacr.org/archive/pkc2003/25670211/25670211.pdf)
         """
         residues     = []
         factors_seen = set()
         total        = 1
 
+        # Reaching cardinality only determines the key up to sign.
+        # By getting to cardinality squared, we can get the exact key
+        # without having to do a lengthy bruteforce
         reached_card = False
-        cardinality  = self.curve.cardinality()
+        cardinality  = self.curve.cardinality()**2
 
-        if not invalid_curves:
-            invalid_curves = []
+        if invalid_curves:
+            curve_facs = [(inv_curve, [(r, e) for r, e in factor(inv_curve.cardinality(), use_rho=False, limit=max_factor_size).items() if r < max_factor_size]) for inv_curve in invalid_curves]
 
+            # Check if we can meet the required cardinality
+            max_card_achieved = 1
+            for prod in [product([r**e for r,e in facs]) for _, facs in curve_facs]:
+                max_card_achieved = lcm(max_card_achieved, prod)    
 
-        # Generate invalid curves if the user doesn't specify them or have enough factors
-        def curve_gen():
-            orig = self.curve
-            while True:
-                b = orig.b
-
-                while b == orig.b:
-                    b = orig.ring.random()
-
-                curve = WeierstrassCurve(a=orig.a, b=b, ring=orig.ring)
-                curve.cardinality()
-
-                curve.G_cache = orig.G_cache
-                yield curve
+            if max_card_achieved < cardinality:
+                raise RuntimeError(f'Maximum achievable modulus is only {"%.2f"%(max_card_achieved / cardinality)}% of curve cardinality squared. Supply more invalid curves.')
 
 
-        for inv_curve in itertools.chain(invalid_curves, curve_gen()):
-            # Factor as much as we can
-            factors = [r for r,_ in factorint(inv_curve.cardinality(), use_rho=False, limit=max_factor_size).items() if r > 2 and r < max_factor_size]
-            log.debug(f'Found factors: {factors}')
+            # Plan which factors to use
+            flattened = [[(inv_curve, (r,e)) for r,e in facs] for inv_curve, facs in curve_facs]
+            flattened = [item for sublist in flattened for item in sublist]
+            fac_dict  = {}
 
-            # Request residues from crafted public keys
-            for factor in RUNTIME.report_progress(set(factors) - factors_seen, desc='Sending malicious public keys', unit='factor'):
-                if total > cardinality:
-                    reached_card = True
-                    break
+            for inv_curve, (r,e) in flattened:
+                if r not in fac_dict:
+                    fac_dict[r] = []
 
-                if factor in factors_seen:
+                fac_dict[r].append((inv_curve, e))
+
+            planned_card = 1
+            initial_plan = []
+
+            # Add greedily
+            for fac, curve_exponents in sorted(fac_dict.items(), key=lambda item: item[0]):
+                selected_curve, exponent = max(curve_exponents, key=lambda item: item[1])
+
+                # Two is a special case, and we require an exponent of at least 2.
+                if fac == 2 and exponent == 1:
                     continue
 
-                total *= factor
+                initial_plan.append((selected_curve, fac, exponent))
+                planned_card *= fac**exponent
+
+
+            final_plan = []
+
+
+            # Remove greedily
+            for curve, fac, exponent in sorted(initial_plan, key=lambda item: item[1], reverse=True):
+                final_exp = exponent
+                for _ in range(exponent):
+                    if planned_card // fac > cardinality:
+                        planned_card //= fac
+                        final_exp -= 1
+                    else:
+                        break
+
+                final_plan.append((curve, fac, exponent))
+
+        else:
+            try:
+                final_plan = _PRECOMPUTED_ICA_PLANS[self.curve]
+                orders     = _PRECOMPUTED_ICA_ORDERS[self.curve]
+                inv_curves = {b: WeierstrassCurve(a=self.curve.a, b=self.curve.ring(b), cardinality=orders[b], base_tuple=(self.curve.G.x, self.curve.G.y), ring=self.curve.ring) for b in set([b for b,f,e in final_plan])}
+                final_plan = [(inv_curves[b], f, e) for b,f,e in final_plan]
+
+            except KeyError:
+                raise RuntimeError('No invalid curves provided and no precomputed plan found')
+
+
+        avg_requests = 0
+        needed_res   = 0
+        for curve, fac, exponent in final_plan:
+            avg_requests += ((fac+1) // 2)*exponent
+            needed_res   += exponent
+
+        log.debug(f'Attack plan consists of {needed_res} residues and an average of oracle {avg_requests} requests')
+
+        # Execute the attack
+        @RUNTIME.threaded(threads=self.threads, starmap=True)
+        def find_residues(inv_curve, fac, exponent):
+            res = 0
+            mal_ecdhe = ECDHE(G=self.curve.G, d=1)
+
+            # If fac is 2, then our heuristic when generating the bad_pub will fail
+            # Skip its first exponent
+            for curr_e in range(1 + (fac == 2), exponent+1):
+                subgroup = fac**curr_e
 
                 # Generate a low-order point on the invalid curve
                 bad_pub = inv_curve.POINT_AT_INFINITY
 
                 while bad_pub == inv_curve.POINT_AT_INFINITY or bad_pub == inv_curve.G:
                     point   = inv_curve.random()
-                    bad_pub = point * (inv_curve.cardinality() // factor)
+                    bad_pub = point * (inv_curve.cardinality() // subgroup)
+                
+                print(bad_pub.x, bad_pub.y)
+                # Determine the residue within the subgroup
+                bad_pub = bad_pub.cache_mul(bad_pub.curve.cardinality().bit_length())
 
-                residue = self.oracle.request(bad_pub, factor)
-                residues.append((ZZ/ZZ(factor))(residue))
-                factors_seen.add(factor)
+                # Handle 2's skip
+                step = subgroup // fac
+                if fac == 2 and curr_e == 2:
+                    step //= 2
 
-            if reached_card:
-                break
+                for i in range(res, subgroup+1, step):
+                    mal_ecdhe.d = i
+                    if fac == 2:
+                        import time
+                        print(i)
+                        time.sleep(0.5)
+                    if self.oracle.request(bad_pub, mal_ecdhe.derive_key(bad_pub)):
+                        res = i
+                        break
 
-        # We have to take into account the fact we can end up on the "negative" side of the field
-        negations = [(residue, -residue) for residue in residues]
-        G_cache   = self.curve.G.cache_mul(cardinality.bit_length())
+                res %= subgroup
+                print(res, subgroup)
+            
+            return res, subgroup
 
-        # Just bruteforce the correct configuration based off of the public key
-        for residue_subset in RUNTIME.report_progress(itertools.product(*negations), desc='Bruteforcing residue configuration', unit='residue set', total=2**len(residues)):
-            n, _ = crt(residue_subset)
-            if G_cache * (int(n) % cardinality) == public_key:
-                break
 
-        return n.val
+        residues = find_residues(final_plan)
+
+
+        res, mod      = crt(residues)
+        p             = int(self.curve.ring.quotient)
+        print(residues)
+        print(res, mod)
+        recovered_key = tonelli(int(res**2 % mod), p)
+
+        # The square root could be negative
+        if recovered_key * self.curve.G != public_key:
+            recovered_key = -recovered_key % p
+
+        return recovered_key
+

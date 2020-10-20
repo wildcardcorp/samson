@@ -1,5 +1,6 @@
 from samson.auxiliary.progress import Progress
 from samson.ace.exploit import DynamicExploit, register_knowns
+from multiprocessing.dummy import Pool
 from functools import wraps
 from types import FunctionType
 import logging
@@ -271,6 +272,7 @@ class RuntimeConfiguration(object):
         def showtraceback(self, _type, exception, trace):
             _type, exception, trace = sys.exc_info()
             RUNTIME.last_tb = trace
+            
             traceback_console.print(
                 Traceback.from_exception(_type, exception, trace.tb_next)
             )
@@ -278,6 +280,38 @@ class RuntimeConfiguration(object):
         import IPython
         IPython.core.interactiveshell.InteractiveShell._showtraceback = showtraceback
 
+
+    def threaded(self, threads: int, starmap: bool=False):
+        """
+        Runs the function with `threads` threads. The returned function should take an iterable.
+
+        Parameters:
+            threads (int): Number of threads to run.
+        
+        Returns:
+            list: Results.
+        
+        Examples:
+            >>> from samson.utilities.runtime import RUNTIME
+            >>> @RUNTIME.threaded(threads=10)
+            >>> def myfunc(i):
+            >>>     return i
+            >>> myfunc(range(5))
+            [0, 1, 2, 3, 4]
+
+        """
+        def _outer_wrap(func):
+            def _runner(iterable):
+                with Pool(threads) as pool:
+                    if starmap:
+                        pool_runner = pool.starmap
+                    else:
+                        pool_runner = pool.map
+
+                    return pool_runner(func, iterable)
+            return _runner
+
+        return _outer_wrap
 
 
 class RuntimeProxyContext(object):

@@ -267,8 +267,11 @@ def probability_of_x_occurences(n: int, x: int, p: float) -> float:
     
     Returns:
         float: Probability of total event.
+    
+    References:
+        https://math.stackexchange.com/questions/2348827/probability-of-an-event-occurring-x-number-of-times-in-a-sequence-of-events
     """
-    return ncr(n, x)*p**x*(1-p)**(n-x)
+    return ncr(n, x) * p**x * (1-p)**(n-x)
 
 
 
@@ -284,7 +287,7 @@ def probability_of_at_least_x_occurences(n: int, x: int, p: float) -> float:
     Returns:
         float: Probability of total event.
     """
-    return sum(ncr(n, k)*p**k*(1-p)**(n-k) for k in range(x,n))
+    return sum(probability_of_x_occurences(n, k, p) for k in range(x, n))
 
 
 def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> int:

@@ -14,9 +14,7 @@ CURRENT
 
 0.3.0
 ===============
-X   Small root finding (AKA Coppersmith's method)
-X   Speed up ECM (should be able to factor a 120bit semiprime in a few seconds)
-
+X   GNFS
 
 X   Separate key parameters from use? Explains some gaps in functions vs data
     X   ECKey, so it can be used in ECDHE and ECDSA

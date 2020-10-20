@@ -19,11 +19,9 @@ class DiffieHellmanSubgroupConfinementAttackTestCase(unittest.TestCase):
             hmac = HMAC(key=Bytes.wrap(K), hash_obj=sha256)
             mac  = hmac.generate(m)
 
-            for i in range(r):
-                eve_hmac = HMAC(key=Bytes(pow(h, i, p)), hash_obj=sha256)
-                if eve_hmac.generate(m) == mac:
-                    return i
+            eve_hmac = HMAC(key=Bytes(r), hash_obj=sha256)
 
+            return eve_hmac.generate(m) == mac
 
         oracle        = Oracle(oracle_func)
         dhsgc         = DiffieHellmanSubgroupConfinementAttack(oracle, p, g, order=q)

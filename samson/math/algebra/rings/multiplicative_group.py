@@ -48,7 +48,7 @@ class MultiplicativeGroupElement(RingElement):
 
 
     @left_expression_intercept
-    def __truediv__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
+    def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
         g = self.ring.coerce(other)
 
         if self.ring.order == oo:
@@ -78,6 +78,17 @@ class MultiplicativeGroupElement(RingElement):
             bool: Whether the element is invertible.
         """
         return self.val.is_invertible()
+    
+
+    def is_primitive_root(self) -> bool:
+        """
+        Determines if the element is a primitive root.
+
+        Returns:
+            bool: Whether the element is a primitive root.
+        """
+        return self.order == self.ring.order
+
 
 
 class MultiplicativeGroup(Ring):

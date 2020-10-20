@@ -675,6 +675,7 @@ def legendre(a: int, p: int) -> ResidueSymbol:
         <ResidueSymbol.DOES_NOT_EXIST: -1>
 
     """
+    assert is_prime(p)
     result = pow(a, (p - 1) // 2, p)
     if result == p-1:
         result = -1

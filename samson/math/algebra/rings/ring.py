@@ -54,6 +54,18 @@ def left_expression_intercept(func: FunctionType) -> object:
 
 
 class Ring(BaseObject):
+    @property
+    def order_factors(self):
+        from samson.math.symbols import oo
+
+        if not hasattr(self, '_order_factor_cache'):
+            self._order_factor_cache = None
+
+        if not self._order_factor_cache and self.order != oo:
+            self._order_factor_cache = factor(self.order)
+
+        return self._order_factor_cache
+
 
     def shorthand(self) -> str:
         pass
@@ -421,7 +433,7 @@ class RingElement(BaseObject):
             return oo
 
 
-        ro_facs = factor(self.ring.order)
+        ro_facs = self.ring.order_factors
         so_facs = Factors()
 
         for p in ro_facs:

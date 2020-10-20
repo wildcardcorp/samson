@@ -229,3 +229,24 @@ class QuotientRing(Ring):
 
     def is_field(self) -> bool:
         return self.quotient.is_irreducible()
+
+
+    def random(self, size: object=None) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int/RingElement): The maximum ordinality/element (non-inclusive).
+    
+        Returns:
+            RingElement: Random element of the algebra.
+        """
+        from samson.math.general import random_int
+
+        if not size:
+            size = self.order-1
+
+        if type(size) is int:
+            return self[random_int(size)]
+        else:
+            return self[random_int(size.ordinality())]
