@@ -229,7 +229,13 @@ class Polynomial(RingElement):
             return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
 
 
-    def small_roots(self):
+    def small_roots(self) -> list:
+        """
+        Finds small roots of a polynomial in `ZZ`/`ZZ`(`N`) using Coppersmith's method.
+
+        Returns:
+            list: List of roots.
+        """
         from samson.math.algebra.rings.integer_ring import ZZ
         return coppersmiths(self.coeff_ring.characteristic, self.change_ring(ZZ))
 

@@ -54,7 +54,7 @@ arguments = parser.parse_args()
 def try_parse(val):
     try:
         val = int(val)
-    except ValueError as _:
+    except ValueError:
         pass
     
     return val
@@ -66,6 +66,7 @@ PARSE_METHOD = try_parse
 
 import re
 _spec_re = re.compile(r'([%@])')
+_lit_re  = re.compile(r'\'.*\'|".*"')
 
 def process_specials(arg):
     curr = None
@@ -90,17 +91,20 @@ def export_pki(pki_obj, arguments):
         encoding = ENCODING_MAPPING[arguments.encoding.upper()]
 
     if arguments.encoding_args:
-        # Process 'hash' literals
-        literals = [arg for arg in arguments.encoding_args.split('#')]
+        # Process literals
         preprocessed_literals = {}
+        sanitized = arguments.encoding_args
 
-        if len(literals) > 1:
-            for i in range(1, len(literals), 2):
-                preprocessed_literals[f'#{i}'] = literals[i]
-                literals[i] = f'#{i}'
+        i = 0
+        while _lit_re.search(sanitized):
+            match   = _lit_re.search(sanitized)
+            literal = sanitized[match.start():match.end()]
 
+            preprocessed_literals[f'#{i}'] = literal[1:-1]
+            sanitized = sanitized.replace(literal, f'#{i}')
+            i += 1
 
-        processed_args = [arg.strip().split('=') for arg in ''.join(literals).split(',')]
+        processed_args = [arg.strip().split('=') for arg in sanitized.split(',')]
         for i, (_, v)in enumerate(processed_args):
             processed_args[i][1] = preprocessed_literals.get(v) or v
         

@@ -4,7 +4,7 @@ from samson.encoding.general import PKIEncoding
 from samson.encoding.pkcs1.pkcs1_diffie_hellman_parameters import PKCS1DiffieHellmanParameters
 from samson.encoding.pkcs8.pkcs8_diffie_hellman_private_key import PKCS8DiffieHellmanPrivateKey
 from samson.encoding.x509.x509_diffie_hellman_public_key import X509DiffieHellmanPublicKey
-from samson.encoding.x509.x509_diffie_hellman_certificate import X509DiffieHellmanCertificate
+from samson.encoding.x509.x509_diffie_hellman_certificate import X509DiffieHellmanCertificate, X509DiffieHellmanCertificateSigningRequest
 from samson.encoding.dns_key.dns_key_dh_key import DNSKeyDHPrivateKey, DNSKeyDHPublicKey
 
 from samson.core.primitives import KeyExchangeAlg, Primitive
@@ -28,7 +28,8 @@ class DiffieHellman(KeyExchangeAlg, EncodablePKI):
         PKIEncoding.PKCS1: PKCS1DiffieHellmanParameters,
         PKIEncoding.X509: X509DiffieHellmanPublicKey,
         PKIEncoding.X509_CERT: X509DiffieHellmanCertificate,
-        PKIEncoding.DNS_KEY: DNSKeyDHPublicKey
+        PKIEncoding.DNS_KEY: DNSKeyDHPublicKey,
+        PKIEncoding.X509_CSR: X509DiffieHellmanCertificateSigningRequest
     }
 
     USAGE_FREQUENCY = FrequencyType.PROLIFIC

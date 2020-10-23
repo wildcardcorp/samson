@@ -1,4 +1,4 @@
-from samson.math.general import random_int_between, crt, pollards_kangaroo, mod_inv
+from samson.math.general import random_int_between, crt, mod_inv, bsgs
 from samson.math.factorization.general import trial_division
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME
@@ -15,18 +15,18 @@ class DiffieHellmanSubgroupConfinementAttack(object):
     The Diffie-Hellman Subgroup Confinement attack takes advantage of smooth multiplicative group orders of unsafe primes used in Diffie-Hellman.
     There are two phases to this attack:
         1) Finding residues modulo the small factors of the multiplicative group order
-        2) Probabilistically solving the discrete logarithm of the remaining factors
+        2) Solving the discrete logarithm of the remaining factors
 
     Conditions:
     * Diffie-Hellman is being used
-    * The user has access to an oracle that accepts arbitrary public keys and returns the residue
+    * The user has access to an boolean oracle that accepts arbitrary public keys and returns whether the residue was correct
     * The left over key space is small enough to solve DLP
     """
 
     def __init__(self, oracle: Oracle, p: int, g: int=None, order: int=None, threads: int=1):
         """
         Parameters:
-            oracle (Oracle): Oracle that accepts (public_key: int, factor: int) and returns (residue: int).
+            oracle (Oracle): Oracle that accepts (public_key: int, residue: int) and returns (is_correct: bool).
             p                (int): Prime modulus.
             g                (int): Generator.
             order            (int): Order of multiplicative group.
@@ -43,7 +43,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
 
 
     @RUNTIME.report
-    def execute(self, public_key: int, max_factor_size: int=2**16, t: int=0) -> int:
+    def execute(self, public_key: int, max_factor_size: int=2**16) -> int:
         """
         Executes the attack.
 
@@ -58,15 +58,6 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         facs = trial_division(self.p-1, limit=max_factor_size)
         log.debug(f'Found factors: {facs}')
 
-        if not t:
-            # If it's a primitive root, it will generate the full group
-            while not t or not t.is_primitive_root():
-                t = self._group(random_int_between(2, self.p))
-
-            t = int(t)
-
-            log.debug(f'Found primitive root: {t}')
-
 
         # Request residues from crafted public keys
         @RUNTIME.threaded(threads=self.threads, starmap=True)
@@ -76,7 +67,10 @@ class DiffieHellmanSubgroupConfinementAttack(object):
             for curr_e in range(1, exponent+1):
                 subgroup = fac**curr_e
 
-                h = pow(t, (self.p-1) // subgroup, self.p)
+                h = 1
+                while h == 1:
+                    t = random_int_between(2, self.p)
+                    h = pow(t, (self.p-1) // subgroup, self.p)
 
                 for i in range(res, subgroup+1, subgroup // fac):
                     if self.oracle.request(h, pow(h, i, self.p)):
@@ -104,9 +98,8 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         log.info(f'Found relation: x = {n} + m*{r}')
         log.debug(f"g' = {g_prime}")
         log.debug(f"y' = {y_prime}")
-        log.info('Attempting to catch a kangaroo...')
 
-        # Probabilistically solve DLP
+        # Solve DLP
         R = (ZZ/ZZ(self.p)).mul_group()
-        m = pollards_kangaroo(R(g_prime), R(y_prime), a=0, b=(self.order - 1) // r)
+        m = bsgs(R(g_prime), R(y_prime), end=(self.order - 1) // r)
         return n + m*r

@@ -2454,14 +2454,18 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
     Parameters:
         N         (int): Modulus.
         f  (Polynomial): Polynomial to find roots of.
-        beta    (float): 
-        epsilon (float): 
-        X         (int): 
-        m         (int): 
-        t         (int): 
-    
+        beta    (float): Tweaks the size of the roots we look for in the polynomial. (Roots mod `b`, where `b` > `N`^`beta`)
+        epsilon (float): Tweaks the size of the matrix.
+        X         (int): Absolute bound for roots.
+        m         (int): Tweaks number of columns.
+        t         (int): Tweaks number of rows.
+
     Returns:
         list: List of small roots in Zn[x].
+
+    References:
+        https://github.com/sagemath/sage/blob/develop/src/sage/rings/polynomial/polynomial_modn_dense_ntl.pyx#L401
+        "Finding Small Solutions to Small Degree Polynomials" (http://cr.yp.to/bib/2001/coppersmith.pdf)
     """
     ZZ = _integer_ring.ZZ
     Matrix = _mat.Matrix
@@ -2518,47 +2522,3 @@ def prime_number_theorem(n: int) -> int:
 
 
 pnt = prime_number_theorem
-
-
-def continued_fraction(frac: 'FractionFieldElement') -> list:
-    """
-    Calculates the continued fraction form of `frac`.
-
-    Parameters:
-        frac (FractionFieldElement): Fraction.
-    
-    Returns:
-        list: Continued fraction.
-    """
-    n, d = frac.numerator, frac.denominator
-    cf   = []
-
-    while True:
-        q,r = divmod(n, d)
-        cf.append(q)
-
-        if not r:
-            break
-        
-        n, d = d, r
-
-    return cf
-
-
-def eval_continued_fraction(cf: list) -> 'FractionFieldElement':
-    """
-    Derives the fraction form for `cf`.
-
-    Parameters:
-        cf (list): Continued fraction.
-    
-    Returns:
-        FractionFieldElement: Corresponding fraction.
-    """
-    from samson.math.all import QQ
-
-    w = QQ(cf[0])
-
-    if len(cf) > 1:
-        w += ~eval_continued_fraction(cf[1:])
-    return w

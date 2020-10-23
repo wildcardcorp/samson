@@ -12,7 +12,7 @@ Many of the most prevalent cryptographic attacks have been implemented including
 * CRIME/BREACH
 * DSA/ECDSA nonce reuse
 * Stream cipher nonce reuse
-* Subgroup attacks
+* Subgroup confinement attacks
 * Hash construction attacks (length extension, fixed points, etc)
 * PRNG cracking
 

@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.encoding.general import url_b64_decode, url_b64_encode
-from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521, GOD521
 from samson.encoding.jwk.jwk_base import JWKBase
 import json
 
@@ -9,7 +9,8 @@ JWK_CURVE_NAME_LOOKUP = {
     P224: 'P-224',
     P256: 'P-256',
     P384: 'P-384',
-    P521: 'P-521'
+    P521: 'P-521',
+    GOD521: 'P-521'
 }
 
 JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}

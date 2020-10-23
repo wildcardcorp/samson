@@ -6,7 +6,7 @@ from samson.encoding.jwk.jwk_rsa_private_key import JWKRSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
-from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms
+from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms, X509RSACertificateSigningRequest
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.dns_key.dns_key_rsa_key import DNSKeyRSAPublicKey, DNSKeyRSAPrivateKey
 from samson.encoding.general import PKIEncoding
@@ -42,7 +42,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         PKIEncoding.X509_CERT: X509RSACertificate,
         PKIEncoding.X509: X509RSAPublicKey,
         PKIEncoding.PKCS1: PKCS1RSAPublicKey,
-        PKIEncoding.DNS_KEY: DNSKeyRSAPublicKey
+        PKIEncoding.DNS_KEY: DNSKeyRSAPublicKey,
+        PKIEncoding.X509_CSR: X509RSACertificateSigningRequest
     }
 
     X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
@@ -131,6 +132,23 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
     def __reprdir__(self):
         return ['bits', 'e', 'd', 'alt_d', 'p', 'q', 'n', 'phi']
+
+
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        
+        s_dict, o_dict = self.__dict__, other.__dict__
+        
+        for key in s_dict:
+            if key in ['p', 'q']:
+                if s_dict[key] not in [o_dict['p'], o_dict['q']]:
+                    return False
+            else:
+                if s_dict[key] != o_dict[key]:
+                    return False
+
+        return True
 
 
     def encrypt(self, plaintext: bytes) -> int:
@@ -322,7 +340,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             plaintext   (bytes): Plaintext to decrypt to.
             ciphertext  (bytes): Target ciphertext.
             max_glue_size (int): Maximum bit size of prime divisors of `p-1` and `q-1`. Used internally.
-        
+
         Returns:
             RSA: RSA key that decrypts `ciphertext` to `plaintext`.
 
@@ -401,3 +419,43 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         e_prime = crt([(ep, (p-1)//2), (eq, q-1)])[0]
         return RSA(p=p, q=q, e=e_prime)
+
+
+
+    @staticmethod
+    def wieners_attack(n: int, e: int) -> int:
+        """
+        Key recovery attack that uses `n` as an approximation of `phi` when `d` < 1/3 * `N`^(1/4).
+
+        Parameters:
+            n (int): Modulus.
+            e (int): Public exponent.
+
+        Returns:
+            RSA: Recovered private key.
+
+        Examples:
+            >>> # Set up Wiener's Attack
+            >>> rsa = RSA(256)
+            >>> d   = random_int_between(3, kth_root(rsa.n, 4) // 3)
+            >>> d   = next_prime(d)
+            >>> rsa = RSA(p=rsa.p, q=rsa.q, e=mod_inv(d, (rsa.p-1) * (rsa.q-1)))
+            >>> #
+            >>> # Recover and prove correctness
+            >>> recovered = RSA.wieners_attack(rsa.n, rsa.e)
+            >>> message   = Bytes.random(7)
+            >>> recovered.decrypt(rsa.encrypt(message)) == message
+            True
+
+        References:
+            https://en.wikipedia.org/wiki/Wiener%27s_attack
+        """
+        from samson.math.all import QQ
+        from samson.math.continued_fraction import ContinuedFraction
+
+        m  = pow(2, e, n)
+        cf = ContinuedFraction(QQ((e, n)))
+
+        for denom in cf.denominators():
+            if pow(m, int(denom), n) == 2:
+                return RSA.factorize_from_d(int(denom), e, n)

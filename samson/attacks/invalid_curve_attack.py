@@ -1,7 +1,7 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.curves.named import _PRECOMPUTED_ICA_PLANS, _PRECOMPUTED_ICA_ORDERS
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import crt, tonelli, product, lcm
+from samson.math.general import crt, tonelli, product, lcm, bsgs
 from samson.math.factorization.general import factor
 from samson.protocols.ecdhe import ECDHE
 from samson.utilities.runtime import RUNTIME
@@ -95,8 +95,8 @@ class InvalidCurveAttack(object):
             for fac, curve_exponents in sorted(fac_dict.items(), key=lambda item: item[0]):
                 selected_curve, exponent = max(curve_exponents, key=lambda item: item[1])
 
-                # Two is a special case, and we require an exponent of at least 2.
-                if fac == 2 and exponent == 1:
+                # Two is a special case, and we require an exponent of at least 3.
+                if fac == 2 and exponent < 3:
                     continue
 
                 initial_plan.append((selected_curve, fac, exponent))
@@ -129,13 +129,15 @@ class InvalidCurveAttack(object):
                 raise RuntimeError('No invalid curves provided and no precomputed plan found')
 
 
+        # Display plan stats
         avg_requests = 0
         needed_res   = 0
         for curve, fac, exponent in final_plan:
             avg_requests += ((fac+1) // 2)*exponent
             needed_res   += exponent
 
-        log.debug(f'Attack plan consists of {needed_res} residues and an average of oracle {avg_requests} requests')
+        log.debug(f'Attack plan consists of {needed_res} residues and an average of {avg_requests} oracle requests')
+
 
         # Execute the attack
         @RUNTIME.threaded(threads=self.threads, starmap=True)
@@ -143,55 +145,72 @@ class InvalidCurveAttack(object):
             res = 0
             mal_ecdhe = ECDHE(G=self.curve.G, d=1)
 
-            # If fac is 2, then our heuristic when generating the bad_pub will fail
-            # Skip its first exponent
-            for curr_e in range(1 + (fac == 2), exponent+1):
-                subgroup = fac**curr_e
+            exp_mod = int(fac == 2)
 
-                # Generate a low-order point on the invalid curve
-                bad_pub = inv_curve.POINT_AT_INFINITY
+            full_pp_group  = fac**exponent
+            first_subgroup = fac**(exponent-1-exp_mod)
 
-                while bad_pub == inv_curve.POINT_AT_INFINITY or bad_pub == inv_curve.G:
-                    point   = inv_curve.random()
-                    bad_pub = point * (inv_curve.cardinality() // subgroup)
-                
-                print(bad_pub.x, bad_pub.y)
-                # Determine the residue within the subgroup
-                bad_pub = bad_pub.cache_mul(bad_pub.curve.cardinality().bit_length())
+            # Generate a prime power point on the invalid curve
+            while True:
+                point   = inv_curve.random()
+                bad_pub = point * (inv_curve.cardinality() // full_pp_group)
 
-                # Handle 2's skip
-                step = subgroup // fac
-                if fac == 2 and curr_e == 2:
-                    step //= 2
+                if bad_pub * first_subgroup:
+                    break
 
-                for i in range(res, subgroup+1, step):
-                    mal_ecdhe.d = i
-                    if fac == 2:
-                        import time
-                        print(i)
-                        time.sleep(0.5)
-                    if self.oracle.request(bad_pub, mal_ecdhe.derive_key(bad_pub)):
-                        res = i
+
+            bad_pub = bad_pub.cache_mul(bad_pub.curve.cardinality().bit_length())
+
+            # Query the oracle
+            for curr_e in range(exponent-exp_mod*2):
+                subgroup = first_subgroup // fac**curr_e
+
+                curr_r = fac-1
+                for i in range(fac-1):
+                    pub_mod = subgroup*(res + i*fac**curr_e)
+
+                    if self.oracle.request(bad_pub*subgroup, mal_ecdhe.derive_key(bad_pub*pub_mod)):
+                        curr_r = i
                         break
 
-                res %= subgroup
-                print(res, subgroup)
-            
-            return res, subgroup
+                res += curr_r * fac**curr_e
+
+            return res, full_pp_group // fac**(exp_mod*2)
 
 
         residues = find_residues(final_plan)
+        res, mod = crt(residues)
+        p        = int(self.curve.ring.quotient)
 
+        if mod > p**2:
+            recovered_key = tonelli(int(res**2 % mod), p)
 
-        res, mod      = crt(residues)
-        p             = int(self.curve.ring.quotient)
-        print(residues)
-        print(res, mod)
-        recovered_key = tonelli(int(res**2 % mod), p)
+            # The square root could be negative
+            if recovered_key * self.curve.G != public_key:
+                recovered_key = -recovered_key % p
 
-        # The square root could be negative
-        if recovered_key * self.curve.G != public_key:
-            recovered_key = -recovered_key % p
+            return recovered_key
 
-        return recovered_key
+        else:
+            # We should only be here for P521.
+            # P521's prime `p` is M521 (2^521 - 1). Since P521's `a` parameter (-3) is a
+            # quadratic residue of the field, and `p` is 3 mod 4, there exists a supersingular
+            # curve `E: y^2 = x^3 + ax` (note that `b` is 0) with order `p+1`. Now `p+1` is a
+            # power of 2, meaning it's literally the smoothest possible invalid curve we can use.
+            # Even more fortunate, negation is idempotent in Z2, so we don't have to care about
+            # negative points. The biggest stipulation is that the public key for the
+            # first subgroup confinement will always result in 0 or G, and, therefore, give us
+            # no information. We simply skip it, and then solve the missing relation.
 
+            # We have a relation d % mod == res
+            # Therefore:
+            # d - m*mod == res
+            # d = res + m*mod
+            # y = d * G
+            # y = G * (res + m*mod)
+            # y = G*res + G*m*mod
+
+            # So by starting BSGS's accumulator at `G*res` and setting the generator to `G*mod`,
+            # we'll solve for `m` given `y`.
+            m = bsgs(self.curve.G*mod, public_key, e=res * self.curve.G, end=self.curve.order // mod + 1)
+            return res + mod*m

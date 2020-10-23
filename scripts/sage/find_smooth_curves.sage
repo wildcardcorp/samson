@@ -48,10 +48,12 @@ def count_items(items: list) -> dict:
     return item_ctr
 
 
-def generate_plan(a, p, search_range):
-    R          = ZZ.quo(p)
-    inv_curves = []
-    Ra         = R(a)
+def generate_plan(a, p, search_range, banned_curves=None, banned_factors=None):
+    R              = ZZ.quo(p)
+    inv_curves     = []
+    Ra             = R(a)
+    banned_curves  = banned_curves or []
+    banned_factors = banned_factors or []
 
     # Generate a bunch of curves
     @parallel
@@ -59,19 +61,22 @@ def generate_plan(a, p, search_range):
         try:
             b_inv = R(b)
             e_inv = EllipticCurve([Ra, b_inv])
-            return b, count_items(trial_factor(e_inv.order()))
+            return b, count_items(trial_factor(e_inv.order())), int(e_inv.order())
         except (TypeError, ArithmeticError):
             return
 
     inv_curves = [result[1] for result in tqdm(process_curve(search_range), total=len(search_range)) if result[1] is not None]
 
-    plan = [[(b_inv, fac, e) for fac, e in facs.items()] for b_inv, facs in inv_curves]
+    plan = [[(b_inv, fac, e) for fac, e in facs.items()] for b_inv, facs, _order in inv_curves if b_inv not in banned_curves]
     plan = [item for sublist in plan for item in sublist]
     plan = sorted(plan, key=lambda item: item[1])
 
     # Find curves with best exponents for every factor
     plan_b = {}
     for b,f,e in plan:
+        if f in banned_factors:
+            continue
+
         if f not in plan_b:
             plan_b[f] = (b, e)
             continue
@@ -95,12 +100,13 @@ def generate_plan(a, p, search_range):
         print('WARNING: "total" does not meet the p^2 threshold!')
     
 
-    return plan_c, sum([((f+1)//2)*e for b,f,e in plan_c])
+    bs = [b for b,f,e in plan_c]
+    return plan_c, {b:order for b, _, order in inv_curves if b in bs}, sum([((f+1)//2)*e for b,f,e in plan_c])
 
 
 if __name__ == '__main__':
     a, p, start, end = [int(arg) for arg in sys.argv[1:]]
-    plan, efficiency = generate_plan(ZZ(a), ZZ(p), list(range(start, end)))
-    print(f'Plan:\n{plan}')
-    print()
+    plan, orders, efficiency = generate_plan(ZZ(a), ZZ(p), list(range(start, end)), banned_curves=[6886], banned_factors=[2])
+    print(f'Plan:\n{plan}\n')
+    print(f'Curve orders:\n{orders}\n')
     print(f'Avg number of requests: {efficiency}')

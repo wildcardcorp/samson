@@ -22,6 +22,10 @@ class X509Certificate(PEMEncodable):
     DEFAULT_PEM = True
     USE_RFC_4716 = False
 
+    SPEC = rfc2459.Certificate()
+    SIGNED_SPEC = rfc2459.TBSCertificate()
+    SIGNED_PART = 'tbsCertificate'
+    SIG_KEY     = 'signatureValue'
 
     def __init__(
         self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
@@ -45,8 +49,8 @@ class X509Certificate(PEMEncodable):
     @classmethod
     def check(cls, buffer: bytes, **kwargs) -> bool:
         try:
-            cert, _ = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
-            return str(cert['tbsCertificate']['subjectPublicKeyInfo']['algorithm']['algorithm']) == cls.ALG_OID
+            cert, _ = decoder.decode(buffer, asn1Spec=cls.SPEC)
+            return str(cert[cls.SIGNED_PART]['subjectPublicKeyInfo']['algorithm']['algorithm']) == cls.ALG_OID
         except PyAsn1Error as _:
             return False
 
@@ -157,7 +161,7 @@ class X509Certificate(PEMEncodable):
         if self.signature_value is not None:
             sig_value = Bytes.wrap(self.signature_value).int()
         else:
-            encoded_tbs = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
+            encoded_tbs = encoder.encode(tbs_cert, asn1Spec=self.SIGNED_SPEC)
             sig_value   = signing_alg.sign(signing_key, encoded_tbs)
 
 
@@ -167,22 +171,22 @@ class X509Certificate(PEMEncodable):
         cert['signatureAlgorithm'] = signature_alg
         cert['signatureValue']     = sig_value
 
-        encoded = encoder.encode(cert, asn1Spec=rfc2459.Certificate())
+        encoded = encoder.encode(cert, asn1Spec=self.SPEC)
         return X509Certificate.transport_encode(encoded, **kwargs)
 
 
-    @staticmethod
-    def verify(buffer: bytes, verification_key: object) -> bool:
+    @classmethod
+    def verify(cls, buffer: bytes, verification_key: object) -> bool:
         if buffer.startswith(b'----'):
             buffer = pem_decode(buffer)
 
         # Decode the full cert and get the encoded TBSCertificate
-        cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
+        cert, _left_over = decoder.decode(buffer, asn1Spec=cls.SPEC)
 
-        sig_value     = cert['signatureValue']
+        sig_value     = cert[cls.SIG_KEY]
         signature_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])].replace('-', '_')
-        tbs_cert      = cert['tbsCertificate']
-        encoded_tbs   = encoder.encode(tbs_cert, asn1Spec=rfc2459.TBSCertificate())
+        tbs_cert      = cert[cls.SIGNED_PART]
+        encoded_tbs   = encoder.encode(tbs_cert, asn1Spec=cls.SIGNED_SPEC)
 
         alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
         return alg.verify(verification_key, encoded_tbs, sig_value)

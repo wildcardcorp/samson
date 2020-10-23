@@ -269,6 +269,7 @@ class PKIEncoding(Enum):
     SSH2      = 5
     JWK       = 6
     DNS_KEY   = 7
+    X509_CSR  = 8
 
 
 

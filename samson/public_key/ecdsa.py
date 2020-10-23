@@ -10,7 +10,7 @@ from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
-from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms
+from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms, X509ECDSACertificateSigningRequest
 from samson.encoding.dns_key.dns_key_ecdsa_key import DNSKeyECDSAPublicKey, DNSKeyECDSAPrivateKey
 from samson.encoding.general import PKIEncoding
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
@@ -40,7 +40,8 @@ class ECDSA(DSA):
         PKIEncoding.SSH2: SSH2ECDSAPublicKey,
         PKIEncoding.X509_CERT: X509ECDSACertificate,
         PKIEncoding.X509: X509ECDSAPublicKey,
-        PKIEncoding.DNS_KEY: DNSKeyECDSAPublicKey
+        PKIEncoding.DNS_KEY: DNSKeyECDSAPublicKey,
+        PKIEncoding.X509_CSR: X509ECDSACertificateSigningRequest
     }
 
     X509_SIGNING_ALGORITHMS = X509ECDSASigningAlgorithms

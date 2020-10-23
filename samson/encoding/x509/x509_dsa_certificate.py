@@ -1,5 +1,6 @@
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.x509.x509_dsa_subject_public_key import X509DSASubjectPublicKey
+from samson.encoding.x509.x509_certificate_signing_request import X509CertificateSigningRequest
 from samson.encoding.x509.x509_dsa_params import X509DSAParams
 from samson.encoding.x509.x509_certificate import X509Certificate
 from pyasn1.type.univ import Integer, SequenceOf, BitString
@@ -46,3 +47,7 @@ class X509DSACertificate(X509Certificate):
     PUB_KEY_ENCODER = X509DSASubjectPublicKey
     PUB_KEY_DECODER = X509DSAPublicKey
     PARAM_ENCODER   = X509DSAParams
+
+
+class X509DSACertificateSigningRequest(X509CertificateSigningRequest, X509DSACertificate):
+    pass

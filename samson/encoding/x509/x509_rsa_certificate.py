@@ -1,6 +1,7 @@
 from samson.encoding.x509.x509_rsa_subject_public_key import X509RSASubjectPublicKey
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.x509.x509_certificate import X509Certificate
+from samson.encoding.x509.x509_certificate_signing_request import X509CertificateSigningRequest
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 from samson.utilities.bytes import Bytes
@@ -45,3 +46,7 @@ class X509RSACertificate(X509Certificate):
     PUB_KEY_ENCODER = X509RSASubjectPublicKey
     PUB_KEY_DECODER = X509RSAPublicKey
     PARAM_ENCODER   = X509RSAParams
+
+
+class X509RSACertificateSigningRequest(X509CertificateSigningRequest, X509RSACertificate):
+    pass

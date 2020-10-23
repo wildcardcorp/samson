@@ -1,5 +1,6 @@
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
 from samson.encoding.x509.x509_certificate import X509Certificate
+from samson.encoding.x509.x509_certificate_signing_request import X509CertificateSigningRequest
 from samson.encoding.x509.x509_ecdsa_params import X509ECDSAParams
 from samson.encoding.x509.x509_ecdsa_subject_public_key import X509ECDSASubjectPublicKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSASignature
@@ -18,3 +19,7 @@ class X509ECDSACertificate(X509Certificate):
     PUB_KEY_ENCODER = X509ECDSASubjectPublicKey
     PUB_KEY_DECODER = X509ECDSAPublicKey
     PARAM_ENCODER   = X509ECDSAParams
+
+
+class X509ECDSACertificateSigningRequest(X509CertificateSigningRequest, X509ECDSACertificate):
+    pass

@@ -77,8 +77,8 @@ class JWE(object):
         Convenience method to create (and encrypt) a JWE.
 
         Parameters:
-            alg                     (JWA): JWA algorithm for key encryption.
-            enc                     (JWA): JWA algorithm for content encryption.
+            alg     (JWAKeyEncryptionAlg): JWA algorithm for key encryption.
+            enc (JWAContentEncryptionAlg): JWA algorithm for content encryption.
             body                  (bytes): Body to be encrypted.
             key                  (object): Key-encrypting key. Object type depending on the JWAKeyEncryptionAlg.
             cek                   (bytes): Content-encrypting key for JWAContentEncryptionAlg. Random key will be generated if not specified.

@@ -2,7 +2,7 @@ from samson.encoding.openssh.core.ecdsa_private_key import ECDSAPrivateKey
 from samson.encoding.openssh.core.ecdsa_public_key import ECDSAPublicKey
 from samson.encoding.openssh.openssh_base import OpenSSHPrivateBase, OpenSSHPublicBase, OpenSSH2PublicBase
 from samson.utilities.bytes import Bytes
-from samson.math.algebra.curves.named import P192, P224, P256, P384, P521
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521, GOD521
 import math
 
 
@@ -11,7 +11,8 @@ SSH_CURVE_NAME_LOOKUP = {
     P224: b'nistp224',
     P256: b'nistp256',
     P384: b'nistp384',
-    P521: b'nistp521'
+    P521: b'nistp521',
+    GOD521: b'nistp521'
 }
 
 SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}

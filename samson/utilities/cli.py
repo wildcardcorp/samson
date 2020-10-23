@@ -61,7 +61,7 @@ from samson.public_key.all import RSA, DSA, ECDSA, EdDSA
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.math.algebra.curves.named import EdwardsCurve25519, EdwardsCurve448
 from samson.encoding.general import PKIEncoding, PKIAutoParser
-from samson.math.algebra.curves.named import P192, P224, P256, P384, P521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
+from samson.math.algebra.curves.named import P192, P224, P256, P384, P521, GOD521, secp192k1, secp224k1, secp256k1, brainpoolP160r1, brainpoolP192r1, brainpoolP224r1, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
 
 HASHES = {
     'blake2b': BLAKE2b,
@@ -105,7 +105,8 @@ EC_CURVES.update({
     'nistp224': P224,
     'nistp256': P256,
     'nistp384': P384,
-    'nistp521': P521
+    'nistp521': P521,
+    'god521': GOD521
 })
 
 ED_CURVES = {
@@ -122,5 +123,6 @@ ENCODING_MAPPING = {
     'SSH2': PKIEncoding.SSH2,
     'X509': PKIEncoding.X509,
     'X509_CERT': PKIEncoding.X509_CERT,
-    'DNS_KEY': PKIEncoding.DNS_KEY
+    'DNS_KEY': PKIEncoding.DNS_KEY,
+    'X509_CSR': PKIEncoding.X509_CSR
 }
