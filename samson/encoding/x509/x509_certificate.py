@@ -26,6 +26,7 @@ class X509Certificate(PEMEncodable):
     SIGNED_SPEC = rfc2459.TBSCertificate()
     SIGNED_PART = 'tbsCertificate'
     SIG_KEY     = 'signatureValue'
+    PK_INFO_KEY    = 'subjectPKInfo'
 
     def __init__(
         self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
@@ -50,7 +51,7 @@ class X509Certificate(PEMEncodable):
     def check(cls, buffer: bytes, **kwargs) -> bool:
         try:
             cert, _ = decoder.decode(buffer, asn1Spec=cls.SPEC)
-            return str(cert[cls.SIGNED_PART]['subjectPublicKeyInfo']['algorithm']['algorithm']) == cls.ALG_OID
+            return str(cert[cls.SIGNED_PART][cls.PK_INFO_KEY]['algorithm']['algorithm']) == cls.ALG_OID
         except PyAsn1Error as _:
             return False
 
@@ -232,7 +233,7 @@ class X509Certificate(PEMEncodable):
                     break
 
 
-        buffer      = encoder.encode(cert['tbsCertificate']['subjectPublicKeyInfo'])
+        buffer      = encoder.encode(tbs_cert['subjectPublicKeyInfo'])
         key         = cls.PUB_KEY_DECODER.decode(buffer).key
         signing_alg = PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg.replace('-', '_')).value
 

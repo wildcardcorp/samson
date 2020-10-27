@@ -169,7 +169,10 @@ P224 = all_curves['P224']
 P256 = all_curves['P256']
 P384 = all_curves['P384']
 P521 = all_curves['P521']
+
 GOD521 = all_curves['GOD521']
+GOD521.G.order_cache = 2**521
+
 secp192k1 = all_curves['secp192k1']
 secp224k1 = all_curves['secp224k1']
 secp256k1 = all_curves['secp256k1']

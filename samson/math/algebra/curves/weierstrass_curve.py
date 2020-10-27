@@ -38,10 +38,14 @@ class WeierstrassPoint(RingElement):
     @property
     def order(self) -> int:
         from samson.math.general import bsgs, hasse_frobenius_trace_interval
+
         if not self.order_cache:
-            start, end = hasse_frobenius_trace_interval(self.curve.p)
-            order      = bsgs(self, self.curve.POINT_AT_INFINITY, e=self.curve.POINT_AT_INFINITY, start=start + self.curve.p, end=end + self.curve.p)
-            self.order_cache = order
+            if self.ring.cardinality_cache:
+                self.order_cache = super().order
+            else:
+                start, end = hasse_frobenius_trace_interval(self.curve.p)
+                order      = bsgs(self, self.curve.POINT_AT_INFINITY, e=self.curve.POINT_AT_INFINITY, start=start + self.curve.p, end=end + self.curve.p)
+                self.order_cache = order
 
         return self.order_cache
 
@@ -113,10 +117,33 @@ class WeierstrassPoint(RingElement):
             return self*mod_inv(other, self.curve.q)
         else:
             g = self.ring.coerce(other)
-            return pohlig_hellman(g, self, self.ring.order)
+            return pohlig_hellman(g, self)
 
 
     __floordiv__ = __truediv__
+
+
+
+class PointAtInfinity(WeierstrassPoint):
+    def __init__(self, x, y, curve):
+        self.x = x
+        self.y = y
+        self.curve = curve
+
+
+    def __repr__(self):
+        return f"<WeierstrassPoint: POINT_AT_INFINITY, curve={self.curve}>"
+
+    def __eq__(self, P2: 'WeierstrassPoint') -> bool:
+        return self is P2
+
+
+    def __hash__(self):
+        return object.__hash__(self)
+
+
+    def __neg__(self) -> 'WeierstrassPoint':
+        return self
 
 
 
@@ -155,7 +182,7 @@ class WeierstrassCurve(Ring):
         self.cardinality_cache = cardinality
         self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
-        self.zero = WeierstrassPoint(0, 0, self)
+        self.zero = PointAtInfinity(self.ring.zero, self.ring.zero, self)
 
 
 
@@ -180,7 +207,7 @@ class WeierstrassCurve(Ring):
         if type(x) is WeierstrassPoint and x.curve == self:
             return x
 
-        if y:
+        if y is not None:
             return WeierstrassPoint(x, y, self)
         else:
             return self.recover_point_from_x(x)
@@ -256,6 +283,39 @@ class WeierstrassCurve(Ring):
                 raise Exception(f"Unkown EllipticCurveCardAlg '{algorithm}'")
 
         return self.cardinality_cache
+
+
+    @property
+    def j_invariant(self) -> 'RingElement':
+        """
+        References:
+            https://en.wikipedia.org/wiki/Supersingular_isogeny_key_exchange#Background
+            
+        """
+        R  = self.ring
+        a3 = R(self.a)**3
+        return 1728*((4*a3)/(4*a3 + 27*R(self.b)**2))
+
+
+    @property
+    def is_supersingular(self):
+        """
+        References:
+            https://en.wikipedia.org/wiki/Supersingular_elliptic_curve#Definition
+            "Elliptic Curves: Number Theory and Cryptography, 4.37" (https://people.cs.nctu.edu.tw/~rjchen/ECC2012S/Elliptic%20Curves%20Number%20Theory%20And%20Cryptography%202n.pdf)
+        """
+        R = self.ring
+        p = R.characteristic
+        j = self.j_invariant
+
+        if p % 3 == 2:
+            return j == R(0)
+
+        elif p % 4 == 3:
+            return j == R(1728)
+
+        else:
+            return self.cardinality() % p == 1
 
 
     @property

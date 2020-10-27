@@ -440,7 +440,7 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: BMatrix, marks: 
 
 def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bool=False):
     nf, m      = siqs_choose_nf_m(len(str(n)))
-    nf        = int(nf * bound_ratio)
+    nf         = int(nf * bound_ratio)
     prime_base = find_base(n, nf)
 
     smooth_relations = []
@@ -485,13 +485,14 @@ def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bo
         progress_finish()
 
         log.debug("Solving exponent parity matrix for nullspace...")
+    
         # 'num_cols' is len(prime_base)+1 because we want Gaussian elimination to cancel out negatives
         exp_vecs = [exp_vec for _, _, exp_vec in smooth_relations]
         exp_ints = [int(''.join([str(int(exp_vec[b])) for b in range(len(exp_vec))])[::-1], 2) for exp_vec in exp_vecs]
         bexp_mat = BMatrix(exp_ints, num_cols=len(prime_base)+1).T
 
         solutions, marks, M = ge_f2_nullspace(M=bexp_mat, visual=visual)
-        primes, composites = find_factors(n=n, solutions=solutions, smooth_nums=smooth_relations, M=M, marks=marks)
+        primes, composites  = find_factors(n=n, solutions=solutions, smooth_nums=smooth_relations, M=M, marks=marks)
 
 
         if primes or composites:

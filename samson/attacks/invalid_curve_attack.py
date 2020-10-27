@@ -1,10 +1,11 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.curves.named import _PRECOMPUTED_ICA_PLANS, _PRECOMPUTED_ICA_ORDERS
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import crt, tonelli, product, lcm, bsgs
+from samson.math.general import crt, product, lcm, bsgs, kth_root
 from samson.math.factorization.general import factor
 from samson.protocols.ecdhe import ECDHE
 from samson.utilities.runtime import RUNTIME
+from samson.utilities.exceptions import SearchspaceExhaustedException
 from typing import List
 import itertools
 
@@ -148,15 +149,31 @@ class InvalidCurveAttack(object):
             exp_mod = int(fac == 2)
 
             full_pp_group  = fac**exponent
-            first_subgroup = fac**(exponent-1-exp_mod)
+            first_subgroup = fac**(exponent-1)
 
-            # Generate a prime power point on the invalid curve
+            already_seen = set()
+
+            # Find a prime power generator on the invalid curve
+            first_order = full_pp_group // first_subgroup
+            attempts = 0
             while True:
                 point   = inv_curve.random()
                 bad_pub = point * (inv_curve.cardinality() // full_pp_group)
 
                 if bad_pub * first_subgroup:
                     break
+
+                # Heuristics to determine if we can't generate that subgroup
+                already_seen.add(bad_pub * first_subgroup)
+                attempts += 1
+
+                if len(already_seen) == first_order or attempts == first_order**3:
+                    log.warning(f'No generator of subgroup size {first_order} for curve {inv_curve}. Decrementing exponent')
+                    first_order     *= fac
+                    first_subgroup //= fac
+                    exponent        -= 1
+                    attempts         = 0
+                    already_seen     = set()
 
 
             bad_pub = bad_pub.cache_mul(bad_pub.curve.cardinality().bit_length())
@@ -165,8 +182,8 @@ class InvalidCurveAttack(object):
             for curr_e in range(exponent-exp_mod*2):
                 subgroup = first_subgroup // fac**curr_e
 
-                curr_r = fac-1
-                for i in range(fac-1):
+                curr_r = 0
+                for i in range(1, fac):
                     pub_mod = subgroup*(res + i*fac**curr_e)
 
                     if self.oracle.request(bad_pub*subgroup, mal_ecdhe.derive_key(bad_pub*pub_mod)):
@@ -175,21 +192,16 @@ class InvalidCurveAttack(object):
 
                 res += curr_r * fac**curr_e
 
-            return res, full_pp_group // fac**(exp_mod*2)
+            return res, fac**(curr_e+1)
 
 
         residues = find_residues(final_plan)
-        res, mod = crt(residues)
-        p        = int(self.curve.ring.quotient)
+        res, mod = crt([(r**2 % p, p) for r,p in residues])
+
+        p = int(self.curve.ring.quotient)
 
         if mod > p**2:
-            recovered_key = tonelli(int(res**2 % mod), p)
-
-            # The square root could be negative
-            if recovered_key * self.curve.G != public_key:
-                recovered_key = -recovered_key % p
-
-            return recovered_key
+            return kth_root(res, 2)
 
         else:
             # We should only be here for P521.
@@ -212,5 +224,15 @@ class InvalidCurveAttack(object):
 
             # So by starting BSGS's accumulator at `G*res` and setting the generator to `G*mod`,
             # we'll solve for `m` given `y`.
-            m = bsgs(self.curve.G*mod, public_key, e=res * self.curve.G, end=self.curve.order // mod + 1)
+            res, mod = crt(residues)
+            g_prime  = self.curve.G*mod
+            y_prime  = res * self.curve.G
+            order    = self.curve.order // mod + 1
+
+            try:
+                m = bsgs(g_prime, public_key, e=y_prime, end=order)
+            except SearchspaceExhaustedException:
+                res     = -res % mod
+                y_prime = res * self.curve.G
+                m       = bsgs(g_prime, public_key, e=y_prime, end=order)
             return res + mod*m

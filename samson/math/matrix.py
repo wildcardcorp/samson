@@ -1,8 +1,10 @@
+from samson.math.dense_vector import DenseVector
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import gaussian_elimination, lll, gram_schmidt, product
 from shutil import get_terminal_size
 from types import FunctionType
+from copy import deepcopy
 
 # Python's string interpolation doesn't like newlines...
 NEWLINE = "\n"
@@ -314,6 +316,8 @@ class Matrix(RingElement):
         return Matrix([row_a + row_b for row_a, row_b in zip(self.rows, cols)], coeff_ring=self.coeff_ring, ring=self.ring)
 
 
+    augment = row_join
+
     def col_join(self, other: 'Matrix') -> 'Matrix':
         """
         Extends `self`'s columns with `others`.
@@ -439,6 +443,87 @@ class Matrix(RingElement):
         return gaussian_elimination(self, rhs)
 
 
+    def rref(self) -> 'Matrix':
+        """
+        Returns the reduced row echelon form.
+
+        Returns:
+            Matrix: RREF of `self`.
+        """
+        A = deepcopy(self)
+
+        n = A.num_rows
+        m = A.num_cols
+        R = A.coeff_ring
+
+        lead = 0
+
+        for r in range(n):
+            if m <= lead:
+                return A
+            
+            i = r
+
+            while not A[i, lead]:
+                i += 1
+                if i == n:
+                    i = r
+                    lead += 1
+
+                    if lead == m:
+                        return A
+            
+            if i != r:
+                A[i], A[r] = A[r], A[i]
+            
+            scalar = A[r, lead]
+            A[r]   = [e / scalar for e in A[r]]
+
+            for i in range(n):
+                if i != r:
+                    i_lead = A[i, lead]
+                    A[i] = [a-b for a,b in zip(A[i], A[r]*A[i, lead])]
+
+            lead += 1
+        
+        return A
+
+
+    def rcef(self) -> 'Matrix':
+        """
+        Returns the reduced column echelon form.
+
+        Returns:
+            Matrix: RCEF of `self`.
+        """
+        return self.T.rref().T
+    
+
+    def right_kernel(self):
+        """
+        Computes the right kernel `x` of `self` such that `self`*`x`.`T`=0.
+
+        Returns:
+            Matrix: Right kernel.
+    
+        References:
+            https://en.wikipedia.org/wiki/Kernel_(linear_algebra)#Computation_by_Gaussian_elimination
+        """
+        AI = self.col_join(Matrix.identity(self.num_cols, self.coeff_ring))
+        c =  AI.T.rref()
+        return Matrix([row[self.num_rows:] for row in c if not any(row[:self.num_rows])])
+    
+
+    def left_kernel(self) -> 'Matrix':
+        """
+        Computes the left kernel `x` of `self` such that `x`*`self`=0.
+
+        Returns:
+            Matrix: Left kernel.
+        """
+        return self.T.right_kernel()
+
+
     def __getitem__(self, idx: object) -> 'RingElement':
         if type(idx) is tuple:
             if type(idx[0]) is slice:
@@ -446,11 +531,17 @@ class Matrix(RingElement):
             else:
                 return self.rows[idx[0]][idx[1]]
         else:
-            return self.rows[idx]
+            if type(idx) is slice:
+                return Matrix(self.rows[idx])
+            else:
+                return DenseVector(self.rows[idx])
 
 
     def __setitem__(self, idx, value):
         if type(idx) is int:
+            if type(value) is DenseVector:
+                value = value.values
+
             self.rows[idx] = value
         elif type(idx) is tuple:
             self.rows[idx[0]][idx[1]] = value
@@ -460,7 +551,7 @@ class Matrix(RingElement):
         return len(self.rows)
 
     def __or__(self, other: 'Matrix') -> 'Matrix':
-        return self.col_join(other)
+        return self.row_join(other)
 
     def __neg__(self) -> 'Matrix':
         return self.apply_elementwise(lambda elem: -elem)

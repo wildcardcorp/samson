@@ -19,25 +19,18 @@ class X509CertificateSigningRequest(X509Certificate):
     SIGNED_SPEC    = rfc2986.CertificationRequestInfo()
     SIGNED_PART    = 'certificationRequestInfo'
     SIG_KEY        = 'signature'
+    PK_INFO_KEY    = 'subjectPKInfo'
 
 
     def __init__(
-        self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
-        issuer_unique_id: int=10, subject_unique_id: int=11, not_before: datetime=None, not_after: datetime=None,
-        signing_alg: object=None, is_ca: bool=False, signature_value: bytes=None, **kwargs
+        self, key: object, version: int=0, subject: str='CN=ca',
+        signing_alg: object=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
-        self.serial_number = serial_number
-        self.issuer = issuer
         self.subject = subject
-        self.issuer_unique_id = issuer_unique_id
-        self.subject_unique_id = subject_unique_id
-        self.not_before = not_before or datetime.now()
-        self.not_after = not_after or self.not_before.replace(year=self.not_before.year + 1)
         self.signing_alg = signing_alg
         self.signature_value = signature_value
-        self.is_ca = is_ca
 
 
 
@@ -101,3 +94,25 @@ class X509CertificateSigningRequest(X509Certificate):
 
         encoded = encoder.encode(csr, asn1Spec=rfc2986.CertificationRequest())
         return X509CertificateSigningRequest.transport_encode(encoded, **kwargs)
+
+
+    @classmethod
+    def decode(cls, buffer: bytes, **kwargs) -> object:
+        from samson.encoding.general import PKIAutoParser
+
+        csr, _left_over = decoder.decode(buffer, asn1Spec=rfc2986.CertificationRequest())
+        signature       = Bytes(int(csr['signature']))
+
+        info    = csr['certificationRequestInfo']
+        version = int(info['version'])
+
+        # Decode RDNs
+        subject = rdn_to_str(info['subject'][0])
+
+        cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(csr['signatureAlgorithm']['algorithm'])]
+
+        buffer      = encoder.encode(info['subjectPKInfo'])
+        key         = cls.PUB_KEY_DECODER.decode(buffer).key
+        signing_alg = PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg.replace('-', '_')).value
+
+        return cls(key=key, version=version, subject=subject, signing_alg=signing_alg, signature_value=signature)

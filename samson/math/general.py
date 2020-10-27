@@ -896,6 +896,9 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
         # Find pivot
         k = max(range(i, n), key=lambda r: max(A[r][i], -A[r][i]))
 
+        if not A[k, i]:
+            continue
+
         # Swap rows
         A[i], A[k] = A[k], A[i]
 
@@ -954,7 +957,7 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
 
     R = matrix.coeff_ring
     n = matrix.num_rows
-    A = [DenseVector(row) for row in matrix.rows]
+    A = matrix
     A_star = []
 
     mu = Matrix([[R.zero for _ in range(n)] for _ in range(n)])
@@ -2522,3 +2525,83 @@ def prime_number_theorem(n: int) -> int:
 
 
 pnt = prime_number_theorem
+
+
+
+def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
+    """
+    Computes the discrete logarithm of `y` to base `g`
+
+    Parameters:
+        g (MultiplicativeGroupElement): Generator.
+        y (MultiplicativeGroupElement): Target of form `g`^`x`.
+        order                    (int): Order of `g`.
+    
+    Returns:
+        int: The discrete logarithm of `y`.
+
+    Examples:
+        >>> from samson.all import ZZ, index_calculus
+        >>> p, q, g, d, y = 3272514023, 1636257011, 2, 1390585808, 1244484161
+        >>> R = (ZZ/ZZ(p)).mul_group()
+        >>> index_calculus(R(g), R(y))
+        1390585808
+
+    References:
+        https://github.com/Gr1zz/dlog/blob/master/index_calculus.sage
+        http://moais.imag.fr/membres/jean-louis.roch/perso_html/transfert/2009-06-19-IntensiveProjects-M1-SCCI-Reports/AlnuaimiKhuloud.pdf
+    """
+    from math import exp, sqrt, log, ceil
+    ZZ = _integer_ring.ZZ
+    Matrix = _mat.Matrix
+    trial_division = _factor_gen.trial_division
+
+    def is_smooth_trial(n, B):
+        facs = trial_division(n, prime_base=B)
+        return facs.recombine() == n, facs
+
+
+    Fp   = g.ring.ring
+    Fq   = ZZ/ZZ(order or g.order)
+    p    = Fp.order
+    B    = ceil(exp(0.5*sqrt(2*log(p)*log(log(p)))))
+    base = list(sieve_of_eratosthenes(B+1))
+
+    # Precompute indices
+    indices   = {p:i for i,p in enumerate(base)}
+    S         = len(base)
+    relations = Matrix.fill(Fq.zero, S+1, S)
+
+
+    # Find smooth relations
+    row = []
+    k   = 0
+    while (k < S+1):
+        while True:
+            a = Fq.random()
+            b = Fq.random()
+            if not (a,b) in row:
+                break
+
+
+        z = g*int(a)+y*int(b)
+
+        is_smooth, facs = is_smooth_trial(int(z), base)
+        if is_smooth:
+            row.append((a,b))
+
+            for p_i, e_i in facs.items():
+                i = indices[p_i]
+                relations[k, i] = Fq(e_i)
+
+            k = k+1
+
+    # Solve
+    ker  = relations.left_kernel()[0]
+    A, B = 0, 0
+
+    for ker_i, row_i in zip(ker, row):
+        A += ker_i*row_i[0]
+        B += ker_i*row_i[1]
+
+    return int(-A * ~Fq(B))

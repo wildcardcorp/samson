@@ -15,19 +15,20 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
         sha256  = SHA256()
         bob_key = ECDHE(G=curve.G)
 
-        eve_ecdhe = ECDHE(d=1, G=curve.G)
-
 
         def oracle_func(h, r):
-            K    = bob_key.derive_key(h)
-            hmac = HMAC(key=K, hash_obj=sha256)
-            mac  = hmac.generate(m)
+            try:
+                K    = bob_key.derive_key(h)
+                hmac = HMAC(key=K, hash_obj=sha256)
+                mac  = hmac.generate(m)
 
-            eve_hmac = HMAC(key=r, hash_obj=sha256)
+                eve_hmac = HMAC(key=r, hash_obj=sha256)
+                return eve_hmac.generate(m) == mac
+            except ValueError:
+                return False
 
-            return eve_hmac.generate(m) == mac
 
-
+        print(bob_key.d)
         oracle        = Oracle(oracle_func)
         ica           = InvalidCurveAttack(oracle, curve)
         recovered_key = ica.execute(bob_key.pub, inv_curves)
@@ -36,7 +37,7 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
 
 
 
-    def test_attack(self):
+    def test_custom_curves(self):
         g       = (182, 85518893674295321206118380980485522083)
         ring    = ZZ/ZZ(233970423115425145524320034830162017933)
         a       = ring(-95051)

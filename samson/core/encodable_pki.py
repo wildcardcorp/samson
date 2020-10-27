@@ -1,7 +1,7 @@
 from samson.encoding.general import PKIEncoding
 from samson.encoding.pem import pem_decode
 
-ORDER = [PKIEncoding.DNS_KEY, PKIEncoding.JWK, PKIEncoding.OpenSSH, PKIEncoding.SSH2, PKIEncoding.X509_CERT, PKIEncoding.X509, PKIEncoding.PKCS8, PKIEncoding.PKCS1]
+ORDER = [PKIEncoding.DNS_KEY, PKIEncoding.JWK, PKIEncoding.OpenSSH, PKIEncoding.SSH2, PKIEncoding.X509_CSR, PKIEncoding.X509_CERT, PKIEncoding.X509, PKIEncoding.PKCS8, PKIEncoding.PKCS1]
 
 class EncodablePKI(object):
     PUB_ENCODINGS  = {}

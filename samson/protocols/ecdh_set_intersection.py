@@ -1,4 +1,5 @@
 from samson.core.primitives import Hash
+from samson.math.general import random_int_between
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 
 class ECDHSetIntersectionServer(object):

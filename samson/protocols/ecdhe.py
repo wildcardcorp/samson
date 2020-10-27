@@ -65,4 +65,8 @@ class ECDHE(KeyExchangeAlg):
         Returns:
             Bytes: Shared key.
         """
-        return Bytes(int((self.d * challenge).x) % self.G.curve.p).zfill((self.G.curve.p.bit_length() + 7) // 8)
+        shared_key = self.d * challenge
+        if not shared_key:
+            raise ValueError('Cannot derive bytes from point at infinity')
+
+        return Bytes(int(shared_key.x) % self.G.curve.p).zfill((self.G.curve.p.bit_length() + 7) // 8)
