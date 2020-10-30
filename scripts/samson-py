@@ -68,6 +68,22 @@ import re
 _spec_re = re.compile(r'([%@])')
 _lit_re  = re.compile(r'\'.*\'|".*"')
 
+def process_literals(arg_str):
+    preprocessed_literals = {}
+    sanitized = arg_str
+
+    i = 0
+    while _lit_re.search(sanitized):
+        match   = _lit_re.search(sanitized)
+        literal = sanitized[match.start():match.end()]
+
+        preprocessed_literals[f'#{i}'] = literal[1:-1]
+        sanitized = sanitized.replace(literal, f'#{i}')
+        i += 1
+    
+    return sanitized, preprocessed_literals
+
+
 def process_specials(arg):
     curr = None
     for cmd in [_ for _ in _spec_re.split(arg)[::-1] if _ ]:
@@ -92,17 +108,7 @@ def export_pki(pki_obj, arguments):
 
     if arguments.encoding_args:
         # Process literals
-        preprocessed_literals = {}
-        sanitized = arguments.encoding_args
-
-        i = 0
-        while _lit_re.search(sanitized):
-            match   = _lit_re.search(sanitized)
-            literal = sanitized[match.start():match.end()]
-
-            preprocessed_literals[f'#{i}'] = literal[1:-1]
-            sanitized = sanitized.replace(literal, f'#{i}')
-            i += 1
+        sanitized, preprocessed_literals = process_literals(arguments.encoding_args)
 
         processed_args = [arg.strip().split('=') for arg in sanitized.split(',')]
         for i, (_, v)in enumerate(processed_args):

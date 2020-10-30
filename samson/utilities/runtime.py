@@ -1,5 +1,4 @@
 from samson.auxiliary.progress import Progress
-from samson.ace.exploit import DynamicExploit, register_knowns
 from multiprocessing.dummy import Pool
 from functools import wraps
 from types import FunctionType
@@ -165,6 +164,7 @@ class RuntimeConfiguration(object):
 
 
     def register_exploit(self, cls, consequence, requirements):
+        from samson.ace.exploit import DynamicExploit
         self.exploits[cls] = DynamicExploit(cls, consequence, requirements)
 
 
@@ -314,6 +314,14 @@ class RuntimeConfiguration(object):
         return _outer_wrap
 
 
+    def _register_known_exploits(self):
+        from samson.ace.exploit import KeyPossession, PlaintextPossession, BitlevelMalleability
+        self.exploits[KeyPossession] = KeyPossession()
+        self.exploits[PlaintextPossession] = PlaintextPossession()
+        self.exploits[BitlevelMalleability] = BitlevelMalleability()
+
+
+
 class RuntimeProxyContext(object):
     def __init__(self, **kwargs):
         self.attrs = kwargs
@@ -329,4 +337,4 @@ class RuntimeProxyContext(object):
 
 
 RUNTIME = RuntimeConfiguration(use_color=(os.environ.get('USE_COLOR', 'True') == 'True'))
-register_knowns()
+RUNTIME._register_known_exploits()

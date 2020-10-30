@@ -2342,7 +2342,7 @@ def is_safe_prime(p: int) -> bool:
     Examples:
         >>> from samson.math.general import is_safe_prime
         >>> from samson.protocols.diffie_hellman import DiffieHellman
-        >>> is_sophie_germain_prime(DiffieHellman.MODP_2048)
+        >>> is_safe_prime(DiffieHellman.MODP_2048)
         True
 
     """

@@ -1,8 +1,8 @@
 from samson.ace.consequence import Consequence, CompositeConsequence, Manipulation
-from samson.ace.utility import Readable
+from samson.core.base_object import BaseObject
 
 
-class Constraint(Readable):
+class Constraint(BaseObject):
     def apply(self, state):
         state.constraints.append(self)
 

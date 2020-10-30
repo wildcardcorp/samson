@@ -1,0 +1,15 @@
+.vscode
+*__pycache__/
+*.pyc
+tests
+.pytest_cache/
+samson_crypto.egg-info/
+dist/
+build/
+doc/_build
+scripts/performance/last_run*
+man/_build
+notebooks
+msieve.dat
+scripts/sage/*.py
+docker

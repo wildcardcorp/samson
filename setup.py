@@ -3,12 +3,11 @@ import setuptools
 from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.md')) as f:
+with open(os.path.join(here, 'README.md'), encoding="utf-8") as f:
     README = f.read()
 
-
 requires = [
-    "pyasn1",
+    "pyasn1>=0.4.8",
     "pyasn1-modules",
     "ipython",
     "tqdm",

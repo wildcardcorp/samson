@@ -111,18 +111,28 @@ Out[9]: <FiniteFieldElement: val=x, field=F_(2**8)>
 
 ### **CLI**
 ```bash
+# Hash the text 'texttohash' with MD5
 [root@localhost ~]# samson hash md5 texttohash
 0d7e83711c9c8efa135653ef124cc23b
 
+# Hash the text 'texttohash' with MD5 from STDIN
 [root@localhost ~]# echo -n "texttohash" | samson hash md5
 0d7e83711c9c8efa135653ef124cc23b
 
+# Hash the text 'texttohash' with BlAKE2b
 [root@localhost ~]# samson hash blake2b texttohash
 de92a99c2d5cb8386cada3589b7c70efa27c6d99a3ec1a2f9313258c0e91229f2279ccf68d6766aa20d124ca415dacbb89fb657013de1a2009752084186445a7
 
+# Hash the text 'texttohash' with Keccak instantiated with arguments
 [root@localhost ~]# samson hash keccak texttohash --args=r=1044,c=512,digest_bit_size=256
 1a568ef9ead0b2a9eeffc1d1e9a688c9153f33719ac5b30a533d1edba0e301b8
 
+# Factor an integer and display progress bar
+[root@localhost ~]# samson factor --args=visual=True 282265139124268609605114400022085050598                                        
+factor: Bits factored:  63%|██████████████████████████████▍                 | 80.95/127.73 [00:00<00:00, 568.47bit/s]
+2 * 3 * 239 * 94933 * 3394031 * 5122385479 * 119262202443691
+
+# Generate a 1024-bit RSA key (default private, default PKCS1 encoding)
 [root@localhost ~]# samson pki generate rsa --args=bits=1024
 -----BEGIN RSA PRIVATE KEY-----
 MIICXQIBAAKBgQChL/Xmka6z8EEiwNC+NXrEs1WHFjUz364hPfFlOMVAmrrWHsAls71U+6
@@ -139,18 +149,21 @@ aVWaJ33ydRV+hspPO02jvSABAkAPaMHmQcEN8c8bOWc5VjH8kxcV5iHUw88WH9hEKpHTsk
 j+LYTu11aOZXFh4dmw5jHd1gjA4bD24c0f5NN7vQLJ
 -----END RSA PRIVATE KEY-----
 
+# Generate a 128-bit RSA key, set `p` to 7, and encode using PKCS8
 [root@localhost ~]# samson pki generate rsa --args=bits=128,p=7 --encoding=pkcs8
 -----BEGIN PRIVATE KEY-----
 MFMCAQAwDQYJKoZIhvcNAQEBBQAEPzA9AgEAAgkEI+1gRNRD9i8CAwEAAQIJAIiZ98pCij
 jhAgEHAgkAl2sNwLCb/pkCAQUCCQCImffKQoo44QIBBQ==
 -----END PRIVATE KEY-----
 
+# Generate a 256-bit RSA key and return the public key
 [root@localhost ~]# samson pki generate rsa --args=bits=256 --pub
 -----BEGIN PUBLIC KEY-----
 MDwwDQYJKoZIhvcNAQEBBQADKwAwKAIhAKItLmP4OG4LIOgWZRt+MFOifSHsoow9NcwAwt
 p3Xx0NAgMBAAE=
 -----END PUBLIC KEY-----
 
+# Generate an ECDSA key with the NIST P-256 curve and encode for OpenSSH
 [root@localhost ~]# samson pki generate ecdsa --args=curve=nistp256 --encoding=openssh
 -----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
@@ -162,17 +175,32 @@ sAAAAhALJ58WavKVYz2fG3koYq3Pthpmg9MJVmStjRyZMYqCrmAAAAEG5vaG9zdEBsb2Nh
 bGhvc3QBAgMEBQYH
 -----END OPENSSH PRIVATE KEY-----
 
+# Generate an EdDSA key with the Ed25519 curve, encode for OpenSSH, and output public key
 [root@localhost ~]# samson pki generate eddsa --args=curve=ed25519 --encoding=openssh --pub
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG0Ru2OL3mSV1aOopjhcxK+pg6fTYcyxOfBy4cjJQ0T4 nohost@localhost
 
-[root@localhost ~]# openssl genrsa 128 | samson pki parse rsa
-Generating RSA private key, 128 bit long modulus
-.+++++++++++++++++++++++++++
-..+++++++++++++++++++++++++++
+# Parse an RSA key from STDIN
+[root@localhost ~]# openssl genrsa 512 | samson pki parse rsa                                                                       
+Generating RSA private key, 512 bit long modulus (2 primes)
+.....+++++++++++++++++++++++++++
+......+++++++++++++++++++++++++++
 e is 65537 (0x010001)
-<RSA: bits=128, p=18204634713468071783, q=14777058483132963961, e=65537, n=269010951824990204830693900060300012463, phi=134505475912495102398856103431849488360, d=14600484545241469070379515690589701393, alt_d=14600484545241469070379515690589701393>
+<PKCS1RSAPrivateKey: key=<RSA: bits=512, e=65537, d=6296796031568503581556207616280967962807076376387317648643496104387929361057440965008899658110684774371838723815081555180232276065759547740996145801493 (501 bits), alt_d=4861274696277509906222134778771643290062658423191630102815100016025231770956604600068400157229874779574456479225803315459261204941026741668937047997477337 (511 bits), p=106617888174141873449919799002923479536903497687797534434241495625009665443277, q=91072482927370968074071590901226339936836118841645415967348631148765293177239, n=9709955800491882805281157142310724644199702693630485570332913039841687683191292008577884027985052180990073430823450207424691388280323554369165878661972203 (512 bits), phi=4854977900245941402640578571155362322099851346815242785166456519920843841595547159103391257571764094800084640501988233904080972664960982121196051851675844 (511 bits)>>
 
-[root@localhost ~]# samson pki generate ecdsa --args=curve=p521 --pub --encoding=x509_cert --encoding-args=ca=1,serial_number=666,issuer=#'CN=hiya,O=hiya-corp,L=Rack City'#
+# Parse key from file '/tmp/rsa', auto detect key type, and re-encode it as an X509 certificate
+[root@localhost ~]# samson pki parse auto @/tmp/rsa --encoding x509_cert --pub                                                      
+-----BEGIN CERTIFICATE-----
+MIIBEDCBu6ADAgECAgEAMA0GCSqGSIb3DQEBCwUAMA0xCzAJBgNVBAMTAmNhMB4XDTIwMT
+AyOTEyMDQzMloXDTIxMTAyOTEyMDQzMlowDTELMAkGA1UEAxMCY2EwXDANBgkqhkiG9w0B
+AQEFAANLADBIAkEA6wreAbl8FoaIP7tEMLPKKgZxNLR5GU3NLWX2VdLcRDjCln8jU7ko1V
+l+NYf1Ks6InaBiz6WxWsEQJRptN1b17wIDAQABgQIACoICAAswDQYJKoZIhvcNAQELBQAD
+QQBz0kaxh5y44pyFu4JqiTcdf85K/LOjaHozvR7dX4D+pWYLTJpbinrH2/DPgMqV5+ac+h
+tOJeM1ywT1m2oHLaQN
+-----END CERTIFICATE-----
+
+
+# Generate an ECDSA key with the NIST P-521 curve, add the certificate authority attribute, set its serial number to 666, and set its issuer to 'CN=hiya,O=hiya-corp,L=Rack City'
+[root@localhost ~]# samson pki generate ecdsa --args=curve=p521 --pub --encoding=x509_cert --encoding-args=ca=1,serial_number=666,issuer='CN=hiya,O=hiya-corp,L=Rack City'
 -----BEGIN CERTIFICATE-----
 MIICAzCCAV6gAwIBAgICApowEQYIKoZIzj0EAwIGBSuBBAAjMDcxDTALBgNVBAMTBGhpeW
 ExEjAQBgNVBAoTCWhpeWEtY29ycDESMBAGA1UEBwwJUmFjayBDaXR5MB4XDTE5MDMxNTA5
@@ -185,6 +213,27 @@ QDAgYFK4EEACMDgYsCwgYcCQgCtM/WKF1HGFVNXRvL+38bFgbtjkAc6lkgnv76bdngWhZj
 KzxOGlBrUMD0vXbjp0wpDnpynBxYXNZxHIrERMolw1wJBS72VR5m4ubujrW2ynM5p9hoc3
 0SK8pZp5HLipmI9gjF/ywqZZGskyFt/nK4wfU3CaoOPOxI86AC5nbwn6f5Y4wA
 -----END CERTIFICATE-----
+
+# Generate an ECDSA key with the secp224k1 curve, encode it as an X509 certificate signing request, and output its public key
+[root@localhost ~]# samson pki generate ecdsa --args=curve=secp224k1 --encoding X509_CSR --pub                                      
+-----BEGIN CERTIFICATE REQUEST-----
+MIG9MGYCAQAwDTELMAkGA1UEAxMCY2EwUDAQBgcqhkjOPQIBBgUrgQQAIAM8AAQAFY8I6Z
+P7vKDMqRYWHaPfK3c9sBIn5hLWt6hhowAVBF1H8tJBL2yHiERYfppAvpOHUomYzyMNg9KY
+oAAwEQYIKoZIzj0EAwIGBSuBBAAgA0AAMD0CHBEMaqmfHfRYZV/O/iLFq6PfFh0sFl2f9n
+E1SLYCHQCAP23HzLH7frnf8diYX7fJDgNGhY9Xcf8e0iJm
+-----END CERTIFICATE REQUEST-----
+
+# Generate a Diffie-Hellman key and encode it as a DNSSEC key
+[root@localhost ~]# samson pki generate dh --encoding dns_key                                                                       
+Private-key-format: v1.3
+Algorithm: 2 (DH)
+Prime(p): ///////////JD9qiIWjCNMTGYouA3BzRKQJOCIpnzHQCC76mOxObIlFKCHmONATd75UZs806QxswKwpt8l8UN0/hNW1tUcJF5IW1dmJefsb0TELppjftawv/XLb0Brft7jhr+1qJn6WunyQRfEsf5kkoZlHs5Fs9wgB8uKFjvwWY2kg2HFXTmmkWP6j9JM9fg2VdI9yjrZYcYvNWIIVSu57VKQdwlpZtZww1Tkq8mATxdGwIyhghfDKQXkYuNs474553LBgOhgObJ4Oi7Aeij7XFXfBvTFLJ3ivL9pVYFxg5lUl86pVq5RXSJhiY+gUQFXKOWoqsqmj//////////w==
+Generator(g): Ag==
+Private_value(x): U+i2s0/q1S/TqGaLKVem8nopEIRnRUwMUr0hB/rsbrO930OCS7/ORezcFlzabnI8oAwX7rbjY//7Bc9j15FSrhptdG2XDKScz7BMEqmNYh4UFbnghXvnsqzPMxXHocEsqT4OXYeaCIkYAMoPZRJp7B50NalYz+x9VMZ1kwWSEqlC+LpzDjG5go+OOkURxQmWQMTpp5iyQjQkzu1vvuUVd3shg1QEOi5MUkrxAiA3KdrZSzT3Duzleiuzutj9D5o7LOhJ5P/rF/sPwJaIHVS1rc7+u63JcNLVbQzPjFSPkLRh3fFCUSMhP8rc0yTgxv15zqgbLm2ewpL0Cfkd7C9l1Q==
+Public_value(y): A1U638iDLE+BDe7nQZ3ncHI6UDKRFWF03QJJHPhuOlvbut0vfRwoDgdERADKKzvSwZ7nauVT06c95UuEVOzVKU2aOVVF8zlAZJsKXyckEjtUHcwUF6lXzh5EjZ915KAp9LyoExSou5IVHXzjb8cy+cnG4GBWUMX8LZZ57FtkavSoZ7FLKItek1pVhleoUbjJcLo58lH9GbJqBj0oTvURe3wI4VNd52dhm9cUd4ZfnhGQzNm8YvekdW94W4MHLJ5BwV50lRMLvfWMYdfUJ+Gdd3CtCx0ge1I6Brm4YZF1Er8SM7IxuDrGeOcC+NPT92XQHqUl1tn4r9X31LGPam9ZIg==
+Created: 20201029163524
+Publish: 20201029163524
+Activate: 20201029163524
 ```
 
 

@@ -176,7 +176,7 @@ def pk_1_smallest_divisor(prime_power: int) -> int:
         returns the correct answer (i.e. 2). Otherwise, `p` is 2. If `k`'s smallest factor is <= 1259,
         this function immediately returns a cached answer. From here, we need to perform factoring.
         We don't necessarily need to fully factor `k`, just find its smallest factor. Since we break on
-        the first factor found, its probable but not guaranteed that the found factor `d` is the smallest.
+        the first factor found, it's probable but not guaranteed that the found factor `d` is the smallest.
         If `k` is a semiprime, then we have to fully factor it, and thus `d` is the smallest. Assuming
         `d` is indeed the smallest, if `d` is a Sophie Germain prime and congruent to 3 mod 4, we use
         a theorem's result to prove that `2d+1` is a factor. Since another theorem about Mersenne

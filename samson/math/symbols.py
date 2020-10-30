@@ -20,9 +20,15 @@ class Infinity(object):
         return NegativeInfinity()
 
     def __add__(self, other):
+        if type(other) is NegativeInfinity:
+            raise ValueError("Cannot subtract infinity from infinity.")
+
         return self
 
     def __sub__(self, other):
+        if type(other) is Infinity:
+            raise ValueError("Cannot subtract infinity from infinity.")
+
         return self
 
     def __mul__(self, other):
@@ -53,6 +59,19 @@ class NegativeInfinity(Infinity):
 
     def __neg__(self):
         return Infinity()
+
+
+    def __add__(self, other):
+        if type(other) is Infinity:
+            raise ValueError("Cannot subtract infinity from infinity.")
+
+        return self
+
+    def __sub__(self, other):
+        if type(other) is NegativeInfinity:
+            raise ValueError("Cannot subtract infinity from infinity.")
+
+        return self
 
 
 class Symbol(Polynomial):

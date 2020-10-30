@@ -5,7 +5,7 @@ from types import FunctionType
 from functools import wraps
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
-from samson.utilities.exceptions import CoercionException, NotInvertibleException
+from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException
 from samson.core.base_object import BaseObject
 
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
@@ -503,10 +503,35 @@ class RingElement(BaseObject):
         return Factors(count_items(factors))
 
 
+    def kth_root(self, k: int, return_all: bool=False) -> 'RingElement':
+        """
+        Computes the `k`-th root of `self`.
+
+        Parameters:
+            k           (int): Root to take.
+            return_all (bool): Whether or not to return all roots or just one.
+        
+        Returns:
+            RingElement: Root.
+        """
+        from samson.math.symbols import Symbol
+
+        x     = Symbol('x')
+        _     = self.ring[x]
+        roots = (x**k - self).roots()
+
+        try:
+            if not return_all:
+                roots = roots[0]
+
+            return roots
+        except IndexError:
+            raise NoSolutionException()
+
+
 
     def sqrt(self) -> 'RingElement':
-        from samson.math.general import kth_root
-        return self.ring(kth_root(int(self.val), 2))
+        return self.kth_root(2)
 
 
     def gcd(self, other: 'RingElement') -> 'RingElement':
