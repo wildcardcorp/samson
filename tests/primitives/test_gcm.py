@@ -38,3 +38,25 @@ class GCMTestCase(unittest.TestCase):
             self.assertEqual(authed_ct[:-16], expected_ciphertext)
             self.assertEqual(authed_ct[-16:], expected_tag)
             self.assertEqual(plaintext, gcm.decrypt(nonce, authed_ct, data))
+
+
+    def test_forbidden_attack(self):
+        rij  = Rijndael(Bytes.random(32))
+        gcm  = GCM(rij)
+        nonce = Bytes.random(12)
+
+        ad_a = Bytes.random(8)
+        ad_b = Bytes.random(24)
+
+        pt_a = Bytes.random(16)
+        pt_b = Bytes.random(16)
+
+        ciphertext_a = gcm.encrypt(plaintext=pt_a, nonce=nonce, data=ad_a)
+        ciphertext_b = gcm.encrypt(plaintext=pt_b, nonce=nonce, data=ad_b)
+
+        ciphertext_a, tag_a = ciphertext_a[:-16], ciphertext_a[-16:]
+        ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:]
+
+        results = GCM.nonce_reuse_attack(ad_a, ciphertext_a, tag_a, ad_b, ciphertext_b, tag_b)
+
+        self.assertTrue(gcm.H in [res[0] for res in results])

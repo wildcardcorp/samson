@@ -1,7 +1,12 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
+from samson.math.factorization.general import factor
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv, schoofs_algorithm, gcd
+from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv, schoofs_algorithm, gcd, kth_root, estimate_L_complexity, is_prime, hasse_frobenius_trace_interval, bsgs
+from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException
+from samson.utilities.runtime import RUNTIME
+from functools import lru_cache
+import math
 
 
 class WeierstrassPoint(RingElement):
@@ -34,20 +39,6 @@ class WeierstrassPoint(RingElement):
     def val(self):
         return self.x
 
-
-    @property
-    def order(self) -> int:
-        from samson.math.general import bsgs, hasse_frobenius_trace_interval
-
-        if not self.order_cache:
-            if self.ring.cardinality_cache:
-                self.order_cache = super().order
-            else:
-                start, end = hasse_frobenius_trace_interval(self.curve.p)
-                order      = bsgs(self, self.curve.POINT_AT_INFINITY, e=self.curve.POINT_AT_INFINITY, start=start + self.curve.p, end=end + self.curve.p)
-                self.order_cache = order
-
-        return self.order_cache
 
 
     def __hash__(self):
@@ -106,21 +97,188 @@ class WeierstrassPoint(RingElement):
     def __radd__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self.__add__(P2)
 
+
     def __sub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return self + (-P2)
+
 
     def __rsub__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         return -self + P2
 
+
     def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if type(other) is int:
             return self*mod_inv(other, self.curve.q)
+
         else:
-            g = self.ring.coerce(other)
-            return pohlig_hellman(g, self)
+            E        = self.ring
+            g        = E(other)
+            ord_facs = factor(g.order)
+            F        = E.ring
+
+            # Check if we can do the MOV attack
+            if RUNTIME.enable_MOV_attack:
+                k = E.embedding_degree
+
+                expected_ecdlp_cost = sum([e*kth_root(p, 2) for p,e in ord_facs.items()])
+                expected_ffdlp_cost = k * estimate_L_complexity(1/2, math.sqrt(2), E.ring.characteristic)
+
+                # Is it even economical?
+                if expected_ffdlp_cost < expected_ecdlp_cost:
+                    from samson.math.algebra.fields.finite_field import FiniteField as GF
+                    K  = GF(int(F.quotient), k)
+                    E_ = WeierstrassCurve(K(E.a), K(E.b))
+
+                    n = g.order
+                    P = other
+                    Q = self
+
+                    P_ = E_(P.x, P.y)
+                    Q_ = E_(Q.x, Q.y)
+
+
+                    def find_n_torsion():
+                        while True:
+                            R = E_.random()
+
+                            if not n*R and R.find_maximum_subgroup(n_facs=ord_facs) == n:
+                                return R
+
+
+                    Km = K.mul_group()
+                    while True:
+                        # Find a random point of `n`-torsion
+                        R  = find_n_torsion()
+                        W2 = Q_.weil_pairing(R, n)
+
+                        # Make sure it generates the whole group
+                        if Km(W2).order == n:
+                            break
+
+                    W1 = P_.weil_pairing(R, n)
+
+                    return W2.log(W1)
+
+            return pohlig_hellman(g, self, factors=ord_facs)
 
 
     __floordiv__ = __truediv__
+
+
+    def line(self, R: 'WeierstrassPoint', Q: 'WeierstrassPoint') -> 'RingElement':
+        """
+        References:
+            https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/ell_point.py#L1270
+        """
+        if not Q:
+            raise ValueError("'Q' cannot be zero")
+
+        if not self or not R:
+            if self == R:
+                return self.ring.ring.one
+            if R:
+                return Q.x - R.x
+            else:
+                return Q.x - self.x
+
+        elif self != R:
+            if self.x == R.x:
+                return Q.x - self.x
+            else:
+                l = (R.y - self.y) / (R.x - self.x)
+                return Q.y - self.y - l * (Q.x - self.x)
+
+        else:
+            den = (2*self.y)
+
+            if not den:
+                return Q.x - self.x
+            else:
+                l = (3*self.x**2 + self.ring.a)/den
+                return Q.y - self.y - l * (Q.x - self.x)
+
+
+
+    def miller(self, Q: 'WeierstrassPoint', n: int) -> 'RingElement':
+        """
+        References:
+            https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/ell_point.py#L1345
+        """
+        if not Q:
+            raise ValueError("'Q' cannot be zero")
+
+        if not n:
+            raise ValueError("'n' cannot be zero")
+
+        # Handle negatives later
+        is_neg = False
+
+        if n < 0:
+           n = abs(n)
+           is_neg = True
+
+        t = self.ring.ring.one
+        V = self
+
+        # Double and add
+        for bit in [int(bit) for bit in bin(n)[3:]]:
+            S = 2*V
+            l = V.line(V, Q)
+            v = S.line(-S, Q)
+            t = (t**2)*(l/v)
+            V = S
+
+            if bit:
+                S = V+self
+                l = V.line(self, Q)
+                v = S.line(-S, Q)
+                t = t*(l/v)
+                V = S  
+
+
+        if is_neg:
+            v = V.line(-V, Q)
+            t = ~(t*v)
+
+        return t
+
+
+    def weil_pairing(self, Q: 'WeierstrassPoint', n: int) -> 'RingElement':
+        """
+        References:
+            https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/ell_point.py#L1520
+        """
+        E = self.ring
+
+        if not Q in E:
+            raise ValueError(f"Q: {Q} is not on {E}")
+
+        # Ensure P and Q are both in E[n]
+        if n*self:
+            raise ValueError(f"self: {self} is not {n}-torsion")
+
+        if n*Q:
+            raise ValueError(f"Q: {Q} is not {n}-torsion")
+
+        one = E.ring.one
+
+        if self == Q:
+            return one
+
+        if not self or not Q:
+            return one
+
+        try:
+            res = self.miller(Q, n) / Q.miller(self, n)
+
+            if n % 2:
+                res = -res
+
+            return res
+
+        except ZeroDivisionError:
+            return one
+
 
 
 
@@ -164,12 +322,13 @@ class WeierstrassCurve(Ring):
         """
         from samson.math.symbols import Symbol
 
-        self.a  = a
-        self.b  = b
-        self.ring = ring or self.a.ring
+        self.ring = ring or a.ring
+        self.a  = self.ring(a)
+        self.b  = self.ring(b)
+        
 
         if check_singularity:
-            if (4 * a**3 - 27 * b**2) == self.ring.zero:
+            if (4 * a**3 + 27 * b**2) == self.ring.zero:
                 raise ValueError("Elliptic curve can't be singular")
 
         if base_tuple:
@@ -266,15 +425,35 @@ class WeierstrassCurve(Ring):
             int: Cardinality of the curve.
         """
         if not self.cardinality_cache:
+            p = self.ring.order
             if algorithm == EllipticCurveCardAlg.AUTO:
-                curve_size = self.p.bit_length()
-                if curve_size <= 96:
-                    self.cardinality_cache = self.G.order
+                curve_size = p.bit_length()
+    
+                if 6 < curve_size <= 96:
+                    algorithm = EllipticCurveCardAlg.BSGS
                 else:
-                    self.cardinality_cache = schoofs_algorithm(self)
+                    algorithm = EllipticCurveCardAlg.SCHOOFS
 
-            elif algorithm == EllipticCurveCardAlg.BSGS:
-                self.cardinality_cache = self.G.order
+            if algorithm == EllipticCurveCardAlg.BSGS:
+                # This is pretty slick. The trace interval is at minimum `2*sqrt(p)`,
+                # so the order is at minimum `p - 2*sqrt(p)`. For p > 43, `2 * (p - 2*sqrt(p))`
+                # is always outside of the interval. This means if we find a point with an order
+                # greater than or equal to `(p - 2*sqrt(p))`, that has to be the order of the curve.
+                # Additionally, due to Langrange's theorem, every element's order is a divisor of
+                # the group's order. If we only search inside of the interval, and the element's
+                # order is greater than the interval, then the discrete logarithm of the point
+                # at infinity will be the curve's order
+                start, end = hasse_frobenius_trace_interval(p)
+                while True:
+                    try:
+                        g = self.random()
+                        bsgs(g, self.zero, e=self.zero, start=1, end=end-start)
+                    except SearchspaceExhaustedException:
+                        break
+
+                order = bsgs(g, self.zero, e=self.zero, start=start + p, end=end + p)
+
+                self.cardinality_cache = order
 
             elif algorithm == EllipticCurveCardAlg.SCHOOFS:
                 self.cardinality_cache = schoofs_algorithm(self)
@@ -319,6 +498,25 @@ class WeierstrassCurve(Ring):
 
 
     @property
+    @lru_cache(1)
+    def embedding_degree(self):
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        Fo = self.ring.order
+        Eo = self.order
+
+        Zem = (ZZ/ZZ(Eo)).mul_group()
+        return Zem(Fo).order
+
+
+    @property
+    def trace_of_frobenius(self):
+        return self.ring.order + 1 - self.cardinality()
+
+
+    trace = trace_of_frobenius
+
+    @property
     def q(self) -> int:
         return self.cardinality()
 
@@ -336,7 +534,7 @@ class WeierstrassCurve(Ring):
     @property
     def G(self) -> WeierstrassPoint:
         if not self.G_cache:
-            self.G_cache = self.random()
+            self.G_cache = self.find_gen()
 
         return self.G_cache
 
@@ -377,7 +575,8 @@ class WeierstrassCurve(Ring):
         Returns:
             WeierstrassPoint: Point at x-coordinate.
         """
-        y = tonelli(pow(x, 3, self.p) + int(self.a*x) + int(self.b), self.p)
+        x = self.ring(x)
+        y = (x**3 + self.a*x + self.b).sqrt()
         return WeierstrassPoint(x, y, self)
 
 
@@ -393,8 +592,8 @@ class WeierstrassCurve(Ring):
         """
         while True:
             try:
-                return self.recover_point_from_x(random_int_between(1, int(size.x) if size else self.p))
-            except AssertionError:
+                return self.recover_point_from_x(self.ring.random())
+            except NoSolutionException:
                 pass
 
 

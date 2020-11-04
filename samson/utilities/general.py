@@ -226,7 +226,7 @@ def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) ->
     context.check_hostname = False
 
     conn = socket.create_connection((host, port), timeout=timeout)
-    sock = context.wrap_socket(conn)
+    sock = context.wrap_socket(conn, server_hostname=host)
 
     try:
         cert = sock.getpeercert(binary_form=True)

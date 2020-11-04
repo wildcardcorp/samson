@@ -1,6 +1,7 @@
 from samson.utilities.manipulation import xor_buffs, left_rotate, right_rotate, get_blocks, transpose, stretch_key
 from samson.encoding.general import int_to_bytes
 from samson.utilities.general import rand_bytes
+from copy import deepcopy
 import codecs
 
 class Bytes(bytearray):
@@ -266,6 +267,24 @@ class Bytes(bytearray):
         """
         return Bytes(stretch_key(self, size, offset), self.byteorder)
 
+
+    def change_byteorder(self, byteorder: str=None) -> 'Bytes':
+        """
+        Changes the byteorder WITHOUT reordering the bytes. This is useful
+        for interpreting an existing byte string differently.
+        
+        Parameters:
+            byteorder (str): Byteorder to switch to. If not specified, defaults to the opposite of `self`.
+        
+        Returns:
+            Bytes: Swapped order bytes.
+        """
+        o = deepcopy(self)
+        if not byteorder:
+            byteorder = 'little' if self.byteorder == 'big' else 'big'
+
+        o.byteorder = byteorder
+        return o
 
 
     # Conversions

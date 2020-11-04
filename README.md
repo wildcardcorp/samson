@@ -66,8 +66,8 @@ In [4]: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?
    ...: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:]  
    ...: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:]  
    ...:  
-   ...: candidates = ForbiddenAttack().execute(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b)  
-   ...: gcm.H in candidates
+   ...: candidates = GCM.nonce_reuse_attack(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b)  
+   ...: gcm.H in [auth_key for auth_key, tag_mask in candidates]
 Out[4]: True
 
 

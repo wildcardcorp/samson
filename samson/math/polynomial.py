@@ -174,8 +174,9 @@ class Polynomial(RingElement):
 
 
     def newton(self, x0, max_tries: int=10000):
-        df = self.derivative()
+        df    = self.derivative()
         tries = 0
+
         while tries < max_tries:
             a = self(x0)
             b = df(x0)
@@ -183,7 +184,7 @@ class Polynomial(RingElement):
             if not a or not b:
                 break
 
-            a_b = a//b
+            a_b = a // b
 
             if not a_b:
                 break
@@ -194,9 +195,12 @@ class Polynomial(RingElement):
         return x0
 
 
-    def roots(self) -> list:
+    def roots(self, **factor_kwargs) -> list:
         """
         Finds the roots of the polynomial (i.e. where the evaluation is zero).
+
+        Parameters:
+            factor_kwargs (kwargs): Keyword arguments to pass into factorization.
 
         Returns:
             list: List of roots.
@@ -214,7 +218,7 @@ class Polynomial(RingElement):
             if is_field and self.degree() == 1:
                 return [-self.monic()[0]]
 
-            facs = self.factor()
+            facs = self.factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
         else:
@@ -223,7 +227,7 @@ class Polynomial(RingElement):
             all_facs = []
             q_facs   = R.quotient.factor()
             for fac in q_facs:
-                sub_facs = self.peel_coeffs().change_ring(R.ring/R.ring(fac)).factor()
+                sub_facs = self.peel_coeffs().change_ring(R.ring/R.ring(fac)).factor(**factor_kwargs)
                 all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
 
             return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
@@ -455,12 +459,7 @@ class Polynomial(RingElement):
 
         return factors
 
-
-    def sff(self) -> list:
-        """
-        See `square_free_decomposition`.
-        """
-        return self.square_free_decomposition()
+    sff = square_free_decomposition
 
 
     def distinct_degree_factorization(self) -> list:
@@ -510,20 +509,16 @@ class Polynomial(RingElement):
             return S
 
 
-    def ddf(self) -> list:
-        """
-        See `distinct_degree_factorization`.
-        """
-        return self.distinct_degree_factorization()
+    ddf = distinct_degree_factorization
 
-
-    def equal_degree_factorization(self, d: int, subgroup_divisor: int=None) -> list:
+    def equal_degree_factorization(self, d: int, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False) -> list:
         """
         Factors a Polynomial into factors of equal degrees.
 
         Parameters:
             d                (int): Degree to factor into.
             subgroup_divisor (int): Smallest divisor of `order - 1`.
+            user_stop_func  (func): A function that takes in (facs) and returns True if the user wants to stop factoring.
 
         Returns:
             list: Equal-degree factors of self.
@@ -572,7 +567,7 @@ class Polynomial(RingElement):
             raise NotImplementedError('Currently can\'t factor polynomials in rings of infinite order')
 
         try:
-            while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])):
+            while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])) and not user_stop_func(S):
                 h = f.ring.random(f)
                 g = gcd(h, f).monic()
 
@@ -606,12 +601,7 @@ class Polynomial(RingElement):
 
         return S
 
-
-    def edf(self, d: int, subgroup_divisor: int=None) -> list:
-        """
-        See `equal_degree_factorization`.
-        """
-        return self.equal_degree_factorization(d, subgroup_divisor)
+    edf = equal_degree_factorization
 
 
     def is_irreducible(self) -> bool:
@@ -773,7 +763,7 @@ class Polynomial(RingElement):
         return content
 
 
-    def _fac_ZZ(self, d: int=1, subgroup_divisor: int=None):
+    def _fac_ZZ(self, d: int=1, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False):
         """
         Performs factorization over ZZ. Assumes `self` is square-free.
 
@@ -815,7 +805,7 @@ class Polynomial(RingElement):
                 break
 
         # Factor over mod `p`
-        facs = g.factor(d=d, subgroup_divisor=subgroup_divisor)
+        facs = g.factor(d=d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
 
         # Here we "reattach" coefficients that were stripped due to monicity constraints of Cantor-Zassenhaus.
         # EXAMPLE: 1296*x**3 + 3654*x**2 + 3195*x + 812
@@ -865,13 +855,14 @@ class Polynomial(RingElement):
 
 
 
-    def factor(self, d: int=1, subgroup_divisor: int=None) -> list:
+    def factor(self, d: int=1, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False) -> list:
         """
         Factors the Polynomial into its constituent, irreducible factors.
 
         Parameters:
             d                (int): Degree to factor into.
             subgroup_divisor (int): Smallest divisor of `order - 1`.
+            user_stop_func  (func): A function that takes in (facs) and returns True if the user wants to stop factoring.
 
         Returns:
             list: Factors.
@@ -918,7 +909,7 @@ class Polynomial(RingElement):
 
         if self.coeff_ring == ZZ:
             f    = p // content
-            facs = [(poly._fac_ZZ(), num) for poly, num in f.sff().items() if poly.degree()]
+            facs = [(poly._fac_ZZ(user_stop_func=user_stop_func), num) for poly, num in f.sff().items() if poly.degree()]
 
             for partial_factors, num in facs:
                 for factor in partial_factors:
@@ -935,7 +926,7 @@ class Polynomial(RingElement):
             # Factor `p` over ZZ
             P    = ZZ[Symbol(q.symbol.repr)]
             z    = P(q.coeffs.map(lambda idx, val: (idx, val.numerator)))
-            facs = z.factor(d=d, subgroup_divisor=subgroup_divisor)
+            facs = z.factor(d=d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
 
             # Coerce the factors back into QQ
             for fac, e in facs.items():
@@ -947,9 +938,12 @@ class Polynomial(RingElement):
             # Cantor-Zassenhaus (SFF -> DDF -> EDF)
             distinct_degrees = [(factor, num) for poly, num in p.sff().items() for factor in poly.ddf()]
             for (poly, _), num in distinct_degrees:
-                for factor in poly.edf(d, subgroup_divisor):
+                for factor in poly.edf(d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func):
                     if factor != p.ring.one:
                         add_or_increment(factors, factor, num)
+
+                        if user_stop_func(factors.keys()):
+                            return Factors(factors)
 
         return Factors(factors)
 

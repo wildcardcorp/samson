@@ -67,6 +67,7 @@ class RuntimeConfiguration(object):
         self.minimize_output = minimize_output
     
         self.enable_poly_intercept = False
+        self.enable_MOV_attack = True
         self.auto_promote = True
 
         self.last_tb = None
@@ -89,7 +90,7 @@ class RuntimeConfiguration(object):
 
 
     def __repr__(self):
-        return f"<RuntimeConfiguration: reporter={self.reporter}, auto_promote={self.auto_promote}, enable_poly_intercept={self.enable_poly_intercept}>"
+        return f"<RuntimeConfiguration: reporter={self.reporter}, auto_promote={self.auto_promote}, enable_poly_intercept={self.enable_poly_intercept}, enable_MOV_attack={self.enable_MOV_attack}>"
 
     def __str__(self):
         return self.__repr__()

@@ -1,7 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
-from samson.math.general import totient, pohlig_hellman
+from samson.math.general import totient
 from samson.math.symbols import oo
-from samson.utilities.general import binary_search_unbounded
 from samson.utilities.exceptions import NotInvertibleException
 
 class MultiplicativeGroupElement(RingElement):
@@ -49,18 +48,7 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
-        g = self.ring.coerce(other)
-
-        if self.ring.order == oo:
-            k = binary_search_unbounded(lambda guess: g*guess < self)
-
-            if g*k == self:
-                return k
-            else:
-                raise NotInvertibleException("Logarithm not found", parameters={'g': g, 'k': k, 'h': self})
-        else:
-            return pohlig_hellman(g, self, self.ring.order)
-
+        return self.log(other)
 
 
     __floordiv__ = __truediv__
@@ -179,14 +167,10 @@ class MultiplicativeGroup(Ring):
         Returns:
             MultiplicativeGroupElement: Coerced element.
         """
-        from samson.math.algebra.rings.quotient_ring import QuotientRing
-
-        if type(other) is int and type(self.ring) is QuotientRing:
-            other %= self.ring.quotient
-
-        if type(other) is not MultiplicativeGroupElement:
-            other = MultiplicativeGroupElement(self.ring.coerce(other), self)
-        return other
+        if type(other) is not MultiplicativeGroupElement or other.ring.ring != self.ring:
+            return MultiplicativeGroupElement(self.ring(other), self)
+        else:
+            return other
 
 
     def element_at(self, x: int) -> MultiplicativeGroupElement:
@@ -201,9 +185,14 @@ class MultiplicativeGroup(Ring):
         """
         return self(self.ring[x+1])
 
+
     def __eq__(self, other: 'MultiplicativeGroup') -> bool:
         return type(self) == type(other) and self.ring == other.ring
 
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
+
+
+    def random(self, size: object=None) -> object:
+        return self(self.ring.random(size))

@@ -1,5 +1,5 @@
 from samson.utilities.general import rand_bytes
-from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException
+from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException, NoSolutionException
 from functools import reduce
 from types import FunctionType
 from copy import deepcopy
@@ -427,7 +427,7 @@ def kth_root(n: int, k: int) -> int:
     # Estimate the root using floating point exponentiation
     # This typically is within 1e-10 of the actual root for large integers
     try:
-        guess = int(n**(1/k))
+        guess = round(n**(1/k))
 
     except OverflowError:
         # If we overflow the float's precision, we can use a bit of math
@@ -441,13 +441,18 @@ def kth_root(n: int, k: int) -> int:
             guess = int(2.0**e)
 
 
-    # Use Newton's method to rapidly converge on the root
-    rprev, root, k_1 = -1, guess, k-1
-    while root > 2:
-        approx = root**k_1
-        rprev, root = root, (k_1*root + n//approx) // k
-        if abs(root - rprev) < 2:
-            break
+    # Newton's method is more likely to screw up small numbers than converge
+    if guess > 2**50:
+        # Use Newton's method to rapidly converge on the root
+        rprev, root, k_1 = -1, guess, k-1
+        while root > 2:
+            approx = root**k_1
+            rprev, root = root, (k_1*root + n//approx) // k
+            if abs(root - rprev) < 2:
+                break
+    else:
+        root = guess
+
 
 
     t = root**k
@@ -456,22 +461,25 @@ def kth_root(n: int, k: int) -> int:
 
     # If we're very close, then try incrementing/decrementing
     diff = n-t
-    if abs(diff)/n < 0.1:
-        if diff > 0:
-            while t < n:
-                root += 1
-                t     = root**k
-        else:
-            while t > n:
-                root -= 1
-                t     = root**k
+    try:
+        if abs(diff)/n < 0.1:
+            if diff > 0:
+                while t < n:
+                    root += 1
+                    t     = root**k
+            else:
+                while t > n:
+                    root -= 1
+                    t     = root**k
 
-        return root
+            return root + (t < n)
+    except OverflowError:
+        pass
 
 
     # If we're still not there, use binary search to comb through the rest of the space
     ub = root
-    lb = 0 if ub < 512 else ub // 2
+    lb = 0
 
     while lb < ub:
         guess = (lb + ub) // 2
@@ -739,7 +747,13 @@ def tonelli(n: int, p: int) -> int:
         https://www.geeksforgeeks.org/find-square-root-modulo-p-set-2-shanks-tonelli-algorithm/
         https://rosettacode.org/wiki/Tonelli-Shanks_algorithm#Python
     """
-    assert legendre(n, p) == ResidueSymbol.EXISTS, "not a square (mod p)"
+    leg = legendre(n, p)
+    if leg == ResidueSymbol.IS_ZERO:
+        return 0
+
+    elif leg == ResidueSymbol.DOES_NOT_EXIST:
+        raise NoSolutionException()
+
     q = p - 1
     s = 0
     while q % 2 == 0:
@@ -780,15 +794,15 @@ def tonelli(n: int, p: int) -> int:
 
 def tonelli_q(a: int, p: int, q: int) -> int:
     """
-    Performs the Tonelli-Shanks algorithm for calculating the `q`th-root of `n` mod `p`.
+    Performs the Tonelli-Shanks algorithm for calculating the `q`th-root of `a` mod `p`.
 
     Parameters:
-        n (int): Integer.
+        a (int): Integer.
         p (int): Modulus.
         q (int): Root to take.
 
     Returns:
-        int: `q`th-root of `n` mod `p`.
+        int: `q`th-root of `a` mod `p`.
 
     Examples:
         >>> from samson.math.general import tonelli_q
@@ -808,7 +822,14 @@ def tonelli_q(a: int, p: int, q: int) -> int:
         "On Taking Roots in Finite Fields" (https://www.cs.cmu.edu/~glmiller/Publications/AMM77.pdf)
     """
     # Step 1 & 2
-    assert generalized_eulers_criterion(a, q, p) == ResidueSymbol.EXISTS, "not a power (mod p)"
+    gec = generalized_eulers_criterion(a, q, p)
+
+    if gec == ResidueSymbol.IS_ZERO:
+        return 0
+
+    elif gec == ResidueSymbol.DOES_NOT_EXIST:
+        raise NoSolutionException()
+
 
     # Step 3
     for g in range(2, p):
@@ -1631,7 +1652,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     R = curve.curve_poly_ring
     S = R/psi
     T = Frac(S, simplify=False)
-    sym_curve = WeierstrassCurve(a=curve.a, b=curve.b, ring=T)
+    sym_curve = WeierstrassCurve(a=T([curve.a]), b=curve.b, ring=T, check_singularity=False)
 
     x = R.poly_ring.symbol
 
@@ -1861,7 +1882,7 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         return x[-1]
 
     x = []
-    for i, (p, e) in enumerate(factors.items()):
+    for p, e in factors.items():
         ex_i = (n // p**e)
         g_i  = g * ex_i
         h_i  = h * ex_i
@@ -2536,7 +2557,7 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
         g (MultiplicativeGroupElement): Generator.
         y (MultiplicativeGroupElement): Target of form `g`^`x`.
         order                    (int): Order of `g`.
-    
+
     Returns:
         int: The discrete logarithm of `y`.
 
@@ -2594,7 +2615,7 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
                 i = indices[p_i]
                 relations[k, i] = Fq(e_i)
 
-            k = k+1
+            k += 1
 
     # Solve
     ker  = relations.left_kernel()[0]
@@ -2605,3 +2626,25 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
         B += ker_i*row_i[1]
 
     return int(-A * ~Fq(B))
+
+
+def estimate_L_complexity(a, c, n):
+    import math
+    return math.e**(c*math.log(n)**a * (math.log(math.log(n)))**(1-a))
+
+
+
+def log(y: 'RingElement', base: 'RingElement') -> int:
+    """
+    Computes the logarithm of `y` to `base`.
+
+    Parameters:
+        base (RingElement): Base.
+    
+    Returns:
+        int: `x` such that `base`^`x` == `y`.
+    """
+    if type(y) in [int, float]:
+        return math.log(y, base)
+    else:
+        return y.log(base)

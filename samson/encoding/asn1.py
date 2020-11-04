@@ -67,15 +67,41 @@ INVERSE_SIGNING_ALG_OIDS = {v:k for k,v in SIGNING_ALG_OIDS.items()}
 
 
 def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
-    rdn_parts = rdn_str.split(',')
-    rdn_seq = rfc2459.RDNSequence()
+    rdn_parts = rdn_str.split('=')
+    rdn_seq   = rfc2459.RDNSequence()
 
-    for i, part in enumerate(rdn_parts):
-        k,v = [item.strip() for item in part.split('=')]
+    # Here we're careful of commas in RDNs
+    # We also use 'key_idx' to keep track of the position
+    # of the RDNs
+    rdn_dict = {}
+    key      = rdn_parts[0]
+    key_idx  = [key]
 
+    for part in rdn_parts[1:-1]:
+        parts = part.split(',')
+        curr_val, next_key = ','.join(parts[:-1]), parts[-1]
+
+        rdn_dict[key] = curr_val
+        key           = next_key
+        key_idx.append(key)
+
+    rdn_dict[next_key] = rdn_parts[-1]
+
+
+    for i, k in enumerate(key_idx[::-1]):
+        v    = rdn_dict[k]
         attr = rfc2459.AttributeTypeAndValue()
-        attr['type']  = RDN_OID_LOOKUP[k]
-        attr['value'] = OctetString(encoder.encode(RDN_TYPE_LOOKUP[k](v)))
+        attr['type'] = RDN_OID_LOOKUP[k]
+
+        try:
+            rdn_payload = RDN_TYPE_LOOKUP[k](v)
+
+        # We need this for rfc2459.X520StateOrProvinceName
+        except TypeError:
+            rdn_payload = RDN_TYPE_LOOKUP[k]()
+            rdn_payload.setComponentByPosition(0, v)
+
+        attr['value'] = OctetString(encoder.encode(rdn_payload))
 
         rdn = rfc2459.RelativeDistinguishedName()
         rdn.setComponentByPosition(0, attr)
@@ -86,6 +112,7 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
 
 def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
     from pyasn1.codec.der import decoder
+
     rdn_map = []
     for rdn in rdns[::-1]:
         rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(rdn[0]['type'].asTuple())]

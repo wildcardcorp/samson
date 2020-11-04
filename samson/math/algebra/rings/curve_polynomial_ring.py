@@ -27,6 +27,10 @@ class CurvePolynomialElement(RingElement):
         return f'{self.ring.shorthand()}({self.x_poly.shorthand()}, {self.y_poly.shorthand()})'
 
 
+    def tinyhand(self) -> str:
+        return self.shorthand()
+
+
     def __hash__(self):
         return hash((self.x_poly, self.y_poly, self.ring))
 

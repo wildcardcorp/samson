@@ -107,6 +107,17 @@ class QuotientElement(RingElement):
         """
         from samson.math.general import gcd
         return gcd(self.val, self.ring.quotient) == self.ring.ring.one
+    
+
+    def sqrt(self) -> 'QuotientElement':
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        if self.ring.ring == ZZ:
+            from samson.math.general import tonelli
+            return self.ring(tonelli(int(self), int(self.ring.quotient)))
+        else:
+            return self.kth_root(2)
+
 
 
 class QuotientRing(Ring):

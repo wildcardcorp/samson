@@ -1,4 +1,4 @@
-from samson.math.general import fast_mul, square_and_mul, is_prime
+from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
@@ -6,6 +6,7 @@ from functools import wraps
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException
+from samson.utilities.general import binary_search_unbounded
 from samson.core.base_object import BaseObject
 
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
@@ -183,9 +184,10 @@ class Ring(BaseObject):
         if self.order == oo:
             return self.one
 
-        for i in range(1, self.order):
-            possible_gen = self[i]
-            if possible_gen * self.order == self.zero and possible_gen.order == self.order:
+
+        while True:
+            possible_gen = self.random()
+            if possible_gen.order == self.order:
                 return possible_gen
 
         raise SearchspaceExhaustedException("Unable to find generator")
@@ -235,11 +237,14 @@ class RingElement(BaseObject):
     def __add__(self, other: 'RingElement') -> 'RingElement':
         pass
 
+
     def __radd__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) + self
 
+
     def __sub__(self, other: 'RingElement') -> 'RingElement':
         pass
+
 
     def __rsub__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) - self
@@ -256,6 +261,7 @@ class RingElement(BaseObject):
 
     def __rmod__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) % self
+
 
     def __rdivmod__(self, other: 'RingElement') -> 'RingElement':
         return divmod(self.ring.coerce(other), self)
@@ -283,15 +289,19 @@ class RingElement(BaseObject):
     def __rtruediv__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) / self
 
+
     def __rfloordiv__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) // self
+
 
     def __bool__(self) -> bool:
         return self != self.ring.zero
 
+
     def __eq__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         return self.val == other.val and self.ring == other.ring
+
 
     def __lt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
@@ -300,8 +310,10 @@ class RingElement(BaseObject):
 
         return self.val < other.val
 
+
     def __le__(self, other: 'RingElement') -> bool:
         return self < other or self == other
+
 
     def __gt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
@@ -309,6 +321,7 @@ class RingElement(BaseObject):
             raise Exception("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
+
 
     def __ge__(self, other: 'RingElement') -> bool:
         return self > other or self == other
@@ -434,12 +447,36 @@ class RingElement(BaseObject):
 
 
         ro_facs = self.ring.order_factors
+        return self.find_maximum_subgroup(n_facs=ro_facs)
+
+
+
+    def find_maximum_subgroup(self, n: int=None, n_facs: 'Factors'=None) -> int:
+        """
+        Finds the maximum order of `self` in the subgroup of the size `n`.
+
+        Parameters:
+            n          (int): Size of the subgroup.
+            n_facs (Factors): Factors of the size of the subgroup.
+
+        Returns:
+            int: Maximum order.
+        """
+        if not n and not n_facs:
+            raise ValueError("Either 'n' or 'n_facs' must be provided")
+
+        if n_facs:
+            n = n_facs.recombine()
+        else:
+            n_facs = factor(n)
+
+
         so_facs = Factors()
 
-        for p in ro_facs:
-            e = ro_facs[p]
+        for p in n_facs:
+            e = n_facs[p]
             for i in range(1,e+2):
-                o = self.ring.order // p**i
+                o = n // p**i
                 if self*o != self.ring.zero:
                     break
 
@@ -510,7 +547,7 @@ class RingElement(BaseObject):
         Parameters:
             k           (int): Root to take.
             return_all (bool): Whether or not to return all roots or just one.
-        
+
         Returns:
             RingElement: Root.
         """
@@ -518,16 +555,21 @@ class RingElement(BaseObject):
 
         x     = Symbol('x')
         _     = self.ring[x]
-        roots = (x**k - self).roots()
 
-        try:
-            if not return_all:
-                roots = roots[0]
+        if return_all:
+            kwargs = {}
+        else:
+            kwargs = {'user_stop_func': lambda S: any(f.degree() == 1 for f in S)}
+    
+        roots = (x**k - self).roots(**kwargs)
 
-            return roots
-        except IndexError:
+        if not roots:
             raise NoSolutionException()
 
+        if not return_all:
+            roots = roots[0]
+
+        return roots
 
 
     def sqrt(self) -> 'RingElement':
@@ -539,3 +581,31 @@ class RingElement(BaseObject):
         while b:
             a, b = b, a % b
         return a
+
+
+
+    def log(self, base: 'RingElement') -> int:
+        """
+        Computes the logarithm of `self` to `base`.
+
+        Parameters:
+            base (RingElement): Base.
+        
+        Returns:
+            int: `x` such that `base`^`x` == `self`.
+        """
+        from samson.math.symbols import oo
+
+        mul = self.ring.mul_group()
+        h   = mul(self)
+        g   = mul(base)
+
+        if self.ring.order == oo:
+            k = binary_search_unbounded(lambda guess: g*guess < h)
+
+            if g*k == h:
+                return k
+            else:
+                raise NotInvertibleException("Logarithm not found", parameters={'g': g, 'k': k, 'h': h})
+        else:
+            return pohlig_hellman(g, h)

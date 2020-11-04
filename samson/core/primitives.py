@@ -72,6 +72,16 @@ class MAC(Primitive):
         pass
 
     def verify(self, message: bytes, signature: bytes) -> bool:
+        """
+        Verifies `message` and `signature` by regenerating the signature.
+
+        Parameters:
+            message   (bytes): Message to verify.
+            signature (bytes): Alleged signature of `message`.
+        
+        Returns:
+            bool: Whether or not the signature matched.
+        """
         from samson.utilities.runtime import RUNTIME
         return RUNTIME.compare_bytes(self.generate(message), signature)
 

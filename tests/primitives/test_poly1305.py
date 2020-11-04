@@ -1,4 +1,6 @@
 from samson.macs.poly1305 import Poly1305
+from samson.block_ciphers.rijndael import Rijndael
+from samson.utilities.bytes import Bytes
 import unittest
 
 testvec = [
@@ -25,11 +27,24 @@ testvec = [
       "r" : b"\x12\x97\x6a\x08\xc4\x42\x6d\x0c\xe8\xa8\x24\x07\xc4\xf4\x82\x07",
       "n" : b"\x9a\xe8\x31\xe7\x43\x97\x8d\x3a\x23\x52\x7c\x71\x28\x14\x9e\x3a",
       "x" : b"\x51\x54\xad\x0d\x2c\xb2\x6e\x01\x27\x4f\xc5\x11\x48\x49\x1f\x1b"
-    } ]
+    }]
 
 
 class Poly1305TestCase(unittest.TestCase):
     def test_allvecs(self):
         for vec in testvec:
-            poly = Poly1305(vec['k'], vec['n'], vec['r'])
-            self.assertEqual(poly.generate(vec['m']), vec['x'])
+            nonce = Rijndael(vec['k']).encrypt(vec['n']).change_byteorder()
+            poly  = Poly1305(vec['r'], clamp_r=False)
+            self.assertEqual(poly.generate(vec['m'], nonce), vec['x'])
+
+
+    #https://tools.ietf.org/html/rfc7539#section-2.5.2
+    def test_rfc7539(self):
+        key = 0x85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b
+        s   = Bytes(0x0103808afb0db2fd4abff6af4149f51b).change_byteorder()
+        r   = 0x85d6be7857556d337f4452fe42d506a8
+        msg = b'Cryptographic Forum Research Group'
+
+        p1305 = Poly1305(r)
+        self.assertEqual(p1305.generate(msg, s), b"\xa8\x06\x1d\xc10Q6\xc6\xc2+\x8b\xaf\x0c\x01'\xa9")
+

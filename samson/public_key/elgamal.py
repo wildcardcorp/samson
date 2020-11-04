@@ -37,7 +37,7 @@ class ElGamal(NumberTheoreticalAlg):
         Parameters:
             plaintext (bytes): Message to encrypt.
             k           (int): (Optional) Ephemeral key.
-        
+
         Returns:
             (int, int): Formatted as (ephemeral key, ciphertext).
         

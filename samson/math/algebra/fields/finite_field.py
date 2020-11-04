@@ -1,5 +1,6 @@
 from samson.math.general import is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
+from samson.math.symbols import Symbol
 from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.math.polynomial import Polynomial
 import itertools
@@ -91,7 +92,7 @@ class FiniteField(Field):
 
     """
 
-    def __init__(self, p: int, n: int=1, reducing_poly: Polynomial=None):
+    def __init__(self, p: int, n: int=1, reducing_poly: Polynomial=None, symbol_repr: str='x'):
         """
         Parameters:
             p                    (int): Prime.
@@ -105,21 +106,24 @@ class FiniteField(Field):
         self.n = n
 
         self.internal_ring = ZZ/ZZ(p)
+        x = Symbol(symbol_repr)
+        P = self.internal_ring[x]
 
         if not reducing_poly:
             if n == 1:
                 reducing_poly = Polynomial([0, 1], self.internal_ring)
             else:
-                for c in itertools.product(range(p), repeat=n):
-                    poly = Polynomial((1, *c)[::-1], self.internal_ring)
+                max_elem = x**(n+1)
+                while True:
+                    poly = P.random(max_elem).monic()
+
                     if poly.is_irreducible():
                         reducing_poly = poly
                         break
 
 
         self.reducing_poly  = reducing_poly
-        poly_ring           = self.reducing_poly.ring
-        self.internal_field = poly_ring/poly_ring(reducing_poly)
+        self.internal_field = P/P(reducing_poly)
 
         self.zero = self.coerce(0)
         self.one  = self.coerce(1)
@@ -174,6 +178,10 @@ class FiniteField(Field):
            FiniteFieldElement: The `x`-th element.
         """
         return FiniteFieldElement(self.internal_field.element_at(x), self)
+    
+
+    def random(self, size: FiniteFieldElement=None) -> FiniteFieldElement:
+        return self(self.internal_field.random(size))
 
 
     def __eq__(self, other: 'FiniteField') -> bool:
