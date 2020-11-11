@@ -13,7 +13,7 @@ JWK_CURVE_NAME_LOOKUP = {
     GOD521: 'P-521'
 }
 
-JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items()}
+JWK_INVERSE_CURVE_LOOKUP = {v:k for k, v in JWK_CURVE_NAME_LOOKUP.items() if k != GOD521}
 
 class JWKECPublicKey(JWKBase):
     """

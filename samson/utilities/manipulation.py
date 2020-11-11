@@ -12,7 +12,7 @@ def xor_buffs(buf1: bytes, buf2: bytes) -> bytearray:
         bytearray: Resulting bytes.
     """
     if len(buf1) != len(buf2):
-        raise Exception('Buffers must be equal length.')
+        raise ValueError('Buffers must be equal length.')
 
     return bytearray([x ^ y for x, y in zip(buf1, buf2)])
 

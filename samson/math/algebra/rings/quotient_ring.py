@@ -107,7 +107,7 @@ class QuotientElement(RingElement):
         """
         from samson.math.general import gcd
         return gcd(self.val, self.ring.quotient) == self.ring.ring.one
-    
+
 
     def sqrt(self) -> 'QuotientElement':
         from samson.math.algebra.rings.integer_ring import ZZ
@@ -207,15 +207,11 @@ class QuotientRing(Ring):
         Returns:
             QuotientElement: Coerced element.
         """
-        is_int  = type(other) is int
-        is_elem = issubclass(type(other), RingElement)
+        if hasattr(other, 'ring') and other.ring == self:
+            return other
+        else:
+            return QuotientElement(self.ring(other), self)
 
-        if is_int or not is_elem or other.ring != self:
-            if is_int or not is_elem or other.ring != self.ring:
-                other = self.ring.coerce(other)
-
-            other = QuotientElement(other, self)
-        return other
 
 
     def element_at(self, x: int) -> QuotientElement:

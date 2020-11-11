@@ -1,13 +1,11 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.curves.named import _PRECOMPUTED_ICA_PLANS, _PRECOMPUTED_ICA_ORDERS
-from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import crt, product, lcm, bsgs, kth_root
 from samson.math.factorization.general import factor
 from samson.protocols.ecdhe import ECDHE
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from typing import List
-import itertools
 
 import logging
 log = logging.getLogger(__name__)
@@ -56,14 +54,11 @@ class InvalidCurveAttack(object):
         References:
             "Validation of Elliptic Curve Public Keys" (https://iacr.org/archive/pkc2003/25670211/25670211.pdf)
         """
-        residues     = []
-        factors_seen = set()
-        total        = 1
+        residues = []
 
         # Reaching cardinality only determines the key up to sign.
         # By getting to cardinality squared, we can get the exact key
         # without having to do a lengthy bruteforce
-        reached_card = False
         cardinality  = self.curve.cardinality()**2
 
         if invalid_curves:
@@ -72,7 +67,7 @@ class InvalidCurveAttack(object):
             # Check if we can meet the required cardinality
             max_card_achieved = 1
             for prod in [product([r**e for r,e in facs]) for _, facs in curve_facs]:
-                max_card_achieved = lcm(max_card_achieved, prod)    
+                max_card_achieved = lcm(max_card_achieved, prod)
 
             if max_card_achieved < cardinality:
                 raise RuntimeError(f'Maximum achievable modulus is only {"%.2f"%(max_card_achieved / cardinality)}% of curve cardinality squared. Supply more invalid curves.')

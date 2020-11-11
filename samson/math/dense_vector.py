@@ -39,11 +39,11 @@ class DenseVector(object):
 
     def __mul__(self, other: object) -> 'DenseVector':
         return DenseVector([a*other for a in self.values])
-    
+
 
     def __iter__(self):
         return self.values.__iter__()
-    
+
 
     def __getitem__(self, idx: object) -> 'RingElement':
         return self.values[idx]
@@ -51,7 +51,7 @@ class DenseVector(object):
 
     def __setitem__(self, idx, value):
         self.values[idx] = value
-    
+
 
     def __len__(self):
         return len(self.values)

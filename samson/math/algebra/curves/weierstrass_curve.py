@@ -2,11 +2,10 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import random_int_between, tonelli, pohlig_hellman, mod_inv, schoofs_algorithm, gcd, kth_root, estimate_L_complexity, is_prime, hasse_frobenius_trace_interval, bsgs
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from functools import lru_cache
-import math
 
 
 class WeierstrassPoint(RingElement):
@@ -56,7 +55,7 @@ class WeierstrassPoint(RingElement):
     def __lt__(self, other: 'WeierstrassPoint') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.x < other.x
 
@@ -64,7 +63,7 @@ class WeierstrassPoint(RingElement):
     def __gt__(self, other: 'WeierstrassPoint') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.x > other.x
 
@@ -112,26 +111,39 @@ class WeierstrassPoint(RingElement):
 
         else:
             E        = self.ring
-            g        = E(other)
-            ord_facs = factor(g.order)
+            P        = E(other)
+            ord_facs = factor(P.order)
             F        = E.ring
 
             # Check if we can do the MOV attack
             if RUNTIME.enable_MOV_attack:
                 k = E.embedding_degree
 
-                expected_ecdlp_cost = sum([e*kth_root(p, 2) for p,e in ord_facs.items()])
-                expected_ffdlp_cost = k * estimate_L_complexity(1/2, math.sqrt(2), E.ring.characteristic)
-
                 # Is it even economical?
-                if expected_ffdlp_cost < expected_ecdlp_cost:
+                if k < 7 and max(ord_facs).bit_length() > RUNTIME.index_calculus_supremacy:
                     from samson.math.algebra.fields.finite_field import FiniteField as GF
                     K  = GF(int(F.quotient), k)
                     E_ = WeierstrassCurve(K(E.a), K(E.b))
+                    Q  = self
 
-                    n = g.order
-                    P = other
-                    Q = self
+                    # Implementation detail: Elliptic curve operations faster than
+                    # poly mul/div, so only do index calculus on large groups
+                    large_facs     = {p: e for p,e in ord_facs.items() if p.bit_length() > RUNTIME.index_calculus_supremacy}
+                    small_facs     = ord_facs - large_facs
+                    large_facs     = ord_facs - small_facs
+                    large_subgroup = product([p**e for p,e in large_facs.items()])
+                    small_subgroup = P.order // large_subgroup
+
+
+                    res = pohlig_hellman(P * large_subgroup, Q * large_subgroup, factors=small_facs)
+
+                    if res * P == Q:
+                        return res
+
+                    # Confine P and Q to the large subgroup
+                    n  = large_subgroup
+                    Q *= small_subgroup
+                    P *= small_subgroup
 
                     P_ = E_(P.x, P.y)
                     Q_ = E_(Q.x, Q.y)
@@ -141,7 +153,7 @@ class WeierstrassPoint(RingElement):
                         while True:
                             R = E_.random()
 
-                            if not n*R and R.find_maximum_subgroup(n_facs=ord_facs) == n:
+                            if not n*R and R.find_maximum_subgroup(n_facs=large_facs) == n:
                                 return R
 
 
@@ -156,10 +168,9 @@ class WeierstrassPoint(RingElement):
                             break
 
                     W1 = P_.weil_pairing(R, n)
+                    return crt([(W2.log(W1), large_subgroup), (res, small_subgroup)])[0]
 
-                    return W2.log(W1)
-
-            return pohlig_hellman(g, self, factors=ord_facs)
+            return pohlig_hellman(P, self, factors=ord_facs)
 
 
     __floordiv__ = __truediv__
@@ -233,7 +244,7 @@ class WeierstrassPoint(RingElement):
                 l = V.line(self, Q)
                 v = S.line(-S, Q)
                 t = t*(l/v)
-                V = S  
+                V = S
 
 
         if is_neg:
@@ -325,7 +336,7 @@ class WeierstrassCurve(Ring):
         self.ring = ring or a.ring
         self.a  = self.ring(a)
         self.b  = self.ring(b)
-        
+
 
         if check_singularity:
             if (4 * a**3 + 27 * b**2) == self.ring.zero:
@@ -428,7 +439,7 @@ class WeierstrassCurve(Ring):
             p = self.ring.order
             if algorithm == EllipticCurveCardAlg.AUTO:
                 curve_size = p.bit_length()
-    
+
                 if 6 < curve_size <= 96:
                     algorithm = EllipticCurveCardAlg.BSGS
                 else:
@@ -459,7 +470,7 @@ class WeierstrassCurve(Ring):
                 self.cardinality_cache = schoofs_algorithm(self)
 
             else:
-                raise Exception(f"Unkown EllipticCurveCardAlg '{algorithm}'")
+                raise ValueError(f"Unkown EllipticCurveCardAlg '{algorithm}'")
 
         return self.cardinality_cache
 

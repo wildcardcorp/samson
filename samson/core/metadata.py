@@ -35,6 +35,7 @@ class ConstructionType(Enum):
     LFSR               = 8
     HASH_ITERATIVE_FRAMEWORK = 9
     DAVIES_MEYER       = 10
+    WEGMAN_CARTER      = 11
 
 
 class SecurityProofType(Enum):
@@ -42,6 +43,7 @@ class SecurityProofType(Enum):
     DISCRETE_LOGARITHM    = 1
     SHORTEST_VECTOR       = 2
     INTEGER_FACTORIZATION = 3
+    INFORMATION_THEORETIC = 4
 
 
 class UsageType(Enum):

@@ -18,6 +18,10 @@ class Bytes(bytearray):
         """
         if issubclass(type(bytes_like), int):
             bytes_like = int_to_bytes(bytes_like, byteorder)
+        
+        # Unfortunately, we need this for pickling
+        if type(bytes_like) is str:
+            bytes_like = bytes_like.encode('latin-1')
 
         super().__init__(bytes_like)
         self.byteorder = byteorder

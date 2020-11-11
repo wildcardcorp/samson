@@ -12,7 +12,7 @@ class Playfair(object):
             key (str): Keyphrase containing no duplicate letters and not the letter 'j'.
         """
         if len(list(set(list(key)))) < len(key):
-            raise Exception("Key cannot have duplicate characters")
+            raise ValueError("Key cannot have duplicate characters")
 
         # Playfair combines 'i' and 'j'
         assert 'j' not in key

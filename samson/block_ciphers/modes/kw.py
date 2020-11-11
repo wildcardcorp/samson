@@ -1,4 +1,6 @@
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidMACException
+from samson.utilities.runtime import RUNTIME
 from samson.core.primitives import EncryptionAlg, BlockCipherMode, Primitive
 from samson.ace.decorators import register_primitive
 
@@ -92,7 +94,8 @@ class KW(BlockCipherMode):
 
 
         if verify:
-            assert A[:len(self.iv)] == self.iv
+            if not RUNTIME.compare_bytes(A[:len(self.iv)], self.iv):
+                raise InvalidMACException
 
         if unpad:
             plaintext = plaintext[:A[len(self.iv):].int()]

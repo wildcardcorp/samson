@@ -47,7 +47,7 @@ class Polynomial(RingElement):
             self.coeffs = coeffs
 
         else:
-            raise Exception(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
+            raise TypeError(f"'coeffs' is not of an accepted type. Received {type(coeffs)}")
 
 
         self.symbol = symbol or Symbol('x')
@@ -132,6 +132,22 @@ class Polynomial(RingElement):
 
     def __setitem__(self, idx: int, value: 'RingElement'):
         self.coeffs[idx] = value
+
+
+    def __getstate__(self):
+        return {'coeffs': self.coeffs, 'symbol_repr': self.symbol.repr}
+
+
+    def __setstate__(self, state):
+        from samson.math.symbols import Symbol
+        o = Polynomial(state['coeffs'], symbol=Symbol(state['symbol_repr']))
+        self.coeffs     = o.coeffs
+        self.coeff_ring = o.coeff_ring
+        self.ring       = o.ring
+        self.symbol     = o.symbol
+
+        #self.symbol.build(self.ring)
+
 
 
     def LC(self) -> RingElement:
@@ -890,7 +906,7 @@ class Polynomial(RingElement):
         if not p:
             return Factors({p:1})
 
-        factors = {}
+        factors = Factors()
 
         # Add content as constant polynomial
         content = p.content()
@@ -905,6 +921,15 @@ class Polynomial(RingElement):
         if first_idx:
             factors[p.symbol*1] = first_idx
             p >>= first_idx
+
+
+        # Check for known irreducibles
+        if p.degree() == 1:
+            factors[p // content] = 1
+            return factors
+
+        if not p.degree():
+            return factors
 
 
         if self.coeff_ring == ZZ:
@@ -943,9 +968,9 @@ class Polynomial(RingElement):
                         add_or_increment(factors, factor, num)
 
                         if user_stop_func(factors.keys()):
-                            return Factors(factors)
+                            return factors
 
-        return Factors(factors)
+        return factors
 
 
     def degree(self) -> int:
@@ -1034,7 +1059,8 @@ class Polynomial(RingElement):
         """
         # Check for zero
         other = self.ring.coerce(other)
-        assert other != self.ring.zero
+        if not other:
+            raise ZeroDivisionError
 
         # Divisor > dividend, early out
         n = other.degree()

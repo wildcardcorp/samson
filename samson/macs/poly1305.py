@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import MAC, Primitive
-from samson.core.metadata import FrequencyType
+from samson.core.metadata import FrequencyType, ConstructionType, SecurityProofType
 from samson.ace.decorators import register_primitive
 
 @register_primitive()
@@ -8,10 +8,15 @@ class Poly1305(MAC):
     """
     Message authentication code using an underlying block cipher. The (r, nonce) combination MUST
     be unique to guarantee its security properties. A single reuse can allow for a forgery.
+
+    References:
+        "The Poly1305-AES message-authentication code" (https://cr.yp.to/mac/poly1305-20050329.pdf)
     """
 
     P1305 = (1 << 130) - 5
-    USAGE_FREQUENCY = FrequencyType.NORMAL
+    USAGE_FREQUENCY    = FrequencyType.NORMAL
+    CONSTRUCTION_TYPES = [ConstructionType.WEGMAN_CARTER]
+    SECURITY_PROOF     = SecurityProofType.INFORMATION_THEORETIC
 
     def __init__(self, r: bytes, clamp_r: bool=True):
         """
@@ -113,15 +118,15 @@ class Poly1305(MAC):
         # plus a secret constant `s` with coefficients in P1305
         # sa = ((((ma1 * r) + ma2) * r) + ma3) * r + s = ma1*r^3 + ma2r*^2 + ma3*r + s
 
-        # The whole thing is then modulo 2**128, making the final equation:
-        # sa = ma1*r^3 + ma2*r^2 + ma3*r + s - n*2**128
+        # The whole thing is then modulo 2^128, making the final equation:
+        # sa = ma1*r^3 + ma2*r^2 + ma3*r + s - n*2^128
         # If `s` is reused, we can cancel it (this is basically the Forbidden attack)
 
-        # sa - sb = (ma1*r^3 - mb1*r^3) + (ma2*r^2 - mb2*r^2) + (ma3*r - mb3*r) + (s - s) - (n*2**128 - m*2**128)
-        # sa - sb = (ma1 - mb1)*r^3 + (ma2 - mb2)*r^2 + (ma3 - mb3)*r - (n - m)*2**128
+        # sa - sb = (ma1*r^3 - mb1*r^3) + (ma2*r^2 - mb2*r^2) + (ma3*r - mb3*r) + (s - s) - (n*2^128 - m*2^128)
+        # sa - sb = (ma1 - mb1)*r^3 + (ma2 - mb2)*r^2 + (ma3 - mb3)*r - (n - m)*2^128
 
         # Since we know `ma` and `mb`, we can calculate these coefficients
-        # sa - sb = m1*r^3 + m2*r^2 + m3*r - (n - m)*2**128
+        # sa - sb = m1*r^3 + m2*r^2 + m3*r - (n - m)*2^128
 
         pt1_chunks, pt2_chunks = [Poly1305._chunk_message(message) for message in [msg1, msg2]]
         coeffs = [chunk1.int() - chunk2.int() for chunk1, chunk2 in zip(pt1_chunks, pt2_chunks)]
@@ -145,13 +150,15 @@ class Poly1305(MAC):
         p = (P(coeffs[::-1]) << 1) - sig_diff
 
         # Then we move `sa - sb` to the other side
-        # m1*r^3 + m2*r^2 + m3*r - (n - m)*2**128 - (sa - sb) = 0
+        # m1*r^3 + m2*r^2 + m3*r - (n - m)*2^128 - (sa - sb) = 0
 
         # By taking the root of this polynomial, we will find `r`. However,
         # we don't know `n` or `m`. What's actually important is the difference between them.
         # We'll call this difference `k` (i.e. `k = n - m`). Note that `k` may be negative,
-        # so we need to try those values as well. This kinda smells like LLL, but this should
-        # work, too.
+        # so we need to try those values as well. `n` and `m` are both in [0, 3], so `k` is in [-3, 3].
+        # Three is the max value because the polynomial result (`total`) is maximally 2^130-6 and (2^130-6) // 2^128 = 3.
+        # If `total` < 2^128, then it's always zero. Lastly, `k` is more likely to be closer to zero
+        # than the extremes, so we try middle values first.
 
         k = 0
         while True:
@@ -165,7 +172,7 @@ class Poly1305(MAC):
                     test_sig1 = gen(pt1_chunks, ri)
 
                     # Here we check if the current `r` is correct
-                    # (ta - tb) % 2**128 == ((ta + s) - (tb + s)) % 2**128
+                    # (ta - tb) % 2^128 == ((ta + s) - (tb + s)) % 2^128
                     # If it is, since `s` is a 128-bit number, `s < last_mod`
                     # and it should also be fully recoverable
                     if (test_sig1 - gen(pt2_chunks, ri)) % last_mod == sig_diff % last_mod:

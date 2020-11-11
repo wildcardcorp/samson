@@ -7,16 +7,13 @@ from pyasn1.type.univ import Integer, SequenceOf, BitString
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256
+from samson.encoding.x509.x509_signature import X509Signature
 from pyasn1.codec.der import encoder, decoder
 from enum import Enum
 from copy import deepcopy
 
 
-class X509DSASignature(object):
-    def __init__(self, name, hash_obj):
-        self.name     = name
-        self.hash_obj = hash_obj
-
+class X509DSASignature(X509Signature):
     def sign(self, pki_obj, data):
         new_pki = deepcopy(pki_obj)
         new_pki.hash_obj = self.hash_obj

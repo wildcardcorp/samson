@@ -1,4 +1,5 @@
 from types import FunctionType
+import dill
 import random
 import ssl
 import socket
@@ -135,14 +136,14 @@ def binary_search_list(in_list: list, value: object, key: FunctionType=lambda it
         if fuzzy:
             return end_range
         else:
-            raise Exception("Item not in list")
+            raise IndexError("Item not in list")
 
 
     if value < key(in_list[0]):
         if fuzzy:
             return start_range
         else:
-            raise Exception("Item not in list")
+            raise IndexError("Item not in list")
 
     curr     = -1
     fuzz_mod = 0
@@ -166,7 +167,7 @@ def binary_search_list(in_list: list, value: object, key: FunctionType=lambda it
     if fuzzy:
         return curr + fuzz_mod
     else:
-        raise Exception("Item not in list")
+        raise IndexError("Item not in list")
 
 
 
@@ -235,10 +236,17 @@ def get_tls_cert(host: str, port: int, parse_cert: bool=True, timeout: int=5) ->
 
 
     if parse_cert:
-        from samson.encoding.pem import pem_decode
         from samson.encoding.general import PKIAutoParser
         cert = PKIAutoParser.import_key(cert)
     else:
         cert = ssl.DER_cert_to_PEM_cert(cert).encode('utf-8')
 
     return cert
+
+
+
+def load(filepath: str):
+    with open(filepath, 'rb') as f:
+        return dill.load(f)
+
+loads = dill.loads

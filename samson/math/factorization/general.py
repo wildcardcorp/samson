@@ -326,7 +326,7 @@ def is_perfect_power(n: int) -> (bool, int, int):
     is_power_of_two = _samson_math.is_power_of_two
     next_prime = _samson_math.next_prime
     is_square  = _samson_math.is_square
-    
+
     logn  = math.log2(n)
     max_p = int(logn) + 2
 
@@ -353,7 +353,7 @@ def is_perfect_power(n: int) -> (bool, int, int):
             return e > 1, m, e
 
         p = next_prime(p+1)
-    
+
     return False, n, 1
 
 

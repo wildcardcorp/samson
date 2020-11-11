@@ -86,7 +86,7 @@ class TwistedEdwardsCurve(Ring):
 
 
     def __eq__(self, other) -> bool:
-        return self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
+        return issubclass(type(other), TwistedEdwardsCurve) and self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
     def __hash__(self) -> int:
         return Bytes(self.oid.encode()).int()
@@ -155,7 +155,7 @@ class TwistedEdwardsCurve(Ring):
         elif self.q % 4 == 3:
             x = xx**((self.q+1)//4)
         else:
-            raise Exception("Unsupported prime `q`.")
+            raise ValueError("Unsupported prime `q`.")
 
         return TwistedEdwardsPoint(x, y, self)
 

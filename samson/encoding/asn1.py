@@ -1,5 +1,7 @@
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
+from samson.hashes.md5 import MD5
+from samson.hashes.md2 import MD2
 from pyasn1_modules import rfc2459
 from pyasn1.codec.der import encoder
 from pyasn1.type.univ import ObjectIdentifier, OctetString
@@ -10,6 +12,8 @@ def invert_dict(dic):
 
 # https://www.ietf.org/rfc/rfc5698.txt
 HASH_OID_LOOKUP = {
+    MD2: ObjectIdentifier('1.2.840.113549.2.2'),
+    MD5: ObjectIdentifier('1.2.840.113549.2.5'),
     SHA1: ObjectIdentifier('1.3.14.3.2.26'),
     SHA224: ObjectIdentifier('2.16.840.1.101.3.4.2.4'),
     SHA256: ObjectIdentifier('2.16.840.1.101.3.4.2.1'),
@@ -26,7 +30,12 @@ RDN_TYPE_LOOKUP = {
     'C': rfc2459.X520countryName,
     'L': rfc2459.UTF8String,
     'ST': rfc2459.X520StateOrProvinceName,
-    'OU': rfc2459.X520OrganizationalUnitName
+    'OU': rfc2459.X520OrganizationalUnitName,
+    'emailAddress': rfc2459.emailAddress,
+    'serialNumber': rfc2459.CertificateSerialNumber,
+    'streetAddress': rfc2459.StreetAddress
+
+    # 'businessCategory': pyasn1_modules doesn't have this one
 }
 
 INVERSE_RDN_TYPE_LOOKUP = invert_dict(RDN_TYPE_LOOKUP)
@@ -37,13 +46,18 @@ RDN_OID_LOOKUP = {
     'OU': ObjectIdentifier([2, 5, 4, 11]),
     'C': ObjectIdentifier([2, 5, 4, 6]),
     'L': ObjectIdentifier([2, 5, 4, 7]),
-    'ST': ObjectIdentifier([2, 5, 4, 8])
+    'ST': ObjectIdentifier([2, 5, 4, 8]),
+    'emailAddress': ObjectIdentifier('1.2.840.113549.1.9.1'),
+    'serialNumber': ObjectIdentifier([2, 5, 4, 5]),
+    'streetAddress': ObjectIdentifier([2, 5, 4, 9]),
+    'businessCategory': ObjectIdentifier([2, 5, 4, 15]),
 }
 
 INVERSE_RDN_OID_LOOKUP = invert_dict(RDN_OID_LOOKUP)
 
 # https://tools.ietf.org/html/rfc8017#appendix-A.2.4
 SIGNING_ALG_OIDS = {
+    'md2WithRSAEncryption': '1.2.840.113549.1.1.2',
     'md5WithRSAEncryption': '1.2.840.113549.1.1.4',
     'sha1WithRSAEncryption': '1.2.840.113549.1.1.5',
     'sha224WithRSAEncryption': '1.2.840.113549.1.1.14',
@@ -76,6 +90,7 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
     rdn_dict = {}
     key      = rdn_parts[0]
     key_idx  = [key]
+    next_key = key
 
     for part in rdn_parts[1:-1]:
         parts = part.split(',')
@@ -91,7 +106,13 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
     for i, k in enumerate(key_idx[::-1]):
         v    = rdn_dict[k]
         attr = rfc2459.AttributeTypeAndValue()
-        attr['type'] = RDN_OID_LOOKUP[k]
+
+        try:
+            attr['type'] = RDN_OID_LOOKUP[k]
+
+        # If the human-readable lookup fails, assume it's an OID
+        except KeyError:
+            attr['type'] = ObjectIdentifier(k)
 
         try:
             rdn_payload = RDN_TYPE_LOOKUP[k](v)
@@ -115,7 +136,14 @@ def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
 
     rdn_map = []
     for rdn in rdns[::-1]:
-        rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(rdn[0]['type'].asTuple())]
+        oid_tuple = rdn[0]['type'].asTuple()
+        try:
+            rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(oid_tuple)]
+
+        # If we fail to convert it to a human readable, just convert to OID form
+        except KeyError:
+            rtype = '.'.join([str(i) for i in oid_tuple])
+
         rval  = str(decoder.decode(bytes(rdn[0]['value']))[0])
         rdn_map.append((rtype, rval))
 

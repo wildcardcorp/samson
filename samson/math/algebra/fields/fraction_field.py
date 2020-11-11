@@ -87,7 +87,7 @@ class FractionFieldElement(FieldElement):
         precision      = self.ring.precision
         precision_type = self.ring.precision_type
 
-        if precision == 'relative':
+        if precision_type == 'relative':
             if self.numerator != self.denominator and self.ring.ring.one not in [self.numerator, self.denominator]:
                 if self.numerator > self.denominator:
                     q,r = divmod(self.numerator, self.denominator)
@@ -178,7 +178,7 @@ class FractionFieldElement(FieldElement):
     def __lt__(self, other: 'FractionFieldElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.numerator * other.denominator < other.numerator * self.denominator
 
@@ -186,7 +186,7 @@ class FractionFieldElement(FieldElement):
     def __gt__(self, other: 'FractionFieldElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.numerator * other.denominator > other.numerator * self.denominator
 

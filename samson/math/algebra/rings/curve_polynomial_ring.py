@@ -68,7 +68,7 @@ class CurvePolynomialElement(RingElement):
             return self.ring.zero, self.ring.zero
 
         if other.y_poly and (self.x_poly or other.x_poly):
-            raise Exception("Multivariate polynomial division not supported")
+            raise NotImplementedError("Multivariate polynomial division not supported")
 
 
         if other.x_poly:

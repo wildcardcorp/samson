@@ -1,7 +1,7 @@
 from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
-from samson.math.general import totient
+from samson.math.general import totient, index_calculus
 from samson.math.symbols import oo
-from samson.utilities.exceptions import NotInvertibleException
+from samson.utilities.runtime import RUNTIME
 
 class MultiplicativeGroupElement(RingElement):
     """
@@ -48,7 +48,9 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
-        return self.log(other)
+        if type(other) is int:
+            pass
+        return self.val.log(other.val)
 
 
     __floordiv__ = __truediv__
@@ -66,7 +68,7 @@ class MultiplicativeGroupElement(RingElement):
             bool: Whether the element is invertible.
         """
         return self.val.is_invertible()
-    
+
 
     def is_primitive_root(self) -> bool:
         """
@@ -76,6 +78,20 @@ class MultiplicativeGroupElement(RingElement):
             bool: Whether the element is a primitive root.
         """
         return self.order == self.ring.order
+
+
+    def _plog(self, base: 'RingElement', order: int) -> int:
+        """
+        Internal function for 'prime logarithm'. Called by Pohlig-Hellman
+        to allow rings to define their own subalgorithms.
+        """
+        if order.bit_length() >= RUNTIME.index_calculus_supremacy:
+            from samson.math.algebra.rings.integer_ring import ZZ
+
+            if hasattr(self.ring.ring, 'quotient') and self.ring.ring.ring == ZZ:
+                return index_calculus(base, self, order=order)
+
+        return super()._plog(base, order)
 
 
 
@@ -113,12 +129,12 @@ class MultiplicativeGroup(Ring):
 
     @property
     def order(self) -> int:
-        from samson.math.algebra.rings.quotient_ring import QuotientRing
-        from samson.math.algebra.rings.integer_ring import IntegerElement
-        from samson.math.algebra.fields.finite_field import FiniteField
-        from samson.math.polynomial import Polynomial
-
         if not self.order_cache:
+            from samson.math.algebra.rings.quotient_ring import QuotientRing
+            from samson.math.algebra.rings.integer_ring import IntegerElement
+            from samson.math.algebra.fields.finite_field import FiniteField
+            from samson.math.polynomial import Polynomial
+
             if type(self.ring) is QuotientRing:
                 quotient = self.ring.quotient
 

@@ -30,7 +30,7 @@ class RC5(BlockCipher):
         Primitive.__init__(self)
 
         if not block_size in [32, 64, 128]:
-            raise Exception("Invalid block size: must be 32, 64, or 128 bits")
+            raise ValueError("Invalid block size: must be 32, 64, or 128 bits")
 
         self.key = Bytes.wrap(key)
         self.num_rounds = num_rounds

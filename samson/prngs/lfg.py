@@ -1,3 +1,4 @@
+from samson.utilities.exceptions import SearchspaceExhaustedException
 from types import FunctionType
 from copy import deepcopy
 
@@ -88,4 +89,4 @@ class LFG(object):
                 [self.generate() for _ in range(next_state_len + clock_difference)]
                 return
 
-        raise Exception('Unable to find correct tap and feed values.')
+        raise SearchspaceExhaustedException('Unable to find correct tap and feed values.')

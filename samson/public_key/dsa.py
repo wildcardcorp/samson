@@ -1,5 +1,6 @@
 from samson.math.general import mod_inv, find_prime, random_int_between, is_prime
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidSignatureException
 
 from samson.encoding.openssh.openssh_dsa_key import OpenSSHDSAPrivateKey, OpenSSHDSAPublicKey, SSH2DSAPublicKey
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
@@ -146,7 +147,8 @@ class DSA(EncodablePKI, SignatureAlg):
         """
         (r_a, s_a) = sig_a
         (r_b, s_b) = sig_b
-        assert r_a == r_b
+        if r_a != r_b:
+            raise InvalidSignatureException
 
         s = (s_a - s_b) % self.q
         m = (self.hash_obj.hash(msg_a).int() - self.hash_obj.hash(msg_b).int()) % self.q

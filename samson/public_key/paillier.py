@@ -27,7 +27,7 @@ class Paillier(EncryptionAlg):
 
     def L(self, x: int) -> int:
         return (x - 1) // self.n
-    
+
     def __reprdir__(self):
         return ['priv', 'p', 'q', 'n', 'g', 'phi']
 

@@ -2,18 +2,18 @@ from samson.encoding.x509.x509_rsa_subject_public_key import X509RSASubjectPubli
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.x509.x509_certificate import X509Certificate
 from samson.encoding.x509.x509_certificate_signing_request import X509CertificateSigningRequest
+from samson.encoding.x509.x509_signature import X509Signature
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
+from samson.hashes.md5 import MD5
+from samson.hashes.md2 import MD2
 from samson.utilities.bytes import Bytes
 from pyasn1.type.univ import Any, BitString
 from enum import Enum
 
 
-class X509RSASignature(object):
-    def __init__(self, name, hash_obj):
-        self.name     = name
-        self.hash_obj = hash_obj
 
+class X509RSASignature(X509Signature):
     def sign(self, pki_obj, data):
         from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
         signed = PKCS1v15RSASigner(pki_obj, self.hash_obj).sign(data)
@@ -25,6 +25,8 @@ class X509RSASignature(object):
 
 
 class X509RSASigningAlgorithms(Enum):
+    md2WithRSAEncryption        = X509RSASignature('md2WithRSAEncryption', MD2())
+    md5WithRSAEncryption        = X509RSASignature('md5WithRSAEncryption', MD5())
     sha1WithRSAEncryption       = X509RSASignature('sha1WithRSAEncryption', SHA1())
     sha224WithRSAEncryption     = X509RSASignature('sha224WithRSAEncryption', SHA224())
     sha256WithRSAEncryption     = X509RSASignature('sha256WithRSAEncryption', SHA256())

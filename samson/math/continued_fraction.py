@@ -1,5 +1,3 @@
-from samson.math.all import ZZ
-
 def _calc_continued_fraction(frac: 'FractionFieldElement') -> list:
     """
     Calculates the continued fraction form of `frac`.
@@ -19,7 +17,7 @@ def _calc_continued_fraction(frac: 'FractionFieldElement') -> list:
 
         if not r:
             break
-        
+
         n, d = d, r
 
     return cf
@@ -30,7 +28,7 @@ class ContinuedFraction(object):
         self.element = element
         self.ring    = self.element.ring
         self.cf      = _calc_continued_fraction(self.element)
-    
+
 
     def __repr__(self):
         return f'<ContinuedFraction: {self.cf}>'
@@ -95,4 +93,4 @@ class ContinuedFraction(object):
         Returns:
             generator: Generator of the convergents.
         """
-        return (QQ((a,b)) for a,b in zip(cf_nums(cf), cf_dens(cf)))
+        return (self.ring((a,b)) for a,b in zip(self.numerators(), self.denominators()))

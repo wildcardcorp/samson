@@ -9,6 +9,7 @@ from samson.padding.pss import PSS, MGF1
 from samson.public_key.ecdsa import ECDSA
 from samson.kdfs.concatkdf import ConcatKDF
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import InvalidMACException
 from samson.encoding.general import url_b64_encode, url_b64_decode, PKIEncoding
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.block_ciphers.rijndael import Rijndael
@@ -130,7 +131,8 @@ class JWA_ACBC_HS(object):
 
         hmac = HMAC(mac_key, self.hash_obj).generate(auth_data + iv + ciphertext + Bytes(len(auth_data) * 8).zfill(8))[:self.chunk_size]
 
-        assert RUNTIME.compare_bytes(hmac, auth_tag)
+        if not RUNTIME.compare_bytes(hmac, auth_tag):
+            raise InvalidMACException
 
         rij = Rijndael(enc_key)
         cbc = CBC(rij, iv=iv)

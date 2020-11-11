@@ -154,7 +154,7 @@ def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polyno
     return sf
 
 
-def gcd(a: int, b: int) -> int:
+def gcd(*args) -> int:
     """
     Iteratively computes the greatest common denominator.
 
@@ -178,11 +178,20 @@ def gcd(a: int, b: int) -> int:
         <Polynomial: x**2, coeff_ring=F_(2**8)>
 
     """
-    if type(a) is int:
-        while b:
-            a, b = b, a % b
-        return a
-    return a.gcd(b)
+    total = args[0]
+    if type(total) is int:
+        def _gcd(a,b):
+            while b:
+                a, b = b, a % b
+            return a
+    else:
+        def _gcd(a,b):
+            return a.gcd(b)
+
+    for arg in args[1:]:
+        total = _gcd(total, arg)
+
+    return total
 
 
 def xgcd(a: int, b: int) -> (int, int, int):
@@ -248,7 +257,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
     return g, s, t
 
 
-def lcm(a: int, b: int) -> int:
+def lcm(*args) -> int:
     """
     Calculates the least common multiple of `a` and `b`.
 
@@ -272,7 +281,14 @@ def lcm(a: int, b: int) -> int:
         <Polynomial: x**3 + x, coeff_ring=F_(2**8)>
 
     """
-    return a // gcd(a, b) * b
+    def _lcm(a, b):
+        return a // gcd(a, b) * b
+
+    total = args[0]
+    for arg in args[1:]:
+        total = _lcm(total, arg)
+
+    return total
 
 
 def mod_inv(a: int, n: int) -> int:
@@ -538,12 +554,14 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
             ub = mid
 
 
-def crt(residues: list) -> (object, object):
+
+def crt(residues: list, auto_correct: bool=True) -> (object, object):
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
 
     Parameters:
-        residues (list): Residues of `x` as QuotientElements or tuples.
+        residues     (list): Residues of `x` as QuotientElements or tuples.
+        auto_correct (bool): Whether or not to automatically remove redundancy.
 
     Returns:
         (RingElement, RingElement): Formatted as (computed `x`, modulus).
@@ -574,6 +592,7 @@ def crt(residues: list) -> (object, object):
     """
     ZZ = _integer_ring.ZZ
 
+    # Auto promote
     peel_ring = False
     if type(residues[0]) is tuple:
         if type(residues[0][0]) is int:
@@ -584,9 +603,41 @@ def crt(residues: list) -> (object, object):
 
         residues = [(ring/ring(mod))(res) for res, mod in residues]
 
+
+    # Remove redundancies
+    if auto_correct:
+        _tmp_res = [(res.val, res.ring.quotient) for res in residues]
+        ring     = _tmp_res[0][0].ring
+
+        x, Nx = _tmp_res[0]
+        for r, n in _tmp_res[1:]:
+            n_total = lcm(Nx, n)
+            new_res = []
+
+            n2p = n_total // Nx
+            n1p = n_total // n
+
+            if ring.one in [n1p, n2p]:
+                if n > Nx:
+                    x, Nx = r, n
+            else:
+                new_res.append((ring/n2p)(r))
+                new_res.append((ring/n1p)(x))
+
+                x, Nx = _crt(new_res)
+    else:
+        x, Nx = _crt(residues)
+
+    if peel_ring:
+        x, Nx = x.val, Nx.val
+
+    return x, Nx
+
+
+
+def _crt(residues: list) -> (object, object):
     x    = residues[0].val
     Nx   = residues[0].ring.quotient
-    ring = Nx.ring
 
     for i in range(1, len(residues)):
         modulus = residues[i].ring.quotient
@@ -594,8 +645,6 @@ def crt(residues: list) -> (object, object):
         Nx = Nx * modulus
 
     x = x % Nx
-    if peel_ring:
-        x, Nx = x.val, Nx.val
 
     return x, Nx
 
@@ -1876,7 +1925,7 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         gamma = g*(p**(e-1))
         for k in range(e):
             h_k = (g * -x[k] + h) * (p**(e-1-k))
-            d_k = bsgs(gamma, h_k, p)
+            d_k = h_k._plog(gamma, p)
             x[k+1] = x[k] + d_k * p**k
 
         return x[-1]
@@ -1890,6 +1939,78 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         x.append(x_i)
 
     return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
+
+
+
+def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int:
+    """
+    Computes the discrete logarithm using Pollard's Rho.
+
+    Parameters:
+        g (RingElement): Generator element.
+        y (RingElement): Result to find discrete logarithm of.
+        order     (int): Order of the group.
+
+    Returns:
+        int: The discrete logarithm of `y` given `g`.
+
+    References:
+        http://koclab.cs.ucsb.edu/teaching/ecc/project/2015Projects/Blumenfeld-Presentation.pdf
+        https://math.mit.edu/classes/18.783/2017/LectureNotes10.pdf
+    """
+    ZZ = _integer_ring.ZZ
+
+    def xab(x, a, b, g, y):
+        sub = hash(x) % 3
+
+        if sub == 0:
+            x = x + x
+            a = a * 2
+            b = b * 2
+        elif sub == 1:
+            x = x + g
+            a = a + 1
+        else:
+            x = x + y
+            b = b + 1
+
+        return x, a, b
+
+
+    residues = []
+    n        = order or g.order
+    Z        = ZZ/ZZ(n)
+
+    # Main loop
+    while True:
+        a       = Z.random()
+        x, b    = g*int(a), Z.zero
+        X, A, B = x, a, b
+
+
+        for _ in range(n):
+            x, a, b = xab(x, a, b, g, y)
+
+            X, A, B = xab(X, A, B, g, y)
+            X, A, B = xab(X, A, B, g, y)
+
+            if x == X:
+                break
+
+        r   = B-b
+        if not r:
+            continue
+
+        # Note we might've found just a factor of the order
+        P   = ZZ/ZZ(r.order)
+        res = P(a-A)/P(r)
+
+        residues.append(P(res))
+        res, _ = crt(residues)
+
+        if int(res)*g == y:
+            return int(res)
+
 
 
 def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
@@ -2582,8 +2703,15 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
         return facs.recombine() == n, facs
 
 
-    Fp   = g.ring.ring
-    Fq   = ZZ/ZZ(order or g.order)
+    Fp = g.ring.ring
+    Fq = ZZ/ZZ(order or g.order)
+
+    g = g.cache_mul(Fq.order.bit_length())
+    y = y.cache_mul(Fq.order.bit_length())
+
+    if not is_prime(Fq.order):
+        raise ValueError('Index calculus requires a prime group')
+
     p    = Fp.order
     B    = ceil(exp(0.5*sqrt(2*log(p)*log(log(p)))))
     base = list(sieve_of_eratosthenes(B+1))

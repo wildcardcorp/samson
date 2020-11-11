@@ -2,7 +2,7 @@ from samson.encoding.pem import PEMEncodable, pem_decode
 from samson.encoding.asn1 import parse_rdn,rdn_to_str
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
-from pyasn1.type.univ import ObjectIdentifier, Any, OctetString, BitString
+from pyasn1.type.univ import ObjectIdentifier, Any, OctetString
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
@@ -151,7 +151,7 @@ class X509Certificate(PEMEncodable):
         tbs_cert['validity']             = validity
         tbs_cert['subject']              = subject
         tbs_cert['subjectPublicKeyInfo'] = pub_info
- 
+
         # TODO: pyasn1 doesn't see these as optional
         # This means samson encodes certs wrong that don't include
         # these values

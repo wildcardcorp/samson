@@ -1,5 +1,6 @@
 from samson.oracles.padding_oracle import PaddingOracle
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import NoSolutionException
 from samson.utilities.runtime import RUNTIME
 from random import randint
 import math
@@ -158,7 +159,7 @@ class PKCS1v15PaddingOracleAttack(object):
 
 
             if len(M_new) == 0:
-                raise Exception("There are zero intervals in 'M_new'")
+                raise NoSolutionException("There are zero intervals in 'M_new'")
 
             M = M_new
             i += 1

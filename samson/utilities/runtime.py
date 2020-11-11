@@ -1,5 +1,6 @@
 from samson.auxiliary.progress import Progress
-from multiprocessing.dummy import Pool
+from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing.pool import Pool as ProcessPool
 from functools import wraps
 from types import FunctionType
 import logging
@@ -63,12 +64,13 @@ class RuntimeConfiguration(object):
             self.default_short_printer = lambda elem: elem.tinyhand()
         else:
             self.default_short_printer = lambda elem: elem.shorthand()
-        
+
         self.minimize_output = minimize_output
-    
+
         self.enable_poly_intercept = False
         self.enable_MOV_attack = True
         self.auto_promote = True
+        self.index_calculus_supremacy = 70
 
         self.last_tb = None
 
@@ -273,7 +275,7 @@ class RuntimeConfiguration(object):
         def showtraceback(self, _type, exception, trace):
             _type, exception, trace = sys.exc_info()
             RUNTIME.last_tb = trace
-            
+
             traceback_console.print(
                 Traceback.from_exception(_type, exception, trace.tb_next)
             )
@@ -301,9 +303,35 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
+        return self._build_concurrent_pool(threads, ThreadPool, starmap)
+
+
+    def parallel(self, processes: int, starmap: bool=False):
+        """
+        Runs the function with `threads` threads. The returned function should take an iterable.
+
+        Parameters:
+            threads (int): Number of threads to run.
+        
+        Returns:
+            list: Results.
+        
+        Examples:
+            >>> from samson.utilities.runtime import RUNTIME
+            >>> @RUNTIME.threaded(threads=10)
+            >>> def myfunc(i):
+            >>>     return i
+            >>> myfunc(range(5))
+            [0, 1, 2, 3, 4]
+
+        """
+        return self._build_concurrent_pool(processes, ProcessPool, starmap)
+
+
+    def _build_concurrent_pool(self, workers: int, pool_type: 'Pool', starmap: bool=False):
         def _outer_wrap(func):
             def _runner(iterable):
-                with Pool(threads) as pool:
+                with pool_type(workers) as pool:
                     if starmap:
                         pool_runner = pool.starmap
                     else:

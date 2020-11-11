@@ -1,4 +1,5 @@
 from z3 import BitVecs, Solver, LShR, Bool, Implies, sat, RotateLeft
+from samson.utilities.exceptions import NoSolutionException
 from inspect import isclass
 import random
 
@@ -55,4 +56,4 @@ class IterativePRNG(object):
             [prng.generate() for _ in outputs]
             return prng
         else:
-            raise RuntimeError('Model not satisfiable.')
+            raise NoSolutionException('Model not satisfiable.')

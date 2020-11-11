@@ -560,7 +560,7 @@ class RSATestCase(unittest.TestCase):
 
     def test_der_encode(self):
         for _ in range(20):
-            bits = max(1, Bytes.random(2).int() >> 4)
+            bits = max(8, Bytes.random(2).int() >> 4)
             rsa  = RSA(bits, e=65537)
 
             should_pem_encode = Bytes.random(1).int() & 1

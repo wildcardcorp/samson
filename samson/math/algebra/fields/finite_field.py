@@ -3,7 +3,6 @@ from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.symbols import Symbol
 from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.math.polynomial import Polynomial
-import itertools
 
 class FiniteFieldElement(FieldElement):
     """
@@ -43,6 +42,7 @@ class FiniteFieldElement(FieldElement):
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val + other.val, self.field)
 
+
     def __mul__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         gmul = self.ground_mul(other)
         if gmul is not None:
@@ -51,26 +51,32 @@ class FiniteFieldElement(FieldElement):
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val * other.val, self.field)
 
+
     @left_expression_intercept
     def __sub__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val - other.val, self.field)
+
 
     @left_expression_intercept
     def __mod__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return FiniteFieldElement(self.val % other.val, self.field)
 
+
     def __invert__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(~self.val, self.field)
 
+
     def __neg__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(-self.val, self.field)
+
 
     @left_expression_intercept
     def __truediv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         other = self.ring.coerce(other)
         return self * ~other
+
 
     @left_expression_intercept
     def __floordiv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
@@ -117,7 +123,7 @@ class FiniteField(Field):
                 while True:
                     poly = P.random(max_elem).monic()
 
-                    if poly.is_irreducible():
+                    if poly and poly.is_irreducible():
                         reducing_poly = poly
                         break
 
@@ -178,7 +184,7 @@ class FiniteField(Field):
            FiniteFieldElement: The `x`-th element.
         """
         return FiniteFieldElement(self.internal_field.element_at(x), self)
-    
+
 
     def random(self, size: FiniteFieldElement=None) -> FiniteFieldElement:
         return self(self.internal_field.random(size))

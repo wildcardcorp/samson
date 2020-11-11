@@ -43,11 +43,8 @@ class GCM(StreamingBlockCipherMode, AuthenticatedCipher):
             self.product_table[reverse_bits(i + 1)] = self.product_table[reverse_bits(i)] ^ self.H
 
 
-    def __repr__(self):
-        return f"<GCM: cipher={self.cipher}, H={self.H}, ctr={self.ctr}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['cipher', 'H', 'ctr']
 
 
     def clock_ctr(self, nonce: bytes) -> Bytes:

@@ -485,7 +485,7 @@ def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bo
         progress_finish()
 
         log.debug("Solving exponent parity matrix for nullspace...")
-    
+
         # 'num_cols' is len(prime_base)+1 because we want Gaussian elimination to cancel out negatives
         exp_vecs = [exp_vec for _, _, exp_vec in smooth_relations]
         exp_ints = [int(''.join([str(int(exp_vec[b])) for b in range(len(exp_vec))])[::-1], 2) for exp_vec in exp_vecs]

@@ -42,7 +42,7 @@ Available encodings: {', '.join([k for k,v in ENCODING_MAPPING.items()])}
 
 
 pki_parser.add_argument('action', help='generate, parse, info')
-pki_parser.add_argument('type')
+pki_parser.add_argument('type', default='auto', nargs='?')
 pki_parser.add_argument('--args', nargs="?")
 pki_parser.add_argument('filename', nargs="?")
 pki_parser.add_argument('--pub', action='store_true')
@@ -187,16 +187,21 @@ if __name__ == '__main__':
             pki_cls  = PKI[pki_type]
 
             if "curve" in dict_args:
+                curve = dict_args["curve"].lower()
+
                 if pki_type == 'ecdsa':
-                    dict_args["G"] = EC_CURVES[dict_args["curve"]].G
+                    dict_args["G"] = EC_CURVES[curve].G
                     del dict_args["curve"]
 
                 elif pki_type == 'eddsa':
-                    dict_args["curve"] = ED_CURVES[dict_args["curve"]]
+                    dict_args["curve"] = ED_CURVES[curve]
 
 
 
             if arguments.action == 'generate':
+                if pki_type == 'auto':
+                    raise parser.error("'type' is a required argument when used with 'generate'")
+
                 pki_obj = pki_cls(**dict_args)
                 export_pki(pki_obj, arguments)
 
@@ -227,7 +232,7 @@ if __name__ == '__main__':
                 print(f'{pki_cls.__doc__}{pki_cls.__init__.__doc__}')
 
             else:
-                raise Exception('Invalid action. Please choose from "generate" and "parse".')
+                raise ValueError('Invalid action. Please choose from "generate" and "parse".')
 
         elif arguments.command == 'factor':
             from samson.math.factorization.general import factor

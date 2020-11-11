@@ -26,6 +26,10 @@ class OracleException(Exception):
     pass
 
 
+class InvalidSignatureException(Exception):
+    pass
+
+
 class DecryptionValidationStep(Enum):
     CIPHERTEXT = 0
     MAC        = 1
@@ -54,7 +58,7 @@ class CiphertextLengthException(DecryptionException):
     DECRYPT_STEP = DecryptionValidationStep.CIPHERTEXT
 
 
-class InvalidMACException(DecryptionException):
+class InvalidMACException(DecryptionException, InvalidSignatureException):
     DECRYPT_STEP = DecryptionValidationStep.MAC
 
 

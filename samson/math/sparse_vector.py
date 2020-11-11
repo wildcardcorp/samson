@@ -35,11 +35,11 @@ class SparseVector(object):
                 length = not_empty
 
         else:
-            raise Exception("'items' must be dict or list")
+            raise TypeError("'items' must be dict or list")
 
         for key in self.values.keys():
             if not type(key) is int:
-                raise ValueError('idx must be an integer')
+                raise TypeError('idx must be an integer')
 
 
         self.zero = zero
@@ -111,7 +111,7 @@ class SparseVector(object):
                 end_not_none   = idx.stop is not None
 
                 if start_not_none and idx.start < 0 or end_not_none and idx.stop < 0:
-                    raise Exception("Negative slices not supported for SparseVectors")
+                    raise ValueError("Negative slices not supported for SparseVectors")
 
                 start = binary_search_list(items, idx.start, key=key, fuzzy=True) if start_not_none else 0
                 end   = binary_search_list(items, idx.stop, key=key, fuzzy=True) if end_not_none else length

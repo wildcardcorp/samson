@@ -1,13 +1,12 @@
-from samson.math.general import is_primitive_root, find_prime, sieve_of_eratosthenes, is_safe_prime, is_sophie_germain_prime, next_prime, is_prime
+from samson.math.general import is_primitive_root, find_prime, is_safe_prime, is_sophie_germain_prime, next_prime, is_prime
 from samson.math.factorization.factors import Factors
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.auxiliary.roca import gen_roca_prime
-from enum import Enum
 import math
 
 class PGen(object):
     def __init__(self, size: int):
-        self.size = size   
+        self.size = size
 
     def generate(self, constraints: list=None) -> int:
         p = 2
@@ -81,7 +80,7 @@ class SmoothGen(PGen):
             while p.bit_length() == glue_size:
                 if is_prime(p_1*p+1):
                     yield p_1*p+1
-                
+
 
                 p = next_prime(p+1)
                 while p in self.glue_prime_exclude:

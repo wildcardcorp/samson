@@ -1,7 +1,7 @@
 from samson.math.dense_vector import DenseVector
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import gaussian_elimination, lll, gram_schmidt, product
+from samson.math.general import gaussian_elimination, lll, gram_schmidt
 from shutil import get_terminal_size
 from types import FunctionType
 from copy import deepcopy
@@ -218,7 +218,7 @@ class Matrix(RingElement):
             # Find first nonzero
             while not mat[idx, i] and idx < n:
                 idx += 1
-        
+
             if idx == n:
                 continue
 
@@ -227,23 +227,23 @@ class Matrix(RingElement):
                 for j in range(n):
                     mat[idx,j], mat[i,j] = mat[i,j], mat[idx,j]
 
-                
+
                 # Sign change when we shift rows
                 if idx-i % 2:
                     det = -det
 
             temp = [mat[i,j] for j in range(n)]
-            
+
             for j in range(i+1, n):
                 a = temp[i]
                 b = mat[j,i]
 
                 for k in range(n):
                     mat[j,k] = (a*mat[j,k]) - (b*temp[k])
-                
+
                 total *= a
-            
-        
+
+
         # Multiply diagonals
         for i in range(n):
             det *= mat[i,i]
@@ -454,14 +454,13 @@ class Matrix(RingElement):
 
         n = A.num_rows
         m = A.num_cols
-        R = A.coeff_ring
 
         lead = 0
 
         for r in range(n):
             if m <= lead:
                 return A
-            
+
             i = r
 
             while not A[i, lead]:
@@ -472,20 +471,20 @@ class Matrix(RingElement):
 
                     if lead == m:
                         return A
-            
+
             if i != r:
                 A[i], A[r] = A[r], A[i]
-            
+
             scalar = A[r, lead]
             A[r]   = [e / scalar for e in A[r]]
+            r_vec  = A[r]
 
             for i in range(n):
                 if i != r:
-                    i_lead = A[i, lead]
-                    A[i] = [a-b for a,b in zip(A[i], A[r]*A[i, lead])]
+                    A[i] = [a-b for a,b in zip(A[i], r_vec*A[i, lead])]
 
             lead += 1
-        
+
         return A
 
 
@@ -497,7 +496,7 @@ class Matrix(RingElement):
             Matrix: RCEF of `self`.
         """
         return self.T.rref().T
-    
+
 
     def right_kernel(self):
         """
@@ -512,7 +511,7 @@ class Matrix(RingElement):
         AI = self.col_join(Matrix.identity(self.num_cols, self.coeff_ring))
         c =  AI.T.rref()
         return Matrix([row[self.num_rows:] for row in c if not any(row[:self.num_rows])])
-    
+
 
     def left_kernel(self) -> 'Matrix':
         """

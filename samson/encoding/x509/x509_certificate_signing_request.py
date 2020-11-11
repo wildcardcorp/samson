@@ -1,16 +1,10 @@
-from samson.encoding.pem import PEMEncodable, pem_decode
 from samson.encoding.x509.x509_certificate import X509Certificate
 from samson.encoding.asn1 import parse_rdn,rdn_to_str
 from pyasn1.codec.der import decoder, encoder
-from pyasn1.type import tag
-from pyasn1.type.univ import ObjectIdentifier, Any, OctetString
-from pyasn1_modules import rfc2459, rfc2986, rfc5280
-from pyasn1.error import PyAsn1Error
-from pyasn1.type.useful import UTCTime
+from pyasn1.type.univ import ObjectIdentifier, Any
+from pyasn1_modules import rfc2986, rfc5280
 from samson.utilities.bytes import Bytes
-from samson.hashes.sha1 import SHA1
 from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
-from datetime import datetime
 
 
 class X509CertificateSigningRequest(X509Certificate):

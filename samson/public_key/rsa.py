@@ -71,7 +71,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             self.n = p * q
 
             if gcd(self.e, phi) != 1:
-                raise Exception("Invalid 'p' and 'q': GCD(e, phi) != 1")
+                raise ValueError("Invalid 'p' and 'q': GCD(e, phi) != 1")
 
             bits = self.n.bit_length()
 
@@ -137,9 +137,9 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
     def __eq__(self, other):
         if self.__class__ != other.__class__:
             return False
-        
+
         s_dict, o_dict = self.__dict__, other.__dict__
-        
+
         for key in s_dict:
             if key in ['p', 'q']:
                 if s_dict[key] not in [o_dict['p'], o_dict['q']]:

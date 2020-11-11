@@ -178,4 +178,3 @@ class BLAKE2s(BLAKE2):
             desired_hash_len (int): Desired output length.
         """
         super().__init__(key, desired_hash_len)
-

@@ -1,7 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import KDF, Primitive
 from samson.ace.decorators import register_primitive
-from types import FunctionType
 
 @register_primitive()
 class PBKDF1(KDF):

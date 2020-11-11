@@ -40,11 +40,10 @@ class Poly1305TestCase(unittest.TestCase):
 
     #https://tools.ietf.org/html/rfc7539#section-2.5.2
     def test_rfc7539(self):
-        key = 0x85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b
+        #key = 0x85d6be7857556d337f4452fe42d506a80103808afb0db2fd4abff6af4149f51b
         s   = Bytes(0x0103808afb0db2fd4abff6af4149f51b).change_byteorder()
         r   = 0x85d6be7857556d337f4452fe42d506a8
         msg = b'Cryptographic Forum Research Group'
 
         p1305 = Poly1305(r)
         self.assertEqual(p1305.generate(msg, s), b"\xa8\x06\x1d\xc10Q6\xc6\xc2+\x8b\xaf\x0c\x01'\xa9")
-

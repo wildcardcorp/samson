@@ -15,7 +15,7 @@ SSH_CURVE_NAME_LOOKUP = {
     GOD521: b'nistp521'
 }
 
-SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items()}
+SSH_INVERSE_CURVE_LOOKUP = {v.decode():k for k, v in SSH_CURVE_NAME_LOOKUP.items() if k != GOD521}
 
 def serialize_public_point(ecdsa_key: 'ECDSA'):
     curve = SSH_CURVE_NAME_LOOKUP[ecdsa_key.G.curve]

@@ -1,5 +1,6 @@
 from samson.encoding.general import url_b64_decode, url_b64_encode
 from samson.utilities.bytes import Bytes
+from samson.utilities.exceptions import DecryptionException
 from samson.protocols.jwt.jwa import JWA_ALG_MAP, JWAContentEncryptionAlg, JWAKeyEncryptionAlg
 import json
 
@@ -253,7 +254,7 @@ class JWESet(object):
         unprotected_header.update(additional_headers)
 
         if (alg in [JWAKeyEncryptionAlg.dir, JWAKeyEncryptionAlg.ECDH_ES] or any([recip.alg in [JWAKeyEncryptionAlg.dir, JWAKeyEncryptionAlg.ECDH_ES] for recip in self.recipients])) and len(self.recipients) > 0 and not self.i_know_what_im_doing:
-            raise Exception(f"Cannot add a recipient using {alg} when there are other recipients. This is because {alg} is either Direct Key Agreement or Direct Encryption. Use the 'i_know_what_im_doing' flag to do it anyway.")
+            raise ValueError(f"Cannot add a recipient using {alg} when there are other recipients. This is because {alg} is either Direct Key Agreement or Direct Encryption. Use the 'i_know_what_im_doing' flag to do it anyway.")
 
 
         jwe = JWE.create(alg, self.enc, self.payload, key, cek=self.cek, iv=self.iv, aad=self.aad, **additional_headers)
@@ -337,6 +338,6 @@ class JWESet(object):
                     pass
 
             if not plaintext:
-                raise Exception('No recipient able to decrypt.')
+                raise DecryptionException('No recipient able to decrypt.')
 
         return plaintext

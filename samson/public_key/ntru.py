@@ -122,7 +122,7 @@ def invert_poly(f_poly: Polynomial, R_poly: Polynomial, p: int) -> Polynomial:
                 inv_poly = (inv_poly % R_poly).trunc(p)
 
     else:
-        raise Exception(f"Polynomial not invertible in Z_{p}. NTRU: p and q must be prime or power of two.")
+        raise NotInvertibleException(f"Polynomial not invertible in Z_{p}. NTRU: p and q must be prime or power of two.")
 
     return inv_poly
 
@@ -167,7 +167,7 @@ class NTRU(NumberTheoreticalAlg):
 
         # Tried to specify only part of private key
         elif any(priv_not_specified):
-            raise Exception("Must provide ALL values for private key: f_poly, g_poly")
+            raise ValueError("Must provide ALL values for private key: f_poly, g_poly")
 
         # Specified private key, but not public key
         else:

@@ -358,7 +358,7 @@ def simulate_until_event(p: float, runs: int, visual: bool=False) -> float:
             curr += 1
             if not random_int(space):
                 break
-        
+
         total += curr
 
     return total / runs

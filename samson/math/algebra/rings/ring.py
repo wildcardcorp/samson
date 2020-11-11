@@ -1,4 +1,4 @@
-from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman
+from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
@@ -196,7 +196,7 @@ class Ring(BaseObject):
 
     def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
         if element.ring != self:
-            raise RuntimeError("'element' must be an element of the ring")
+            raise ValueError("'element' must be an element of the ring")
 
         return _quot.QuotientRing(element, self)
 
@@ -306,7 +306,7 @@ class RingElement(BaseObject):
     def __lt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.val < other.val
 
@@ -318,7 +318,7 @@ class RingElement(BaseObject):
     def __gt__(self, other: 'RingElement') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
-            raise Exception("Cannot compare elements with different underlying rings.")
+            raise ValueError("Cannot compare elements with different underlying rings.")
 
         return self.val > other.val
 
@@ -560,7 +560,7 @@ class RingElement(BaseObject):
             kwargs = {}
         else:
             kwargs = {'user_stop_func': lambda S: any(f.degree() == 1 for f in S)}
-    
+
         roots = (x**k - self).roots(**kwargs)
 
         if not roots:
@@ -581,6 +581,19 @@ class RingElement(BaseObject):
         while b:
             a, b = b, a % b
         return a
+
+
+    def _plog(self, base: 'RingElement', order: int) -> int:
+        """
+        Internal function for 'prime logarithm'. Called by Pohlig-Hellman
+        to allow rings to define their own subalgorithms.
+        """
+        # BSGS is deterministic and generally faster, but it takes sqrt space.
+        # This should cap memory usage at one million objects before moving to rho
+        if order.bit_length() <= 40:
+            return bsgs(base, self, end=order)
+        else:
+            return pollards_rho_log(base, self, order=order)
 
 
 

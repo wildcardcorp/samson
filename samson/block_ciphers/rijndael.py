@@ -89,10 +89,10 @@ class Rijndael(BlockCipher):
 
         key = Bytes.wrap(key)
         if not (len(key)) in range(16, 33, 4):
-            raise Exception("Invalid key size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
+            raise ValueError("Invalid key size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
 
         if not block_size in range(16, 33, 4):
-            raise Exception("Invalid block size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
+            raise ValueError("Invalid block size! Must be between 128 bits (16 bytes) and 256 bits (32 bytes) and a multiple of 32 bits (4 bytes)")
 
 
         self.key = key

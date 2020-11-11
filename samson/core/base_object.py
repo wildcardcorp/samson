@@ -58,19 +58,18 @@ class BaseObject(object):
 
     def __str__(self):
         return self.__repr__()
-    
+
     def __hash__(self):
         return object.__hash__(self)
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.__dict__ == other.__dict__
 
+
+    def dumps(self):
+        return dill.dumps(self)
+
+
     def save(self, filepath: str):
         with open(filepath, 'wb+') as f:
             dill.dump(self, f)
-
-
-    @staticmethod
-    def load(filepath: str):
-        with open(filepath, 'rb') as f:
-            return dill.load(f)

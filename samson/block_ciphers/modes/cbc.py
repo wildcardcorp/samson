@@ -45,7 +45,7 @@ class CBC(BlockCipherMode):
 
 
         if len(plaintext) % self.cipher.block_size != 0:
-            raise Exception("Plaintext is not a multiple of the block size")
+            raise ValueError("Plaintext is not a multiple of the block size")
 
         ciphertext = Bytes(b'')
         last_block = self.iv
