@@ -334,7 +334,7 @@ class JWESet(object):
                 try:
                     plaintext = recipient.decrypt(key)
                     break
-                except Exception as _:
+                except Exception:
                     pass
 
             if not plaintext:

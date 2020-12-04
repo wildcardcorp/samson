@@ -48,8 +48,6 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
-        if type(other) is int:
-            pass
         return self.val.log(other.val)
 
 

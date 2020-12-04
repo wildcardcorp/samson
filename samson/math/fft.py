@@ -3,7 +3,7 @@ from math import ceil, log
 
 
 def _split(v, m, k):
-    K      = 1<< (k-1)
+    K      = 1 << (k-1)
     zero   = v[0].ring.zero
     zeroes = [zero] * K
     return [v[i:i+K] + zeroes for i in range(0, K << m, K)]
@@ -12,17 +12,28 @@ def _split(v, m, k):
 def _combine(L, m, k):
     M = 1 << m
     half_K = 1 << (k-1)
-    return SparseVector.wrap(L[0][:half_K] + \
+    return L[0][:half_K] + \
         [L[i+1][j] + L[i][j+half_K] \
-            for i in range(M-1) for j in range(half_K)])
+            for i in range(M-1) for j in range(half_K)]
 
 
 def _nega_combine(L, m, k):
     M = 1 << m
     half_K = 1 << (k-1)
-    return SparseVector.wrap([L[0][j] - L[M-1][j+half_K] for j in range(half_K)] + \
+    return [L[0][j] - L[M-1][j+half_K] for j in range(half_K)] + \
         [L[i+1][j] + L[i][j+half_K] \
-            for i in range(M-1) for j in range(half_K)])
+            for i in range(M-1) for j in range(half_K)]
+
+
+def _convolution_naive(L1, L2):
+    assert L1 and L2
+    new_coeffs = [L1[0].ring.zero] * (len(L1)+len(L2))
+
+    for i, coeff_h in enumerate(L1):
+        for j, coeff_g in enumerate(L2):
+            new_coeffs[i+j] += coeff_h*coeff_g
+
+    return new_coeffs
 
 
 
@@ -30,26 +41,21 @@ def _forward_butterfly(L1, L2, r):
     assert len(L1) == len(L2)
     assert 0 <= r <= len(L1)
 
-    K = len(L1)
-    zero = L1[0].ring.zero
-    nL1 = SparseVector([], zero)
-    nL2 = SparseVector([], zero)
+    K   = len(L1)
+    nL1 = []
+    nL2 = []
 
-    indices = set(L1.values.keys()[:] + [(k+r)%K for k in L2.values.keys()])
 
-    for i in indices:
+    for i in range(K):
         a = L1[i]
         b = L2[(i-r)%K]
 
-        nL1[i] = a-b
-        nL2[i] = a+b
+        nL1.append(a-b)
+        nL2.append(a+b)
 
 
     v1 = nL1[:r] + nL2[r:]
     v2 = nL2[:r] + nL1[r:]
-
-    v1.virtual_len = K
-    v2.virtual_len = K
 
     return v1, v2
 
@@ -60,41 +66,12 @@ def _inverse_butterfly(L1, L2, r):
     assert 0 <= r <= len(L1)
 
     K = len(L1)
-    # print('K', K)
-    # print('L1', L1.sparsity)
-    # print()
 
-    # zero = L1[0].ring.zero
-    # v1 = SparseVector([], zero)
-    # v2 = SparseVector([], zero)
+    v1 = [L1[i] + L2[i] for i in range(K)]
+    v2 = [L1[i] - L2[i] for i in range(r, K)] + [L2[i] - L1[i] for i in range(r)]
 
-    # indices = set(L1.values.keys()[:] + [(r+k)%K for k in L2.values.keys()])
+    return v1, v2
 
-    # for i in indices:
-    #     a = L1[i]
-    #     b = L2[i]
-    #     v1[i] = a + b
-
-    #     if i < r:
-    #         c = b - a
-    #     else:
-    #         c = a - b
-
-    #     v2[(i-r)%K] = c
-
-
-    # v1.virtual_len = K
-    # v2.virtual_len = K
-
-    old_v1 = SparseVector.wrap([L1[i] + L2[i] for i in range(K)])
-    old_v2 = SparseVector.wrap([L1[i] - L2[i] for i in range(r, K)] + [L2[i] - L1[i] for i in range(r)])
-
-
-    # assert v1 == old_v1
-    # assert v2 == old_v2
-
-    #return v1, v2
-    return old_v1, old_v2
 
 
 
@@ -104,9 +81,8 @@ def _fft(L, K, start, depth, root):
 
     # reduce mod (x^(D/2) - y^root) and mod (x^(D/2) + y^root)
     for i in range(half):
-        if L[start + i].sparsity or L[start2 + i].sparsity:
-           L[start + i], L[start2 + i] = \
-               _forward_butterfly(L[start + i], L[start2 + i], root)
+        L[start + i], L[start2 + i] = \
+            _forward_butterfly(L[start + i], L[start2 + i], root)
 
    # recurse into each half
     if depth >= 2:
@@ -126,90 +102,27 @@ def _ifft(L, K, start, depth, root):
 
     # CRT together (x^(D/2) - y^root) and mod (x^(D/2) + y^root)
     for i in range(half):
-        if L[start + i].sparsity or L[start2 + i].sparsity:
-            L[start + i], L[start2 + i] = \
-                _inverse_butterfly(L[start + i], L[start2 + i], root)
+        L[start + i], L[start2 + i] = \
+            _inverse_butterfly(L[start + i], L[start2 + i], root)
 
-
-
-def _convolution_naive(L1, L2):
-    assert len(L1) and len(L2)
-
-    m1 = len(L1)
-    m2 = len(L2)
-
-    zero = L1[0].ring.zero
-    new_coeffs = SparseVector([], zero)
-
-    for i, coeff_h in L1:
-        for j, coeff_g in L2:
-            new_coeffs[i+j] += coeff_h*coeff_g
-
-    return new_coeffs
 
 
 def _negaconvolution_naive(L1, L2):
     assert len(L1)
     assert len(L1) == len(L2)
 
-    N = len(L1)
-    zero = L1[0].ring.zero
-    new_coeffs = SparseVector([], zero)
-
-    # for j in range(N):
-    #     total = zero
-    #     for i in range(N):
-    #         c = L1[i] * L2[(j-i)%N]
-    #         if i < (j+1):
-    #             total += c
-    #         else:
-    #             total -=c
-
-    #     new_coeffs[j] = total
-
-    # for i, coeff_h in L1:
-    #     for j, coeff_g in L2:
-    #         if i < (j+1):
-    #             new_coeffs[j] += coeff_h*coeff_g
-    #         else:
-    #             new_coeffs[j] -= coeff_h*coeff_g
-
-    # vals = L2.map(lambda idx, val: (idx, L1[idx]*val))
-    # pos_acc = zero
-    # neg_acc = sum(vals.list(), zero)
-
-    # for i, coeff in vals:
-    #     pos_acc += coeff
-    #     neg_acc -= coeff
-
-    #     new_coeffs[i] = pos_acc - neg_acc
+    N          = len(L1)
+    new_coeffs = []
 
 
-    # for i, coeff_h in L1:
-    #     for j, coeff_g in L2:
-    #         new_coeffs[i+j] += coeff_h*coeff_g
+    for j in range(N):
+        a = sum([L1[i] * L2[j-i] for i in range(j+1)])
+        b = sum([L1[i] * L2[N+j-i] for i in range(j+1, N)])
 
-    old_v = SparseVector([sum([L1[i] * L2[j-i] for i in range(j+1)]) - \
-    sum([L1[i] * L2[N+j-i] for i in range(j+1, N)]) for j in range(N)], zero=zero)
+        new_coeffs.append(a-b)
+    
+    return new_coeffs
 
-    # print('L1', L1)
-    # print('L2', L2)
-    # #print('vals', vals)
-    # print('new_coeffs', new_coeffs)
-    # print('old_v', old_v)
-    # print()
-
-    #assert new_coeffs == old_v
-
-    return old_v
-    #return new_coeffs
-
-
-def _negaconvolution(L1, L2, n):
-    if n <= 3: # arbitrary cutoff
-        return _negaconvolution_naive(L1, L2)
-    else:
-        return _negaconvolution_fft(L1, L2, n)
 
 
 def _negaconvolution_fft(L1, L2, n):
@@ -242,7 +155,15 @@ def _negaconvolution_fft(L1, L2, n):
     L3 = _nega_combine(L3, m, k)
 
     # normalise
-    return L3.map(lambda idx, val: (idx, R(val / M)))
+    return [R(val / M) for val in L3]
+
+
+
+def _negaconvolution(L1, L2, n):
+    if n <= 3: # arbitrary cutoff
+        return _negaconvolution_naive(L1, L2)
+    else:
+        return _negaconvolution_fft(L1, L2, n)
 
 
 
@@ -293,7 +214,7 @@ def _convolution(L1, L2):
     _ifft(L3, K, 0, m, K)
 
     # combine back into a single list
-    L3 = _combine(L3, m, k)
+    L3 = SparseVector.wrap(_combine(L3, m, k))
 
     # normalise, and truncate to correct length
     return L3.map(lambda idx, val: (idx, R(val / M)))

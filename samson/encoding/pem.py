@@ -68,13 +68,13 @@ def create_pem_cbc_obj(passphrase: bytes, algo: str, iv: bytes=None) -> CBC:
         passphrase (bytes): Passphrase to key CBC.
         algo         (str): RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
         iv         (bytes): (Optional) IV to use for CBC encryption.
-    
+
     Returns:
         CBC: Valid CBC cryptor.
     """
     try:
         cipher, key_size = _get_alg_params(algo)
-    except KeyError as _:
+    except KeyError:
         raise ValueError(f'Unsupported cipher "{algo}"')
 
     if not iv:
@@ -211,4 +211,4 @@ class PEMEncodable(BaseObject):
         if (encode_pem is None and cls.DEFAULT_PEM) or encode_pem:
             buffer = pem_encode(buffer, marker or cls.DEFAULT_MARKER, encryption=encryption, passphrase=passphrase, iv=iv, use_rfc_4716=cls.USE_RFC_4716)
 
-        return buffer
+        return Bytes.wrap(buffer)

@@ -1,4 +1,4 @@
-from samson.math.general import gcd, lcm, mod_inv, find_prime
+from samson.math.general import gcd, lcm, mod_inv, find_prime, crt
 
 from samson.encoding.openssh.openssh_rsa_key import OpenSSHRSAPrivateKey, OpenSSHRSAPublicKey, SSH2RSAPublicKey
 from samson.encoding.jwk.jwk_rsa_public_key import JWKRSAPublicKey
@@ -18,6 +18,9 @@ from samson.core.primitives import Primitive, NumberTheoreticalAlg
 from samson.core.metadata import SecurityProofType, FrequencyType
 from samson.ace.decorators import creates_constraint, register_primitive
 from samson.ace.constraints import RSAConstraint
+
+import logging
+logger = logging.getLogger(__name__)
 
 @creates_constraint(RSAConstraint())
 @register_primitive()
@@ -67,7 +70,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         phi = 0
 
         if p and q:
-            phi = lcm(p - 1, q - 1)
+            phi = lcm(p-1, q-1)
             self.n = p * q
 
             if gcd(self.e, phi) != 1:
@@ -102,7 +105,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
                 if not q:
                     next_q = find_prime(q_bits)
 
-                phi = lcm(next_p - 1, next_q - 1)
+                phi = lcm(next_p-1, next_q-1)
 
             p = next_p
             q = next_q
@@ -116,7 +119,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         if self.p and self.q:
             self.d     = mod_inv(self.e, phi)
-            self.alt_d = mod_inv(self.e, (self.p - 1) * (self.q - 1))
+            self.alt_d = mod_inv(self.e, (self.p-1) * (self.q-1))
 
             self.dP = self.d % (self.p-1)
             self.dQ = self.d % (self.q-1)
@@ -176,15 +179,21 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         Returns:
             Bytes: Decrypted plaintext.
         """
-        plaintext = pow(Bytes.wrap(ciphertext).int(), self.d, self.n)
+        ciphertext = Bytes.wrap(ciphertext).int()
+
+        if self.p:
+            plaintext = crt([(pow(ciphertext, d, p), p) for d, p in [(self.dP, self.p), (self.dQ, self.q)]])[0]
+        else:
+            plaintext = pow(ciphertext, self.d, self.n)
+
         return Bytes(plaintext, 'big')
 
 
 
     @staticmethod
-    def factorize_from_shared_p(n1: int, n2: int, e: int):
+    def factor_from_shared_p(n1: int, n2: int, e: int) -> ('RSA', 'RSA'):
         """
-        Factorizes the moduli of two instances that share a common secret prime. See `Batch GCD`.
+        Factors the moduli of two instances that share a common secret prime. See `Batch GCD`.
 
         Parameters:
             n1 (int): Modulus of the first instance.
@@ -206,15 +215,15 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
 
     @staticmethod
-    def factorize_from_faulty_crt(message: int, faulty_sig: int, e: int, n: int):
+    def factor_from_faulty_crt(message: int, faulty_sig: int, n: int, e: int) -> 'RSA':
         """
-        Factorize the secret primes from a faulty signature produced with CRT-optimized RSA.
+        Factor the secret primes from a faulty signature produced with CRT-optimized RSA.
 
         Parameters:
             message    (int): Message.
             faulty_sig (int): Faulty signature of `message`.
-            e          (int): Public exponent.
             n          (int): Modulus.
+            e          (int): Public exponent.
         
         Returns:
             RSA: Cracked RSA instance.
@@ -226,14 +235,14 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
 
     @staticmethod
-    def factorize_from_d(d: int, e: int, n: int):
+    def factor_from_d(d: int, n: int, e: int) -> 'RSA':
         """
-        Factorizes the secret primes from the private key `d`.
+        Factor the secret primes from the private key `d`.
 
         Parameters:
             d (int): Private key.
-            e (int): Public exponent.
             n (int): Modulus.
+            e (int): Public exponent.
         
         Returns:
             RSA: Full RSA instance.
@@ -423,7 +432,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
 
     @staticmethod
-    def wieners_attack(n: int, e: int) -> int:
+    def wieners_attack(n: int, e: int) -> 'RSA':
         """
         Key recovery attack that uses `n` as an approximation of `phi` when `d` < 1/3 * `N`^(1/4).
 
@@ -458,4 +467,81 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         for denom in cf.denominators():
             if pow(m, int(denom), n) == 2:
-                return RSA.factorize_from_d(int(denom), e, n)
+                return RSA.factor_from_d(int(denom), e, n)
+
+
+
+    @staticmethod
+    def shared_d_attack(public_key_list: list, num_primes: int=2) -> int:
+        """
+        Generalization of Wiener's attack to RSA keys with shared `d` and/or multi-prime RSA.
+        This works when `d` < `N`^`delta` where `N` is the largest modulus and `delta`
+        is computed as `n`/`r`*(`n`+1) - log(4*`r`-2, `N`) where `n` is the number
+        of public keys and `r` is the number of primes. Also, note that the largest
+        modulus must be less than twice the smallest.
+
+        Parameters:
+            public_key_list (list): List of RSA keys or (`n`, `e`) tuples.
+            num_primes       (int): Number of primes used in each RSA key.
+
+        Returns:
+            int: The private key `d`.
+
+        Examples:
+            >>> def calc_max_d(m, n, r):
+            >>>     return int(kth_root(m**n, r*(n+1)) // QQ(m**(log(4*r-2, m))))
+            >>> #
+            >>> num_keys = 3
+            >>> rs  = [RSA(256) for _ in range(num_keys)]
+            >>> d   = int(calc_max_d(max(rsa.n for rsa in rs), num_keys, 2) * 0.999)
+            >>> d   = next_prime(d)
+            >>> rs  = [RSA(p=rsa.p, q=rsa.q, e=mod_inv(d, (rsa.p-1) * (rsa.q-1))) for rsa in rs]
+            >>> RSA.shared_d_attack(rs) == d
+            True
+
+            >>> from samson.public_key.multi_prime_rsa import MultiPrimeRSA
+            >>> num_keys   = 4
+            >>> num_primes = 3
+            >>> rs  = [MultiPrimeRSA.from_specs(128, num_primes*128, 65537) for _ in range(num_keys)]
+            >>> d   = int(calc_max_d(max(rsa.n for rsa in rs), num_keys, num_primes) * 0.999)
+            >>> d   = next_prime(d)
+            >>> rs  = [MultiPrimeRSA.from_specs(d=d, primes=rsa.ps) for rsa in rs]
+            >>> RSA.shared_d_attack(rs, num_primes) == d
+            True
+
+        References:
+            "Lattice Based Attack on Common PrivateExponent RSA" (https://www.ijcsi.org/papers/IJCSI-9-2-1-311-314.pdf)
+            "Common Private Exponent Attack on Multi Prime RSA" (http://ijeie.jalaxy.com.tw/contents/ijeie-v7-n2/ijeie-2017-v7-n2-p79-87.pdf)
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.general import kth_root, log
+        from samson.math.matrix import Matrix
+        from samson.math.all import QQ
+
+        public_key_list = [(k.n, k.e) if type(k) not in [list, tuple] else k for k in public_key_list]
+        max_mod         = max([n for n, _e in public_key_list])
+        min_mod         = min([n for n, _e in public_key_list])
+
+        if min_mod*2 < max_mod:
+            raise ValueError('The maximum modulus is greater than twice the minimum')
+
+
+        # Floor of M^(1-1/r) using integer methods for numerical stability
+        r  = num_primes
+        k  = kth_root(max_mod, r)
+        k -= k**r > max_mod
+        M  = max_mod // k
+
+        def calc_max_d(m, n, r):
+            return int(kth_root(m**n, r*(n+1)) // QQ(m**(log(4*r-2, m))))
+
+
+        logger.info(f'Max possible private key crackable: {calc_max_d(max_mod, len(public_key_list), r)}')
+
+
+        # Build the problem matrix
+        m = Matrix([[M, *[e for _n, e in public_key_list]],
+            *[[0]*(idx+1) + [-n] + [0]*(len(public_key_list)-idx-1) for idx, (n, _e) in enumerate(public_key_list)]
+        ], ZZ)
+
+        return int(abs(m.LLL(0.99)[0,0]) / M)

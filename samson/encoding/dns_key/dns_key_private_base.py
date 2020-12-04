@@ -33,7 +33,7 @@ class DNSKeyPrivateBase(BaseObject):
         try:
             lines = buffer.split(b'\n')
             return b'Private-key-format:' in lines[0] and DNSKeyAlgorithm(int(lines[1].split(b' ')[1])) in cls.ALGS
-        except Exception as _:
+        except Exception:
             return False
 
 
@@ -53,7 +53,7 @@ class DNSKeyPrivateBase(BaseObject):
             f'Activate: {self.activate.strftime(_TIME_FORMAT)}',
         ]
 
-        return b'\n'.join([p.encode('utf-8') for p in parts])
+        return Bytes(b'\n'.join([p.encode('utf-8') for p in parts]))
 
 
     @staticmethod

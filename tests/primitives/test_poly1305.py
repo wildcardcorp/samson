@@ -47,3 +47,21 @@ class Poly1305TestCase(unittest.TestCase):
 
         p1305 = Poly1305(r)
         self.assertEqual(p1305.generate(msg, s), b"\xa8\x06\x1d\xc10Q6\xc6\xc2+\x8b\xaf\x0c\x01'\xa9")
+
+
+    def test_nonce_reuse(self):
+        s    = Bytes(0x0103808afb0db2fd4abff6af4149f51b).change_byteorder()
+        r    = 0x85d6be7857556d337f4452fe42d506a8
+        msg1 = b'Cryptographic Forum Research Group'
+
+        p1305 = Poly1305(r)
+
+        sig1 = p1305.generate(msg1, s)
+
+        for _ in range(5):
+          msg2 = Bytes.random(len(msg1))
+          sig2 = p1305.generate(msg2, s)
+
+          candidates = Poly1305.nonce_reuse_attack(msg1, sig1, msg2, sig2)
+
+          self.assertTrue((p1305.r, s.int()) in candidates)

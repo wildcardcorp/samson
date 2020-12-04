@@ -9,7 +9,7 @@ from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class X509Certificate(PEMEncodable):
@@ -225,8 +225,8 @@ class X509Certificate(PEMEncodable):
             sig_params = None
 
         validity   = tbs_cert['validity']
-        not_before = validity['notBefore']['utcTime'].asDateTime
-        not_after  = validity['notAfter']['utcTime'].asDateTime
+        not_before = validity['notBefore']['utcTime'].asDateTime.astimezone(timezone.utc)
+        not_after  = validity['notAfter']['utcTime'].asDateTime.astimezone(timezone.utc)
 
         is_ca = False
         if 'extensions' in tbs_cert:

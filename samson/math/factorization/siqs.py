@@ -6,6 +6,7 @@ from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.factorization.factors import Factors
 from samson.math.factorization.general import trial_division
 from samson.math.sparse_vector import SparseVector
+from samson.auxiliary.complexity import add_complexity, KnownComplexities
 from tqdm import tqdm
 import math
 
@@ -438,7 +439,20 @@ def find_factors(n: int, solutions: list, smooth_nums: list, M: BMatrix, marks: 
     return primes, composites
 
 
-def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bool=False):
+@add_complexity(KnownComplexities.SIQS)
+def siqs(n: int, bound_ratio: float=1.0, relations_ratio: float=1.05, visual: bool=False) -> (Factors, Factors):
+    """
+    Factors an integer `n` using the Self-Initializing Quadratic Sieve. Effective for integers up to 100 digits (~330 bits).
+
+    Parameters:
+        n                 (int): Integer to factor.
+        bound_ratio     (float): Percentage of wanted bound to optimized bound.
+        relations_ratio (float): Percentage of wanted relations to required relations.
+        visual           (bool): Whether or not to display progress bar.
+
+    Returns:
+        (Factors, Factors): Formatted (prime factors, composite factors).
+    """
     nf, m      = siqs_choose_nf_m(len(str(n)))
     nf         = int(nf * bound_ratio)
     prime_base = find_base(n, nf)

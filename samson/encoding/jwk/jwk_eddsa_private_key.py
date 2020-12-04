@@ -1,6 +1,7 @@
 from samson.encoding.general import url_b64_encode
 from samson.encoding.jwk.jwk_eddsa_public_key import JWKEdDSAPublicKey
 from samson.encoding.jwk.jwk_base import JWKBase
+from samson.utilities.bytes import Bytes
 import json
 
 class JWKEdDSAPrivateKey(JWKBase):
@@ -26,7 +27,7 @@ class JWKEdDSAPrivateKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448', 'X25519', 'X448'] and 'd' in jwk
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -44,7 +45,7 @@ class JWKEdDSAPrivateKey(JWKBase):
         jwk = JWKEdDSAPublicKey.build_pub(self.key)
         jwk['d'] = url_b64_encode(self.key.d).decode()
 
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod

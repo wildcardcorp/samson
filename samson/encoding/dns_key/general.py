@@ -1,5 +1,6 @@
 from enum import Enum, IntFlag
 from samson.math.algebra.curves.named import P256, P384, EdwardsCurve25519, EdwardsCurve448
+from samson.utilities.bytes import Bytes
 
 # https://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.xhtml
 class DNSKeyAlgorithm(Enum):
@@ -42,13 +43,14 @@ class DNSKeyFlags(IntFlag):
 
 
 def to_wire(key: bytes):
+    from samson.encoding.dns_key.dns_key_public_base import DNSKeyPublicBase
     flags, proto, alg = key.split(b' ')[:3]
 
     flags = Bytes(int(flags)).zfill(2)
     proto = Bytes(int(proto)).zfill(1)
     alg   = Bytes(int(alg)).zfill(1)
 
-    return flags + proto + alg + DNSKeyDHublicKey.get_pub_bytes(key)
+    return flags + proto + alg + DNSKeyPublicBase.get_pub_bytes(key)
 
 
 def calculate_key_tag(key: bytes):

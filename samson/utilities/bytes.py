@@ -58,7 +58,17 @@ class Bytes(bytearray):
             Bytes: Random Bytes.
         """
         return Bytes(rand_bytes(size), byteorder=byteorder)
+    
+    
+    @staticmethod
+    def read_file(filename: str) -> 'Bytes':
+        with open(filename, 'rb') as f:
+            return Bytes(f.read())
 
+
+    def write_file(self, filename: str) -> int:
+        with open(filename, 'wb') as f:
+            return f.write(self)
 
 
     def __repr__(self):
@@ -289,6 +299,19 @@ class Bytes(bytearray):
 
         o.byteorder = byteorder
         return o
+
+
+    def unpack_length_encoded(self, length_size: int=2) -> list:
+        curr  = self
+        parts = []
+        while len(curr):
+            length = curr[:length_size].int()
+            data   = curr[length_size:length+length_size]
+            parts.append(data)
+            curr   = curr[length+length_size:]
+        
+        return parts
+
 
 
     # Conversions

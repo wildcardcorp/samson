@@ -14,7 +14,7 @@ class X509ECDSAExplicitCertificate(object):
             cert, _ = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
             alg = cert['tbsCertificate']['subjectPublicKeyInfo']['algorithm']
             return str(alg['algorithm']) == '1.2.840.10045.2.1' and type(decoder.decode(alg['parameters'])[0]) == Sequence
-        except PyAsn1Error as _:
+        except PyAsn1Error:
             return False
 
 

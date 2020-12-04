@@ -16,7 +16,7 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0]) == '1.2.840.10045.2.1'
-        except PyAsn1Error as _:
+        except PyAsn1Error:
             return False
 
 

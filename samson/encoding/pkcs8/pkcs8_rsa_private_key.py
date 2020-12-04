@@ -10,7 +10,7 @@ class PKCS8RSAPrivateKey(PKCS8Base):
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 3 and str(items[1][0]) == '1.2.840.113549.1.1.1'
-        except Exception as _:
+        except Exception:
             return False
 
 

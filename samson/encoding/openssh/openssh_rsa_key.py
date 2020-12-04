@@ -14,10 +14,9 @@ class OpenSSHRSAKey(OpenSSHPrivateBase):
     def extract_key(cls, priv, pub):
         from samson.public_key.rsa import RSA
 
-        n, e, p, q = pub.n, pub.e, priv.p if priv else 2, priv.q if priv else 3
+        n, e, p, q = pub.n, pub.e, priv.p if priv else None, priv.q if priv else None
 
-        rsa   = RSA(n.bit_length(), p=p, q=q, e=e)
-        rsa.n = n
+        rsa = RSA(n.bit_length(), n=n, p=p, q=q, e=e)
 
         return rsa
 

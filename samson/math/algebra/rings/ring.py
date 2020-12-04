@@ -178,20 +178,33 @@ class Ring(BaseObject):
         Returns:
             RingElement: A generator element.
         """
-        from samson.utilities.exceptions import SearchspaceExhaustedException
         from samson.math.symbols import oo
 
         if self.order == oo:
             return self.one
 
 
+        return self.find_element_of_order(self.order)
+
+
+    def find_element_of_order(self, n: int=None, n_facs: 'Factors'=None) -> 'RingElement':
+        """
+        Finds an element of order `n`.
+
+        Parameters:
+            n          (int): Size of the subgroup.
+            n_facs (Factors): Factors of the size of the subgroup.
+
+        Returns:
+            RingElement: Element of order `n`.
+        """
+        if not n_facs:
+            n_facs = factor(n)
+
         while True:
-            possible_gen = self.random()
-            if possible_gen.order == self.order:
-                return possible_gen
-
-        raise SearchspaceExhaustedException("Unable to find generator")
-
+            elem = self.random()
+            if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs):
+                return elem
 
 
     def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
@@ -553,8 +566,8 @@ class RingElement(BaseObject):
         """
         from samson.math.symbols import Symbol
 
-        x     = Symbol('x')
-        _     = self.ring[x]
+        x = Symbol('x')
+        _ = self.ring[x]
 
         if return_all:
             kwargs = {}
@@ -570,6 +583,7 @@ class RingElement(BaseObject):
             roots = roots[0]
 
         return roots
+
 
 
     def sqrt(self) -> 'RingElement':

@@ -35,7 +35,7 @@ class JWKEdDSAPublicKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'OKP' and jwk['crv'] in ['Ed25519', 'Ed448', 'X25519', 'X448'] and not 'd' in jwk
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -71,7 +71,7 @@ class JWKEdDSAPublicKey(JWKBase):
             str: JWK JSON string.
         """
         jwk = JWKEdDSAPublicKey.build_pub(self.key)
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod

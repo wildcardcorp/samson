@@ -57,10 +57,8 @@ class LM(BaseObject):
         Returns:
             Bytes: Cracked LM hash.
         """
-        h1, h2 = lm_hash.zfill(16).chunk(8)
-
-        h1_pt, h2_pt = None, None
-
+        h1, h2           = lm_hash.zfill(16).chunk(8)
+        h1_pt, h2_pt     = None, None
         h1_null, h2_null = self.check_halves_null(lm_hash)
 
         if h1_null:
@@ -88,3 +86,33 @@ class LM(BaseObject):
 
         except KeyboardInterrupt:
             return Bytes(h1_pt or b'\x00').pad_congruent_right(7) + Bytes(h2_pt or b'')
+
+
+    @staticmethod
+    def lm_to_ntlm(cracked: bytes, ntlm_hex: bytes) -> Bytes:
+        """
+        Since LM hashes uppercase all letters, the password may not match the password for the NTLM hash.
+        By trying every combination of uppercase and lowercase, the NTLM hash can be bruteforced.
+
+        Parameters:
+            cracked  (bytes): Cracked password of LM hash.
+            ntlm_hex (bytes): Target NTLM hash in hex format.
+        
+        Returns:
+            Bytes: The NTLM hash's password.
+        """
+        from samson.hashes.ntlm import NTLM
+        import string
+        import itertools
+
+        letters      = [(idx, chr(l)) for idx, l in enumerate(cracked) if chr(l) in string.ascii_uppercase]
+        both_cases   = [(l, l.lower()) for _idx, l in letters]
+        cracked_copy = bytearray(cracked)
+        ntlm         = NTLM()
+
+        for prod in itertools.product(*both_cases):
+            for c, (i, _) in zip(prod, letters):
+                cracked_copy[i] = ord(c)
+
+            if ntlm.hash(cracked_copy).hex() == ntlm_hex:
+                return Bytes(cracked_copy)

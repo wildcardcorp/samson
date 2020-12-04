@@ -13,7 +13,7 @@ class PKCS1RSAPublicKey(PEMEncodable):
             items = bytes_to_der_sequence(buffer)
             poss_p = int(items[0])
             return len(items) == 2 and not is_prime(poss_p)
-        except Exception as _:
+        except Exception:
             return False
 
 

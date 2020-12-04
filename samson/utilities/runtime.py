@@ -3,6 +3,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing.pool import Pool as ProcessPool
 from functools import wraps
 from types import FunctionType
+import math
 import logging
 import inspect
 import sys
@@ -13,7 +14,14 @@ URANDOM = open("/dev/urandom", "rb")
 
 
 def default_poly_fft_heuristic(p1, p2):
-    return p1.coeffs.sparsity * p2.coeffs.sparsity > (2**24 // p1.ring.structure_depth**2)
+    max_deg = max(p1.degree(), p2.degree())
+    if not max_deg:
+        return False
+
+    logn    = math.ceil(math.log2(max_deg))
+    n       = 2**logn
+
+    return p1.coeffs.sparsity * p2.coeffs.sparsity > 10*(3*n*logn+n)
 
 
 class RuntimeConfiguration(object):

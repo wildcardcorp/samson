@@ -14,7 +14,7 @@ class X509EdDSAPublicKey(X509PublicKeyBase):
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8EdDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0])[:7] == '1.3.101'
-        except Exception as _:
+        except Exception:
             return False
 
 

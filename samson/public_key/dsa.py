@@ -148,7 +148,7 @@ class DSA(EncodablePKI, SignatureAlg):
         (r_a, s_a) = sig_a
         (r_b, s_b) = sig_b
         if r_a != r_b:
-            raise InvalidSignatureException
+            raise ValueError('Signatures do not share an `r` value')
 
         s = (s_a - s_b) % self.q
         m = (self.hash_obj.hash(msg_a).int() - self.hash_obj.hash(msg_b).int()) % self.q

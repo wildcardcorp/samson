@@ -52,7 +52,7 @@ class CRIMEAttack(object):
         padding = self.find_padding(plaintext, constant_padding)
 
         if padding == None:
-            raise Exception("No suitable padding found")
+            raise RuntimeError("No suitable padding found")
 
         ctr = 0
         while (len(plaintext) - len(known_plaintext)) < secret_len:

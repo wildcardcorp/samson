@@ -1,9 +1,10 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths
+from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths, product
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
+from samson.utilities.runtime import RUNTIME
 from types import FunctionType
 import itertools
 
@@ -146,9 +147,6 @@ class Polynomial(RingElement):
         self.ring       = o.ring
         self.symbol     = o.symbol
 
-        #self.symbol.build(self.ring)
-
-
 
     def LC(self) -> RingElement:
         """
@@ -174,6 +172,9 @@ class Polynomial(RingElement):
         Returns:
             RingElement: Evaluation at `x`.
         """
+        if not self.degree():
+            return self[0]
+
         coeffs   = self.coeffs
         total    = self.coeff_ring.zero
         last_idx = coeffs.last()
@@ -242,11 +243,24 @@ class Polynomial(RingElement):
 
             all_facs = []
             q_facs   = R.quotient.factor()
-            for fac in q_facs:
-                sub_facs = self.peel_coeffs().change_ring(R.ring/R.ring(fac)).factor(**factor_kwargs)
-                all_facs.append([-sub_fac.coeffs[0] for sub_fac in sub_facs.keys() if sub_fac.degree() == 1])
 
-            return [R(crt(comb)[0]) for comb in itertools.product(*all_facs)]
+            P = int(product(q_facs))
+
+            for fac in q_facs:
+                nroots = self.change_ring(ZZ/fac).roots()
+                all_facs.append(nroots)
+
+            results = []
+            for comb in itertools.product(*all_facs):
+                candidate = crt(comb)[0]
+
+                # Essentially Hensel lifting
+                for _ in range(int(R.quotient) // P):
+                    if not self(candidate):
+                        results.append(candidate)
+                    candidate += P
+            
+            return results
 
 
     def small_roots(self) -> list:
@@ -297,42 +311,63 @@ class Polynomial(RingElement):
 
 
     def valuation(self):
-        from samson.math.algebra.symbols import oo
+        from samson.math.symbols import oo
 
         if not self.coeffs:
             return oo
 
-        return min(self.coeffs)
+        return min(self.coeffs.values.values())
 
 
 
-    def hensel_lift(self, p, a):
-        a_eval   = self(a)
-        f_prime  = self.derivative()
-        der_eval = f_prime(a)
+    def hensel_lift(self, p: int, k: int, last_roots: list=None) -> list:
+        """
+        Finds roots in `ZZ/ZZ(p**k)` where `p` is the coefficient ring's characteristic.
 
-        if a_eval.valuation(p) < 2*der_eval.valuation(p):
-            raise ValueError('a is not close enough to a root')
+        Parameters:
+            p (int): Prime modulus to find roots in.
+            k (int): Power to lift to.
 
-        b = ~der_eval
+        Returns:
+            list: Lifted roots.
 
-        while True:
-            na = a - a_eval*b
+        References:
+            https://en.wikipedia.org/wiki/Hensel%27s_lemma
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+    
+        if not ZZ(p).is_prime():
+            raise ValueError("'p' must be prime")
 
-            if na == a:
-                return a
+        if not k:
+            return []
 
-            a        = na
-            a_eval   = self(a)
-            der_eval = f_prime(a)
-            b       *= 2 - der_eval*b
 
-            print('a', a)
-            print('a_eval', a_eval)
-            print('der_eval', der_eval)
-            print('b', b)
-            print()
+        if k == 1:
+            return self.change_ring(ZZ/ZZ(p)).roots()
 
+        else:
+            r  = last_roots or self.hensel_lift(p, k-1)
+            df = self.derivative().change_ring(ZZ/ZZ(p))
+            nroots = []
+
+            R = ZZ/ZZ(p**k)
+            f = self.change_ring(R)
+
+            for root in r:
+                zroot = ZZ(root)
+                dfr   = df(zroot)
+
+                if not f(zroot):
+                    if dfr:
+                        a = ZZ(~dfr)
+                        s = -f(zroot)*a + R(zroot)
+                        nroots.append(s)
+                    else:
+                        for t in range(int(p)):
+                            nroots.append(R(zroot) + R(t)*p**(k-1))
+
+            return nroots
 
 
     def _create_sparse(self, vec):
@@ -427,8 +462,6 @@ class Polynomial(RingElement):
         """
         Decomposes a Polynomial into its square-free factors. Used as the first step in factorization.
 
-        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
-
         Returns:
             list: Square-free factors of self.
 
@@ -441,6 +474,8 @@ class Polynomial(RingElement):
             >>> poly.square_free_decomposition()
             {<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
 
+        References:
+            https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
         """
         is_field = self.coeff_ring.is_field()
         def cond_monic(poly):
@@ -482,10 +517,11 @@ class Polynomial(RingElement):
         """
         Factors a Polynomial into factors of different degrees.
 
-        https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
-
         Returns:
             list: Distinct-degree factors of self.
+        
+        References:
+            https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base
 
@@ -1140,8 +1176,6 @@ class Polynomial(RingElement):
 
 
     def __mul__(self, other: object) -> object:
-        from samson.utilities.runtime import RUNTIME
-
         gmul = self.ground_mul(other)
         if gmul is not None:
             return gmul
@@ -1191,7 +1225,8 @@ class Polynomial(RingElement):
 
 
             # Convolve and reconstruct
-            poly = self._create_poly(_convolution(small_self.coeffs, small_other.coeffs)) << (self_smallest_pow+other_smallest_pow)
+            # poly = self._create_poly(_convolution(small_self.coeffs, small_other.coeffs)) << (self_smallest_pow+other_smallest_pow)
+            poly = self._create_poly(_convolution(list(small_self), list(small_other))) << (self_smallest_pow+other_smallest_pow)
 
             if denom > 1:
                 poly.coeffs = poly.coeffs.map(lambda idx, val: (idx*denom, val))

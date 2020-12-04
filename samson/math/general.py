@@ -1,5 +1,6 @@
 from samson.utilities.general import rand_bytes
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException, NoSolutionException
+from samson.auxiliary.complexity import add_complexity, KnownComplexities
 from functools import reduce
 from types import FunctionType
 from copy import deepcopy
@@ -335,6 +336,7 @@ def mod_inv(a: int, n: int) -> int:
     return x
 
 
+@add_complexity(KnownComplexities.LOG)
 def square_and_mul(g: int, u: int, s: int=None) -> int:
     """
     Computes `s` = `g` ^ `u` over arbitrary rings.
@@ -377,6 +379,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
     return s
 
 
+@add_complexity(KnownComplexities.LOG)
 def fast_mul(a: int, b: int, s: int=None) -> int:
     """
     Computes `s` = `a` * `b` over arbitrary rings.
@@ -554,7 +557,7 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
             ub = mid
 
 
-
+@add_complexity(KnownComplexities.LINEAR)
 def crt(residues: list, auto_correct: bool=True) -> (object, object):
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
@@ -928,7 +931,7 @@ def tonelli_q(a: int, p: int, q: int) -> int:
             l = (l * pow(g, pow(2, (k-j-1)*lamb), p)) % p
 
 
-
+@add_complexity(KnownComplexities.CUBIC)
 def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     """
     Solves `Ax = b` for `x` where `A` is `system_matrix` and `b` is `rhs`.
@@ -998,6 +1001,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     return Matrix(A[:, rhs_cols:m], coeff_ring=R, ring=A.ring)
 
 
+@add_complexity(KnownComplexities.GRAM)
 def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
     """
     Performs Gram-Schmidt orthonormalization.
@@ -1065,6 +1069,7 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
     return Q, mu
 
 
+@add_complexity(KnownComplexities.LLL)
 def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     """
     Performs the Lenstra–Lenstra–Lovász lattice basis reduction algorithm.
@@ -1867,7 +1872,7 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
     raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
 
-
+@add_complexity(KnownComplexities.PH)
 def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dict=None) -> int:
     """
     Computes the discrete logarithm for finite abelian groups with a smooth order.
@@ -1941,7 +1946,7 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
     return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
 
 
-
+@add_complexity(KnownComplexities.PH)
 def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int:
     """
     Computes the discrete logarithm using Pollard's Rho.
@@ -2669,7 +2674,7 @@ def prime_number_theorem(n: int) -> int:
 pnt = prime_number_theorem
 
 
-
+@add_complexity(KnownComplexities.IC)
 def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
     """
     Computes the discrete logarithm of `y` to base `g`
@@ -2757,7 +2762,6 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
 
 
 def estimate_L_complexity(a, c, n):
-    import math
     return math.e**(c*math.log(n)**a * (math.log(math.log(n)))**(1-a))
 
 

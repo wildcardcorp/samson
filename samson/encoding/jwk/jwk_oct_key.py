@@ -25,7 +25,7 @@ class JWKOctKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'oct' and 'k' in jwk
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -43,7 +43,7 @@ class JWKOctKey(JWKBase):
             'kty': 'oct',
             'k': url_b64_encode(self.key).decode()
         }
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod

@@ -20,6 +20,16 @@ def int_proc(a):
     return color_format(INT_COLOR, a_str) + (f' ({a.bit_length()} bits)' if is_long else "")
 
 
+def list_proc(a):
+    is_long = len(a) > 10
+    if is_long and RUNTIME.minimize_output:
+        a_str = f'{str(a[:10])[:-1]}...'
+    else:
+        a_str = str(a)
+    
+    return f'{a_str} ({len(a)} items)'
+
+
 def str_color(a):
     return color_format(STR_COLOR, str(a.__repr__()))
 
@@ -33,6 +43,7 @@ def color_text(color):
 PROC_DICT = {
     'int': int_proc,
     'str': str_color,
+    'list': list_proc,
     'bytes': color_text(STR_COLOR),
     'Bytes': color_text(BYTES_COLOR),
     'NoneType': color_text(NONE_COLOR),

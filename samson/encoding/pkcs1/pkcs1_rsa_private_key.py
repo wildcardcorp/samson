@@ -11,7 +11,7 @@ class PKCS1RSAPrivateKey(PEMEncodable):
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 9 and int(items[0]) == 0
-        except Exception as _:
+        except Exception:
             return False
 
 

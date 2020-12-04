@@ -51,7 +51,7 @@ class PKCS1ECDSAPrivateKey(PEMEncodable):
         try:
             items = bytes_to_der_sequence(buffer)
             return len(items) == 4 and int(items[0]) == 1
-        except Exception as _:
+        except Exception:
             return False
 
 

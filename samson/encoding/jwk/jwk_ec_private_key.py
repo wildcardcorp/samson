@@ -26,7 +26,7 @@ class JWKECPrivateKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'EC' and 'd' in jwk
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -44,7 +44,7 @@ class JWKECPrivateKey(JWKBase):
         jwk = JWKECPublicKey.build_pub(self.key)
         jwk['d'] = url_b64_encode(Bytes(self.key.d)).decode()
 
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod

@@ -25,7 +25,7 @@ class JWKRSAPublicKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'RSA' and not ('d' in jwk)
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -61,7 +61,7 @@ class JWKRSAPublicKey(JWKBase):
             str: JWK JSON string.
         """
         jwk = JWKRSAPublicKey.build_pub(self.key)
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod
@@ -88,12 +88,10 @@ class JWKRSAPublicKey(JWKBase):
             p = Bytes(url_b64_decode(jwk['p'].encode('utf-8'))).int()
             q = Bytes(url_b64_decode(jwk['q'].encode('utf-8'))).int()
         else:
-            p = 2
-            q = 3
+            p = None
+            q = None
 
 
-        rsa = RSA(8, p=p, q=q, e=e)
-        rsa.n = n
-        rsa.bits = rsa.n.bit_length()
+        rsa = RSA(n.bit_length(), n=n, p=p, q=q, e=e)
 
         return JWKRSAPublicKey(rsa)

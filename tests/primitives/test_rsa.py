@@ -751,7 +751,7 @@ class RSATestCase(unittest.TestCase):
 
 
 
-    def test_factorize_from_shared_p(self):
+    def test_factor_from_shared_p(self):
         for _ in range(5):
             a_d = 0
             b_d = 0
@@ -766,18 +766,18 @@ class RSATestCase(unittest.TestCase):
 
             self.assertNotEqual(rsa_a.d, rsa_b.d)
 
-            new_rsa_a, new_rsa_b = RSA.factorize_from_shared_p(rsa_a.n, rsa_b.n, rsa_a.e)
+            new_rsa_a, new_rsa_b = RSA.factor_from_shared_p(rsa_a.n, rsa_b.n, rsa_a.e)
 
             self.assertEqual((rsa_a.d, rsa_a.e, rsa_a.n, rsa_a.p, rsa_a.q), (new_rsa_a.d, new_rsa_a.e, new_rsa_a.n, new_rsa_a.p, new_rsa_a.q))
             self.assertEqual((rsa_b.d, rsa_b.e, rsa_b.n, rsa_b.p, rsa_b.q), (new_rsa_b.d, new_rsa_b.e, new_rsa_b.n, new_rsa_b.p, new_rsa_b.q))
 
 
 
-    def test_factorize_from_d(self):
+    def test_factor_from_d(self):
         for _ in range(5):
             bits = max(1, Bytes.random(2).int() >> 4)
             rsa_a = RSA(bits, e=65537)
-            new_rsa_a = RSA.factorize_from_d(rsa_a.d, rsa_a.e, rsa_a.n)
+            new_rsa_a = RSA.factor_from_d(rsa_a.d, rsa_a.n, rsa_a.e)
 
             # Here we sort p and q since we don't know which found prime will be assigned to which variable
             self.assertEqual((rsa_a.d, rsa_a.e, rsa_a.n, sorted([rsa_a.p, rsa_a.q])), (new_rsa_a.d, new_rsa_a.e, new_rsa_a.n, sorted([new_rsa_a.p, new_rsa_a.q])))

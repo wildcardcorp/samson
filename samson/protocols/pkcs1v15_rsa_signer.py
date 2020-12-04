@@ -73,5 +73,5 @@ class PKCS1v15RSASigner(object):
 
 
             return RUNTIME.compare_bytes(hashed_value, hash_obj.hash(plaintext))
-        except Exception as _:
+        except Exception:
             return False

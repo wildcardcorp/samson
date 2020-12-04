@@ -119,7 +119,7 @@ def gen_doc(description: str=None, parameters: list=None, returns: DocReturns=No
         if returns:
             returns_str = f"""
 
-    Returns:
+    Returns{' (complexity ' + undefined_param_format(str(func.complexity)) + ')' if hasattr(func, 'complexity') else ''}:
     {TAB}{returns.cls}: {returns.desc}"""
 
 
@@ -134,7 +134,7 @@ def gen_doc(description: str=None, parameters: list=None, returns: DocReturns=No
             references_str = f"""
 
     References:
-    {NEWLINE.join([f'{TAB}{QUOTE + ref.name + QUOTE + " " if ref.name else ""}{ref.url}' for ref in references])}"""
+    {NEWLINE.join([f'{TAB}{(QUOTE + ref.name + QUOTE + " ") if ref.name else ""}{"(" + ref.url + ")" if ref.name else ref.url}' for ref in references])}"""
 
 
 
@@ -219,7 +219,7 @@ def parse_doc(func):
         output_idxs = [-1] + [idx for idx, ex in enumerate(exs) if ">>>" not in ex]
 
         for idx, out_idx in enumerate(output_idxs[1:]):
-            code = NEWLINE.join([ex.lstrip(">>> ") for ex in exs[output_idxs[idx]+1:out_idx]])
+            code = NEWLINE.join([ex[ex.index(">>> ")+4:] for ex in exs[output_idxs[idx]+1:out_idx]])
             _examples.append(DocExample(code, exs[out_idx]))
 
 
@@ -239,9 +239,14 @@ def parse_doc(func):
             url_start = ref.index('http')
 
             if url_start > -1:
-                dref = DocReference(ref[:url_start], ref[url_start:])
+                name = ref[:url_start]
+                url  = ref[url_start:]
+
             else:
-                dref = DocReference(ref, "")
+                name = ref
+                url  = ""
+
+            dref = DocReference(name.strip("\"\' ("), url.strip("() \"\'"))
 
             references.append(dref)
 

@@ -1,6 +1,7 @@
-#!/usr/bin/python3
+from samson.core.base_object import BaseObject
+
 w, n, m, r = (32, 624, 397, 31)
-a = 0x9908b0df
+MAGIC = 0x9908b0df
 f = 1812433253
 u, d = (11, 0xFFFFFFFF)
 s, b = (7, 0x9D2C5680)
@@ -68,9 +69,12 @@ def untemper(y):
 
 
 # Implementation of MT19937
-class MT19937(object):
+class MT19937(BaseObject):
     """
     Mersenne Twister 19937
+
+    References:
+        https://jazzy.id.au/2010/09/22/cracking_random_number_generators_part_3.html
     """
 
     def __init__(self, seed: int=0):
@@ -79,7 +83,7 @@ class MT19937(object):
             seed (int): Initial value.
         """
         self.state = [0] * n
-        self.seed = seed
+        self.seed  = seed
 
         # Seed the algo
         self.index = n
@@ -89,9 +93,8 @@ class MT19937(object):
             self.state[i] = asint32(f * (self.state[i - 1] ^ self.state[i - 1] >> (w - 2)) + i)
 
 
-    def __repr__(self):
-        return f"<MT19937: seed={self.seed}, index={self.index}, state={self.state}>"
-
+    def __reprdir__(self):
+        return ['seed', 'index', 'state']
 
     def __str__(self):
         return self.__repr__()
@@ -106,7 +109,7 @@ class MT19937(object):
             self.state[i] = self.state[(i + m) % n] ^ y >> 1
 
             if y & 1 == 1:
-                self.state[i] ^= a
+                self.state[i] ^= MAGIC
 
         self.index = 0
 
@@ -122,15 +125,56 @@ class MT19937(object):
             self.twist()
 
         y = self.state[self.index]
-        y  = temper(y)
+        y = temper(y)
 
         self.index += 1
 
         return asint32(y)
 
 
+    def untwist(self):
+        for i in reversed(range(n)):
+            tmp  = self.state[i]
+            tmp ^= self.state[(i + m) % n]
+
+            if (tmp & 0x80000000) == 0x80000000:
+                tmp ^= MAGIC
+            
+            result = (tmp << 1) & 0x80000000
+            tmp    = self.state[(i - 1 + n) % n]
+            tmp   ^= self.state[(i - 1 + m) % n]
+
+            if (tmp & 0x80000000) == 0x80000000:
+                tmp    ^= MAGIC
+                result |= 1
+            
+            result |= (tmp << 1) & 0x7fffffff
+            self.state[i] = result
+
+        self.index = n-1
+
+
+
+    def reverse_clock(self) -> int:
+        """
+        Generates the previous pseudorandom output.
+
+        Returns:
+            int: Next pseudorandom output.
+        """
+        self.index -= 1
+        if self.index < 0:
+            self.untwist()
+        
+        y = self.state[self.index]
+        y = temper(y)
+
+        return asint32(y)
+
+
+
     @staticmethod
-    def crack(observed_outputs: list):
+    def crack(observed_outputs: list) -> 'MT19937':
         """
         Given 624 observed, consecutive outputs, cracks the internal state of the original and returns a replica.
 
@@ -140,10 +184,10 @@ class MT19937(object):
         Returns:
             MT19937: A replica of the original MT19937.
         """
-        if len(observed_outputs) < 624:
+        if len(observed_outputs) < n:
             raise ValueError("`observed_outputs` must contain at least 624 consecutive outputs.")
 
         cloned = MT19937(0)
-        cloned.state = [untemper(output) for output in observed_outputs][-624:]
+        cloned.state = [untemper(output) for output in observed_outputs][-n:]
 
         return cloned

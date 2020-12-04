@@ -4,19 +4,85 @@ from samson.math.all import *
 import math
 
 
+# TODO: Allow this generates a smoother poly, the 'gen_primes' function
+# fails since it will never find a prime `f` isn't irreducible over
+def gen_smoother_num_field(n, d):
+    m  = next_prime(max(int(math.pow(n, 1.0/d)), 213))
+    nn = n
+
+    while True:
+        f = int_to_poly(nn, m)
+        if f.degree() >= d:
+            break
+
+        nn *= 2
+
+
+    e = 3
+    x = Symbol('x')
+    _ = ZZ[x]
+
+
+    while True:
+        m -= 2
+        while not is_prime(m):
+            m -= 2
+
+        f = x - m
+        for p in [2, 3, 5, 7, 11, 13][:d-1]:
+            f *= x - p**e
+
+        print('Looking for poly')
+        print(f, m)
+        break
+        # if f.change_ring(ZZ/ZZ(m)).is_irreducible():
+        #     break
+
+    return f, m
+
+
 def gen_num_field(n, d):
-    m = next_prime(max(int(math.pow(n, 1.0/d)), 31))
-    f = int_to_poly(n, m)
+    m  = next_prime(max(int(math.pow(n, 1.0/d)), 211))
+    nn = n
+
+    while True:
+        f = int_to_poly(nn, m)
+        if f.degree() >= d:
+            break
+
+        nn *= 2
 
     while f.degree() > d and not f.is_irreducible():
         m -= 2
         while not is_prime(m):
             m -= 2
 
-        f = int_to_poly(n, m)
+        f = int_to_poly(nn, m)
+        print('Looking for poly')
         print(f, m)
 
     return f.peel_coeffs(), m
+
+
+def find_smooth_poly(n, m, d, attempts=1000):
+    Zn   = ZZ/ZZ(n)
+    P    = Zn[x]
+    best = (None, {1:0})
+
+    for _ in range(attempts):
+        p  = (P.random(x**d) << 1)
+        p -= p(m)
+
+        if p.change_ring(ZZ).is_irreducible():
+            roots = p.roots()
+
+            r_facs = lcm(*[int(r) for r in roots if r])
+            facs   = ZZ(r_facs).factor()
+
+            if sum(facs.values()) > sum(best[1].values()):
+                best = (p.change_ring(ZZ), facs)
+
+    return best
 
 
 
@@ -57,8 +123,9 @@ def gen_primes(primes, f, couv_bound):
     if primes:
         primes_prod = product(primes)
 
-    sum_bound   = primes_prod.bit_length()
+    sum_bound = primes_prod.bit_length()
 
+    print('Finding primes...')
     while sum_bound <= couv_bound:
         p = find_prime(64)
         if p in primes or not f.change_ring(ZZ/ZZ(p)).is_irreducible():
@@ -66,6 +133,7 @@ def gen_primes(primes, f, couv_bound):
 
         primes_prod *= p
         sum_bound    = primes_prod.bit_length()
+        print('sum_bound', sum_bound)
         primes.append(p)
 
     return primes, primes_prod
@@ -168,20 +236,20 @@ def alg_sqrt(f, n, m, d, smooths, base):
     primes = []
     base                = set([p for _,p in base])
     couv_bound          = num_req_primes(n, m, f, smooths)
-    print(couv_bound)
+    print('couv_bound', couv_bound)
     primes, primes_prod = gen_primes(primes, f, couv_bound)
     prime_exps          = get_alg_prime_exps(smooths, f, base)
 
     f_prime = f.derivative()
     total   = 0
-    print(primes)
+    print('primes', primes)
 
     for p in primes:
         norm_p = sqrt_mod_n(prime_exps, base, p)
         R      = ZZ/ZZ(p)
         f_p    = f.change_ring(R)
         nfp    = f_p.ring/f_p
-        print(smooths)
+        print('smooths', smooths)
         prod   = product([nfp(list(smooth)) for smooth in smooths])
 
         prod *= f_prime.change_ring(R)**2
@@ -213,17 +281,19 @@ def sieve(m, f_q, num_required, R, A, Q, d):
     b     = 0
 
     last_len = 0
+    k = 0
 
     while len(pairs) < num_required:
-        b += 1
+        k += 1
+        b += (-1 + 2*(k % 2)) * k
 
-        # if last_len == len(pairs):
-        #     N *= 2
+        if last_len == len(pairs):
+            N *= 2
 
         last_len = len(pairs)
-        print(last_len)
+        print('last_len, b', last_len, b)
 
-        for a in range(-N, N+1):
+        for a in range(-N*2**10, N*2**10+1):
             r_facs = []
             c = a+b*m
 
@@ -298,10 +368,12 @@ def gnfs(n, d, R_size=30, A_size=90, Q_size=108):
     P = ZZ[x]
 
     # CONFIGURE SIEVE
-    f, m = gen_num_field(n, d)
-    print(f, m)
+    #f, m = gen_num_field(n, d)
+    f, m = gen_smoother_num_field(n, d)
+    print('Found f, m', f, m)
     f_q  = f.change_ring(QQ)
     F    = P/f
+    print(F)
     assert f(m) % n == 0
 
     R = list(sieve_of_eratosthenes(R_size))
@@ -312,10 +384,11 @@ def gnfs(n, d, R_size=30, A_size=90, Q_size=108):
     l = len(A)
     u = len(Q)
 
-    num_cols = l+k+u+1
+    # num_cols = l+k+u+1
+    num_cols = l+k+u+1+5
 
     # PERFORM SIEVE
-    pairs, facs = sieve(m, f_q, num_cols+5, R, A, Q, d)
+    pairs, facs = sieve(m, f_q, num_cols, R, A, Q, d)
     bexp_mat    = build_matrix(facs, R, A, num_cols)
 
 
@@ -331,24 +404,30 @@ def gnfs(n, d, R_size=30, A_size=90, Q_size=108):
         for solution in solutions:
             sol_vec = solve_row(solution, M, marks)
             rat_sol = 1
+            alg_sol = P.one
+            theta   = P.symbol
 
             for idx in sol_vec:
                 a, b = pairs[idx]
                 rat_sol *= a+b*m
+                alg_sol *= a+b*theta
+                print(idx)
 
+
+            print(alg_sol)
             res = alg_sqrt(f, n, m, d, [pairs[idx] for idx in sol_vec], A)
 
             print('res', res)
             # print(alg_sol2)
 
             # res = int(alg_sol.val(m))
-            print(rat_sol, res)
+            print('rat_sol, res', rat_sol, res)
             print()
             if is_square(rat_sol):
                 rat_sol = kth_root(rat_sol, 2)
                 res     = kth_root(res, 2)
                 for factor in [gcd(n, abs(rat_sol-res)), gcd(n, abs(rat_sol+res))]:
-                    print(factor)
+                    print('fac', factor)
                     if factor not in [1, n]:
                         found = True
                         print(f"FOUND: {factor}")

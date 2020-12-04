@@ -52,13 +52,13 @@ class EncodablePKI(object):
 
 
 
-    def export_private_key(self, encode_pem: bool=True, encoding: PKIEncoding=PKIEncoding.PKCS8, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None, **kwargs) -> bytes:
+    def export_private_key(self, encoding: PKIEncoding=PKIEncoding.PKCS8, encode_pem: bool=True, marker: str=None, encryption: str=None, passphrase: bytes=None, iv: bytes=None, **kwargs) -> bytes:
         """
         Exports the full PKI instance into encoded bytes.
 
         Parameters:
-            encode_pem      (bool): Whether or not to PEM-encode as well.
             encoding (PKIEncoding): Encoding scheme to use. Support dependent on PKI type.
+            encode_pem      (bool): Whether or not to PEM-encode as well.
             marker           (str): Marker to use in PEM formatting (if applicable).
             encryption       (str): (Optional) RFC1423 encryption algorithm (e.g. 'DES-EDE3-CBC').
             passphrase     (bytes): (Optional) Passphrase to encrypt DER-bytes (if applicable).

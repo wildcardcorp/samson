@@ -51,9 +51,9 @@ class CBC(BlockCipherMode):
         last_block = self.iv
 
         for block in get_blocks(plaintext, self.cipher.block_size):
-            enc_block = self.cipher.encrypt(bytes(last_block ^ block))
+            enc_block   = self.cipher.encrypt(bytes(last_block ^ block))
             ciphertext += enc_block
-            last_block = enc_block
+            last_block  = enc_block
 
         return ciphertext
 
@@ -76,7 +76,7 @@ class CBC(BlockCipherMode):
 
         last_block = self.iv
         for block in get_blocks(ciphertext, self.cipher.block_size):
-            enc_block = last_block ^ Bytes.wrap(self.cipher.decrypt(block))
+            enc_block  = last_block ^ Bytes.wrap(self.cipher.decrypt(block))
             plaintext += enc_block
             last_block = block
 

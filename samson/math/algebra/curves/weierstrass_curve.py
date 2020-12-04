@@ -140,34 +140,27 @@ class WeierstrassPoint(RingElement):
                     if res * P == Q:
                         return res
 
-                    # Confine P and Q to the large subgroup
-                    n  = large_subgroup
-                    Q *= small_subgroup
-                    P *= small_subgroup
-
-                    P_ = E_(P.x, P.y)
-                    Q_ = E_(Q.x, Q.y)
-
-
-                    def find_n_torsion():
-                        while True:
-                            R = E_.random()
-
-                            if not n*R and R.find_maximum_subgroup(n_facs=large_facs) == n:
-                                return R
-
-
                     Km = K.mul_group()
+
+                    # Confine points to the large subgroup
+                    Qp = Q * small_subgroup
+                    Pp = P * small_subgroup
+
+                    P_ = E_(Pp.x, Pp.y)
+                    Q_ = E_(Qp.x, Qp.y)
+
                     while True:
                         # Find a random point of `n`-torsion
-                        R  = find_n_torsion()
-                        W2 = Q_.weil_pairing(R, n)
+                        g  = E_.find_element_of_order(P.order, ord_facs)
+                        R  = g * small_subgroup
+                        W2 = Q_.weil_pairing(R, large_subgroup)
 
                         # Make sure it generates the whole group
-                        if Km(W2).order == n:
+                        if Km(W2).order == large_subgroup:
                             break
 
-                    W1 = P_.weil_pairing(R, n)
+                    W1 = P_.weil_pairing(R, large_subgroup)
+
                     return crt([(W2.log(W1), large_subgroup), (res, small_subgroup)])[0]
 
             return pohlig_hellman(P, self, factors=ord_facs)
@@ -374,8 +367,11 @@ class WeierstrassCurve(Ring):
 
 
     def coerce(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
-        if type(x) is WeierstrassPoint and x.curve == self:
-            return x
+        if type(x) is WeierstrassPoint:
+            if x.curve == self:
+                return x
+            else:
+                return self(x.x, x.y)
 
         if y is not None:
             return WeierstrassPoint(x, y, self)
@@ -446,8 +442,7 @@ class WeierstrassCurve(Ring):
                     algorithm = EllipticCurveCardAlg.SCHOOFS
 
             if algorithm == EllipticCurveCardAlg.BSGS:
-                # This is pretty slick. The trace interval is at minimum `2*sqrt(p)`,
-                # so the order is at minimum `p - 2*sqrt(p)`. For p > 43, `2 * (p - 2*sqrt(p))`
+                # This is pretty slick. The order is at minimum `p - 2*sqrt(p)`. For p > 43, `2 * (p - 2*sqrt(p))`
                 # is always outside of the interval. This means if we find a point with an order
                 # greater than or equal to `(p - 2*sqrt(p))`, that has to be the order of the curve.
                 # Additionally, due to Langrange's theorem, every element's order is a divisor of
@@ -480,7 +475,6 @@ class WeierstrassCurve(Ring):
         """
         References:
             https://en.wikipedia.org/wiki/Supersingular_isogeny_key_exchange#Background
-            
         """
         R  = self.ring
         a3 = R(self.a)**3
@@ -561,6 +555,29 @@ class WeierstrassCurve(Ring):
             self.PAF_cache = self.zero
 
         return self.PAF_cache
+    
+
+    @property
+    @lru_cache(1)
+    def cm_discriminant(self):
+        """
+        References:
+            https://safecurves.cr.yp.to/disc.html
+        """
+        from samson.math.factorization.general import factor
+        from samson.math.factorization.factors import Factors
+        t = self.trace
+        p = self.ring.characteristic
+        d = t**2-4*p
+
+        facs = factor(d)
+        s    = Factors({p: e // 2 for p,e in facs.items()})
+        D    = d // s.recombine()**2
+
+        if D % 4 != 1:
+            D *= 4
+        
+        return D
 
 
     def element_at(self, x: int) -> WeierstrassPoint:

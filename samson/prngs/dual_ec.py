@@ -97,7 +97,7 @@ class DualEC(object):
 
                 if int.to_bytes(int(test_r2.x), 32, 'big')[2:2 + len(r2)] == r2:
                     possible_states.append(DualEC(P, Q, int(dR.x)))
-            except AssertionError as _:
+            except AssertionError:
                 pass
 
         return possible_states

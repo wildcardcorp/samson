@@ -27,7 +27,7 @@ class JWKRSAPrivateKey(JWKBase):
 
             jwk = json.loads(buffer)
             return jwk['kty'] == 'RSA' and 'd' in jwk
-        except (json.JSONDecodeError, UnicodeDecodeError) as _:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return False
 
 
@@ -51,7 +51,7 @@ class JWKRSAPrivateKey(JWKBase):
         jwk['dq'] = url_b64_encode(Bytes(self.key.dQ)).decode()
         jwk['qi'] = url_b64_encode(Bytes(self.key.Qi)).decode()
 
-        return json.dumps(jwk).encode('utf-8')
+        return Bytes(json.dumps(jwk).encode('utf-8'))
 
 
     @staticmethod

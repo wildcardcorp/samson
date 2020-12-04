@@ -196,7 +196,7 @@ class NTRU(NumberTheoreticalAlg):
                 self.generate_public_key()
 
                 break
-            except NotInvertibleException as _:
+            except NotInvertibleException:
                 pass
 
 

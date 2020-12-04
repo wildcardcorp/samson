@@ -13,7 +13,7 @@ class X509ECDSAPublicKey(X509PublicKeyBase):
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS1ECDSAPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.10045.2.1'
-        except Exception as _:
+        except Exception:
             return False
 
 

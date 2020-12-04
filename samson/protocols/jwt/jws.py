@@ -221,7 +221,7 @@ class JWSSet(object):
 
                     if verified:
                         break
-                except Exception as _:
+                except Exception:
                     pass
 
         return verified

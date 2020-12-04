@@ -1,5 +1,6 @@
 from samson.core.base_object import BaseObject
 from samson.encoding.openssh.general import generate_openssh_private_key, parse_openssh_key
+from samson.utilities.bytes import Bytes
 
 class OpenSSHPrivateBase(BaseObject):
     DEFAULT_MARKER = 'OPENSSH PRIVATE KEY'
@@ -27,14 +28,14 @@ class OpenSSHPrivateBase(BaseObject):
         try:
             priv, _ = cls.parse_keys(buffer, passphrase)
             return priv is not None and cls.SSH_PUBLIC_HEADER in buffer
-        except ValueError as _:
+        except ValueError:
             return False
 
 
     def encode(self, encode_pem: bool=True, marker: str=None, encryption: bytes=None, iv: bytes=None, passphrase: bytes=None, **kwargs):
         public_key, private_key = self.build_keys(self.user)
         encoded = generate_openssh_private_key(public_key, private_key, encode_pem, marker, encryption, iv, passphrase)
-        return encoded
+        return Bytes.wrap(encoded)
 
 
     @classmethod

@@ -14,7 +14,7 @@ class X509DiffieHellmanPublicKey(X509PublicKeyBase):
         try:
             items = bytes_to_der_sequence(buffer)
             return not PKCS8DiffieHellmanPrivateKey.check(buffer) and len(items) == 2 and str(items[0][0]) == '1.2.840.113549.1.3.1'
-        except Exception as _:
+        except Exception:
             return False
 
 

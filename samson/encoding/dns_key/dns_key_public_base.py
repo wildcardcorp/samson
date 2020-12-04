@@ -1,6 +1,7 @@
 from samson.encoding.general import EncodingScheme
 from samson.encoding.dns_key.general import DNSKeyAlgorithm, DNSKeyFlags
 from samson.core.base_object import BaseObject
+from samson.utilities.bytes import Bytes
 import re
 
 METADATA_RE = re.compile(b'[0-9]{1,3} 3 [0-9]{1,2}')
@@ -34,7 +35,7 @@ class DNSKeyPublicBase(BaseObject):
 
             return DNSKeyAlgorithm(alg) in cls.ALGS and EncodingScheme.BASE64 in EncodingScheme.get_valid_charsets(pub_key)
 
-        except Exception as _:
+        except Exception:
             return False
 
 
@@ -44,7 +45,7 @@ class DNSKeyPublicBase(BaseObject):
         if type(alg) is DNSKeyAlgorithm:
             alg = alg.value
 
-        return f'{int(self.flags)} {self.proto} {alg} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(spacing, allow_partials=True))
+        return Bytes(f'{int(self.flags)} {self.proto} {alg} '.encode('utf-8') + b' '.join(EncodingScheme.BASE64.encode(pub_bytes).chunk(spacing, allow_partials=True)))
 
 
     @staticmethod
