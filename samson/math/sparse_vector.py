@@ -119,12 +119,24 @@ class SparseVector(object):
                 if end < 0:
                     end = 0
 
-                selected_items = items[start:end:idx.step]
+                selected_items = items[start:end]
 
                 # Need to normalize indices so they start at 0
                 req_start = idx.start or 0
                 req_stop  = len(self) if idx.stop is None else idx.stop
                 selected_items = [(i-req_start, val) for i,val in selected_items]
+
+
+                # Handle step
+                step = idx.step
+                if step is None:
+                    step = 1
+
+                elif step < 0:
+                    step = -step
+                    selected_items = [(req_stop - idx, val) for idx, val in selected_items]
+
+                selected_items = [(idx, val) for idx, val in selected_items if not idx % step]
 
                 new_vec = SparseVector(selected_items, self.zero, allow_virtual_len=self.allow_virtual_len)
 
