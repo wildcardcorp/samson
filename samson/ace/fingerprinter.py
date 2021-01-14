@@ -2,6 +2,7 @@ from samson.utilities.runtime import RUNTIME
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.core.metadata import FrequencyType, EphemeralType, SizeType, UsageType
 from samson.core.primitives import BlockCipher, BlockCipherMode, StreamingBlockCipherMode
+from samson.core.base_object import BaseObject
 from samson.oracles.chosen_plaintext_oracle import ChosenPlaintextOracle
 from samson.analysis.integer_analysis import IntegerAnalysis
 from itertools import groupby
@@ -20,7 +21,7 @@ WELL_KNOWN_GROUPS = {
 }
 
 
-class Fingerprint(object):
+class Fingerprint(BaseObject):
     def __init__(self, candidates, modes, max_input_analysis, io_relation, block_size):
         self.candidates = candidates
         self.modes  = modes
@@ -29,11 +30,8 @@ class Fingerprint(object):
         self.block_size  = block_size
 
 
-    def __repr__(self):
-        return f"<Fingerprint: io_relation={self.io_relation}, block_size={self.block_size}, candidates={self.candidates}, modes={self.modes}, max_input_analysis={self.max_input_analysis}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['io_relation', 'block_size', 'candidates', 'modes', 'max_input_analysis']
 
 
     def group_candidates(self) -> list:

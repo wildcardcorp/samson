@@ -2,8 +2,9 @@ from samson.hashes.sha1 import SHA1
 from samson.macs.hmac import HMAC
 from samson.utilities.bytes import Bytes
 from samson.auxiliary.incrementing_counter import IncrementingCounter
+from samson.core.base_object import BaseObject
 
-class HOTP(object):
+class HOTP(BaseObject):
     """
     HMAC-based One-Time Password (https://tools.ietf.org/html/rfc4226)
     """
@@ -16,17 +17,9 @@ class HOTP(object):
             digits      (int): Number of digits to generate.
             counter     (int): Initial counter.
         """
-        self.hmac = HMAC(key, hash_obj)
-        self.digits = digits
+        self.hmac    = HMAC(key, hash_obj)
+        self.digits  = digits
         self.counter = counter
-
-
-    def __repr__(self):
-        return f"<HOTP: hmac={self.hmac}, digits={self.digits}, counter={self.counter}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
 
     def generate(self) -> str:

@@ -1,6 +1,7 @@
 from samson.analysis.general import count_items
 from samson.math.general import is_prime, is_sophie_germain_prime, smoothness
 from samson.math.factorization.general import factor
+from samson.core.base_object import BaseObject
 from samson.protocols.diffie_hellman import DiffieHellman
 
 WELL_KNOWN_GROUPS = {
@@ -14,7 +15,7 @@ WELL_KNOWN_GROUPS = {
     DiffieHellman.MODP_8192: 'MODP_8192'
 }
 
-class IntegerAnalysis(object):
+class IntegerAnalysis(BaseObject):
     def __init__(self, n: int, is_prime: bool, byte_aligned: bool, smoothness_ratio: float, is_safe_prime: bool, prime_name: bool, percent_one: float, is_uniform: bool, small_factors: dict):
         self.n = n
         self.is_prime = is_prime
@@ -30,8 +31,8 @@ class IntegerAnalysis(object):
     def __repr__(self):
         return f"<IntegerAnalysis: is_prime={self.is_prime}, smoothness_ratio={self.smoothness_ratio}, byte_aligned={self.byte_aligned}, is_safe_prime={self.is_safe_prime}, prime_name='{self.prime_name}', percent_one={self.percent_one}, is_uniform={self.is_uniform}, small_factors={self.small_factors}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['is_prime', 'smoothness_ratio', 'byte_aligned', 'is_safe_prime', 'prime_name', 'percent_one', 'is_uniform', 'small_factors']
 
 
     @staticmethod

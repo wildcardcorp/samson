@@ -1,4 +1,4 @@
-from abc import abstractmethod #ABC,
+from abc import abstractmethod
 from samson.math.algebra.rings.ring import RingElement, Ring
 
 class Field(Ring):
@@ -39,12 +39,15 @@ class FieldElement(RingElement):
     def __mul__(self, other: 'FieldElement') -> 'FieldElement':
         pass
 
-    @abstractmethod
-    def __truediv__(self, other: 'FieldElement') -> 'FieldElement':
-        pass
+
+    def _element_division(self, other: 'FieldElement') -> 'FieldElement':
+        other = self.ring.coerce(other)
+        return self * ~other
+
 
     def __floordiv__(self, other: 'FieldElement') -> 'FieldElement':
         return self.__truediv__(other)
+
 
     def is_invertible(self) -> bool:
         """

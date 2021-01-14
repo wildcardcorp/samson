@@ -41,7 +41,7 @@ class Poly1305(MAC):
 
     # https://tools.ietf.org/html/rfc7539#section-2.5
     @staticmethod
-    def _clamp_r(r: bytes):
+    def _clamp_r(r: bytearray) -> bytearray:
         r[3]  &= 15
         r[7]  &= 15
         r[11] &= 15
@@ -58,7 +58,7 @@ class Poly1305(MAC):
 
 
     @staticmethod
-    def _evaluate(chunks, r):
+    def _evaluate(chunks: list, r: int) -> int:
         total = 0
         for chunk in chunks:
             total += chunk.to_int()

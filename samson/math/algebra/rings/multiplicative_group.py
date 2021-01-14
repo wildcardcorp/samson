@@ -18,10 +18,6 @@ class MultiplicativeGroupElement(RingElement):
         self.val  = val
 
 
-    def __repr__(self):
-        return f"<MultiplicativeGroupElement: val={self.val}, ring={self.ring}>"
-
-
     @left_expression_intercept
     def __add__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = self.ring.coerce(other)
@@ -162,9 +158,8 @@ class MultiplicativeGroup(Ring):
         return self.order_cache
 
 
-
-    def __repr__(self):
-        return f"<MultiplicativeGroup: ring={self.ring}>"
+    def __reprdir__(self):
+        return ['ring']
 
 
     def shorthand(self) -> str:

@@ -31,7 +31,7 @@ class Matrix(RingElement):
 
         self.rows = rows
 
-        if not ring and r_len == c_len:
+        if not ring:
             from samson.math.algebra.rings.matrix_ring import MatrixRing
             ring = MatrixRing(size=r_len, ring=self.coeff_ring)
 
@@ -57,6 +57,9 @@ class Matrix(RingElement):
     def __repr__(self):
         from samson.utilities.runtime import RUNTIME
         return f'<Matrix: rows={RUNTIME.default_short_printer(self)}>'
+
+    def __reprdir__(self):
+        return ['rows',]
 
 
     @property
@@ -594,12 +597,15 @@ class Matrix(RingElement):
 
 
     def __invert__(self) -> 'Matrix':
-        return gaussian_elimination(self, Matrix.identity(len(self), coeff_ring=self.coeff_ring, ring=self.ring))
+        if self.ring:
+            return gaussian_elimination(self, Matrix.identity(len(self), coeff_ring=self.coeff_ring, ring=self.ring))
+        else:
+            raise ArithmeticError('Matrix is not square and has no ring')
 
 
-    def __truediv__(self, other: 'Matrix') -> 'Matrix':
-        other = self.ring.coerce(other)
-        return self * ~other
+    def ground_div(self, other: 'RingElement') -> None:
+        if type(other) is not Matrix and other in self.coeff_ring:
+            return self * ~self.coeff_ring(other)
 
 
     def __floordiv__(self, other: 'Matrix') -> 'Matrix':

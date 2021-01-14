@@ -46,8 +46,8 @@ class TwistedEdwardsCurve(Ring):
         self.one  = self.B
 
 
-    def __repr__(self):
-        return f"<TwistedEdwardsCurve: b={self.b}, q={self.q}, l={self.l}>"
+    def __reprdir__(self):
+        return ['b', 'q', 'l']
 
 
     def random(self, size: int=None) -> 'TwistedEdwardsPoint':
@@ -185,9 +185,8 @@ class TwistedEdwardsPoint(RingElement):
             raise ValueError(f"({x}, {y}) is not on {curve}")
 
 
-
-    def __repr__(self):
-        return f"<TwistedEdwardsPoint: x={self.x}, y={self.y}, curve={self.curve}>"
+    def __reprdir__(self):
+        return ['x', 'y', 'curve']
 
 
     def shorthand(self) -> str:

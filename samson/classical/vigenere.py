@@ -1,6 +1,7 @@
 from samson.analysis.general import chisquare, count_items
 from samson.utilities.bytes import Bytes
 from samson.analyzers.english_analyzer import EnglishAnalyzer
+from samson.core.base_object import BaseObject
 import string
 
 
@@ -40,7 +41,7 @@ for key, val in letter_freq.items():
 
 
 
-class Vigenere(object):
+class Vigenere(BaseObject):
     """
     Polyalphabetic subsitution cipher that can be reduced to interwoven Caesar ciphers.
     """
@@ -53,13 +54,6 @@ class Vigenere(object):
         """
         self.key = key
         self.alphabet = alphabet
-
-
-    def __repr__(self):
-        return "<Vigenere: key={}, alphabet={}>".format(self.key, self.alphabet)
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def encrypt(self, plaintext: bytes) -> Bytes:

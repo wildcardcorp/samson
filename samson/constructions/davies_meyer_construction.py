@@ -1,8 +1,9 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
 # https://en.wikipedia.org/wiki/One-way_compression_function#Davies%E2%80%93Meyer
-class DaviesMeyerConstruction(object):
+class DaviesMeyerConstruction(BaseObject):
     """
     A Davies-Meyer construction is a one-way compression function built from a block cipher.
     """
@@ -16,13 +17,6 @@ class DaviesMeyerConstruction(object):
         self.initial_state = Bytes.wrap(initial_state)
         self.block_size = len(self.initial_state)
         self.encryptor = encryptor
-
-
-    def __repr__(self):
-        return f"<DaviesMeyerConstruction: initial_state={self.initial_state}, encryptor={self.encryptor}, block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def yield_state(self, message: bytes):

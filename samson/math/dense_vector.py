@@ -1,6 +1,7 @@
 from samson.utilities.runtime import RUNTIME
+from samson.core.base_object import BaseObject
 
-class DenseVector(object):
+class DenseVector(BaseObject):
     def __init__(self, values: list):
         self.values = values
 

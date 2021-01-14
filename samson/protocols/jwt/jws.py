@@ -1,10 +1,11 @@
 from samson.encoding.general import url_b64_decode, url_b64_encode
 from samson.utilities.bytes import Bytes
 from samson.protocols.jwt.jwa import JWA_ALG_MAP, JWASignatureAlg
+from samson.core.base_object import BaseObject
 import json
 
 
-class JWS(object):
+class JWS(BaseObject):
     """
     JSON Web Signature
     """
@@ -19,13 +20,6 @@ class JWS(object):
         self.header    = header
         self.body      = body
         self.signature = signature
-
-
-    def __repr__(self):
-        return f"<JWS: header={self.header}, body={self.body}, signature={self.signature}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 
@@ -107,7 +101,7 @@ class JWS(object):
 
 
 
-class JWSSet(object):
+class JWSSet(BaseObject):
     def __init__(self, payload: bytes, signatures: list=None):
         """
         Parameters:
@@ -116,13 +110,6 @@ class JWSSet(object):
         """
         self.payload    = payload
         self.signatures = signatures or []
-
-
-    def __repr__(self):
-        return f"<JWSSet: payload={self.payload}, signatures={self.signatures}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def serialize(self, flatten: bool=False) -> bytes:

@@ -37,9 +37,6 @@ class FractionFieldElement(FieldElement):
 
 
 
-    def __repr__(self):
-        return f"<FractionFieldElement: numerator={self.numerator}, denominator={self.denominator}, ring={self.ring}>"
-
 
     def shorthand(self) -> str:
         return f'{self.field.shorthand()}({self.numerator}/{self.denominator})'
@@ -144,12 +141,8 @@ class FractionFieldElement(FieldElement):
         return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
-    @left_expression_intercept
-    def __truediv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        return self * (~self.ring.coerce(other))
-
-
-    __floordiv__ = __truediv__
+    def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+        return self.__truediv__(other)
 
 
     def __neg__(self) -> 'FractionFieldElement':
@@ -217,8 +210,9 @@ class FractionField(Field):
         self.one  = FractionFieldElement(self.ring.one, self.ring.one, self)
 
 
-    def __repr__(self):
-        return f"<FractionField: ring={self.ring}>"
+
+    def __reprdir__(self):
+        return ['ring']
 
 
     def __hash__(self) -> int:
@@ -255,13 +249,17 @@ class FractionField(Field):
     
         Returns:
             FractionFieldElement: Random element of the algebra.
-        """
+        """ 
         if type(size) is int:
             numerator   = size
             denominator = size
-        else:
+        elif size and size in self:
+            size        = self(size)
             numerator   = size.numerator
             denominator = size.denominator
+        else:
+            numerator   = self.ring.random(size)
+            denominator = self.ring.random(size)
 
         return FractionFieldElement(self.ring.random(numerator), max(self.ring.one, self.ring.random(denominator)), self)
 

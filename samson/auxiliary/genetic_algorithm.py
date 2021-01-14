@@ -1,10 +1,11 @@
 from enum import Enum
 from types import FunctionType
 from samson.utilities.runtime import RUNTIME
+from samson.core.base_object import BaseObject
 import random
 
 
-class Chromosome(object):
+class Chromosome(BaseObject):
     """
     Represents a Chromosome. Used by GeneticAlgorithm to keep state.
     """
@@ -18,20 +19,13 @@ class Chromosome(object):
         self.fitness = 0
 
 
-    def __repr__(self):
-        return f"<Chromosome: state={self.state}, fitness={self.fitness}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 class TerminationReason(Enum):
     MAX_ITERATION_REACHED = 0
     MINIMUM_CONVERGENCE_UNSATISFIED = 1
     GLOBAL_OPTIMA_REACHED = 2
 
 
-class OptimizationResult(object):
+class OptimizationResult(BaseObject):
     """
     Encapsulates finished-state information for optimization algorithms.
     """
@@ -48,15 +42,9 @@ class OptimizationResult(object):
         self.termination_reason = termination_reason
 
 
-    def __repr__(self):
-        return f"<OptimizationResult: solution={self.solution}, iteration={self.iteration}, termination_reason={self.termination_reason}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
 # https://en.wikipedia.org/wiki/Genetic_algorithm
-class GeneticAlgorithm(object):
+class GeneticAlgorithm(BaseObject):
     """
     Highly configurable genetic algorithm implementation. Bring-your-own functions.
     """
@@ -108,12 +96,6 @@ class GeneticAlgorithm(object):
         self.min_conv_tolerance = min_conv_tolerance
         self.convergence_granularity = convergence_granularity
 
-
-    def __repr__(self):
-        return f"<GeneticAlgorithm: parent_pool_size={self.parent_pool_size}, num_parents={self.num_parents}, population_size={self.population_size}, maximize={self.maximize}, elitism={self.elitism}, num_immigrants={self.num_immigrants}, minimum_convergence={self.minimum_convergence}, min_conv_tolerance={self.min_conv_tolerance}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     @RUNTIME.report

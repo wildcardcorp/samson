@@ -236,7 +236,7 @@ def oid_tuple_to_bytes(oid_tuple: tuple) -> bytes:
     BER-encodes an OID tuple.
 
     Parameters:
-        oid_tuple: OID tuple to encode.
+        oid_tuple (tuple): OID tuple to encode.
     
     Returns:
         bytes: BER-encoded OID.

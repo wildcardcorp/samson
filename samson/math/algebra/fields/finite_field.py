@@ -19,10 +19,6 @@ class FiniteFieldElement(FieldElement):
         self.val   = self.field.internal_field.coerce(val)
 
 
-    def __repr__(self):
-        return f"<FiniteFieldElement: val={self.val}, field={self.field}>"
-
-
     def shorthand(self) -> str:
         return self.field.shorthand() + f'({self.val.shorthand()})'
 
@@ -70,12 +66,6 @@ class FiniteFieldElement(FieldElement):
 
     def __neg__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(-self.val, self.field)
-
-
-    @left_expression_intercept
-    def __truediv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
-        other = self.ring.coerce(other)
-        return self * ~other
 
 
     @left_expression_intercept
@@ -135,8 +125,8 @@ class FiniteField(Field):
         self.one  = self.coerce(1)
 
 
-    def __repr__(self):
-        return f"<FiniteField: p={self.p}, n={self.n}, reducing_poly={self.reducing_poly}>"
+    def __reprdir__(self):
+        return ['p', 'n', 'reducing_poly',]
 
 
     def __hash__(self) -> int:

@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
-class MatyasMeyerOseasConstruction(object):
+class MatyasMeyerOseasConstruction(BaseObject):
     """
     Considered to be the dual of the Davies-Meyer construction. The Matyas-Meyer-Oseas construction is a
     one-way compression function built from a block cipher.
@@ -16,12 +17,6 @@ class MatyasMeyerOseasConstruction(object):
         self.initial_state = initial_state
         self.encryptor = encryptor
 
-
-    def __repr__(self):
-        return f"<MatyasMeyerOseasConstruction: initial_state={self.initial_state}, encryptor={self.encryptor}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def yield_state(self, message: bytes) -> Bytes:

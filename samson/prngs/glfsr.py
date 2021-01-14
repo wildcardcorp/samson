@@ -1,8 +1,9 @@
 from samson.math.polynomial import Polynomial
 from samson.math.general import berlekamp_massey
 from samson.math.general import poly_to_int
+from samson.core.base_object import BaseObject
 
-class GLFSR(object):
+class GLFSR(BaseObject):
     """
     Galois linear-feedback shift register.
     """
@@ -33,14 +34,6 @@ class GLFSR(object):
                 break
 
             self.mask <<= 1
-
-
-    def __repr__(self):
-        return f"<GLFSR: state={self.state}, polynomial={self.polynomial}, mask={self.mask}>"
-
-
-    def __str__(self):
-        return self.__repr__()
 
 
 

@@ -1,8 +1,9 @@
 from samson.protocols.diffie_hellman import DiffieHellman
 from samson.math.general import mod_inv
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 
-class SocialistMillionare(object):
+class SocialistMillionare(BaseObject):
     """
     Zero-Knowledge Proof of a secret using Diffie-Hellman exchanges.
     """
@@ -38,11 +39,8 @@ class SocialistMillionare(object):
         self.Q = None
 
 
-    def __repr__(self):
-        return f"<SocialistMillionare: key={self.key}, h={self.h}, p={self.p}, exp1={self.exp1}, exp2={self.exp2}, validate={self.validate}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['key', 'h', 'p', 'exp1', 'exp2', 'validate']
 
 
 

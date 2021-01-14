@@ -1,16 +1,14 @@
 from samson.utilities.general import add_or_increment
 from samson.analysis.general import count_items
+from samson.core.base_object import BaseObject
 from functools import reduce
 from itertools import combinations, chain
 from sortedcontainers import SortedDict
 
-class Factors(object):
+class Factors(BaseObject):
     def __init__(self, factors=None):
         self.factors = SortedDict(factors or {})
 
-
-    def __repr__(self):
-        return f'<Factors: {self.factors}>'
 
     def __str__(self):
         facs = list(self.factors.items())

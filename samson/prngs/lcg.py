@@ -3,10 +3,11 @@ from samson.math.factorization.general import factor as factorint
 from samson.math.matrix import Matrix
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
+from samson.core.base_object import BaseObject
 import functools
 
 
-class LCG(object):
+class LCG(BaseObject):
     """
     Linear congruential generator of the form `(a*X + c) mod m`.
     """
@@ -28,11 +29,10 @@ class LCG(object):
         self.X = X
 
 
-    def __repr__(self):
-        return f"<LCG: X={self.X}, a={self.a}, c={self.c}, m={self.m}, trunc={self.trunc}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['X', 'a', 'c', 'm', 'trunc']
+
 
 
     def generate(self) -> int:
@@ -43,6 +43,17 @@ class LCG(object):
             int: Next pseudorandom output.
         """
         self.X = (self.a * self.X + self.c) % self.m
+        return self.X >> self.trunc
+    
+
+    def reverse_clock(self) -> int:
+        """
+        Generates the previous pseudorandom output.
+
+        Returns:
+            int: Next pseudorandom output.
+        """
+        self.X = (mod_inv(self.a, self.m) * (self.X - self.c)) % self.m
         return self.X >> self.trunc
 
 

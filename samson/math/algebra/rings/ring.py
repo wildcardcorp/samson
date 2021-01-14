@@ -1,4 +1,4 @@
-from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log
+from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log, mod_inv
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
@@ -280,23 +280,43 @@ class RingElement(BaseObject):
         return divmod(self.ring.coerce(other), self)
 
 
+
+    def _element_division(self, other: 'RingElement') -> 'RingElement':
+        raise NotInvertibleException
+
+
+    @left_expression_intercept
     def __truediv__(self, other: 'RingElement') -> 'RingElement':
-        other = self.ring.coerce(other)
-        if other == self.ring.one:
-            return self
+        # Is this just integer division?
+        gmul = self.ground_div(other)
+        if gmul is not None:
+            return gmul
 
-        elif other == self:
-            return self.ring.one
+        # Try special cases
+        if self.ring and other in self.ring:
+            other = self.ring.coerce(other)
 
-        if RUNTIME.auto_promote:
-            elem = _frac.FractionField(self.ring)((self, other))
+            if other == self.ring.one:
+                return self
 
-            if elem.denominator == self.ring.one:
-                elem = elem.numerator
+            elif other == self:
+                return self.ring.one
 
-            return elem
-        else:
-            raise NotInvertibleException("Non-unit division impossible", parameters={'a': other})
+
+        # Either we have element division or we have to promote
+        try:
+            return self._element_division(other)
+
+        except NotInvertibleException:
+            if RUNTIME.auto_promote:
+                elem = _frac.FractionField(self.ring)((self, other))
+
+                if elem.denominator == self.ring.one:
+                    elem = elem.numerator
+
+                return elem
+            else:
+                raise
 
 
     def __rtruediv__(self, other: 'RingElement') -> 'RingElement':
@@ -366,6 +386,23 @@ class RingElement(BaseObject):
         # This is like a bajillion times faster than importing Poly
         elif type_o.__name__ in ['Polynomial', 'Symbol']:
             return try_poly_first(self, other, _poly.Polynomial.__rmul__)
+
+
+    def ground_div(self, other: 'RingElement') -> 'RingElement':
+        """
+        Tries "special" divisions first.
+
+        Parameter:
+            other (RingElement): Other operand.
+        
+        Returns:
+            RingElement/None: Returns the special __div__ if possible.
+        """
+        type_o = type(other)
+
+        if type_o is int:
+            other = mod_inv(other, self.order)
+            return fast_mul(self, other)
 
 
     def is_invertible(self) -> bool:

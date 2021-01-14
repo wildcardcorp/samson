@@ -1,7 +1,8 @@
 import string
+from samson.core.base_object import BaseObject
 
 # http://practicalcryptography.com/ciphers/playfair-cipher/
-class Playfair(object):
+class Playfair(BaseObject):
     """
     Bigram substituion cipher.
     """
@@ -22,14 +23,6 @@ class Playfair(object):
                 key += letter
 
         self.key = key
-
-
-    def __repr__(self):
-        return "<Playfair: key={}>".format(self.key)
-
-    def __str__(self):
-        return self.__repr__()
-
 
 
     def encrypt(self, plaintext: str) -> str:

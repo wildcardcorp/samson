@@ -1,8 +1,9 @@
 from samson.utilities.exceptions import SearchspaceExhaustedException
+from samson.core.base_object import BaseObject
 from types import FunctionType
 from copy import deepcopy
 
-class LFG(object):
+class LFG(BaseObject):
     """
     Lagged Fibonacci generator
     """
@@ -10,31 +11,25 @@ class LFG(object):
     ADD_OP = lambda a, b: a + b
     SUB_OP = lambda a, b: a - b
 
-    def __init__(self, state: list, tap: int, feed: int, length: int, operation: FunctionType=ADD_OP, increment: bool=False):
+    def __init__(self, state: list, tap: int, feed: int, operation: FunctionType=ADD_OP, increment: bool=False, mask: int=0xFFFFFFFFFFFFFFFF, length: int=None):
         """
         Parameters:
             state     (list): Initial state.
             tap        (int): Initial tap position.
             feed       (int): Initial feed position.
-            length     (int): Length of internal state (modulus).
             operation  (int): The operation the LFG performs. Function that takes in an integer and returns an integer.
             increment (bool): Whether to increment (True) or decrement (False) the feed and tap.
+            mask       (int): Bitmask to use for integer operations
+            length     (int): Length of internal state.
         """
-        self.state = deepcopy(state)
-        self.tap = tap
-        self.feed = feed
-        self.length = length
+        self.state     = deepcopy(state)
+        self.tap       = tap
+        self.feed      = feed
         self.operation = operation
         self.increment = increment
         self.shift_mod = -1 + 2 * increment
-
-
-    def __repr__(self):
-        return f"<LFG: state={self.state}, tap={self.tap}, feed={self.feed}, length={self.length}, operation={self.operation}, increment={self.increment}>"
-
-    def __str__(self):
-        return self.__repr__()
-
+        self.mask      = mask
+        self.length    = length or len(state)
 
 
     def generate(self) -> int:
@@ -44,12 +39,38 @@ class LFG(object):
         Returns:
             int: Next pseudorandom output.
         """
-        self.tap = (self.tap + self.shift_mod) % self.length
+        self.tap  = (self.tap + self.shift_mod) % self.length
         self.feed = (self.feed + self.shift_mod) % self.length
 
-        x = self.operation(self.state[self.feed], self.state[self.tap]) & 0xFFFFFFFFFFFFFFFF
+        x = self.operation(self.state[self.feed], self.state[self.tap]) & self.mask
         self.state[self.feed] = x
         return x
+    
+
+
+    def reverse_clock(self) -> int:
+        """
+        Runs the algorithm backwards.
+
+        Returns:
+            int: Previous pseudorandom output.
+        """
+        x = self.operation(self.state[self.feed], -self.state[self.tap]) & self.mask
+        self.state[self.feed] = x
+
+        self.tap  = (self.tap - self.shift_mod) % self.length
+        self.feed = (self.feed - self.shift_mod) % self.length
+
+        return self.state[self.feed]
+
+
+        # length    = len(self.state)
+        # self.tap  = (self.tap - self.shift_mod) % length
+        # self.feed = (self.feed - self.shift_mod) % length
+
+        # x = self.operation(self.state[self.feed], -self.state[self.tap]) & 0xFFFFFFFFFFFFFFFF
+        # self.state[self.feed] = x
+        # return x
 
 
 

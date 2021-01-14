@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
 from samson.hashes.md5 import MD5
+from samson.core.base_object import BaseObject
 
-class RADIUS(object):
+class RADIUS(BaseObject):
     """
     Remote Authentication Dial In User Service (https://tools.ietf.org/html/rfc2865)
     """
@@ -13,14 +14,6 @@ class RADIUS(object):
             key (bytes): Encryption key.
         """
         self.key = key
-
-
-    def __repr__(self):
-        return f"<RADIUS: key={self.key}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
 
     def encrypt(self, authenticator: bytes, password: bytes) -> Bytes:

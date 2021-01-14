@@ -1,9 +1,10 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import InvalidPaddingException
+from samson.core.base_object import BaseObject
 import math
 
 # https://tools.ietf.org/html/rfc8017#section-7.2.1
-class PKCS1v15Padding(object):
+class PKCS1v15Padding(BaseObject):
     """
     PCKS#1 v1.5 RSA padding
     """
@@ -15,13 +16,6 @@ class PKCS1v15Padding(object):
         """
         self.key_byte_length = math.ceil(key_bit_length / 8)
         self.block_type = block_type
-
-
-    def __repr__(self):
-        return f"<PKCS1v15Padding: key_byte_length={self.key_byte_length}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def pad(self, plaintext: bytes) -> Bytes:

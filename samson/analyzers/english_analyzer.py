@@ -67,8 +67,7 @@ class EnglishAnalyzer(Analyzer):
 
         Parameters:
             in_bytes   (bytes): The bytes-like object to be "scored".
-            in_ciphers (bytes): (Optional) If set, will check if `in_bytes` is a subset of `in_ciphers`.
-                                Used for supervised machine learning.
+            in_ciphers (bytes): (Optional) If set, will check if `in_bytes` is a subset of `in_ciphers`. Used for supervised machine learning.
         
         Returns:
             dictionary: Dictionary containing the processed features.

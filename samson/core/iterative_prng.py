@@ -1,13 +1,21 @@
 from z3 import BitVecs, Solver, LShR, Bool, Implies, sat, RotateLeft
 from samson.utilities.exceptions import NoSolutionException
+from samson.core.base_object import BaseObject
 from inspect import isclass
 import random
 
 
-class IterativePRNG(object):
+class IterativePRNG(BaseObject):
     """
     Base class for PRNGs that iterate over fixed-size state.
     """
+    def __init__(self, seed: list):
+        """
+        Parameters:
+            seed (list): Initial value.
+        """
+        self.state = [s & (2**self.NATIVE_BITS-1) for s in seed]
+
 
     def generate(self) -> int:
         """

@@ -1,6 +1,7 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 
-class IncrementalPadding(object):
+class IncrementalPadding(BaseObject):
     """
     Incremental padding. Used in OpenSSH's keys.
     """
@@ -12,12 +13,6 @@ class IncrementalPadding(object):
         """
         self.block_size = block_size
 
-
-    def __repr__(self):
-        return f"<IncrementalPadding: block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def pad(self, plaintext: bytes) -> Bytes:

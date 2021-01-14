@@ -1,4 +1,6 @@
 from samson.utilities.manipulation import right_rotate
+from samson.core.base_object import BaseObject
+from samson.math.general import mod_inv
 from types import FunctionType
 
 #V{output_size}_{state_size}_{transform}[.._{n_transforms}]
@@ -11,7 +13,7 @@ def V32_64_XSH_RR(x, mult, inc):
 
 
 # https://en.wikipedia.org/wiki/Permuted_congruential_generator
-class PCG(object):
+class PCG(BaseObject):
     def __init__(self, seed: int, multiplier: int, increment: int, variant: FunctionType=V32_64_XSH_RR):
         """
         Parameters:
@@ -26,13 +28,6 @@ class PCG(object):
         self.variant = variant
 
 
-    def __repr__(self):
-        return f"<PCG: state={self.state}, multiplier={self.multiplier}, increment={self.increment}, variant={self.variant}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
 
     def generate(self) -> int:
         """
@@ -43,3 +38,10 @@ class PCG(object):
         """
         self.state, result = self.variant(self.state, self.multiplier, self.increment)
         return result
+
+
+    def reverse_clock(self) -> int:
+        inv_mul = mod_inv(self.multiplier, 2**64)
+        self.state = ((self.state - self.increment) * inv_mul) % 2**64
+        self.state = ((self.state - self.increment) * inv_mul) % 2**64
+        return self.generate()

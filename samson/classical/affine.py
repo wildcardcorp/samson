@@ -1,6 +1,7 @@
 from samson.math.general import mod_inv
+from samson.core.base_object import BaseObject
 
-class AffineCipher(object):
+class AffineCipher(BaseObject):
     """
     Monoalphabetic substitution of the form `(ax + b) mod m`.
 
@@ -29,11 +30,9 @@ class AffineCipher(object):
             self.inv_char_map[alphabet[i]] = alphabet[(inv_a*(i-b))%len(alphabet)]
 
 
-    def __repr__(self):
-        return "<Affine: a={}, b={}, alphabet={}>".format(self.a, self.b, self.alphabet)
+    def __reprdir__(self):
+        return ['a', 'b', 'alphabet']
 
-    def __str__(self):
-        return self.__repr__()
 
 
     def encrypt(self, plaintext: str) -> str:

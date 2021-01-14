@@ -38,8 +38,7 @@ class XORDictionaryAttack(object):
         
         Parameters:
             ciphertexts (list): List of bytes-like ciphertexts using the same keystream.
-            word_ranges (list): List of numbers of words to try. E.G. [2, 3, 4] means
-                                try the Cartesian product of 2, 3, and 4-tuple word combinations.
+            word_ranges (list): List of numbers of words to try. E.G. [2, 3, 4] means try the Cartesian product of 2, 3, and 4-tuple word combinations.
             delimiter    (str): Delimiter to use between word combinations.
         
         Returns:

@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import InvalidPaddingException
+from samson.core.base_object import BaseObject
 
-class PKCS7(object):
+class PKCS7(BaseObject):
     """
     PCKS#7 block cipher padding
     """
@@ -12,13 +13,6 @@ class PKCS7(object):
             block_size (int): Block size of the cipher.
         """
         self.block_size = block_size
-
-
-    def __repr__(self):
-        return f"<PKCS7: block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def pad(self, plaintext: bytes) -> Bytes:

@@ -1,7 +1,8 @@
 from samson.math.algebra.rings.ring import RingElement
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
-class BitVectorCache(object):
+class BitVectorCache(BaseObject):
     def __init__(self, element: RingElement, start: RingElement, operation: FunctionType, size: int):
         self.element   = element
         self.start     = start
@@ -11,11 +12,8 @@ class BitVectorCache(object):
         self.rebuild_cache()
 
 
-    def __repr__(self):
-        return f'<BitVectorCache: element={self.element}, size={self.size}>'
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['element', 'size']
 
 
     def __mul__(self, other: int):

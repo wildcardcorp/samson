@@ -42,8 +42,9 @@ class PolynomialRing(Ring):
         return oo
 
 
-    def __repr__(self):
-        return f"<PolynomialRing: ring={self.ring}>"
+
+    def __reprdir__(self):
+        return ['ring']
 
 
     def shorthand(self) -> str:

@@ -2,6 +2,7 @@ from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.ace.decorators import has_exploit
 from samson.attacks.mangers_attack import MangersAttack
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
 def MGF1(seed: bytes, length: int, hash_obj: object=SHA1()) -> Bytes:
@@ -25,7 +26,7 @@ def MGF1(seed: bytes, length: int, hash_obj: object=SHA1()) -> Bytes:
 
 # https://www.ietf.org/rfc/rfc3447.txt
 @has_exploit(MangersAttack)
-class OAEP(object):
+class OAEP(BaseObject):
     """
     Optimal Asymmetric Encryption Padding
 
@@ -44,13 +45,6 @@ class OAEP(object):
         self.hash_obj = hash_obj
         self.label = label
         self.modulus_len = modulus_len
-
-
-    def __repr__(self):
-        return f"<OAEP: mgf={self.mgf}, hash_obj={self.hash_obj}, label={self.label}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 

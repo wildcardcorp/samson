@@ -175,14 +175,6 @@ class NTRU(NumberTheoreticalAlg):
 
 
 
-    # def __repr__(self):
-    #     return f"<NTRU: N={self.N}, p={self.p}, q={self.q}, f_poly={self.f_poly}, g_poly={self.g_poly}, h_poly={self.h_poly}>"
-
-    # def __str__(self):
-    #     return self.__repr__()
-
-
-
 
     def generate_random_keys(self):
         """

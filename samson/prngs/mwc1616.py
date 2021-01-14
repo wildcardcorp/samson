@@ -23,20 +23,11 @@ class MWC1616(IterativePRNG):
         if type(seed) == int:
             seed = ((seed >> 16) & 0xFFFF, seed & 0xFFFF)
 
-        self.state = seed
+        super().__init__(seed)
         self.a = a
         self.b = b
 
 
-    def __repr__(self):
-        return f"<MWC1616: state={self.state}, a={self.a}, b={self.b}>"
-
-    def __str__(self):
-        return self.__repr__()
-
-
-
-    # @staticmethod
     def gen_func(self, sym_s0, sym_s1, SHFT_L=lambda x, n: (x << n) & MASK32, SHFT_R=DEFAULT_SHFT_R, RotateLeft=lambda x:x) -> (list, int):
         """
         Internal function compatible with Python and symbolic execution.
@@ -45,3 +36,26 @@ class MWC1616(IterativePRNG):
         sym_s1 = (self.b * (sym_s1 & 0xFFFF) + SHFT_R(sym_s1, 16)) & MASK32
 
         return (sym_s0, sym_s1), (SHFT_L(sym_s0, 16) + (sym_s1 & 0xFFFF)) & MASK32
+
+
+    def reverse_clock(self) -> int:
+        """
+        Runs the algorithm backwards.
+
+        Returns:
+            int: Previous pseudorandom output.
+        """
+        sym_s0, sym_s1 = self.state
+
+        for _ in range(2):
+            s0_r, s0_q = divmod(sym_s0, self.a)
+            s1_r, s1_q = divmod(sym_s1, self.b)
+
+            s0 = (s0_q << 16) + s0_r
+            s1 = (s1_q << 16) + s1_r
+
+            sym_s0, sym_s1 = s0, s1
+
+        self.state = [sym_s0, sym_s1]
+
+        return self.generate()

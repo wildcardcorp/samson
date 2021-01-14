@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
-class EvenMansourScheme(object):
+class EvenMansourScheme(BaseObject):
     """
     Block cipher construction built from a prewhitening key, unkeyed pseudorandom permutation, and postwhitening key.
     """
@@ -17,13 +18,6 @@ class EvenMansourScheme(object):
         self.K1 = Bytes.wrap(K1)
         self.K2 = Bytes.wrap(K2 or K1)
         self.block_size = len(self.K1)
-
-
-    def __repr__(self):
-        return f"<EvenMansourScheme: F={self.F}, K1={self.K1}, K2={self.K2}, block_size={self.block_size}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 

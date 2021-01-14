@@ -1,8 +1,9 @@
 from samson.utilities.general import binary_search_list
+from samson.core.base_object import BaseObject
 from sortedcontainers import SortedDict
 from copy import copy
 
-class SparseVector(object):
+class SparseVector(BaseObject):
     """
     Sparse vector implementation. Saves on memory when representing high-dimensional vectors with many zeroes.
     """
@@ -47,11 +48,11 @@ class SparseVector(object):
         self.virtual_len = length
 
 
-    def __repr__(self):
-        return f'<SparseVector: values={self.values}, virtual_len={self.virtual_len}>'
+    # def __repr__(self):
+    #     return f'<SparseVector: values={self.values}, virtual_len={self.virtual_len}>'
 
-    def __str__(self):
-        return self.__repr__()
+    # def __str__(self):
+    #     return self.__repr__()
 
 
     def __hash__(self) -> int:

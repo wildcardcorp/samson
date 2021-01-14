@@ -2,9 +2,10 @@ from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, Weier
 from samson.utilities.bytes import Bytes
 from samson.math.general import mod_inv
 from samson.utilities.runtime import RUNTIME
+from samson.core.base_object import BaseObject
 import random
 
-class DualEC(object):
+class DualEC(BaseObject):
     """
     Implementation of the NSA's backdoored DRBG.
     """
@@ -21,12 +22,6 @@ class DualEC(object):
         self.t = seed
         self.r = None
 
-
-    def __repr__(self):
-        return f"<DualEC: P={self.P}, Q={self.Q}, t={self.t}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def generate(self) -> Bytes:

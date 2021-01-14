@@ -23,9 +23,6 @@ class IntegerElement(RingElement):
         self.val  = val
 
 
-    def __repr__(self):
-        return f"<IntegerElement: val={self.val}, ring={self.ring}>"
-
 
     def tinyhand(self) -> str:
         return str(self.val)
@@ -173,8 +170,8 @@ class IntegerRing(Ring):
         return self(x)
 
 
-    def __repr__(self):
-        return "<IntegerRing>"
+    def __reprdir__(self):
+        return []
 
 
     def shorthand(self) -> str:

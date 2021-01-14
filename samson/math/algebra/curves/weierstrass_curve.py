@@ -21,8 +21,8 @@ class WeierstrassPoint(RingElement):
         self.result_cache = {}
 
 
-    def __repr__(self):
-        return f"<WeierstrassPoint: x={self.x}, y={self.y}, curve={self.curve}>"
+    def __reprdir__(self):
+        return ['x', 'y', 'curve']
 
 
     def shorthand(self) -> str:
@@ -296,6 +296,7 @@ class PointAtInfinity(WeierstrassPoint):
     def __repr__(self):
         return f"<WeierstrassPoint: POINT_AT_INFINITY, curve={self.curve}>"
 
+
     def __eq__(self, P2: 'WeierstrassPoint') -> bool:
         return self is P2
 
@@ -349,8 +350,8 @@ class WeierstrassCurve(Ring):
 
 
 
-    def __repr__(self):
-        return f"<WeierstrassCurve: a={self.a}, b={self.b}, cardinality={self.cardinality_cache}, ring={self.ring}, G={(str(self.G_cache.x), str(self.G_cache.y)) if self.G_cache else self.G_cache}>"
+    def __reprdir__(self):
+        return ['a', 'b', 'cardinality_cache', 'ring']
 
 
 

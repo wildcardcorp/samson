@@ -57,15 +57,20 @@ def process_field(field):
     if cname in PROC_DICT:
         return PROC_DICT[cname](field)
     else:
-        return field.__repr__()
+        return str(field)
 
 
 class BaseObject(object):
     def __reprdir__(self):
         return self.__dict__.keys()
 
+
     def __repr__(self):
-        return f'<{cls_color(self.__class__.__name__)}: {", ".join([color_format(FIELD_COLOR, k) + "=" + process_field(self.__dict__[k]) for k in self.__reprdir__()])}>'
+        fields = ""
+        if self.__reprdir__():
+            fields = f': {", ".join([color_format(FIELD_COLOR, k) + "=" + process_field(getattr(self, k)) for k in self.__reprdir__()])}'
+
+        return f'<{cls_color(self.__class__.__name__)}{fields}>'
 
     def __str__(self):
         return self.__repr__()

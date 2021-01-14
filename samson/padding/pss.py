@@ -1,10 +1,11 @@
 from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.padding.oaep import MGF1
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
 
-class PSS(object):
+class PSS(BaseObject):
     """
     Probabilistic Signature Scheme used for RSA signatures
 
@@ -24,12 +25,6 @@ class PSS(object):
         self.hash_obj = hash_obj
         self.salt_len = salt_len
 
-
-    def __repr__(self):
-        return f"<PSS: modulus_len={self.modulus_len}, mgf={self.mgf}, hash_obj={self.hash_obj}, salt_len={self.salt_len}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
     # https://tools.ietf.org/html/rfc8017#section-9.1.1

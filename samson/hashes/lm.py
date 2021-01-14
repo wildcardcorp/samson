@@ -31,7 +31,7 @@ class LM(BaseObject):
         return DES(key[:8]).encrypt(self.plaintext) + DES(key[8:]).encrypt(self.plaintext)
 
 
-    def check_halves_null(self, lm_hash: bytes) -> list:
+    def check_halves_null(self, lm_hash: bytes) -> (bool, bool):
         """
         Checks if either half of the plaintext is null. LM hashes encrypt each half of the plaintext separately so
         attackers can determine if the plaintext is less than eight characters by checking if the second half is 'aad3b435b51404ee'.
@@ -40,7 +40,7 @@ class LM(BaseObject):
             lm_hash (bytes): LM hash.
         
         Returns:
-            list: Whether or not each half of the LM hash is null.
+            (bool, bool): Whether or not each half of the LM hash is null.
         """
         return [half == DES(Bytes(b'').zfill(8)).encrypt(self.plaintext) for half in lm_hash.chunk(8)]
 

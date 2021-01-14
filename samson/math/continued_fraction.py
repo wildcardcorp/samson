@@ -1,3 +1,5 @@
+from samson.core.base_object import BaseObject
+
 def _calc_continued_fraction(frac: 'FractionFieldElement') -> list:
     """
     Calculates the continued fraction form of `frac`.
@@ -23,18 +25,12 @@ def _calc_continued_fraction(frac: 'FractionFieldElement') -> list:
     return cf
 
 
-class ContinuedFraction(object):
+class ContinuedFraction(BaseObject):
     def __init__(self, element):
         self.element = element
         self.ring    = self.element.ring
         self.cf      = _calc_continued_fraction(self.element)
 
-
-    def __repr__(self):
-        return f'<ContinuedFraction: {self.cf}>'
-
-    def __str__(self):
-        return self.__repr__()
 
 
     @staticmethod

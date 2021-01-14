@@ -2,10 +2,11 @@ from samson.encoding.general import url_b64_decode, url_b64_encode
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import DecryptionException
 from samson.protocols.jwt.jwa import JWA_ALG_MAP, JWAContentEncryptionAlg, JWAKeyEncryptionAlg
+from samson.core.base_object import BaseObject
 import json
 
 
-class JWE(object):
+class JWE(BaseObject):
     """
     JSON Web Encryption
     """
@@ -27,11 +28,9 @@ class JWE(object):
         self.aad           = aad
 
 
-    def __repr__(self):
-        return f"<JWE: header={self.header}, jose_header={self.jose_header}, encrypted_key={self.encrypted_key}, iv={self.iv}, ciphertext={self.ciphertext}, tag={self.tag}, aad={self.aad}>"
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['header', 'jose_header', 'encrypted_key', 'iv', 'ciphertext', 'tag', 'aad']
 
 
     def serialize(self) -> Bytes:
@@ -142,7 +141,7 @@ class JWE(object):
 
 
 
-class JWESet(object):
+class JWESet(BaseObject):
     def __init__(self, enc: JWAContentEncryptionAlg, ciphertext: bytes, tag: bytes, cek: bytes, iv: bytes, protected_header: bytes, payload: bytes=None, recipients: list=None, unprotected_header: dict=None, aad: bytes=None):
         """
         Parameters:
@@ -170,11 +169,8 @@ class JWESet(object):
         self.i_know_what_im_doing = False
 
 
-    def __repr__(self):
-        return f"<JWESet: payload={self.payload}, enc={self.enc}, cek={self.cek}, iv={self.iv}, aad={self.aad}, protected_header={self.protected_header}, unprotected_header={self.unprotected_header}, ciphertext={self.ciphertext}, recipients={self.recipients}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['payload', 'enc', 'cek', 'iv', 'aad', 'protected_header', 'unprotected_header', 'ciphertext', 'recipients']
 
 
 

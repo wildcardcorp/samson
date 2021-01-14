@@ -41,8 +41,9 @@ class MatrixRing(Ring):
         raise NotImplementedError()
 
 
-    def __repr__(self):
-        return f"<MatrixRing: size={self.size}, ring={self.ring}>"
+
+    def __reprdir__(self):
+        return ['size', 'ring']
 
 
     def shorthand(self) -> str:
@@ -71,7 +72,9 @@ class MatrixRing(Ring):
             raise CoercionException(self, other)
 
 
-        assert elem.is_square(), "Elements must be square in a MatrixRing"
+        if not elem.is_square():
+            raise CoercionException(elem, "Elements must be square in a MatrixRing")
+
         return elem
 
 

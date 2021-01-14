@@ -325,7 +325,7 @@ def mod_inv(a: int, n: int) -> int:
     R = a.ring
 
     if (a * x) % n != R.one:
-        raise NotInvertibleException("'a' is not invertible", parameters={'a': a, 'x': x, 'n': n})
+        raise NotInvertibleException(f"{a} is not invertible over {n}", parameters={'a': a, 'x': x, 'n': n})
 
     if x < R.zero:
         x = x + n

@@ -16,10 +16,6 @@ class QuotientElement(RingElement):
         self.val  = val % self.ring.quotient
 
 
-    def __repr__(self):
-        return f"<QuotientElement: val={self.val}, ring={self.ring}>"
-
-
     def shorthand(self) -> str:
         return self.val.shorthand()
 
@@ -68,10 +64,10 @@ class QuotientElement(RingElement):
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
 
 
-    @left_expression_intercept
-    def __truediv__(self, other: 'QuotientElement') -> 'QuotientElement':
+    def _element_division(self, other: 'QuotientElement') -> 'QuotientElement':
         other = self.ring.coerce(other)
         return self * ~other
+
 
 
     @left_expression_intercept
@@ -146,8 +142,8 @@ class QuotientRing(Ring):
         self.one  = QuotientElement(self.ring.one, self)
 
 
-    def __repr__(self):
-        return f"<QuotientRing: ring={self.ring}, quotient={self.quotient}>"
+    def __reprdir__(self):
+        return ['ring', 'quotient']
 
 
     @property

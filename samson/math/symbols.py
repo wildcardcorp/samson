@@ -80,6 +80,7 @@ class Symbol(Polynomial):
         self.ring = None
         self.var  = None
 
+
     def __repr__(self):
         return f'<Symbol: {self.repr}, ring={self.ring}>'
 

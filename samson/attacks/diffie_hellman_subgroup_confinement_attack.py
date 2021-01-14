@@ -50,7 +50,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         Parameters:
             public_key      (int): Diffie-Hellman public key to crack.
             max_factor_size (int): Max factor size to prevent attempting to factor forever.
-        
+
         Returns:
             int: Private key.
         """

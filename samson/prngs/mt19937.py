@@ -96,9 +96,6 @@ class MT19937(BaseObject):
     def __reprdir__(self):
         return ['seed', 'index', 'state']
 
-    def __str__(self):
-        return self.__repr__()
-
 
     def twist(self):
         """

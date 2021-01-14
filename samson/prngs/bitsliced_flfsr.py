@@ -1,6 +1,7 @@
 from samson.utilities.bitstring import Bitstring
+from samson.core.base_object import BaseObject
 
-class BitslicedFLFSR(object):
+class BitslicedFLFSR(BaseObject):
     """
     An implementation of an FLFSR using an internal bitstring rather than an integer.
     """
@@ -18,13 +19,6 @@ class BitslicedFLFSR(object):
         self.clock_bit = clock_bit
         self.taps = taps
 
-
-    def __repr__(self):
-        return f"<BitslicedFLFSR: state={self.state}, length={self.length}, clockbit={self.clock_bit}, taps={self.taps}>"
-
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def mix_state(self, in_val: bytes, size: int):

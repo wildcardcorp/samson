@@ -196,11 +196,11 @@ def parse_doc(func):
     params = []
     if 'Parameters' in parsed:
         for param in parsed['Parameters']:
-            split = param.split()
-            p_name, p_type = split[:2]
-            p_desc = ' '.join(split[2:])
+            split = param.split(' ', 1)
+            p_name = split[0]
+            p_type, p_desc = split[1].split(':', 1)
 
-            params.append(DocParameter(p_name, p_type.lstrip('(').rstrip('):'), p_desc))
+            params.append(DocParameter(p_name, p_type.strip('(): '), p_desc.strip()))
 
 
     returns = None

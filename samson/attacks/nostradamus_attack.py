@@ -24,11 +24,9 @@ class NostradamusAttack(object):
         """
         Parameters:
             k               (int): Number of levels the tree will have.
-            collision_func (func): Function that finds a collision in the hash function. Should return a tuple
-                                   (input_bytes1, input_bytes2, colliding_state).
+            collision_func (func): Function that finds a collision in the hash function. Should return a tuple (input_bytes1, input_bytes2, colliding_state).
             output_size     (int): Size of the hash output.
-            prefixes       (list): List of bytes-like prefixes. These are the starting nodes of the tree.
-                                   You should set this to values you want to guarantee are in the tree.
+            prefixes       (list): List of bytes-like prefixes. These are the starting nodes of the tree. You should set this to values you want to guarantee are in the tree.
         """
         self.k = k
         self.prefixes = prefixes or [int.to_bytes(i, output_size, 'little') for i in range(2 ** k)]

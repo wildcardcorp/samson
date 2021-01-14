@@ -2,6 +2,7 @@ from samson.prngs.xorshift import Xorshift128Plus, Xorshift128, Xorshift116Plus
 from samson.prngs.xoroshiro import Xoroshiro116Plus
 from samson.prngs.mt19937 import MT19937
 from samson.prngs.lcg import LCG
+from samson.prngs.lfg import LFG
 from samson.core.iterative_prng import IterativePRNG
 
 _mt19937 = lambda state: MT19937(state)
@@ -17,6 +18,7 @@ class PRNG(object):
     D          = _mtdict
     ERLANG     = {Xoroshiro116Plus: lambda state: Xoroshiro116Plus(state), Xorshift116Plus: lambda state: Xorshift116Plus(state)}
     ELIXIR     = ERLANG
+    GO         = {LFG: lambda state: LFG(state, feed=334, tap=0, mask=2**64-1, operation=LFG.ADD_OP, increment=False, length=607)}
     JAVASCRIPT = _xor128pdict
     JAVA       = CLOJURE
     JULIA      = _mtdict

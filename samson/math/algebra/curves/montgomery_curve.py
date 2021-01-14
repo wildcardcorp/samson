@@ -55,6 +55,10 @@ class MontgomeryCurve(Ring):
         return f"<MontgomeryCurve: p={self.p}, A={self.A}, U={self.U}, V={self.V}>"
 
 
+    def __reprdir__(self):
+        return ['p', 'A', 'U', 'V']
+
+
     def shorthand(self) -> str:
         return f'MontgomeryCurve{{A={self.A}, U={self.U}, V={self.V}}}'
 
@@ -122,10 +126,6 @@ class MontgomeryPoint(RingElement):
         """
         self.curve = curve
         self.x = x
-
-
-    def __repr__(self):
-        return f"<MontgomeryPoint: x={self.x}, curve={self.curve}>"
 
 
     @property

@@ -30,12 +30,8 @@ class XTS(BlockCipherMode):
         self.sector_encryptor = sector_encryptor
 
 
-
-    def __repr__(self):
-        return f"<XTS: cipher={self.cipher}, sector_encryptor={self.sector_encryptor}>"
-
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['cipher', 'sector_encryptor']
 
 
 

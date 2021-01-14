@@ -1,4 +1,5 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 
 class DGHVBit(int):
     """
@@ -45,7 +46,7 @@ class DGHVBit(int):
 
 
 
-class DGHV(object):
+class DGHV(BaseObject):
     """
     The Dijk-Gentry-Halevi-Vaikuntanathan (DGHV) fully-homomorphic encryption scheme
     """
@@ -56,13 +57,6 @@ class DGHV(object):
             p (int): Key.
         """
         self.p = p or Bytes.random(8).to_int()
-
-
-    def __repr__(self):
-        return f"<DGHV: p={self.p}>"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 

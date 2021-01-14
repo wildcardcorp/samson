@@ -1,7 +1,8 @@
 from samson.utilities.bytes import Bytes
+from samson.core.base_object import BaseObject
 from types import FunctionType
 
-class FeistelNetwork(object):
+class FeistelNetwork(BaseObject):
     """
     Construction for building block ciphers. Operates on half of a plaintext or ciphertext at a time and
     interleaves invocations of the Feistel function. If the Feistel function (`round_func`) is a cryptographically
@@ -17,14 +18,6 @@ class FeistelNetwork(object):
         """
         self.round_func   = round_func
         self.key_schedule = key_schedule
-
-
-    def __repr__(self):
-        return f"<FeistelNetwork: round_func={self.round_func}, key_schedule={self.key_schedule}>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
 
     def yield_encrypt(self, key: bytes, plaintext: bytes):
