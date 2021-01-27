@@ -181,5 +181,5 @@ class Poly1305(MAC):
             # This is just a simple way of testing 0, -1, 1, -2, 2...
             k += 1
             p += (-1 + 2*(k % 2)) * (_MOD_128*k)
-        
+
         return list(set(candidates))

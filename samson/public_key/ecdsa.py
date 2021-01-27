@@ -1,5 +1,5 @@
 from samson.math.general import mod_inv, random_int_between
-from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+from samson.math.algebra.curves.weierstrass_curve import WeierstrassPoint
 from samson.utilities.bytes import Bytes
 from samson.public_key.dsa import DSA
 from samson.hashes.sha2 import SHA256
@@ -52,10 +52,10 @@ class ECDSA(DSA):
     EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda dsa: dsa.q.bit_length()))
     USAGE_FREQUENCY = FrequencyType.PROLIFIC
 
-    def __init__(self, G: WeierstrassCurve, hash_obj: object=SHA256(), d: int=None):
+    def __init__(self, G: WeierstrassPoint, hash_obj: object=SHA256(), d: int=None):
         """
         Parameters:
-            G (WeierstrassCurve): Generator point for a curve.
+            G (WeierstrassPoint): Generator point for a curve.
             hash_obj    (object): Instantiated object with compatible hash interface.
             d              (int): (Optional) Private key.
         """
@@ -98,18 +98,7 @@ class ECDSA(DSA):
         return (r, s)
 
 
-
-    def verify(self, message: bytes, sig: (int, int)) -> bool:
-        """
-        Verifies a `message` against a `sig`.
-
-        Parameters:
-            message  (bytes): Message.
-            sig ((int, int)): Signature of `message`.
-        
-        Returns:
-            bool: Whether the signature is valid or not.
-        """
+    def _build_verification_params(self, message: bytes, sig: (int, int)) -> (int, int, WeierstrassPoint):
         (r, s) = sig
         w = mod_inv(s, self.q)
 
@@ -119,7 +108,44 @@ class ECDSA(DSA):
         u_1 = (z * w) % self.q
         u_2 = (r * w) % self.q
         v = u_1 * self.G + u_2 * self.Q
+
+        return u_1, u_2, v
+
+
+    def verify(self, message: bytes, sig: (int, int)) -> bool:
+        """
+        Verifies a `message` against a `sig`.
+
+        Parameters:
+            message  (bytes): Message.
+            sig ((int, int)): Signature of `message`.
+
+        Returns:
+            bool: Whether the signature is valid or not.
+        """
+        (r, s) = sig
+        _, _, v = self._build_verification_params(message, sig)
         return v.x == r
+
+
+    def duplicate_signature_key_selection(self,  message: bytes, sig: (int, int)) -> 'ECDSA':
+        """
+        Generates an ECDSA instance that signs `message` as `sig`.
+
+        Parameters:
+            message  (bytes): Message.
+            sig ((int, int)): Desired signature of `message`.
+
+        Returns:
+            ECDSA: Constructed ECDSA with duplicate signature.
+        """
+        (r, s) = sig
+        u1, u2, v = self._build_verification_params(message, sig)
+
+        d = random_int_between(1, self.q)
+        t = u1 + u2*d
+        G = v/t
+        return ECDSA(G, d=d)
 
 
     @staticmethod

@@ -147,7 +147,6 @@ def unxorshift_right(x: int, n: int, bits: int) -> int:
     Returns:
         int: Unxorshifted `x`.
     """
-    mask = 2**bits-1
     y = x
     for i in range(1, bits // n + 1):
         y ^= (x >> n*i)

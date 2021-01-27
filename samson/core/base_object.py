@@ -26,7 +26,7 @@ def list_proc(a):
         a_str = f'{str(a[:10])[:-1]}...'
     else:
         a_str = str(a)
-    
+
     return f'{a_str} ({len(a)} items)'
 
 

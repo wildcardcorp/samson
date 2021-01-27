@@ -26,7 +26,7 @@ class OpenSSHPrivateBase(BaseObject):
     @classmethod
     def check(cls, buffer: bytes, passphrase: bytes=None, **kwargs):
         try:
-            priv, _ = cls.parse_keys(buffer, passphrase)
+            priv, _, _ = cls.parse_keys(buffer, passphrase)
             return priv is not None and cls.SSH_PUBLIC_HEADER in buffer
         except ValueError:
             return False
@@ -40,7 +40,8 @@ class OpenSSHPrivateBase(BaseObject):
 
     @classmethod
     def decode(cls, buffer: bytes, passphrase: bytes=None, **kwargs):
-        return cls(cls.extract_key(*cls.parse_keys(buffer, passphrase)))
+        priv, pub, user = cls.parse_keys(buffer, passphrase)
+        return cls(cls.extract_key(priv, pub), user)
 
 
 

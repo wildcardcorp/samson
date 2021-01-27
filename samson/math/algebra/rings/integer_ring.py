@@ -19,8 +19,8 @@ class IntegerElement(RingElement):
             val   (int): Value of the element.
             ring (Ring): Parent ring.
         """
-        self.ring = ring
         self.val  = val
+        self.ring = ring
 
 
 
@@ -42,6 +42,10 @@ class IntegerElement(RingElement):
 
     def kth_root(self, k: int) -> 'IntegerElement':
         return ZZ(kth_root(int(self), k))
+
+
+    def is_square(self) -> bool:
+        return self.kth_root(2)**2 == self
 
 
     def valuation(self, p: int) -> int:

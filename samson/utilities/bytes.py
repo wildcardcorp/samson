@@ -18,7 +18,7 @@ class Bytes(bytearray):
         """
         if issubclass(type(bytes_like), int):
             bytes_like = int_to_bytes(bytes_like, byteorder)
-        
+
         # Unfortunately, we need this for pickling
         if type(bytes_like) is str:
             bytes_like = bytes_like.encode('latin-1')
@@ -58,8 +58,8 @@ class Bytes(bytearray):
             Bytes: Random Bytes.
         """
         return Bytes(rand_bytes(size), byteorder=byteorder)
-    
-    
+
+
     @staticmethod
     def read_file(filename: str) -> 'Bytes':
         with open(filename, 'rb') as f:
@@ -309,7 +309,7 @@ class Bytes(bytearray):
             data   = curr[length_size:length+length_size]
             parts.append(data)
             curr   = curr[length+length_size:]
-        
+
         return parts
 
 

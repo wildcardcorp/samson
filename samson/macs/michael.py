@@ -16,8 +16,9 @@ class Michael(MAC):
 
 
     def __init__(self, key: bytes):
+        Primitive.__init__(self)
         self.key = Bytes.wrap(key).zfill(8).change_byteorder('little')
-    
+
 
     @staticmethod
     def ADD32(l: Bytes, r: Bytes) -> Bytes:
@@ -60,7 +61,7 @@ class Michael(MAC):
         r ^= l.lrot(17)
 
         return l, r
-    
+
 
     @staticmethod
     def pad(message: Bytes) -> Bytes:
@@ -87,7 +88,7 @@ class Michael(MAC):
         for chunk in message.chunk(4):
             l   ^= chunk
             l, r = Michael.b(l, r)
-        
+
         return l.zfill(4) + r.zfill(4)
 
 
@@ -123,5 +124,5 @@ class Michael(MAC):
         for chunk in message.chunk(4)[::-1]:
             l, r = Michael.b_inv(l, r)
             l   ^= chunk
-        
+
         return Michael(l.zfill(4) + r.zfill(4))

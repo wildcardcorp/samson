@@ -130,10 +130,17 @@ def parse_openssh_key(buffer: bytes, ssh_header: bytes, public_key_cls: object, 
             decryptor = header.generate_decryptor(passphrase)
 
         priv, _left_over = private_key_cls.unpack(left_over, decryptor)
+        user = priv.host
+
     else:
         if buffer.split(b' ')[0][:len(ssh_header)] == ssh_header:
-            buffer = base64.b64decode(buffer.split(b' ')[1])
+            _header, body, user = buffer.split(b' ')
+            body = base64.b64decode(body)
 
-        pub, _ = public_key_cls.unpack(buffer, already_unpacked=True)
+        else:
+            body = buffer
+            user = None
 
-    return priv, pub
+        pub, _ = public_key_cls.unpack(body, already_unpacked=True)
+
+    return priv, pub, Bytes(user) if user else user

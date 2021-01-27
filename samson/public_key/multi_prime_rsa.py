@@ -31,7 +31,7 @@ class MultiPrimeRSA(BaseObject):
             while gcd(e, phi) != 1 or len(set(primes)) < len(primes):
                 primes = [find_prime(prime_size) for _ in range(num_prime)]
                 phi    = lcm(*[p-1 for p in primes])
-                
+
 
         phi = product([p-1 for p in primes])
         if e:

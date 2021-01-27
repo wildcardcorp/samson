@@ -249,7 +249,7 @@ class FractionField(Field):
     
         Returns:
             FractionFieldElement: Random element of the algebra.
-        """ 
+        """
         if type(size) is int:
             numerator   = size
             denominator = size

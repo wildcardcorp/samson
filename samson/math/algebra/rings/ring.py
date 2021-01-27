@@ -141,8 +141,8 @@ class Ring(BaseObject):
 
 
 
-    def __call__(self, args) -> 'RingElement':
-        return self.coerce(self.base_coerce(args))
+    def __call__(self, args, **kwargs) -> 'RingElement':
+        return self.coerce(self.base_coerce(args), **kwargs)
 
 
     def __contains__(self, element: 'RingElement') -> bool:
@@ -203,7 +203,7 @@ class Ring(BaseObject):
 
         while True:
             elem = self.random()
-            if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs):
+            if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs) == n:
                 return elem
 
 
@@ -282,7 +282,7 @@ class RingElement(BaseObject):
 
 
     def _element_division(self, other: 'RingElement') -> 'RingElement':
-        raise NotInvertibleException
+        raise NotInvertibleException("Element division not defined for ring", parameters=other)
 
 
     @left_expression_intercept
@@ -398,11 +398,15 @@ class RingElement(BaseObject):
         Returns:
             RingElement/None: Returns the special __div__ if possible.
         """
+
         type_o = type(other)
 
-        if type_o is int:
-            other = mod_inv(other, self.order)
-            return fast_mul(self, other)
+        if type_o is int and self.order > 1:
+            from samson.math.symbols import oo
+
+            if self.order != oo:
+                other = mod_inv(other, self.order)
+                return fast_mul(self, other)
 
 
     def is_invertible(self) -> bool:
@@ -525,6 +529,7 @@ class RingElement(BaseObject):
 
         for p in n_facs:
             e = n_facs[p]
+
             for i in range(1,e+2):
                 o = n // p**i
                 if self*o != self.ring.zero:
@@ -567,7 +572,7 @@ class RingElement(BaseObject):
         Returns:
             Factors: Dictionary-like Factors object.
         """
-        from samson.math.general import ecm
+        from samson.math.factorization import ecm
         from samson.math.factorization.factors import Factors
         from samson.analysis.general import count_items
 
@@ -590,7 +595,7 @@ class RingElement(BaseObject):
         return Factors(count_items(factors))
 
 
-    def kth_root(self, k: int, return_all: bool=False) -> 'RingElement':
+    def kth_root(self, k: int, return_all: bool=False, **root_kwargs) -> 'RingElement':
         """
         Computes the `k`-th root of `self`.
 
@@ -606,12 +611,10 @@ class RingElement(BaseObject):
         x = Symbol('x')
         _ = self.ring[x]
 
-        if return_all:
-            kwargs = {}
-        else:
-            kwargs = {'user_stop_func': lambda S: any(f.degree() == 1 for f in S)}
+        if not return_all:
+            root_kwargs['user_stop_func'] = lambda S: any(f.degree() == 1 for f in S)
 
-        roots = (x**k - self).roots(**kwargs)
+        roots = (x**k - self).roots(**root_kwargs)
 
         if not roots:
             raise NoSolutionException()
@@ -625,6 +628,14 @@ class RingElement(BaseObject):
 
     def sqrt(self) -> 'RingElement':
         return self.kth_root(2)
+
+
+    def is_square(self) -> bool:
+        try:
+            self.sqrt()
+            return True
+        except NoSolutionException:
+            return False
 
 
     def gcd(self, other: 'RingElement') -> 'RingElement':

@@ -14,8 +14,8 @@ class MultiplicativeGroupElement(RingElement):
             val   (int): Value of the element.
             ring (Ring): Parent ring.
         """
-        self.ring = ring
         self.val  = val
+        self.ring = ring
 
 
     @left_expression_intercept
@@ -44,7 +44,10 @@ class MultiplicativeGroupElement(RingElement):
 
     @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
-        return self.val.log(other.val)
+        if type(other) is int:
+            return self.val.kth_root(other)
+        else:
+            return self.val.log(other.val)
 
 
     __floordiv__ = __truediv__
@@ -172,11 +175,14 @@ class MultiplicativeGroup(Ring):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             MultiplicativeGroupElement: Coerced element.
         """
         if type(other) is not MultiplicativeGroupElement or other.ring.ring != self.ring:
+            if hasattr(other, 'ring') and other == other.ring.zero:
+                raise ValueError("Zero is not part of the multiplicative group")
+
             return MultiplicativeGroupElement(self.ring(other), self)
         else:
             return other
@@ -204,4 +210,8 @@ class MultiplicativeGroup(Ring):
 
 
     def random(self, size: object=None) -> object:
-        return self(self.ring.random(size))
+        r = None
+        while not r:
+            r = self.ring.random(size)
+
+        return self(r)

@@ -22,7 +22,7 @@ class MichaelTestCase(unittest.TestCase):
             pt     = michael[:i]
             last_k = m.generate(pt)
             self.assertEqual(last_k, Bytes(keys[i]).change_byteorder('little'))
-    
+
 
     def test_ieee_vec(self):
         k   = Bytes(0xd55e100510128986)

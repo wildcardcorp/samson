@@ -1,14 +1,13 @@
 from samson.utilities.bytes import Bytes
 from samson.prngs.all import MWC1616, Xoroshiro116Plus, Xoroshiro128Plus, Xorshift32, Xorshift64, Xorshift128, PCG, Xorshift1024Star, LFG
 from samson.core.prng import PRNG
-import codecs
 import unittest
 
 
 class ReverseClockTestCase(unittest.TestCase):
     def test_reverse_clocks(self):
         prngs = [
-            MWC1616([Bytes.random(4).int() for _ in range(2)]), 
+            MWC1616([Bytes.random(4).int() for _ in range(2)]),
             Xoroshiro116Plus([4039333298297189104, 14574314857804983261]),
             Xoroshiro128Plus([Bytes.random(8).int() for _ in range(2)]),
             Xorshift32([Bytes.random(4).int()]),

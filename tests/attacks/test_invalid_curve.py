@@ -28,7 +28,6 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
                 return False
 
 
-        print(bob_key.d)
         oracle        = Oracle(oracle_func)
         ica           = InvalidCurveAttack(oracle, curve)
         recovered_key = ica.execute(bob_key.pub, inv_curves)
@@ -41,7 +40,7 @@ class InvalidCurveAttackTestCase(unittest.TestCase):
         g       = (182, 85518893674295321206118380980485522083)
         ring    = ZZ/ZZ(233970423115425145524320034830162017933)
         a       = ring(-95051)
-        curve   = WeierstrassCurve(a=a, b=ring(11279326), cardinality=29246302889428143187362802287225875743, base_tuple=g, ring=ring)
+        curve   = WeierstrassCurve(a=a, b=ring(11279326), cardinality=8*29246302889428143187362802287225875743, base_tuple=g, ring=ring)
 
         curve_params = [
             (210, 233970423115425145550826547352470124412),

@@ -11,7 +11,9 @@ class SearchspaceExhaustedException(Exception):
 
 
 class CoercionException(Exception):
-    pass
+    def __init__(self, *args, **kwargs):
+        args = [str(a) for a in args]
+        super().__init__(*args, **kwargs)
 
 
 class ProbabilisticFailureException(Exception):

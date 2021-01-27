@@ -56,7 +56,7 @@ class PKCS1v15PaddingOracleAttack(object):
                      n (int): The RSA instance's modulus.
                      e (int): The RSA instance's public exponent.
             key_length (int): The the bit length of the RSA instance (2048, 4096, etc).
-        
+
         Returns:
             Bytes: The ciphertext's corresponding plaintext.
         """

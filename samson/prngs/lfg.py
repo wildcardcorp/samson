@@ -45,7 +45,7 @@ class LFG(BaseObject):
         x = self.operation(self.state[self.feed], self.state[self.tap]) & self.mask
         self.state[self.feed] = x
         return x
-    
+
 
 
     def reverse_clock(self) -> int:
@@ -58,20 +58,10 @@ class LFG(BaseObject):
         x = self.operation(self.state[self.feed], -self.state[self.tap]) & self.mask
         self.state[self.feed] = x
 
-        self.tap  = (self.tap - self.shift_mod) % self.length
+        self.tap  = (self.tap  - self.shift_mod) % self.length
         self.feed = (self.feed - self.shift_mod) % self.length
 
         return self.state[self.feed]
-
-
-        # length    = len(self.state)
-        # self.tap  = (self.tap - self.shift_mod) % length
-        # self.feed = (self.feed - self.shift_mod) % length
-
-        # x = self.operation(self.state[self.feed], -self.state[self.tap]) & 0xFFFFFFFFFFFFFFFF
-        # self.state[self.feed] = x
-        # return x
-
 
 
     def crack(self, outputs: list, num_outputs_to_predict: int=2):

@@ -16,6 +16,9 @@ class QuotientElement(RingElement):
         self.val  = val % self.ring.quotient
 
 
+    def __reprdir__(self):
+        return ['val', 'ring']
+
     def shorthand(self) -> str:
         return self.val.shorthand()
 
@@ -114,6 +117,16 @@ class QuotientElement(RingElement):
         else:
             return self.kth_root(2)
 
+
+    def is_square(self) -> bool:
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        if self.ring.ring == ZZ:
+            from samson.math.general import generalized_eulers_criterion, ResidueSymbol
+            return generalized_eulers_criterion(int(self), 2, int(self.ring.quotient)) != ResidueSymbol.DOES_NOT_EXIST
+
+        else:
+            return super().is_square()
 
 
 class QuotientRing(Ring):
@@ -223,7 +236,7 @@ class QuotientRing(Ring):
         return self(self.ring.element_at(x))
 
 
-    def __eq__(self, other: 'QuotientElement') -> bool:
+    def __eq__(self, other: 'QuotientRing') -> bool:
         return type(self) == type(other) and self.ring == other.ring and self.quotient == other.quotient
 
     def __hash__(self) -> int:

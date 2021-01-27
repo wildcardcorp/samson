@@ -120,7 +120,7 @@ def _negaconvolution_naive(L1, L2):
         b = sum([L1[i] * L2[N+j-i] for i in range(j+1, N)])
 
         new_coeffs.append(a-b)
-    
+
     return new_coeffs
 
 

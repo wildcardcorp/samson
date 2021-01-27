@@ -1,6 +1,5 @@
 from samson.math.general import mod_inv, find_prime, random_int_between, is_prime
 from samson.utilities.bytes import Bytes
-from samson.utilities.exceptions import InvalidSignatureException
 
 from samson.encoding.openssh.openssh_dsa_key import OpenSSHDSAPrivateKey, OpenSSHDSAPublicKey, SSH2DSAPublicKey
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey

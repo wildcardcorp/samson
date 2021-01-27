@@ -44,7 +44,7 @@ class LCG(BaseObject):
         """
         self.X = (self.a * self.X + self.c) % self.m
         return self.X >> self.trunc
-    
+
 
     def reverse_clock(self) -> int:
         """

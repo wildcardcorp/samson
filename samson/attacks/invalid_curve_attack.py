@@ -47,7 +47,7 @@ class InvalidCurveAttack(object):
             public_key      (int): ECDH public key to crack.
             invalid_curves (list): List of invalid curves to use in the attack.
             max_factor_size (int): Max factor size to prevent attempting to factor forever.
-        
+
         Returns:
             int: Private key.
 

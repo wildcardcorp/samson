@@ -19,15 +19,14 @@ class DH25519(KeyExchangeAlg):
         """
         Parameters:
             d                 (int): Secret key that will be clamped to the curve.
-            base              (int): Base multiplier used in generating the challenge.
+            base  (MontgomeryPoint): Base point.
             curve (MontgomeryCurve): The curve used.
         """
         Primitive.__init__(self)
         self.d     = Bytes.wrap(d or random_int_between(1, curve.ring.order)).int()
         self.curve = curve
         self.key   = curve.clamp_to_curve(self.d)
-        self.base  = base or curve.U
-
+        self.base  = base or curve.G
         self.pub   = pub
 
         if not pub:
@@ -47,7 +46,7 @@ class DH25519(KeyExchangeAlg):
 
 
     def get_pub_bytes(self) -> Bytes:
-        return Bytes(self.pub, 'little')
+        return Bytes(int(self.pub.x), 'little')
 
 
 
@@ -61,4 +60,4 @@ class DH25519(KeyExchangeAlg):
         Returns:
             int: Shared key.
         """
-        return Bytes(self.key * challenge).zfill((self.curve.p.bit_length() + 7) // 8)
+        return Bytes(int((self.key * self.curve(challenge)).x)).zfill((self.curve.p.bit_length() + 7) // 8)

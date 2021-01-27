@@ -9,11 +9,12 @@ import math
 
 # Resolve circular dependencies while reducing function-level imports
 from samson.auxiliary.lazy_loader import LazyLoader
-_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
-_poly         = LazyLoader('poly', globals(), 'samson.math.polynomial')
-_mat          = LazyLoader('mat', globals(), 'samson.math.matrix')
-_dense        = LazyLoader('dense', globals(), 'samson.math.dense_vector')
-_factor_gen   = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
+_integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_complex_field = LazyLoader('_complex_field', globals(), 'samson.math.algebra.fields.complex_field')
+_poly          = LazyLoader('poly', globals(), 'samson.math.polynomial')
+_mat           = LazyLoader('mat', globals(), 'samson.math.matrix')
+_dense         = LazyLoader('dense', globals(), 'samson.math.dense_vector')
+_factor_gen    = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
@@ -345,10 +346,10 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         g (int): Base.
         u (int): Exponent.
         s (int): The 'one' value of the ring.
-    
+
     Returns:
         int: `g` ^ `u` within its ring.
-    
+
     Examples:
         >>> from samson.math.general import mod_inv
         >>> square_and_mul(5, 10, 1)
@@ -743,14 +744,15 @@ def legendre(a: int, p: int) -> ResidueSymbol:
     return ResidueSymbol(result)
 
 
-def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
+def generalized_eulers_criterion(a: int, k: int, p: int, factors: dict=None) -> ResidueSymbol:
     """
     Determines if `a` is a `k`-th root over `p`.
 
     Parameters:
-        a (int): Possible `k`-th residue.
-        k (int): Root to take.
-        p (int): Modulus.
+        a        (int): Possible `k`-th residue.
+        k        (int): Root to take.
+        p        (int): Modulus.
+        factors (dict): Factors of `p`.
 
     Returns:
         ResidueSymbol: Legendre symbol (basically).
@@ -766,8 +768,11 @@ def generalized_eulers_criterion(a: int, k: int, p: int) -> ResidueSymbol:
         >>> generalized_eulers_criterion(4, 3, 11)
         <ResidueSymbol.EXISTS: 1>
 
+    References:
+        "A Generalization of Euler’s Criterion to Composite Moduli" (https://arxiv.org/pdf/1507.00098.pdf)
     """
-    result = pow(a, (p-1) // gcd(k, p-1), p)
+    t = totient(p, factors=factors)
+    result = pow(a, t // gcd(k, t), p)
     if result > 1:
         result = -1
 
@@ -1312,6 +1317,26 @@ def next_prime(start_int: int) -> int:
     return start_int
 
 
+def primes(start: int, stop: int=None) -> list:
+    """
+    Generates primes between `start` and `stop`.
+
+    Parameters:
+        start (int): Number to start at (inclusive).
+        stop  (int): Number to stop at (exclusive).
+    
+    Returns:
+        list: Primes within the range.
+    """
+    p = start
+
+    while True:
+        p = next_prime(p)
+        if stop and p >= stop:
+            break
+        yield p
+        p += 2
+
 
 def berlekamp_massey(output_list: list) -> 'Polynomial':
     """
@@ -1706,7 +1731,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     R = curve.curve_poly_ring
     S = R/psi
     T = Frac(S, simplify=False)
-    sym_curve = WeierstrassCurve(a=T([curve.a]), b=curve.b, ring=T, check_singularity=False)
+    sym_curve = WeierstrassCurve(a=T([curve.a]), b=T([curve.b]), ring=T, check_singularity=False)
 
     x = R.poly_ring.symbol
 
@@ -2780,3 +2805,114 @@ def log(y: 'RingElement', base: 'RingElement') -> int:
         return math.log(y, base)
     else:
         return y.log(base)
+
+
+def find_smooth_close_to(n: int, max_j: int=5, primes: list=None) -> int:
+    # 'mod' flips between 1 and -1 so we add and subtract
+    curr_facs = 1
+    mod       = 1
+
+    for prime in (primes or PRIMES_UNDER_1000):
+        if curr_facs*prime > n:
+            break
+
+        # Figure out where we need to jump to to be divisible
+        r = (mod*n) % prime
+        j = -(mod_inv(curr_facs, prime)*r) % prime
+
+        if j <= max_j:
+            n   += mod*curr_facs*j
+            mod *= -1
+            curr_facs *= prime
+
+    return n
+
+
+def cornacchias_algorithm(d: int, p: int, **root_kwargs) -> (int, int):
+    """
+    Solves the Diophantine equation `x`^2 +`d`*`y`^2 = `p`.
+
+    Parameters:
+        d (int): `d` parameter.
+        p (int): `p` parameter.
+
+    Returns:
+        (int, int): Formatted as (`x`, `y`).
+
+    References:
+        https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm
+    """
+    ZZ = _integer_ring.ZZ
+    d  = int(d)
+
+    R = ZZ/ZZ(p)
+    D = R(-d)
+
+    if D.is_square():
+        for root in D.kth_root(2, True, **root_kwargs):
+            t     = int(root)
+            bound = kth_root(p, 2)
+            n     = p
+
+            while True:
+                n, t = t, n % t
+                if t < bound:
+                    break
+
+            result = ZZ(p-t**2)/d
+            if result in ZZ and result.is_square():
+                return (t, int(result.kth_root(2)))
+
+    raise NoSolutionException()
+
+
+
+def hilbert_class_polynomial(D: int) -> 'Polynomial':
+    """
+    Generates the Hilbert class polynomial for discriminant `D`.
+
+    Parameters:
+        D (int): Discriminant.
+
+    Returns:
+        Polynomial: Hilbert class polynomial.
+    
+    References:
+        https://crypto.stanford.edu/pbc/notes/ep/hilbert.html
+    """
+    ZZ = _integer_ring.ZZ
+    C2 = _complex_field.ComplexField(256)
+    from samson.math.symbols import Symbol
+
+    def j_func(tau):
+        return C2(C2.ctx.kleinj(tau.val)*1728)
+
+
+    if D < 0:
+        D = -D
+
+    x = Symbol('x')
+    R = C2[x]
+    P = R(1)
+    b = D % 2
+    B = int((abs(D)/3)**(1/2))
+    dsqrt = C2(-D).sqrt()
+
+    while b <= B:
+        t = (b**2 + D)/4
+        a = max(b, 1)
+
+        while a**2 <= t:
+            if not t % a:
+                j_val = j_func((-b + dsqrt)/(2*a))
+                if a == b or a**2 == t or b == 0:
+                    P *= (x - j_val)
+                else:
+                    P *= (x**2 - x*2*C2(j_val.val.real) + abs(j_val)**2)
+
+            a += 1
+
+        b += 2
+
+    Q = ZZ[Symbol('y')]
+    return Q([round(c.real()) for c in P])

@@ -209,19 +209,20 @@ class Polynomial(RingElement):
             x0 -= a_b
             tries += 1
 
-        return x0
+        return self.coeff_ring(x0)
 
 
-    def roots(self, **factor_kwargs) -> list:
+    def roots(self, use_hensel: bool=False, **factor_kwargs) -> list:
         """
         Finds the roots of the polynomial (i.e. where the evaluation is zero).
 
         Parameters:
             factor_kwargs (kwargs): Keyword arguments to pass into factorization.
+            use_hensel      (bool): Uses Hensel lifting instead of congruences. Much fast for very large moduli but isn't guaranteed to find all roots.
 
         Returns:
             list: List of roots.
-        
+
         References:
             https://crypto.stanford.edu/pbc/notes/numbertheory/poly.html
             https://math.stackexchange.com/questions/170128/roots-of-a-polynomial-mod-n
@@ -242,24 +243,37 @@ class Polynomial(RingElement):
             from samson.math.general import crt
 
             all_facs = []
+            results  = []
             q_facs   = R.quotient.factor()
 
-            P = int(product(q_facs))
+            if use_hensel:
+                for fac, e in q_facs.items():
+                    nroots = self.change_ring(ZZ).hensel_lift(fac, e)
+                    all_facs.append(nroots)
 
-            for fac in q_facs:
-                nroots = self.change_ring(ZZ/fac).roots()
-                all_facs.append(nroots)
+                for comb in itertools.product(*all_facs):
+                    root = crt(comb)[0]
 
-            results = []
-            for comb in itertools.product(*all_facs):
-                candidate = crt(comb)[0]
+                    if not self(root):
+                        results.append(root)
 
-                # Essentially Hensel lifting
-                for _ in range(int(R.quotient) // P):
-                    if not self(candidate):
-                        results.append(candidate)
-                    candidate += P
-            
+            else:
+                P = int(product(q_facs))
+
+                for fac in q_facs:
+                    nroots = self.change_ring(ZZ/fac).roots()
+                    all_facs.append(nroots)
+
+
+                for comb in itertools.product(*all_facs):
+                    candidate = crt(comb)[0]
+
+                    # Essentially Hensel lifting
+                    for _ in range(int(R.quotient) // P):
+                        if not self(candidate):
+                            results.append(candidate)
+                        candidate += P
+
             return results
 
 
@@ -335,7 +349,7 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Hensel%27s_lemma
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-    
+
         if not ZZ(p).is_prime():
             raise ValueError("'p' must be prime")
 

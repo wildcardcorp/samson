@@ -14,8 +14,8 @@ class DH25519TestCase(unittest.TestCase):
         self.assertEqual(dh_a.derive_key(pub_b), dh_b.derive_key(pub_a))
 
         if expected_pub_a:
-            self.assertEqual(expected_pub_a, pub_a)
-            self.assertEqual(expected_pub_b, pub_b)
+            self.assertEqual(expected_pub_a, int(pub_a.x))
+            self.assertEqual(expected_pub_b, int(pub_b.x))
 
         if expected_shared_key:
             self.assertEqual(dh_a.derive_key(pub_b), expected_shared_key)

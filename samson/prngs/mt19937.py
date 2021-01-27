@@ -1,4 +1,5 @@
 from samson.core.base_object import BaseObject
+from samson.utilities.bytes import Bytes
 
 w, n, m, r = (32, 624, 397, 31)
 MAGIC = 0x9908b0df
@@ -136,7 +137,7 @@ class MT19937(BaseObject):
 
             if (tmp & 0x80000000) == 0x80000000:
                 tmp ^= MAGIC
-            
+
             result = (tmp << 1) & 0x80000000
             tmp    = self.state[(i - 1 + n) % n]
             tmp   ^= self.state[(i - 1 + m) % n]
@@ -144,7 +145,7 @@ class MT19937(BaseObject):
             if (tmp & 0x80000000) == 0x80000000:
                 tmp    ^= MAGIC
                 result |= 1
-            
+
             result |= (tmp << 1) & 0x7fffffff
             self.state[i] = result
 
@@ -162,7 +163,7 @@ class MT19937(BaseObject):
         self.index -= 1
         if self.index < 0:
             self.untwist()
-        
+
         y = self.state[self.index]
         y = temper(y)
 
@@ -188,3 +189,40 @@ class MT19937(BaseObject):
         cloned.state = [untemper(output) for output in observed_outputs][-n:]
 
         return cloned
+
+
+    @staticmethod
+    def init_by_array(init_key: list) -> 'MT19937':
+        prng       = MT19937(19650218)
+        mt         = prng.state
+        key_length = len(init_key)
+
+        i, j = 1, 0
+
+        for k in reversed(range(max(key_length, n))):
+            mt[i] = ((mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1664525)) + init_key[j] + j) % 2**32
+            i += 1
+            j += 1
+            if i >= n:
+                mt[0] = mt[n-1]
+                i = 1
+
+            if j >= key_length:
+                j = 0
+
+        for k in reversed(range(n-1)):
+            mt[i] = ((mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1566083941)) - i) % 2**32
+            i += 1
+            if i >= n:
+                mt[0] = mt[n-1]
+                i = 1
+
+        mt[0] = 0x80000000
+        prng.state = mt
+
+        return prng
+
+
+    @staticmethod
+    def python_seed(seed: int) -> 'MT19937':
+        return MT19937.init_by_array([b.change_byteorder().int() for b in Bytes(seed, 'little').pad_congruent_left(4).chunk(4)])

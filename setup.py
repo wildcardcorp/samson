@@ -14,7 +14,8 @@ requires = [
     "z3-solver",
     "sortedcontainers",
     "rich",
-    "dill"
+    "dill",
+    "mpmath"
 ]
 
 tests_require = [

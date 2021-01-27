@@ -23,7 +23,7 @@ def add_complexity(complexity):
     def wrapper(func):
         func.complexity = complexity
         return func
-    
+
     return wrapper
 
 
@@ -33,11 +33,11 @@ def _ph_estimator(g: 'RingElement', n: int=None, factors: dict=None):
 
     if not factors:
         factors = _factor_gen.factor(n)
-    
+
     total = 1
     for p, e in factors.items():
         total *= _math_gen.kth_root(p, 2)*e
-    
+
     return total // 2
 
 
