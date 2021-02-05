@@ -441,7 +441,7 @@ class DSATestCase(unittest.TestCase):
 
             should_pem_encode = Bytes.random(1).int() & 1
 
-            der_bytes = dsa.export_private_key(should_pem_encode).encode()
+            der_bytes = dsa.export_private_key().encode(pem_encode=should_pem_encode)
             recovered_dsa = DSA.import_key(der_bytes).key
 
             self.assertEqual((dsa.p, dsa.q, dsa.g, dsa.x), (recovered_dsa.p, recovered_dsa.q, recovered_dsa.g, recovered_dsa.x))

@@ -6,10 +6,8 @@ import unittest
 # https://github.com/pyca/cryptography/blob/master/vectors/cryptography_vectors/asymmetric/RSA/pkcs-1v2-1d2-vec/oaep-vect.txt
 class OAEPTestCase(unittest.TestCase):
     def _run_oaep(self, e, d, modulus, bits, message, seed, expected_ciphertext):
-        rsa = RSA(bits)
-        rsa.e = e
+        rsa = RSA(n=modulus, e=e)
         rsa.d = d
-        rsa.n = modulus
 
         oaep = OAEP(rsa.bits)
         padded_plain = oaep.pad(message, seed=seed)

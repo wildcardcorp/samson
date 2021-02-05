@@ -31,12 +31,10 @@ class PolynomialRing(Ring):
         self.one  = Polynomial([self.ring.one], coeff_ring=self.ring, ring=self, symbol=self.symbol)
 
 
-    @property
     def characteristic(self):
-        return self.ring.characteristic
+        return self.ring.characteristic()
 
 
-    @property
     def order(self) -> int:
         from samson.math.symbols import oo
         return oo
@@ -105,7 +103,7 @@ class PolynomialRing(Ring):
            Polynomial: The `x`-th element.
         """
         base_coeffs = []
-        modulus     = self.ring.order
+        modulus     = self.ring.order()
 
         if modulus != 0:
             # Use != to handle negative numbers
@@ -138,7 +136,7 @@ class PolynomialRing(Ring):
         Returns:
             RingElement: Random element of the algebra.
         """
-        if self.characteristic:
+        if self.characteristic():
             return super().random(size)
 
         else:

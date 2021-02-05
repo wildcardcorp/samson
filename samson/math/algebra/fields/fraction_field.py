@@ -222,14 +222,13 @@ class FractionField(Field):
     def __eq__(self, other: 'FractionField'):
         return type(self) == type(other) and self.ring == other.ring
 
-    @property
+
     def characteristic(self):
-        return self.ring.characteristic
+        return self.ring.characteristic()
 
 
-    @property
     def order(self) -> int:
-        return self.ring.order**2
+        return self.ring.order()**2
 
 
     def set_precision(self, precision: FractionFieldElement, precision_type: str='absolute'):

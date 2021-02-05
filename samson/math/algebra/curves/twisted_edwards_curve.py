@@ -68,6 +68,10 @@ class TwistedEdwardsCurve(Ring):
         return int(self.ring.quotient)
 
 
+    def order(self):
+        return self.q
+
+
     def element_at(self, x: int) -> 'TwistedEdwardsPoint':
         """
         Returns the `x`-th element w.r.t to the generator.

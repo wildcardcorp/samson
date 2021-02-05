@@ -1,24 +1,11 @@
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.fields.real_field import RealField, RealElement
-from samson.math.algebra.rings.ring import left_expression_intercept
-from samson.utilities.exceptions import CoercionException, NoSolutionException
-import mpmath
-import math
+from samson.utilities.exceptions import CoercionException
 
 class ComplexElement(RealElement):
     """
     Element of a `ComplexField`.
     """
-
-    def __init__(self, val: FieldElement, field: Field):
-        """
-        Parameters:
-            val     (MPC): Value of the element.
-            field (Field): Parent field.
-        """
-        self.val   = val
-        self.field = field
-
 
     def sqrt(self) -> 'ComplexElement':
         return self.field(self.field.ctx.sqrt(self.val))
@@ -26,7 +13,7 @@ class ComplexElement(RealElement):
 
     def kth_root(self, k:int) -> 'ComplexElement':
         return self**(self.field(1)/self.field(k))
-    
+
 
     def real(self):
         return RealField(ctx=self.field.ctx)(self.val.real)
@@ -40,7 +27,7 @@ class ComplexElement(RealElement):
 class ComplexField(RealField):
 
     def shorthand(self) -> str:
-        return f'CC'
+        return 'CC'
 
 
     def coerce(self, other: object) -> ComplexElement:
@@ -60,9 +47,11 @@ class ComplexField(RealField):
             imag = 0
             if type(other) in [tuple, list]:
                 other, imag = other
-            
-            return ComplexElement(self.ctx.mpc(other, imag), self)
 
+            try:
+                return ComplexElement(self.ctx.mpc(other, imag), self)
+            except ValueError as e:
+                raise CoercionException((other, imag)) from e
 
 
     def random(self, size: object=None) -> object:

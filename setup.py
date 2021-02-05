@@ -9,6 +9,7 @@ with open(os.path.join(here, 'README.md'), encoding="utf-8") as f:
 requires = [
     "pyasn1>=0.4.8",
     "pyasn1-modules",
+    'jedi==0.17.2',
     "ipython",
     "tqdm",
     "z3-solver",

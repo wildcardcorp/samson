@@ -12,7 +12,7 @@ class RealElement(FieldElement):
     def __init__(self, val: FieldElement, field: Field):
         """
         Parameters:
-            val     (MPC): Value of the element.
+            val     (MPF): Value of the element.
             field (Field): Parent field.
         """
         self.val   = val
@@ -25,7 +25,7 @@ class RealElement(FieldElement):
 
     def tinyhand(self) -> str:
         return self.shorthand()
-    
+
 
     def __hash__(self) -> int:
         return hash((self.val, self.field))
@@ -59,7 +59,7 @@ class RealElement(FieldElement):
 
     def __round__(self):
         a = abs(self)
-        n = ((int(a) - int(a - 0.5)) ^ 1) + int(a)
+        n = int(a) + ((a - int(a)) > 0.5)
         if self < 0:
             n = -n
         return n
@@ -127,6 +127,9 @@ class RealElement(FieldElement):
         return self.field(self.field.ctx.exp(self.val))
 
 
+    def ceil(self) -> 'RealElement':
+        return self.field(math.ceil(self.val))
+
 
 class RealField(Field):
 
@@ -139,8 +142,8 @@ class RealField(Field):
         if ctx:
             self.ctx = ctx
         else:
-            self.ctx  = mpmath.ctx_mp.MPContext()
-            self.ctx.dps = prec
+            self.ctx     = mpmath.ctx_mp.MPContext()
+            self.ctx.dps = math.ceil(prec/math.log(10, 2))
 
         self.zero = self(0)
         self.one  = self(1)
@@ -150,19 +153,18 @@ class RealField(Field):
         return ['prec']
 
 
-    @property
+
     def characteristic(self) -> int:
         return 0
 
 
-    @property
     def order(self) -> int:
         from samson.math.symbols import oo
         return oo
 
 
     def shorthand(self) -> str:
-        return f'RR'
+        return 'RR'
 
 
     def coerce(self, other: object) -> RealElement:
@@ -179,7 +181,10 @@ class RealField(Field):
             return other
 
         else:
-            return RealElement(self.ctx.mpf(other), self)
+            try:
+                return RealElement(self.ctx.mpf(other), self)
+            except ValueError as e:
+                raise CoercionException(other) from e
 
 
 

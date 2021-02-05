@@ -40,7 +40,7 @@ class JWA_HS(object):
 
 class JWA_ES(object):
     def __init__(self, curve: WeierstrassCurve):
-        self.sig_len = (curve.q.bit_length() + 7) // 8
+        self.sig_len = (curve.order().bit_length() + 7) // 8
 
 
     def sign(self, key: object, data: bytes) -> Bytes:

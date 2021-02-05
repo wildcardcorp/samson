@@ -26,7 +26,7 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10045, 2, 1]))
         alg_id.setComponentByPosition(1, ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.key.G.curve.oid)]) + self.key.G.curve.oid)[0].asTuple()))
 
-        zero_fill = math.ceil(self.key.G.curve.q.bit_length() / 8)
+        zero_fill = math.ceil(self.key.G.curve.order().bit_length() / 8)
 
         params_seq = Sequence()
         params_seq.setComponentByPosition(0, Integer(1))

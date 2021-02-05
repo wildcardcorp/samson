@@ -50,8 +50,8 @@ class DualEC(BaseObject):
             (WeierstrassPoint, WeierstrassPoint, int): Result formatted as (P, backdoored Q, backdoor d)
         """
         P = curve.G
-        d = random.randint(2, curve.q)
-        e = mod_inv(d, curve.q)
+        d = random.randint(2, curve.order())
+        e = mod_inv(d, curve.order())
         Q = e * P
 
         return P, Q, d

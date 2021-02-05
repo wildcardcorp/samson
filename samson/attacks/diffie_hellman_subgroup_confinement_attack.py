@@ -35,7 +35,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
         self.p = p
         self.g = g
         self._group  = (ZZ/ZZ(p)).mul_group()
-        self.order   = order or (self._group(g).order if g else self._group.order)
+        self.order   = order or (self._group(g).order() if g else self._group.order())
         self.threads = threads
 
         if order:
@@ -89,7 +89,7 @@ class DiffieHellmanSubgroupConfinementAttack(object):
 
         # Oh, I guess we already found it...
         if r >= self.order:
-            return n
+            return n % self.order
 
         g_prime = pow(self.g, r, self.p)
         y_prime = (public_key * mod_inv(pow(self.g, n, self.p), self.p)) % self.p

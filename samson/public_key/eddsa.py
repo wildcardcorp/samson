@@ -106,7 +106,7 @@ class EdDSA(DSA):
         x = int(self.curve.recover_point_from_y(y).x)
 
         if (x & 1) != bit(in_bytes, self.curve.b-1):
-            x = self.curve.q - x
+            x = self.curve.order() - x
 
         return TwistedEdwardsPoint(x, y, self.curve)
 

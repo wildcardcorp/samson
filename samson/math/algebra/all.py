@@ -4,6 +4,7 @@ from .fields.fraction_field import FractionField
 from .fields.real_field import RealField, RR
 from .rings.integer_ring import IntegerRing, ZZ
 from .rings.matrix_ring import MatrixRing
+from .rings.padic_integers import PAdicIntegerRing, Zp
 from .rings.polynomial_ring import PolynomialRing
 from .rings.quotient_ring import QuotientRing
 from .curves.montgomery_curve import MontgomeryCurve

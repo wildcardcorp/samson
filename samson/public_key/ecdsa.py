@@ -61,7 +61,7 @@ class ECDSA(DSA):
         """
         Primitive.__init__(self)
         self.G = G
-        self.q = self.G.curve.q
+        self.q = self.G.curve.order()
         self.d = Bytes.wrap(d).int() if d else random_int_between(1, self.q)
         self.Q = self.d * self.G
         self.hash_obj = hash_obj
@@ -123,7 +123,7 @@ class ECDSA(DSA):
         Returns:
             bool: Whether the signature is valid or not.
         """
-        (r, s) = sig
+        r, _ = sig
         _, _, v = self._build_verification_params(message, sig)
         return v.x == r
 
@@ -139,7 +139,6 @@ class ECDSA(DSA):
         Returns:
             ECDSA: Constructed ECDSA with duplicate signature.
         """
-        (r, s) = sig
         u1, u2, v = self._build_verification_params(message, sig)
 
         d = random_int_between(1, self.q)
@@ -166,7 +165,7 @@ class ECDSA(DSA):
         """
         Internal function used for exporting the key. Formats `Q` into a bitstring.
         """
-        zero_fill = math.ceil(self.G.curve.q.bit_length() / 8)
+        zero_fill = math.ceil(self.G.curve.order().bit_length() / 8)
         pub_point_bs = bin((b'\x00\x04' + (Bytes(int(self.Q.x)).zfill(zero_fill) + Bytes(int(self.Q.y)).zfill(zero_fill))).int())[2:]
         pub_point_bs = pub_point_bs.zfill(math.ceil(len(pub_point_bs) / 8) * 8)
         return pub_point_bs

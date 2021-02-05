@@ -159,7 +159,6 @@ class QuotientRing(Ring):
         return ['ring', 'quotient']
 
 
-    @property
     def characteristic(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
@@ -170,7 +169,7 @@ class QuotientRing(Ring):
             return int(quotient)
 
         elif type(quotient) is Polynomial:
-            return quotient.ring.ring.characteristic
+            return quotient.ring.ring.characteristic()
 
         else:
             raise NotImplementedError
@@ -183,7 +182,7 @@ class QuotientRing(Ring):
             return int(self.quotient)
 
 
-    @property
+
     def order(self) -> int:
         from samson.math.algebra.rings.integer_ring import IntegerElement
         from samson.math.polynomial import Polynomial
@@ -195,7 +194,7 @@ class QuotientRing(Ring):
             return int(quotient)
 
         elif type_o is Polynomial:
-            return quotient.ring.ring.order**quotient.degree()
+            return quotient.ring.ring.order()**quotient.degree()
 
         else:
             raise NotImplementedError
@@ -203,7 +202,7 @@ class QuotientRing(Ring):
 
 
     def shorthand(self) -> str:
-        return f'{self.ring.shorthand()}/{self.quotient.shorthand()}'
+        return f'{self.ring.shorthand()}/({self.quotient.shorthand()})'
 
 
     def coerce(self, other: int) -> QuotientElement:
@@ -260,7 +259,7 @@ class QuotientRing(Ring):
         from samson.math.general import random_int
 
         if not size:
-            size = self.order-1
+            size = self.order()-1
 
         if type(size) is int:
             return self[random_int(size)]

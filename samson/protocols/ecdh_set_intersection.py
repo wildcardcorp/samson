@@ -11,9 +11,9 @@ class ECDHSetIntersectionServer(object):
         self.hash_obj = hash_obj
         self.curve    = curve
         self.trunc    = trunc
-        self.b        = b or random_int_between(2, curve.q)
+        self.b        = b or random_int_between(2, curve.order())
 
-        self.Q  = (curve.G*self.b).cache_mul(curve.q.bit_length())
+        self.Q  = (curve.G*self.b).cache_mul(curve.order().bit_length())
         self.db = {}
 
 
@@ -44,7 +44,7 @@ class ECDHSetIntersectionClient(object):
         H   = self.hash_obj.hash(element)
         H_n = H[:self.trunc].int()
 
-        a   = random_int_between(2, self.curve.q)
+        a   = random_int_between(2, self.curve.order())
         H_a = (self.curve.G*a)*H.int()
 
         S, H_ab = server.create_response(H_n, H_a)

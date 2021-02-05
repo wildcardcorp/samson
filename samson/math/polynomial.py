@@ -3,7 +3,7 @@ from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths, pro
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
-from samson.utilities.general import add_or_increment
+from samson.utilities.general import add_or_increment, binary_search_unbounded
 from samson.utilities.runtime import RUNTIME
 from types import FunctionType
 import itertools
@@ -60,12 +60,14 @@ class Polynomial(RingElement):
 
 
 
-    def shorthand(self, tinyhand: bool=False) -> str:
+    def shorthand(self, tinyhand: bool=False, idx_mod: int=0) -> str:
         poly_repr   = []
         poly_coeffs = type(self.LC().get_ground()) is Polynomial
 
         if self.LC():
             for idx, coeff in self.coeffs.values.items():
+                idx += idx_mod
+
                 if coeff == coeff.ring.zero and not len(self.coeffs) == 1:
                     continue
 
@@ -228,6 +230,7 @@ class Polynomial(RingElement):
             https://math.stackexchange.com/questions/170128/roots-of-a-polynomial-mod-n
         """
         from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.algebra.rings.padic_integers import Zp
 
         R = self.coeff_ring
         is_field = R.is_field()
@@ -238,6 +241,10 @@ class Polynomial(RingElement):
 
             facs = self.factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
+        
+    
+        elif type(R) is Zp:
+            return self.change_ring(ZZ).hensel_lift(R.p, R.prec)
 
         else:
             from samson.math.general import crt
@@ -246,13 +253,14 @@ class Polynomial(RingElement):
             results  = []
             q_facs   = R.quotient.factor()
 
-            if use_hensel:
+            if use_hensel or len(q_facs) == 1:
                 for fac, e in q_facs.items():
-                    nroots = self.change_ring(ZZ).hensel_lift(fac, e)
+                    Q = ZZ/ZZ(fac**e)
+                    nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e)]
                     all_facs.append(nroots)
 
                 for comb in itertools.product(*all_facs):
-                    root = crt(comb)[0]
+                    root = R(crt(comb)[0])
 
                     if not self(root):
                         results.append(root)
@@ -285,7 +293,7 @@ class Polynomial(RingElement):
             list: List of roots.
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        return coppersmiths(self.coeff_ring.characteristic, self.change_ring(ZZ))
+        return coppersmiths(self.coeff_ring.characteristic(), self.change_ring(ZZ))
 
 
 
@@ -349,6 +357,7 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Hensel%27s_lemma
         """
         from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.algebra.rings.padic_integers import Zp
 
         if not ZZ(p).is_prime():
             raise ValueError("'p' must be prime")
@@ -357,31 +366,28 @@ class Polynomial(RingElement):
             return []
 
 
-        if k == 1:
-            return self.change_ring(ZZ/ZZ(p)).roots()
-
-        else:
-            r  = last_roots or self.hensel_lift(p, k-1)
-            df = self.derivative().change_ring(ZZ/ZZ(p))
+        roots = last_roots or self.change_ring(ZZ/ZZ(p)).roots()
+        for e in range(k if last_roots else 2, k+1):
+            R      = Zp(p, e)
+            f      = self.change_ring(R)
+            df     = f.derivative()
             nroots = []
 
-            R = ZZ/ZZ(p**k)
-            f = self.change_ring(R)
-
-            for root in r:
+            for root in roots:
                 zroot = ZZ(root)
                 dfr   = df(zroot)
 
-                if not f(zroot):
-                    if dfr:
-                        a = ZZ(~dfr)
-                        s = -f(zroot)*a + R(zroot)
-                        nroots.append(s)
-                    else:
-                        for t in range(int(p)):
-                            nroots.append(R(zroot) + R(t)*p**(k-1))
+                if dfr:
+                    s = -f(zroot)/dfr + zroot
+                    nroots.append(s)
+                else:
+                    for t in range(int(p)):
+                        nroots.append(R(zroot) + R(t)*p**(k-1))
 
-            return nroots
+            roots = nroots
+        
+        return roots
+
 
 
     def _create_sparse(self, vec):
@@ -420,6 +426,9 @@ class Polynomial(RingElement):
         """
         Returns the derivative of the Polynomial.
 
+        Parameter:
+            n (int): Number of times to take derivative.
+
         Returns:
             Polynomial: Derivative of self.
         """
@@ -427,6 +436,22 @@ class Polynomial(RingElement):
             return self
         else:
             return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0]).derivative(n-1)
+
+
+    def integral(self, n: int=1) -> 'Polynomial':
+        """
+        Returns the integral of the Polynomial.
+
+        Parameter:
+            n (int): Number of times to take integral.
+
+        Returns:
+            Polynomial: Integral of self.
+        """
+        if n <= 0:
+            return self
+        else:
+            return self._create_poly([(idx+1, coeff/(idx+1)) for idx, coeff in self.coeffs]).derivative(n-1)
 
 
     def trunc_kth_root(self, k: int) -> 'Polynomial':
@@ -515,12 +540,12 @@ class Polynomial(RingElement):
             w, c, i = y, c // y, i + 1
 
         if c != self.ring.one:
-            if self.coeff_ring.characteristic:
-                c = c.trunc_kth_root(self.coeff_ring.characteristic)
+            if self.coeff_ring.characteristic():
+                c = c.trunc_kth_root(self.coeff_ring.characteristic())
 
             new_facs = c.square_free_decomposition()
             for new_fac in new_facs:
-                add_or_increment(factors, new_fac, self.coeff_ring.characteristic or 1)
+                add_or_increment(factors, new_fac, self.coeff_ring.characteristic() or 1)
 
         return factors
 
@@ -598,8 +623,8 @@ class Polynomial(RingElement):
         S = [f]
 
         f_quot   = f.ring / f
-        if self.coeff_ring.order != oo:
-            q = self.coeff_ring.order
+        if self.coeff_ring.order() != oo:
+            q = self.coeff_ring.order()
 
             # Finite fields must be in the form p^k where `p` is prime and `k` >= 1.
             # If `p` is an odd prime, then 2|p^k-1.
@@ -629,7 +654,7 @@ class Polynomial(RingElement):
             return S
 
         # We check here and not above because it's possible the poly is already irreducible
-        if self.coeff_ring.order == oo:
+        if self.coeff_ring.order() == oo:
             raise NotImplementedError('Currently can\'t factor polynomials in rings of infinite order')
 
         try:

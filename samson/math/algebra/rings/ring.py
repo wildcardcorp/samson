@@ -55,15 +55,15 @@ def left_expression_intercept(func: FunctionType) -> object:
 
 
 class Ring(BaseObject):
-    @property
+
     def order_factors(self):
         from samson.math.symbols import oo
 
         if not hasattr(self, '_order_factor_cache'):
             self._order_factor_cache = None
 
-        if not self._order_factor_cache and self.order != oo:
-            self._order_factor_cache = factor(self.order)
+        if not self._order_factor_cache and self.order() != oo:
+            self._order_factor_cache = factor(self.order())
 
         return self._order_factor_cache
 
@@ -88,7 +88,7 @@ class Ring(BaseObject):
             return 1
 
 
-    def random(self, size: object) -> object:
+    def random(self, size: object) -> 'RingElement':
         """
         Generate a random element.
 
@@ -104,6 +104,16 @@ class Ring(BaseObject):
             return self[random_int(size)]
         else:
             return self[random_int(size.ordinality())]
+
+
+
+    def fraction_field(self) -> 'Ring':
+        """
+        Returns:
+            FractionField: A fraction field of self.
+        """
+        from samson.math.algebra.fields.fraction_field import FractionField
+        return FractionField(self)
 
 
     def base_coerce(self, other: object) -> 'RingElement':
@@ -166,7 +176,6 @@ class Ring(BaseObject):
         raise NotImplementedError()
 
 
-    @property
     def order(self) -> int:
         raise NotImplementedError()
 
@@ -180,11 +189,11 @@ class Ring(BaseObject):
         """
         from samson.math.symbols import oo
 
-        if self.order == oo:
+        if self.order() == oo:
             return self.one
 
 
-        return self.find_element_of_order(self.order)
+        return self.find_element_of_order(self.order())
 
 
     def find_element_of_order(self, n: int=None, n_facs: 'Factors'=None) -> 'RingElement':
@@ -218,13 +227,18 @@ class Ring(BaseObject):
         if type(x).__name__ == 'Symbol':
             from samson.math.algebra.rings.polynomial_ring import PolynomialRing
             return PolynomialRing(self, x)
+
+        elif type(x) is list and type(x[0]).__name__ == 'Symbol':
+            from samson.math.algebra.rings.power_series_ring import PowerSeriesRing
+            return PowerSeriesRing(self, x[0])
+
         else:
             return self.element_at(x)
 
 
     def is_field(self) -> bool:
         from samson.math.symbols import oo
-        return self.order != oo and is_prime(self.order)
+        return self.order() != oo and is_prime(self.order())
 
 
 
@@ -401,11 +415,11 @@ class RingElement(BaseObject):
 
         type_o = type(other)
 
-        if type_o is int and self.order > 1:
+        if type_o is int and self.order() > 1:
             from samson.math.symbols import oo
 
-            if self.order != oo:
-                other = mod_inv(other, self.order)
+            if self.order() != oo:
+                other = mod_inv(other, self.order())
                 return fast_mul(self, other)
 
 
@@ -478,15 +492,15 @@ class RingElement(BaseObject):
 
         """
         from samson.math.algebra.rings.integer_ring import IntegerElement
+        from samson.math.algebra.rings.padic_integers import PAdicIntegerElement
 
-        if type(self) in [IntegerElement, _poly.Polynomial, _frac.FractionFieldElement]:
+        if type(self) in [IntegerElement, _poly.Polynomial, _frac.FractionFieldElement, PAdicIntegerElement]:
             return self
 
         else:
             return self.val.get_ground()
 
 
-    @property
     def order(self) -> int:
         """
         The minimum number of times the element can be added to itself before reaching the additive identity.
@@ -496,11 +510,11 @@ class RingElement(BaseObject):
         """
         from samson.math.symbols import oo
 
-        if self.ring.order == oo:
+        if self.ring.order() == oo:
             return oo
 
 
-        ro_facs = self.ring.order_factors
+        ro_facs = self.ring.order_factors()
         return self.find_maximum_subgroup(n_facs=ro_facs)
 
 
@@ -572,7 +586,7 @@ class RingElement(BaseObject):
         Returns:
             Factors: Dictionary-like Factors object.
         """
-        from samson.math.factorization import ecm
+        from samson.math.factorization.general import ecm
         from samson.math.factorization.factors import Factors
         from samson.analysis.general import count_items
 
@@ -675,7 +689,7 @@ class RingElement(BaseObject):
         h   = mul(self)
         g   = mul(base)
 
-        if self.ring.order == oo:
+        if self.ring.order() == oo:
             k = binary_search_unbounded(lambda guess: g*guess < h)
 
             if g*k == h:

@@ -137,12 +137,10 @@ class FiniteField(Field):
         return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
 
 
-    @property
     def characteristic(self) -> int:
         return self.p
 
 
-    @property
     def order(self) -> int:
         return self.p**self.n
 

@@ -42,7 +42,7 @@ class DNSKeyECDSAPrivateKey(DNSKeyPrivateBase, DNSKeyECDSAKey):
 class DNSKeyECDSAPublicKey(DNSKeyPublicBase, DNSKeyECDSAKey):
 
     def encode(self, spacing: int=32) -> bytes:
-        size = (self.key.G.curve.order.bit_length() + 7) // 8
+        size = (self.key.G.curve.order().bit_length() + 7) // 8
         return self.build(Bytes(int(self.key.Q.x)).zfill(size) + Bytes(int(self.key.Q.y)).zfill(size), spacing=spacing)
 
 

@@ -32,8 +32,8 @@ class MultiplicativeGroupElement(RingElement):
 
     def __mul__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         other = int(other)
-        if self.ring.order and self.ring.order != oo:
-            other %= self.ring.order
+        if self.ring.order() and self.ring.order() != oo:
+            other %= self.ring.order()
 
         return MultiplicativeGroupElement(self.val ** other, self.ring)
 
@@ -74,7 +74,7 @@ class MultiplicativeGroupElement(RingElement):
         Returns:
             bool: Whether the element is a primitive root.
         """
-        return self.order == self.ring.order
+        return self.order() == self.ring.order()
 
 
     def _plog(self, base: 'RingElement', order: int) -> int:
@@ -119,12 +119,10 @@ class MultiplicativeGroup(Ring):
         self.one  = self.zero
 
 
-    @property
     def characteristic(self) -> int:
-        return self.ring.characteristic
+        return self.ring.characteristic()
 
 
-    @property
     def order(self) -> int:
         if not self.order_cache:
             from samson.math.algebra.rings.quotient_ring import QuotientRing
@@ -149,10 +147,10 @@ class MultiplicativeGroup(Ring):
                     raise NotImplementedError()
 
             elif type(self.ring) is FiniteField:
-                self.order_cache = self.ring.order-1
+                self.order_cache = self.ring.order()-1
 
 
-            elif self.ring.order == oo:
+            elif self.ring.order() == oo:
                 self.order_cache = oo
 
             else:

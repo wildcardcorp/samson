@@ -222,7 +222,7 @@ class InvalidCurveAttack(object):
             res, mod = crt(residues)
             g_prime  = self.curve.G*mod
             y_prime  = res * self.curve.G
-            order    = self.curve.order // mod + 1
+            order    = self.curve.order() // mod + 1
 
             try:
                 m = bsgs(g_prime, public_key, e=y_prime, end=order)

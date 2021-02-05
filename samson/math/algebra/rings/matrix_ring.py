@@ -31,12 +31,10 @@ class MatrixRing(Ring):
         self.one  = Matrix.identity(self.size, coeff_ring=self.ring, ring=self)
 
 
-    @property
     def characteristic(self) -> int:
         raise NotImplementedError()
 
 
-    @property
     def order(self) -> int:
         raise NotImplementedError()
 

@@ -68,7 +68,7 @@ def poly_to_int(poly: 'Polynomial') -> int:
         100
 
     """
-    modulus = poly.coeff_ring.order
+    modulus = poly.coeff_ring.order()
     value   = 0
     for idx, coeff in poly.coeffs:
         value += int(coeff) * modulus**idx
@@ -96,7 +96,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
         return []
 
     P = poly.ring
-    q = poly.coeff_ring.order if poly.coeff_ring.order != oo else poly.coeff_ring.characteristic
+    q = poly.coeff_ring.order() if poly.coeff_ring.order() != oo else poly.coeff_ring.characteristic()
     bases = [None]*n
     bases[0] = P.one
 
@@ -1516,7 +1516,7 @@ def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterat
                 result = b + xT - xW
 
                 if apply_reduction:
-                    result %= R.order
+                    result %= R.order()
 
                 return result
 
@@ -1789,7 +1789,7 @@ def frobenius_trace(curve: object) -> int:
     ZZ = _integer_ring.ZZ
 
     search_range      = hasse_frobenius_trace_interval(curve.p)
-    torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic])
+    torsion_primes    = primes_product(search_range[1] - search_range[0], [curve.ring.characteristic()])
     trace_congruences = []
 
     # Handle 2 separately to prevent multivariate poly arithmetic
@@ -1937,14 +1937,14 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         >>> g     = curve.G
         >>> exp   = 28
         >>> h     = g * exp
-        >>> pohlig_hellman(curve.G, h, curve.G.order)
+        >>> pohlig_hellman(curve.G, h, curve.G.order())
         28
 
     References:
         https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
     """
     if not n:
-        n = g.order
+        n = g.order()
 
     if not factors:
         factors = _factor_gen.factor(n)
@@ -2008,7 +2008,7 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
 
 
     residues = []
-    n        = order or g.order
+    n        = order or g.order()
     Z        = ZZ/ZZ(n)
 
     # Main loop
@@ -2032,7 +2032,7 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
             continue
 
         # Note we might've found just a factor of the order
-        P   = ZZ/ZZ(r.order)
+        P   = ZZ/ZZ(r.order())
         res = P(a-A)/P(r)
 
         residues.append(P(res))
@@ -2388,7 +2388,7 @@ def is_primitive_root(a: int, p: int) -> bool:
     Z_star = (ZZ/ZZ(p)).mul_group()
     a_star = Z_star(a)
 
-    return gcd(a, p) == 1 and a_star*Z_star.order == Z_star.one and a_star.order == Z_star.order
+    return gcd(a, p) == 1 and a_star*Z_star.order() == Z_star.one and a_star.order() == Z_star.order()
 
 
 
@@ -2734,15 +2734,15 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
 
 
     Fp = g.ring.ring
-    Fq = ZZ/ZZ(order or g.order)
+    Fq = ZZ/ZZ(order or g.order())
 
-    g = g.cache_mul(Fq.order.bit_length())
-    y = y.cache_mul(Fq.order.bit_length())
+    g = g.cache_mul(Fq.order().bit_length())
+    y = y.cache_mul(Fq.order().bit_length())
 
-    if not is_prime(Fq.order):
+    if not is_prime(Fq.order()):
         raise ValueError('Index calculus requires a prime group')
 
-    p    = Fp.order
+    p    = Fp.order()
     B    = ceil(exp(0.5*sqrt(2*log(p)*log(log(p)))))
     base = list(sieve_of_eratosthenes(B+1))
 
@@ -2866,6 +2866,40 @@ def cornacchias_algorithm(d: int, p: int, **root_kwargs) -> (int, int):
     raise NoSolutionException()
 
 
+def binary_quadratic_forms(D: int) -> list:
+    """
+    Returns the list of primitive binary quadratic forms satisfying `a`*`x`^2 + `b`*`x`*`y` + `c`*`y`^2 (i.e. `b`^2 - 4`a``c` = -`D`).
+
+    Parameters:
+        D (int): Discriminant.
+    
+    Returns:
+        list: List of primitives BQFs satsifying the equation for D.
+
+    References:
+        https://crypto.stanford.edu/pbc/notes/ep/hilbert.html
+    """
+    D    = abs(D)
+    B    = int((D/3)**(1/2))
+    bqfs = []
+    b    = D % 2
+
+    while b <= B:
+        t = (b**2 + D) // 4
+        a = max(b, 1)
+
+        while a**2 <= t:
+            c = t // a
+            if not t % a and gcd(c, a, b) == 1:
+                if not (a == b or a**2 == t or b == 0):
+                    bqfs.append((a, -b, c))
+                bqfs.append((a, b, c))
+            a += 1
+
+        b += 2
+
+    return bqfs
+
 
 def hilbert_class_polynomial(D: int) -> 'Polynomial':
     """
@@ -2876,43 +2910,61 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
 
     Returns:
         Polynomial: Hilbert class polynomial.
-    
+
     References:
-        https://crypto.stanford.edu/pbc/notes/ep/hilbert.html
+        https://github.com/sagemath/sage/blob/master/src/sage/schemes/elliptic_curves/cm.py
     """
     ZZ = _integer_ring.ZZ
-    C2 = _complex_field.ComplexField(256)
+    RR = _complex_field.CC(0).real().ring
+
+    if D < 0:
+        D = -D
+
+    if not -D % 4 in [0, 1]:
+        raise ValueError(f'{-D} is not a discriminant')
+
+    # Calculate required precision
+    bqfs  = binary_quadratic_forms(D)
+    h     = len(bqfs)
+    c1    = 3.05682737291380
+    c2    = sum([1/RR(qf[0]) for qf in bqfs], RR(0))
+    prec  = c2*RR(3.142)*RR(D).sqrt() + h*c1 
+    prec *= 1.45
+    prec += 10
+    prec  = prec.ceil()
+
+    C2 = _complex_field.ComplexField(int(prec))
+
+
     from samson.math.symbols import Symbol
 
     def j_func(tau):
         return C2(C2.ctx.kleinj(tau.val)*1728)
 
 
-    if D < 0:
-        D = -D
-
     x = Symbol('x')
     R = C2[x]
     P = R(1)
-    b = D % 2
-    B = int((abs(D)/3)**(1/2))
+
     dsqrt = C2(-D).sqrt()
 
-    while b <= B:
-        t = (b**2 + D)/4
-        a = max(b, 1)
+    for qf in bqfs:
+        a,b,_ = qf
+        P    *= x - j_func((-b + dsqrt)/(2*a))
 
-        while a**2 <= t:
-            if not t % a:
-                j_val = j_func((-b + dsqrt)/(2*a))
-                if a == b or a**2 == t or b == 0:
-                    P *= (x - j_val)
-                else:
-                    P *= (x**2 - x*2*C2(j_val.val.real) + abs(j_val)**2)
-
-            a += 1
-
-        b += 2
 
     Q = ZZ[Symbol('y')]
     return Q([round(c.real()) for c in P])
+
+
+
+def newton_method_sizes(prec: int) -> list:
+    output = []
+    while prec > 1:
+        output.append(prec)
+        prec = (prec + 1) >> 1
+    
+    output.append(1)
+    output.reverse()
+
+    return output

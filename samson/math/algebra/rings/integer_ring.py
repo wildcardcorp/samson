@@ -64,7 +64,6 @@ class IntegerElement(RingElement):
         return v
 
 
-    @property
     def order(self) -> int:
         """
         The minimum number of times the element can be added to itself before reaching the additive identity.
@@ -148,11 +147,10 @@ class IntegerRing(Ring):
         self.one  = IntegerElement(1, self)
 
 
-    @property
     def characteristic(self) -> int:
         return 0
 
-    @property
+
     def order(self) -> int:
         return oo
 
@@ -192,6 +190,13 @@ class IntegerRing(Ring):
         Returns:
             IntegerElement: Coerced element.
         """
+        try:
+            Q     = other.ring
+            if other.ring(int(other)) == other:
+                other = int(other)
+        except:
+            pass
+
         if type(other) is int:
             return IntegerElement(other, self)
 

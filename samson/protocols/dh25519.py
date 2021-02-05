@@ -23,7 +23,7 @@ class DH25519(KeyExchangeAlg):
             curve (MontgomeryCurve): The curve used.
         """
         Primitive.__init__(self)
-        self.d     = Bytes.wrap(d or random_int_between(1, curve.ring.order)).int()
+        self.d     = Bytes.wrap(d or random_int_between(1, curve.ring.order())).int()
         self.curve = curve
         self.key   = curve.clamp_to_curve(self.d)
         self.base  = base or curve.G

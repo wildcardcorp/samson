@@ -75,10 +75,11 @@ class NegativeInfinity(Infinity):
 
 
 class Symbol(Polynomial):
-    def __init__(self, str_representation):
+    def __init__(self, str_representation, top_ring=None):
         self.repr = str_representation
         self.ring = None
         self.var  = None
+        self.top_ring = top_ring
 
 
     def __repr__(self):
@@ -97,11 +98,12 @@ class Symbol(Polynomial):
         return True
 
     def __pow__(self, power):
-        return self.var._create_poly({power: self.ring.ring.one})
+        return self.top_ring(self.var._create_poly({power: self.ring.ring.one}))
 
 
     def build(self, ring):
         self.ring = ring
+        self.top_ring = self.top_ring or ring
         self.var  = Polynomial([ring.ring.zero, ring.ring.one], coeff_ring=ring.ring, ring=ring, symbol=self)
 
 

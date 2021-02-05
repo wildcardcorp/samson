@@ -5,14 +5,6 @@ import unittest
 
 class ECCTestCase(unittest.TestCase):
     def _run_test(self, curve, iterations, expected_result):
-        # k = curve.U
-        # clamped_k, u = curve.clamp_to_curve(k), int(curve.U)
-        # for _ in range(iterations):
-        #     k, u = (clamped_k * u).x, int(k)
-        #     clamped_k = curve.clamp_to_curve(k)
-
-
-        # self.assertEqual(k, expected_result)
         k, u = curve.U, curve.U
 
         for _ in range(iterations):

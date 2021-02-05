@@ -52,31 +52,30 @@ class AlgebraTestCase(unittest.TestCase):
 
     def test_order(self):
         # Known answers
-        self.assertEqual(ZZ.order, oo)
-        self.assertEqual(QQ.order, oo)
-        self.assertEqual(F.order, 256)
+        self.assertEqual(ZZ.order(), oo)
+        self.assertEqual(QQ.order(), oo)
+        self.assertEqual(F.order(), 256)
 
         # The modulus is random, so the 23rd elem may not have order 16
-        # self.assertEqual(F23.order, 16)
-        self.assertEqual(P.order, oo)
-        self.assertEqual(Z_star.order, oo)
-        self.assertEqual(Z_2.order, 2)
-        self.assertEqual(P_q.order, 256)
-        self.assertEqual(P256.order, P256.q)
-        self.assertEqual(R.order, oo)
-        self.assertEqual(FX2.order, 65536)
+        # self.assertEqual(F23.order(), 16)
+        self.assertEqual(P.order(), oo)
+        self.assertEqual(Z_star.order(), oo)
+        self.assertEqual(Z_2.order(), 2)
+        self.assertEqual(P_q.order(), 256)
+        self.assertEqual(R.order(), oo)
+        self.assertEqual(FX2.order(), 65536)
 
 
         # Verify mathematical property
         for i in range(30):
-            self.assertEqual(F[i] * F.order, F.zero)
-            self.assertEqual(FX2[i] * FX2.order, FX2.zero)
-            self.assertEqual(F23[i] * F23.order, F23.zero)
-            self.assertEqual(Z_2[i] * Z_2.order, Z_2.zero)
-            self.assertEqual(P_q[i] * P_q.order, P_q.zero)
-            self.assertEqual(P256[i] * P256.order, P256.zero)
-            self.assertEqual(Zp_star[i] * Zp_star.order, Zp_star.zero)
-            self.assertEqual(Zn_star[i] * Zn_star.order, Zn_star.zero)
+            self.assertEqual(F[i] * F.order(), F.zero)
+            self.assertEqual(FX2[i] * FX2.order(), FX2.zero)
+            self.assertEqual(F23[i] * F23.order(), F23.zero)
+            self.assertEqual(Z_2[i] * Z_2.order(), Z_2.zero)
+            self.assertEqual(P_q[i] * P_q.order(), P_q.zero)
+            self.assertEqual(P256[i] * P256.order(), P256.zero)
+            self.assertEqual(Zp_star[i] * Zp_star.order(), Zp_star.zero)
+            self.assertEqual(Zn_star[i] * Zn_star.order(), Zn_star.zero)
 
 
 
@@ -107,11 +106,11 @@ class AlgebraTestCase(unittest.TestCase):
                         rand_elem = RX[random_int(50)]
 
                     # Assert order is a multiple of the number of element
-                    self.assertEqual(rand_elem * RX.order, RX.zero)
+                    self.assertEqual(rand_elem * RX.order(), RX.zero)
 
                     # Assert order is the minimum multiple (i.e. 1)
-                    factors = factor(RX.order)
-                    has_smaller_order = any([rand_elem * reduce(int.__mul__, list(set(factors) - set([fac])), 1) == RX.zero for fac in factors if not (fac == RX.order or fac == 1)])
+                    factors = factor(RX.order())
+                    has_smaller_order = any([rand_elem * reduce(int.__mul__, list(set(factors) - set([fac])), 1) == RX.zero for fac in factors if not (fac == RX.order() or fac == 1)])
                     smaller_orders.append(has_smaller_order)
 
                 self.assertFalse(bool(smaller_orders) and all(smaller_orders))
@@ -120,21 +119,21 @@ class AlgebraTestCase(unittest.TestCase):
 
 
     def test_characteristic(self):
-        self.assertEqual(ZZ.characteristic, 0)
-        self.assertEqual(QQ.characteristic, 0)
-        self.assertEqual(F.characteristic, 2)
-        self.assertEqual(FX2.characteristic, 2)
-        self.assertEqual(F23.characteristic, 2)
-        self.assertEqual(P.characteristic, 2)
-        self.assertEqual(Z_star.characteristic, 0)
-        self.assertEqual(Z_2.characteristic, 2)
-        self.assertEqual(P_q.characteristic, 2)
-        self.assertEqual(R.characteristic, 0)
+        self.assertEqual(ZZ.characteristic(), 0)
+        self.assertEqual(QQ.characteristic(), 0)
+        self.assertEqual(F.characteristic(), 2)
+        self.assertEqual(FX2.characteristic(), 2)
+        self.assertEqual(F23.characteristic(), 2)
+        self.assertEqual(P.characteristic(), 2)
+        self.assertEqual(Z_star.characteristic(), 0)
+        self.assertEqual(Z_2.characteristic(), 2)
+        self.assertEqual(P_q.characteristic(), 2)
+        self.assertEqual(R.characteristic(), 0)
 
-        self.assertEqual(F.one * F.characteristic, F.zero)
-        self.assertEqual(F23.one * F23.characteristic, F23.zero)
-        self.assertEqual(P.one * P.characteristic, P.zero)
-        self.assertEqual(Z_2.one * Z_2.characteristic, Z_2.zero)
-        self.assertEqual(P_q.one * P_q.characteristic, P_q.zero)
-        self.assertEqual(Zp_star.one * Zp_star.characteristic, Zp_star.zero)
-        self.assertEqual(Zn_star.one * Zn_star.characteristic, Zn_star.zero)
+        self.assertEqual(F.one * F.characteristic(), F.zero)
+        self.assertEqual(F23.one * F23.characteristic(), F23.zero)
+        self.assertEqual(P.one * P.characteristic(), P.zero)
+        self.assertEqual(Z_2.one * Z_2.characteristic(), Z_2.zero)
+        self.assertEqual(P_q.one * P_q.characteristic(), P_q.zero)
+        self.assertEqual(Zp_star.one * Zp_star.characteristic(), Zp_star.zero)
+        self.assertEqual(Zn_star.one * Zn_star.characteristic(), Zn_star.zero)

@@ -71,7 +71,7 @@ def gen_roca_prime(bit_size: int):
     # Here we're manually adding the MSB bias
     Mp, _, _, c_a = get_params(bit_size*2)
     Zm     = (ZZ/ZZ(Mp)).mul_group()
-    max_a  = Zm(65537).order
+    max_a  = Zm(65537).order()
 
     while not is_prime(p):
         k = random_int_between(2**k_size+1 , 2**(k_size+1))

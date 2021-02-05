@@ -131,9 +131,9 @@ class CurvePolynomialRing(Ring):
         self.one  = CurvePolynomialElement(Polynomial([self.poly_ring.ring(1)], self.poly_ring.ring), None, self)
 
 
-    @property
+
     def characteristic(self) -> int:
-        return self.poly_ring.ring.characteristic
+        return self.poly_ring.ring.characteristic()
 
 
     def random(self, size: int=None) -> CurvePolynomialElement:

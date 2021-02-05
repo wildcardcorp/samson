@@ -29,7 +29,7 @@ def add_complexity(complexity):
 
 def _ph_estimator(g: 'RingElement', n: int=None, factors: dict=None):
     if not n:
-        n = g.order
+        n = g.order()
 
     if not factors:
         factors = _factor_gen.factor(n)

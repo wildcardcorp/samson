@@ -90,7 +90,6 @@ class MontgomeryCurve(Ring):
         return self(self.U)
 
 
-    @property
     def order(self) -> int:
         return self._order
 
@@ -145,7 +144,7 @@ class MontgomeryCurve(Ring):
         a = (3-A**2) / (3*B**2)
         b = (2*A**3 - 9*A) / (27*B**3)
 
-        return WeierstrassCurve(a=a, b=b, base_tuple=(x, y), cardinality=self.order)
+        return WeierstrassCurve(a=a, b=b, base_tuple=(x, y), cardinality=self.order())
 
 
 
@@ -192,7 +191,7 @@ class MontgomeryPoint(RingElement):
         k = int(self.curve.ring(other))
         u2, w2 = (1, 0)
         u3, w3 = (u, 1)
-        p = u.ring.characteristic
+        p = u.ring.characteristic()
         A = self.curve.A
 
         for i in reversed(range(p.bit_length())):
