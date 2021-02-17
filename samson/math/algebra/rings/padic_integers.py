@@ -43,22 +43,6 @@ class PAdicIntegerElement(RingElement):
         return self.shorthand()
 
 
-    def valuation(self, p: int) -> int:
-        from samson.math.symbols import oo
-
-        if not self:
-            return oo
-
-        v = -1
-        r = 0
-        int_self = int(self)
-        while not r:
-            v += 1
-            int_self, r = divmod(int_self, p)
-
-        return v
-
-
     def order(self) -> int:
         """
         The minimum number of times the element can be added to itself before reaching the additive identity.
@@ -89,12 +73,16 @@ class PAdicIntegerElement(RingElement):
         return sum([e*self.ring.p**i for i, e in enumerate(self.val)])
 
 
-    def degree(self) -> int:
+    def valuation(self) -> int:
         for i, e in enumerate(self.val):
             if e:
                 break
 
-        return len(self.val)-i
+        return i
+
+
+    def __getitem__(self, idx: int) -> object:
+        return self.val[idx]
 
 
     @left_expression_intercept
@@ -144,7 +132,7 @@ class PAdicIntegerElement(RingElement):
 
 
     def __abs__(self):
-        return self.degree()
+        return self.valuation()
 
 
     def __invert__(self) -> 'FractionFieldElement':
@@ -156,11 +144,17 @@ class PAdicIntegerElement(RingElement):
 
 
     def __lshift__(self, num: int):
-        return PAdicIntegerElement([e for e in self.val][num:] + [0]*num, self.ring)
+        if num < 0:
+            return self >> -num
+        else:
+            return PAdicIntegerElement(([0]*num + [e for e in self.val])[:self.ring.prec], self.ring)
 
 
     def __rshift__(self, num: int):
-        return PAdicIntegerElement(([0]*num + [e for e in self.val])[:self.ring.prec], self.ring)
+        if num < 0:
+            return self << -num
+        else:
+            return PAdicIntegerElement([e for e in self.val][num:] + [0]*num, self.ring)
 
 
 
@@ -175,12 +169,15 @@ class PAdicIntegerElement(RingElement):
 
         a = divisor.val[0]
 
+        if not a:
+            raise ZeroDivisionError
+
         i = 0
         while i < self.ring.prec:
             b = dividend.val[i]
             if a:
                 c         = (b*mod_inv(a, self.ring.p)) % self.ring.p
-                dividend -= (divisor >> i) * c
+                dividend -= (divisor << i) * c
             else:
                 c = 0
 
@@ -206,7 +203,14 @@ class PAdicIntegerElement(RingElement):
 
 
     def __neg__(self) -> 'PAdicIntegerElement':
-        return PAdicIntegerElement([self.ring.p-self.val[0]] + [self.ring.p-1-e for e in self.val[1:]], self.ring)
+        p = self.ring.p
+        carry, coeff_zero = divmod(p-self.val[0], p)
+        places = [coeff_zero]
+        for e in self.val[1:]:
+            carry, v = divmod(p-1-e+carry, p)
+            places.append(v)
+
+        return PAdicIntegerElement(places, self.ring)
 
 
     def __eq__(self, other: 'PAdicIntegerElement') -> bool:
@@ -216,6 +220,7 @@ class PAdicIntegerElement(RingElement):
 
     def __hash__(self):
         return super().__hash__()
+
 
 
 class PAdicIntegerRing(Ring):
@@ -269,6 +274,15 @@ class PAdicIntegerRing(Ring):
             base_coeffs.append(r)
 
         return base_coeffs
+
+
+    def fraction_field(self) -> 'Ring':
+        """
+        Returns:
+            FractionField: A fraction field of self.
+        """
+        from samson.math.algebra.rings.padic_numbers import PAdicNumberField
+        return PAdicNumberField(self)
 
 
     def coerce(self, other: int) -> PAdicIntegerElement:

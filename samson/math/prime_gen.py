@@ -43,11 +43,12 @@ class ROCAGen(PGen):
 
 
 class SmoothGen(PGen):
-    def __init__(self, size: int, base: int=2, glue_prime_exclude: set=None, max_glue_size :int=16):
+    def __init__(self, size: int, base: int=2, glue_prime_exclude: set=None, max_glue_size :int=16, distance: int=1):
         self.size = size
         self.base = base
         self.glue_prime_exclude = set(glue_prime_exclude or [])
         self.max_glue_size = max_glue_size
+        self.distance = distance
 
 
     def _gen(self, constraints: list):
@@ -78,8 +79,9 @@ class SmoothGen(PGen):
             p = next_prime(2**(glue_size-1))
 
             while p.bit_length() == glue_size:
-                if is_prime(p_1*p+1):
-                    yield p_1*p+1
+                q = p_1*p+self.distance
+                if is_prime(q):
+                    yield q
 
 
                 p = next_prime(p+1)

@@ -47,6 +47,7 @@ class KnownComplexities(object):
     QUAD   = Complexity(repr='O(n^2)', estimator=lambda n: n**2)
     CUBIC  = Complexity(repr='O(n^3)', estimator=lambda n: n**3)
     GNFS   = LComplexity(1/3, (64/9)**(1/3))
+    SNFS   = LComplexity(1/3, (32/9)**(1/3))
     IC     = LComplexity(1/2, math.sqrt(2))
     PH     = Complexity(repr='O(e√p)', estimator=_ph_estimator)
     LLL    = Complexity(repr='O(n^4 log B)', estimator=lambda rows, columns: rows**4 * columns.bit_length()) # https://arxiv.org/abs/1006.1661#:~:text=Its%20average%20complexity%20is%20shown,approximations%20of%20LLL%20are%20proposed.

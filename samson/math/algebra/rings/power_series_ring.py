@@ -168,7 +168,7 @@ class PowerSeriesElement(RingElement):
 
 
     def __eq__(self, other: 'PowerSeriesElement') -> bool:
-        if other is PowerSeriesElement:
+        if type(other) is PowerSeriesElement:
             other = other.val
 
         return self.val == other
@@ -184,8 +184,8 @@ class PowerSeriesRing(Ring):
         Parameters:
             ring (Ring): Underlying ring.
         """
-        symbol.top_ring = self
         self._polyring = PolynomialRing(ring, symbol)
+        symbol.top_ring = self
         self.symbol = symbol
         self.ring = ring
         self.prec = prec

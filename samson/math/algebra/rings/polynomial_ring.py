@@ -26,6 +26,7 @@ class PolynomialRing(Ring):
         self.ring   = ring
         self.symbol = symbol or Symbol('x')
         self.symbol.build(self)
+        symbol.top_ring = self
 
         self.zero = Polynomial([self.ring.zero], coeff_ring=self.ring, ring=self, symbol=self.symbol)
         self.one  = Polynomial([self.ring.one], coeff_ring=self.ring, ring=self, symbol=self.symbol)

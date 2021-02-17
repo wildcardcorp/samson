@@ -35,14 +35,14 @@ class IterativePRNG(BaseObject):
 
         Parameters:
             outputs (list): Observed, sequential outputs.
-        
+
         Returns:
             IterativePRNG: Cracked IterativePRNG of the subclass' class.
         """
         state_vecs = BitVecs(' '.join([f'ostate{i}' for i in range(self.STATE_SIZE)]), self.NATIVE_BITS)
         sym_states = state_vecs
 
-        solver = Solver()
+        solver     = Solver()
         conditions = []
 
         for output in outputs:
@@ -53,7 +53,7 @@ class IterativePRNG(BaseObject):
             conditions += [condition]
 
         if solver.check(conditions) == sat:
-            model = solver.model()
+            model  = solver.model()
             params = [model[vec].as_long() for vec in state_vecs]
 
             if isclass(self):
@@ -63,5 +63,6 @@ class IterativePRNG(BaseObject):
 
             [prng.generate() for _ in outputs]
             return prng
+
         else:
             raise NoSolutionException('Model not satisfiable.')

@@ -45,6 +45,7 @@ class X509DSAPublicKey(X509PublicKeyBase):
         p, q, g = [int(item) for item in items[0][1]]
 
         dsa = DSA(None, p=p, q=q, g=g, x=0)
+        dsa.x = None
         dsa.y = y
 
         return X509DSAPublicKey(dsa)

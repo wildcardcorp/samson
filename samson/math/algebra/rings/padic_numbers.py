@@ -1,0 +1,114 @@
+from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.padic_integers import PAdicIntegerRing, PAdicIntegerElement
+from samson.math.algebra.fields.negative_degree_field import NegativeDegreeElement, NegativeDegreeField
+from samson.utilities.exceptions import CoercionException
+from samson.auxiliary.lazy_loader import LazyLoader
+from samson.math.general import mod_inv
+from samson.math.symbols import oo
+import operator
+
+_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+
+class PAdicNumberElement(NegativeDegreeElement):
+    """
+    Element of an `PAdicNumberField`.
+    """
+
+    def __init__(self, val: PAdicIntegerElement, shift: int, ring: Ring):
+        """
+        Parameters:
+            val (PAdicIntegerElement): Value of the element.
+            ring               (Ring): Parent ring.
+        """
+        self.val   = val
+        self.shift = shift
+        self.ring  = ring
+
+
+    def shorthand(self) -> str:
+        parts = []
+        p = str(self.ring.p)
+        for i, e in enumerate(self.val.val):
+            if e:
+                i -= self.shift
+                if not i:
+                    parts.append(str(e))
+                elif i == 1:
+                    parts.append(f"{e}*{p}")
+                else:
+                    parts.append(f"{e}*{p}^{i}")
+
+        vals = ' + '.join(parts)
+        if not vals:
+            vals = '0'
+        return vals + f' + O({self.ring.p}^{self.ring.prec})'
+
+
+    def tinyhand(self) -> str:
+        return self.shorthand()
+
+
+    def __int__(self) -> int:
+        """
+        The ordinality of this element within the set.
+
+        Returns:
+            int: Ordinality.
+        """
+        return sum([e*self.ring.p**(i-self.shift) for i, e in enumerate(self.val)])
+
+
+
+class PAdicNumberField(NegativeDegreeField):
+    ELEMENT = PAdicNumberElement
+
+    def __init__(self, ring: Ring):
+        self.ring = ring
+        self.zero = self(0)
+        self.one  = self(1)
+    
+
+    def _precheck_val(self, other):
+        other  = int(other)
+        decomp = self.ring._decompose_integer(other)
+        i = 0
+        for i, e in enumerate(decomp):
+            if e:
+                break
+
+        return other // self.ring.p**i, i
+
+
+    def element_at(self, x: int) -> PAdicNumberElement:
+        """
+        Returns the `x`-th element of the set.
+
+        Parameters:
+            x (int): Element ordinality.
+        
+        Returns:
+           PAdicNumberElement: The `x`-th element.
+        """
+        return self(x)
+
+
+    @property
+    def p(self):
+        return self.ring.p
+
+
+    @property
+    def prec(self):
+        return self.ring.prec
+
+
+    def __reprdir__(self):
+        return ['p', 'prec']
+
+
+    def shorthand(self) -> str:
+        return f'Qp_{self.ring.p}'
+
+
+def Qp(p, prec):
+    return PAdicIntegerRing(p=p, prec=prec).fraction_field()

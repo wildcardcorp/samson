@@ -225,8 +225,19 @@ class X509Certificate(PEMEncodable):
             sig_params = None
 
         validity   = tbs_cert['validity']
-        not_before = validity['notBefore']['utcTime'].asDateTime.astimezone(timezone.utc)
-        not_after  = validity['notAfter']['utcTime'].asDateTime.astimezone(timezone.utc)
+
+        def parse_time(time_val):
+            if 'utcTime' in time_val and time_val['utcTime'].hasValue():
+                result = time_val['utcTime']
+            else:
+                result = time_val['generalTime']
+
+            return result.asDateTime.astimezone(timezone.utc)
+
+
+        not_before = parse_time(validity['notBefore'])
+        not_after  = parse_time(validity['notAfter'])
+
 
         is_ca = False
         if 'extensions' in tbs_cert:

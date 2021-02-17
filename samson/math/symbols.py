@@ -75,11 +75,11 @@ class NegativeInfinity(Infinity):
 
 
 class Symbol(Polynomial):
-    def __init__(self, str_representation, top_ring=None):
+    def __init__(self, str_representation):
         self.repr = str_representation
         self.ring = None
         self.var  = None
-        self.top_ring = top_ring
+        self.top_ring = None
 
 
     def __repr__(self):
@@ -97,13 +97,56 @@ class Symbol(Polynomial):
     def __bool__(self) -> bool:
         return True
 
+
+    def __top_coerce(self, poly):
+        if self.top_ring:
+            poly = self.top_ring(poly)
+        return poly
+
+
+    def __add__(self, other):
+        return self.__top_coerce(self.var) + other
+
+
+    def __sub__(self, other):
+        return self.__top_coerce(self.var) - other
+
+
+    def __mul__(self, other):
+        return self.__top_coerce(self.var) * other
+
+
+    def __truediv__(self, other):
+        return self.__top_coerce(self.var) / other
+
+
+    def __lshift__(self, other):
+        return self.__top_coerce(super().__lshift__(other))
+
+
+    def __rshift__(self, other):
+        return self.__top_coerce(super().__rshift__(other))
+
+
+    def __divmod__(self, other):
+        return divmod(self.__top_coerce(self.var), other)
+
+
+    def __floordiv__(self, other):
+        return self.__top_coerce(self.var) // other
+
+
+    def __mod__(self, other):
+        return self.__top_coerce(self.var) % other
+
+
     def __pow__(self, power):
-        return self.top_ring(self.var._create_poly({power: self.ring.ring.one}))
+        poly = self.var._create_poly({power: self.ring.ring.one})
+        return self.__top_coerce(poly)
 
 
     def build(self, ring):
         self.ring = ring
-        self.top_ring = self.top_ring or ring
         self.var  = Polynomial([ring.ring.zero, ring.ring.one], coeff_ring=ring.ring, ring=ring, symbol=self)
 
 

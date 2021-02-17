@@ -371,7 +371,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
     s = s or g.ring.one
     while u != 0:
         if u & 1:
-            s = (s * g)
+            s = (g * s)
         u >>= 1
         g = (g * g)
 
@@ -413,7 +413,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
 
     while b != 0:
         if b & 1:
-            s = (s + a)
+            s = (a + s)
         b >>= 1
         a = (a + a)
     return s
@@ -1329,6 +1329,9 @@ def primes(start: int, stop: int=None) -> list:
         list: Primes within the range.
     """
     p = start
+    if p < 3:
+        yield 2
+        p = 2
 
     while True:
         p = next_prime(p)
@@ -2733,16 +2736,16 @@ def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupEleme
         return facs.recombine() == n, facs
 
 
-    Fp = g.ring.ring
     Fq = ZZ/ZZ(order or g.order())
+    q  = Fq.order()
+    p  = g.ring.characteristic()
 
-    g = g.cache_mul(Fq.order().bit_length())
-    y = y.cache_mul(Fq.order().bit_length())
+    g = g.cache_mul(q.bit_length())
+    y = y.cache_mul(q.bit_length())
 
-    if not is_prime(Fq.order()):
+    if not is_prime(q):
         raise ValueError('Index calculus requires a prime group')
 
-    p    = Fp.order()
     B    = ceil(exp(0.5*sqrt(2*log(p)*log(log(p)))))
     base = list(sieve_of_eratosthenes(B+1))
 

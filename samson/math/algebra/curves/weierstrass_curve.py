@@ -1,11 +1,61 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
-from samson.math.factorization.general import factor
+from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from functools import lru_cache
+
+from samson.auxiliary.lazy_loader import LazyLoader
+_elliptic_curve_isogeny  = LazyLoader('_elliptic_curve_isogeny', globals(), 'samson.math.algebra.curves.elliptic_curve_isogeny')
+
+def _additive_transfer(P, Q):
+    """
+    References:
+        https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
+        https://hxp.io/blog/25/SharifCTF-2016-crypto350-British-Elevator-writeup/
+    """
+    from samson.math.algebra.rings.padic_numbers import Qp
+
+    # Move everything into p-adic numbers
+    E    = P.ring
+    p    = E.ring.characteristic()
+    Qp2  = Qp(p, 10)
+    QpA  = Qp2(E.a)
+    QpB  = Qp2(E.b)
+    Ep   = EllipticCurve(QpA, QpB)
+
+    QpxP = Qp2(P.x)
+    QpxQ = Qp2(Q.x)
+
+
+    # Lift points to the new curve
+    def lift_point(x, y):
+        Qpy = (x ** 3 + QpA * x + QpB).sqrt()
+        QpP = Ep(x, (-Qpy, Qpy)[Qpy.val[0] == y])
+        return QpP
+
+
+    PQp = lift_point(QpxP, P.y)
+    QQp = lift_point(QpxQ, Q.y)
+
+
+    # Take the formal logarithm
+    formal_log = Ep.formal_group().log()
+
+    pQQp = p * QQp
+    pPQp = p * PQp
+
+    tQ = -pQQp.x / pQQp.y
+    tP = -pPQp.x / pPQp.y
+
+    lQ = formal_log(tQ) / p
+    lP = formal_log(tP) / p
+
+    return int((lQ / lP)[0])
+
+
 
 
 class WeierstrassPoint(RingElement):
@@ -37,7 +87,6 @@ class WeierstrassPoint(RingElement):
     @property
     def val(self):
         return self.x
-
 
 
     def __hash__(self):
@@ -107,7 +156,11 @@ class WeierstrassPoint(RingElement):
 
     def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if type(other) is int:
-            return self*mod_inv(other, self.curve.order())
+            return self*mod_inv(other, self.order())
+
+        # Is it an anomalous curve? Do additive transfer
+        elif not (self.ring.random() * self.ring.ring.characteristic()):
+            return _additive_transfer(other, self)
 
         else:
             E        = self.ring
@@ -400,7 +453,7 @@ class WeierstrassCurve(Ring):
 
     @property
     def p(self) -> int:
-        return int(self.ring.quotient)
+        return self.ring.characteristic()
 
 
     @staticmethod
@@ -440,6 +493,16 @@ class WeierstrassCurve(Ring):
         """
         if not self.cardinality_cache:
             p = self.ring.order()
+
+            if self.is_supersingular():
+                ipp, p, n = is_perfect_power(p)
+                if not ipp:
+                    raise RuntimeError('Supersingular curve over ring with non-perfect power order')
+
+                self.cardinality_cache = (p+1)**n
+                return self.cardinality_cache
+
+
             if algorithm == EllipticCurveCardAlg.AUTO:
                 curve_size = p.bit_length()
 
@@ -452,14 +515,17 @@ class WeierstrassCurve(Ring):
 
 
             if algorithm == EllipticCurveCardAlg.BRUTE_FORCE:
-                start, end = hasse_frobenius_trace_interval(p)
-                order      = 1
+                g      = self.ring.find_gen()
+                points = []
 
-                for _ in range(p):
-                    po    = bsgs(self.random(), self.zero, e=self.zero, start=start + p, end=end + p)
-                    order = max(order, po)
+                for i in range(g.order()):
+                    try:
+                        points.append(self(g*i))
+                    except NoSolutionException:
+                        pass
 
-                self.cardinality_cache = order
+                self.cardinality_cache = len(set(points + [-point for point in points]))+1
+
 
             elif algorithm == EllipticCurveCardAlg.BSGS:
                 # This is pretty slick. The order is at minimum `p - 2*sqrt(p)`. For p > 43, `2 * (p - 2*sqrt(p))`
@@ -500,7 +566,7 @@ class WeierstrassCurve(Ring):
         return 1728*((4*a3)/(4*a3 + 27*R(self.b)**2))
 
 
-    def is_supersingular(self):
+    def is_supersingular(self,):
         """
         References:
             https://en.wikipedia.org/wiki/Supersingular_elliptic_curve#Definition
@@ -508,6 +574,7 @@ class WeierstrassCurve(Ring):
         """
         R = self.ring
         p = R.characteristic()
+        q = R.order()
         j = self.j_invariant()
 
         if p % 3 == 2:
@@ -517,7 +584,10 @@ class WeierstrassCurve(Ring):
             return j == R(1728)
 
         else:
-            return self.cardinality() % p == 1
+            ipp, p, n = is_perfect_power(q)
+            return ipp and not self.random()*(p+1)**n
+
+
 
 
     @lru_cache(1)
@@ -636,6 +706,42 @@ class WeierstrassCurve(Ring):
         return twist
 
 
+    def isogeny(self, P: WeierstrassPoint) -> 'EllipticCurveIsogeny':
+        """
+        Finds the an elliptic curve isogeny whose kernel is `P`.
+
+        Parameters:
+            P (WeierstrassPoint): Kernel of isogeny.
+
+        Returns:
+            EllipticCurveIsogeny: Isogeny with kernel of `P`.
+
+        References:
+            https://epub.jku.at/obvulihs/content/titleinfo/2581853/full.pdf
+        """
+        EllipticCurveIsogeny = _elliptic_curve_isogeny.EllipticCurveIsogeny
+
+        if P.ring != self:
+            raise ValueError(f'{P} is not on {self}')
+
+        E      = self
+        n      = P.order()
+        n_facs = factor(n)
+        phi    = None
+
+        for p, e in n_facs.items():
+            Q   = P*(n // p**e)
+
+            for i in range(1, e+1):
+                phi = EllipticCurveIsogeny(E, Q*(p**(e-i)), pre_isomorphism=phi)
+                Q   = phi._rat_map(Q)
+                E   = phi.codomain()
+
+            P = phi(P)
+
+        return phi
+
+
 
     @staticmethod
     def generate_curve_with_trace(bit_size: int, trace: int) -> 'WeierstrassCurve':
@@ -728,11 +834,11 @@ class WeierstrassCurve(Ring):
         while True:
             m  = random_int_between(2**(m_size-1)+3, 2**m_size)
             m -= (m % 4)-1
-            p = D*m*(m+1) + (D + trace**2) // 4
+            p  = D*m*(m+1) + (D + trace**2) // 4
 
             if p.bit_length() == bit_size and is_prime(p) and not (4*p - trace**2) % D:
                 y2 = (4*p - trace**2) // D
-                y = kth_root(y2, 2)
+                y  = kth_root(y2, 2)
                 if y**2 == y2:
                     break
 
@@ -770,7 +876,7 @@ class WeierstrassCurve(Ring):
             if not E.random()*o:
                 E.cardinality_cache = o
                 return E
-            
+
             E = E.quadratic_twist()
 
             if not E.random()*o:
@@ -813,7 +919,6 @@ class WeierstrassCurve(Ring):
 
             E.cardinality_cache = o
             return E
-
 
 
 
@@ -1030,7 +1135,10 @@ class WeierstrassCurve(Ring):
         a, b   = self.a, self.b
         d_poly = None
 
-        if n in [0, 1]:
+        if n == -1:
+            d_poly = self.curve_poly_ring(4*x**3 + 4*a*x + 4*b)
+
+        elif n in [0, 1]:
             d_poly = self.curve_poly_ring(n)
 
         elif n == 2:

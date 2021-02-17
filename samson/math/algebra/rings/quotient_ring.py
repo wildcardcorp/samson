@@ -111,7 +111,7 @@ class QuotientElement(RingElement):
     def sqrt(self) -> 'QuotientElement':
         from samson.math.algebra.rings.integer_ring import ZZ
 
-        if self.ring.ring == ZZ:
+        if self.ring.ring == ZZ and self.ring.is_field():
             from samson.math.general import tonelli
             return self.ring(tonelli(int(self), int(self.ring.quotient)))
         else:
@@ -127,6 +127,7 @@ class QuotientElement(RingElement):
 
         else:
             return super().is_square()
+
 
 
 class QuotientRing(Ring):

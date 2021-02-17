@@ -3,6 +3,9 @@ from samson.core.base_object import BaseObject
 from types import FunctionType
 from copy import deepcopy
 
+def _gen_mask_op(mask):
+    return lambda n: n & mask
+
 class LFG(BaseObject):
     """
     Lagged Fibonacci generator
@@ -11,7 +14,19 @@ class LFG(BaseObject):
     ADD_OP = lambda a, b: a + b
     SUB_OP = lambda a, b: a - b
 
-    def __init__(self, state: list, tap: int, feed: int, operation: FunctionType=ADD_OP, increment: bool=False, mask: int=0xFFFFFFFFFFFFFFFF, length: int=None):
+    GEN_MASK_OP = _gen_mask_op
+
+    @staticmethod
+    def C_SHARP_MASK_OP(n):
+        if n == 2147483647:
+            return n-1
+        elif n < 0:
+            return n + 2147483647
+        else:
+            return n
+
+
+    def __init__(self, state: list, tap: int, feed: int, operation: FunctionType=ADD_OP, increment: bool=False, mask_op: FunctionType=_gen_mask_op(0xFFFFFFFFFFFFFFFF), length: int=None):
         """
         Parameters:
             state     (list): Initial state.
@@ -19,7 +34,7 @@ class LFG(BaseObject):
             feed       (int): Initial feed position.
             operation  (int): The operation the LFG performs. Function that takes in an integer and returns an integer.
             increment (bool): Whether to increment (True) or decrement (False) the feed and tap.
-            mask       (int): Bitmask to use for integer operations
+            mask_op   (func): Mask operation to use for integer operations.
             length     (int): Length of internal state.
         """
         self.state     = deepcopy(state)
@@ -28,7 +43,7 @@ class LFG(BaseObject):
         self.operation = operation
         self.increment = increment
         self.shift_mod = -1 + 2 * increment
-        self.mask      = mask
+        self.mask_op   = mask_op
         self.length    = length or len(state)
 
 
@@ -42,7 +57,7 @@ class LFG(BaseObject):
         self.tap  = (self.tap + self.shift_mod) % self.length
         self.feed = (self.feed + self.shift_mod) % self.length
 
-        x = self.operation(self.state[self.feed], self.state[self.tap]) & self.mask
+        x = self.mask_op(self.operation(self.state[self.feed], self.state[self.tap]))
         self.state[self.feed] = x
         return x
 
@@ -55,7 +70,7 @@ class LFG(BaseObject):
         Returns:
             int: Previous pseudorandom output.
         """
-        x = self.operation(self.state[self.feed], -self.state[self.tap]) & self.mask
+        x = self.mask_op(self.operation(self.state[self.feed], -self.state[self.tap]))
         self.state[self.feed] = x
 
         self.tap  = (self.tap  - self.shift_mod) % self.length
@@ -83,21 +98,22 @@ class LFG(BaseObject):
 
         next_state_len = len(next_states)
 
-        self.state = init_state
+        lfg       = deepcopy(self)
+        lfg.state = init_state
 
-        for i in range(self.length):
-            guessed_feed = (self.feed + self.shift_mod * i) % self.length
-            guessed_tap  = (self.tap  + self.shift_mod * i) % self.length
+        for i in range(lfg.length):
+            guessed_feed = (lfg.feed + lfg.shift_mod * i) % lfg.length
+            guessed_tap  = (lfg.tap  + lfg.shift_mod * i) % lfg.length
 
-            simulated_states = [self.operation(self.state[(guessed_feed - self.shift_mod * j) % self.length], self.state[(guessed_tap - self.shift_mod * j) % self.length]) & 0xFFFFFFFFFFFFFFFF for j in range(next_state_len)][::-self.shift_mod]
+            simulated_states = [lfg.mask_op(lfg.operation(lfg.state[(guessed_feed - lfg.shift_mod * j) % lfg.length], lfg.state[(guessed_tap - lfg.shift_mod * j) % lfg.length])) for j in range(next_state_len)][::-lfg.shift_mod]
 
             if simulated_states == next_states:
                 # We've found working tap/feed positions. Run the clock difference to synchronize states.
                 clock_difference = orig_len - len(outputs)
-                self.feed = guessed_feed - self.shift_mod * next_state_len
-                self.tap  = guessed_tap  - self.shift_mod * next_state_len
+                lfg.feed = (guessed_feed - lfg.shift_mod * next_state_len) % lfg.length
+                lfg.tap  = (guessed_tap  - lfg.shift_mod * next_state_len) % lfg.length
 
-                [self.generate() for _ in range(next_state_len + clock_difference)]
-                return
+                [lfg.generate() for _ in range(next_state_len + clock_difference)]
+                return lfg
 
         raise SearchspaceExhaustedException('Unable to find correct tap and feed values.')

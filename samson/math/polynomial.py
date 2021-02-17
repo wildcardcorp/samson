@@ -89,7 +89,7 @@ class Polynomial(RingElement):
                 elif idx == 1:
                     full_coeff = f'{coeff_short_mul}{self.symbol}'
                 else:
-                    full_coeff = f'{coeff_short_mul}{self.symbol}**{idx}'
+                    full_coeff = f'{coeff_short_mul}{self.symbol}{RUNTIME.poly_exp_separator}{idx}'
 
                 poly_repr.append(full_coeff)
 
@@ -231,6 +231,7 @@ class Polynomial(RingElement):
         """
         from samson.math.algebra.rings.integer_ring import ZZ
         from samson.math.algebra.rings.padic_integers import Zp
+        from samson.math.algebra.rings.padic_numbers import PAdicNumberField
 
         R = self.coeff_ring
         is_field = R.is_field()
@@ -243,8 +244,9 @@ class Polynomial(RingElement):
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
         
     
-        elif type(R) is Zp:
-            return self.change_ring(ZZ).hensel_lift(R.p, R.prec)
+        elif type(R) in [Zp, PAdicNumberField]:
+            roots = self.change_ring(ZZ).hensel_lift(R.p, R.prec, use_number_field=type(R) == PAdicNumberField)
+            return [r for r in roots if not self(r)]
 
         else:
             from samson.math.general import crt
@@ -342,7 +344,7 @@ class Polynomial(RingElement):
 
 
 
-    def hensel_lift(self, p: int, k: int, last_roots: list=None) -> list:
+    def hensel_lift(self, p: int, k: int, last_roots: list=None, use_number_field: bool=False) -> list:
         """
         Finds roots in `ZZ/ZZ(p**k)` where `p` is the coefficient ring's characteristic.
 
@@ -369,6 +371,10 @@ class Polynomial(RingElement):
         roots = last_roots or self.change_ring(ZZ/ZZ(p)).roots()
         for e in range(k if last_roots else 2, k+1):
             R      = Zp(p, e)
+
+            if use_number_field:
+                R = R.fraction_field()
+
             f      = self.change_ring(R)
             df     = f.derivative()
             nroots = []
@@ -382,7 +388,7 @@ class Polynomial(RingElement):
                     nroots.append(s)
                 else:
                     for t in range(int(p)):
-                        nroots.append(R(zroot) + R(t)*p**(k-1))
+                        nroots.append(R(zroot) + R(t)*p**(e-1))
 
             roots = nroots
         

@@ -1,6 +1,8 @@
 from samson.prngs.xorshift import Xorshift128Plus, Xorshift128, Xorshift116Plus
 from samson.prngs.xoroshiro import Xoroshiro116Plus
+from samson.prngs.xoshiro import Xoshiro128PlusPlus, Xoshiro256PlusPlus
 from samson.prngs.mt19937 import MT19937
+from samson.prngs.mwc1616 import MWC
 from samson.prngs.lcg import LCG
 from samson.prngs.lfg import LFG
 from samson.core.iterative_prng import IterativePRNG
@@ -15,10 +17,13 @@ class PRNG(object):
     C          = {**_mtdict, LCG: lambda state: LCG(X=state, a=1103515245, c=12345, m=2**31)}
     CLOJURE    = {LCG: lambda state: LCG(X=state, a=0x5DEECE66D, c=0xB, m=2**48, trunc=16)}
     CPP        = C
+    C_SHARP    = {LFG: lambda state: LFG(state=state, feed=0, tap=21, operation=LFG.SUB_OP, mask_op=LFG.C_SHARP_MASK_OP, length=55, increment=True)}
     D          = _mtdict
+    DART       = {MWC: lambda state: MWC(seed=state, a=0xFFFFDA61), Xorshift128Plus: _xor128p}
     ERLANG     = {Xoroshiro116Plus: lambda state: Xoroshiro116Plus(state), Xorshift116Plus: lambda state: Xorshift116Plus(state)}
     ELIXIR     = ERLANG
-    GO         = {LFG: lambda state: LFG(state, feed=334, tap=0, mask=2**64-1, operation=LFG.ADD_OP, increment=False, length=607)}
+    F_SHARP    = C_SHARP
+    GO         = {LFG: lambda state: LFG(state, feed=334, tap=0, mask_op=LFG.GEN_MASK_OP(2**64-1), operation=LFG.ADD_OP, increment=False, length=607)}
     JAVASCRIPT = _xor128pdict
     JAVA       = CLOJURE
     JULIA      = _mtdict
@@ -32,8 +37,9 @@ class PRNG(object):
     PYTHON     = _mtdict
     R          = _mtdict
     RUBY       = _mtdict
-    RUST       = {Xorshift128: lambda state: Xorshift128(state)}
+    RUST       = {Xorshift128: lambda state: Xorshift128(state), Xoshiro128PlusPlus: lambda state: Xoshiro128PlusPlus(state), Xoshiro256PlusPlus: lambda state: Xoshiro256PlusPlus(state)}
     SCALA      = CLOJURE
+    VB_NET     = C_SHARP
 
 
 

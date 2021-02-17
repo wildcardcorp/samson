@@ -2,11 +2,11 @@ from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellm
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
-from functools import wraps
+from functools import wraps, lru_cache
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException
-from samson.utilities.general import binary_search_unbounded
+from samson.utilities.general import binary_search_unbounded, binary_search
 from samson.core.base_object import BaseObject
 
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
@@ -501,6 +501,7 @@ class RingElement(BaseObject):
             return self.val.get_ground()
 
 
+    @lru_cache(1)
     def order(self) -> int:
         """
         The minimum number of times the element can be added to itself before reaching the additive identity.
@@ -540,14 +541,18 @@ class RingElement(BaseObject):
 
 
         so_facs = Factors()
+        elem    = self.cache_mul(n.bit_length())
 
         for p in n_facs:
             e = n_facs[p]
 
-            for i in range(1,e+2):
-                o = n // p**i
-                if self*o != self.ring.zero:
-                    break
+            if e < 4:
+                for i in range(1,e+2):
+                    o = n // p**i
+                    if elem*o != self.ring.zero:
+                        break
+            else:
+                i = binary_search(lambda i: not elem*(n // p**i), e+1)
 
             so_facs[p] = e-(i-1)
 

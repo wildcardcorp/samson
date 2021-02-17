@@ -45,5 +45,12 @@ class X509RSAPublicKey(X509PublicKeyBase):
                 raise ValueError('Unable to decode RSA key.')
 
         n, e = [int(item) for item in items]
+
+        # TODO: uhh, pyasn1 sometimes returns a negative integer...
+        if n < 0:
+            # Align to byte
+            bit_length = ((-n).bit_length() + 7) // 8 * 8
+            n = range(2**bit_length)[n]
+
         rsa = RSA(n=n, e=e)
         return X509RSAPublicKey(rsa)

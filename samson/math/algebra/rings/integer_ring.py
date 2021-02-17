@@ -127,7 +127,7 @@ class IntegerElement(RingElement):
 
 
     def __eq__(self, other: 'IntegerElement') -> bool:
-        if other is IntegerElement:
+        if type(other) is IntegerElement:
             other = other.val
 
         return self.val == other
@@ -191,7 +191,6 @@ class IntegerRing(Ring):
             IntegerElement: Coerced element.
         """
         try:
-            Q     = other.ring
             if other.ring(int(other)) == other:
                 other = int(other)
         except:

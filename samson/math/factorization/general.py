@@ -491,7 +491,7 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
 
     R = n.ring
     is_poly = type(n) is Polynomial
-    for a in range(attempts):
+    for _ in range(attempts):
         curve, g = WeierstrassCurve.random_curve(n)
 
         # Free factor!

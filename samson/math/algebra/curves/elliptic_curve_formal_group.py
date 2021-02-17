@@ -1,8 +1,9 @@
 from samson.math.general import newton_method_sizes
 from samson.math.symbols import Symbol
+from samson.core.base_object import BaseObject
 from samson.math.algebra.rings.padic_integers import Zp
 
-class EllipticCurveFormalGroup(object):
+class EllipticCurveFormalGroup(BaseObject):
     def __init__(self, curve):
         self.curve = curve
 

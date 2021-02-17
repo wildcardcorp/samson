@@ -21,6 +21,10 @@ class FiniteFieldElement(FieldElement):
 
     def shorthand(self) -> str:
         return self.field.shorthand() + f'({self.val.shorthand()})'
+    
+
+    def __call__(self, arg):
+        return self.val(arg)
 
 
     def ordinality(self) -> int:
@@ -102,10 +106,16 @@ class FiniteField(Field):
         self.n = n
 
         self.internal_ring = ZZ/ZZ(p)
-        x = Symbol(symbol_repr)
-        P = self.internal_ring[x]
 
-        if not reducing_poly:
+        if reducing_poly:
+            assert reducing_poly.coeff_ring == self.internal_ring
+            x = reducing_poly.symbol
+            P = self.internal_ring[x]
+
+        else:
+            x = Symbol(symbol_repr)
+            P = self.internal_ring[x]
+
             if n == 1:
                 reducing_poly = Polynomial([0, 1], self.internal_ring)
             else:
@@ -118,8 +128,10 @@ class FiniteField(Field):
                         break
 
 
-        self.reducing_poly  = reducing_poly
-        self.internal_field = P/P(reducing_poly)
+        self.reducing_poly   = reducing_poly
+        self.internal_field  = P/P(reducing_poly)
+        self.symbol          = x
+        self.symbol.top_ring = self
 
         self.zero = self.coerce(0)
         self.one  = self.coerce(1)

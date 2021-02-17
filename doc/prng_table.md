@@ -9,8 +9,9 @@ Using https://www.tablesgenerator.com/markdown_tables.
 | Bash                                     | LCG (Park and Miller '88)                |
 | C#/VB .NET/Powershell                    | SLFG                                     |
 | D                                        | MT19937/LCG                              |
+| Dart                                     | MWC, See Javascript                      |
 | Delphi                                   | LCG                                      |
-| Elm/Typescript/Dart/CoffeeScript/Scratch | See Javascript                           |
+| Elm/Typescript/CoffeeScript/Scratch      | See Javascript                           |
 | Erlang/Elixir                            | Xoroshiro116+/Xorshift1024*/Xorshift116+ |
 | FreeBSD /dev/random                      | Fortuna                                  |
 | FreeBSD C                                | LCG (Park and Miller '88)                |
