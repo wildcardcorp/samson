@@ -3,7 +3,7 @@ from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
-from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException
+from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
 from functools import lru_cache
 
@@ -68,7 +68,6 @@ class WeierstrassPoint(RingElement):
         self.y     = curve.ring.coerce(y)
         self.curve = curve
         self.order_cache  = None
-        self.result_cache = {}
 
 
     def __reprdir__(self):
@@ -340,12 +339,6 @@ class WeierstrassPoint(RingElement):
 
 
 class PointAtInfinity(WeierstrassPoint):
-    def __init__(self, x, y, curve):
-        self.x = x
-        self.y = y
-        self.curve = curve
-
-
     def __reprdir__(self):
         return ['curve']
 
@@ -420,7 +413,7 @@ class WeierstrassCurve(Ring):
             return super().__getitem__(args)
 
 
-    def coerce(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
+    def coerce(self, x: 'RingElement', y: 'RingElement'=None, verify: bool=True) -> WeierstrassPoint:
         if type(x) is WeierstrassPoint:
             if x.curve == self:
                 return x
@@ -428,13 +421,16 @@ class WeierstrassCurve(Ring):
                 return self(x.x, x.y)
 
         if y is not None:
+            if verify and y**2 != x**3 + self.a*x + self.b:
+                raise CoercionException(f'Point ({x}, {y}) not on curve')
+
             return WeierstrassPoint(x, y, self)
         else:
             return self.recover_point_from_x(x)
 
 
-    def __call__(self, x: 'RingElement', y: 'RingElement'=None) -> WeierstrassPoint:
-        return self.coerce(x, y)
+    def __call__(self, x: 'RingElement', y: 'RingElement'=None, verify: bool=True) -> WeierstrassPoint:
+        return self.coerce(x, y, verify)
 
 
     def __eq__(self, other: 'WeierstrassCurve') -> bool:
@@ -566,7 +562,7 @@ class WeierstrassCurve(Ring):
         return 1728*((4*a3)/(4*a3 + 27*R(self.b)**2))
 
 
-    def is_supersingular(self,):
+    def is_supersingular(self) -> bool:
         """
         References:
             https://en.wikipedia.org/wiki/Supersingular_elliptic_curve#Definition
@@ -574,24 +570,26 @@ class WeierstrassCurve(Ring):
         """
         R = self.ring
         p = R.characteristic()
-        q = R.order()
         j = self.j_invariant()
 
-        if p % 3 == 2:
-            return j == R(0)
+        if p % 3 == 2 and j == R(0):
+            return True
 
-        elif p % 4 == 3:
-            return j == R(1728)
+        elif p % 4 == 3 and j == R(1728):
+            return True
+
+        elif self.cardinality_cache:
+            return not self.cardinality_cache % (p+1)
 
         else:
-            ipp, p, n = is_perfect_power(q)
+            ipp, p, n = is_perfect_power(R.order())
             return ipp and not self.random()*(p+1)**n
 
 
 
 
-    @lru_cache(1)
-    def embedding_degree(self):
+    @lru_cache(10)
+    def embedding_degree(self) -> int:
         from samson.math.algebra.rings.integer_ring import ZZ
 
         Fo = self.ring.order()
@@ -638,7 +636,7 @@ class WeierstrassCurve(Ring):
         return self.PAF_cache
 
 
-    @lru_cache(1)
+    @lru_cache(10)
     def cm_discriminant(self) -> int:
         """
         References:
@@ -663,6 +661,15 @@ class WeierstrassCurve(Ring):
 
     @staticmethod
     def from_j(j: RingElement) -> 'WeierstrassCurve':
+        """
+        Generates a `WeierstrassCurve` with desired `j`-invariant.
+
+        Parameters:
+            j (RingElement): `j`-invariant of curve.
+
+        Returns:
+            WeierstrassCurve: Constructed curve.
+        """
         R = j.ring
         if j == R.zero:
             a, b = R.zero, R.one
@@ -676,6 +683,8 @@ class WeierstrassCurve(Ring):
 
         return WeierstrassCurve(a, b)
 
+
+    generate_curve_with_j = from_j
 
 
     def quadratic_twist(self, D: RingElement=None) -> 'WeierstrassCurve':
@@ -746,7 +755,7 @@ class WeierstrassCurve(Ring):
     @staticmethod
     def generate_curve_with_trace(bit_size: int, trace: int) -> 'WeierstrassCurve':
         """
-        Generates an `WeierstrassCurve` with field size `bit_size` and trace `trace`.
+        Generates a `WeierstrassCurve` with field size `bit_size` and trace `trace`.
 
         Parameters:
             bit_size (int): Size of the underlying finite field in bits.
@@ -763,14 +772,14 @@ class WeierstrassCurve(Ring):
         if trace % 2:
             return EllipticCurve._generate_curve_with_odd_trace(bit_size, trace)
         elif not trace:
-            return EllipticCurve._generate_supersingular(bit_size)
+            return EllipticCurve._generate_supersingular_deg_1(bit_size)
         else:
             return EllipticCurve._generate_curve_with_even_trace(bit_size, trace)
 
 
 
     @staticmethod
-    def _generate_supersingular(bit_size: int=None, p:int=None) -> 'WeierstrassCurve':
+    def _generate_supersingular_deg_1(bit_size: int=None, p:int=None) -> 'WeierstrassCurve':
         from samson.math.algebra.rings.integer_ring import ZZ
         from samson.math.prime_gen import PrimeEngine
 
@@ -790,6 +799,73 @@ class WeierstrassCurve(Ring):
         return E
 
 
+
+    @staticmethod
+    def generate_supersingular_over_ring(R: Ring) -> 'WeierstrassCurve':
+        """
+        Generates a `WeierstrassCurve` over field `R`.
+
+        Parameters:
+            R (Ring): Base field.
+
+        Returns:
+            WeierstrassCurve: Constructed curve.
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.general import random_int_between
+
+        p = R.characteristic()
+        Z = ZZ/ZZ(p)
+
+        for i in range(3, 500):
+            d = Z(i)
+
+            if (p % 4 == 1) == d.is_square():
+                continue
+
+            D = -ZZ(d)
+
+            if D % 4 != 1:
+                D *= 4
+
+            try:
+                E = EllipticCurve.from_D(int(D), R)
+                if E.is_supersingular():
+                    return E
+
+            except NoSolutionException:
+                pass
+
+        raise SearchspaceExhaustedException
+
+
+
+    @staticmethod
+    def from_D(D: int, R: Ring):
+        """
+        Generates a `WeierstrassCurve` over field 'R' with complex multiplication discriminant `D`.
+
+        Parameters:
+            D  (int): Complex multiplication discriminant.
+            R (Ring): Base field.
+
+        Returns:
+            WeierstrassCurve: Constructed curve.
+        """
+        from samson.math.general import hilbert_class_polynomial
+
+        Hd     = hilbert_class_polynomial(-D)
+        j_invs = Hd.change_ring(R).roots()
+
+        if j_invs:
+            return EllipticCurve.from_j(j_invs[0])
+        else:
+            raise NoSolutionException
+
+
+    generate_curve_with_D = from_D
+
+
     @staticmethod
     def _generate_curve_with_odd_trace(bit_size: int, trace: int) -> 'WeierstrassCurve':
         """
@@ -797,8 +873,7 @@ class WeierstrassCurve(Ring):
             "Generating Anomalous Elliptic Curves" (http://www.monnerat.info/publications/anomalous.pdf)
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import random_int_between, is_prime, kth_root, hilbert_class_polynomial, gcd
-        from samson.math.symbols import Symbol
+        from samson.math.general import random_int_between, is_prime, kth_root, gcd
 
         if not trace % 2:
             raise ValueError("Algorithm can only generate curves with odd trace")
@@ -844,13 +919,10 @@ class WeierstrassCurve(Ring):
 
 
         # Find a j-invariant
-        R  = ZZ/ZZ(p)
-        Hd = hilbert_class_polynomial(-D)
-        j  = (R[Symbol('x')](Hd)).roots()[0]
-
-        # If the cardinality is incorrect, then the twist is the right one
-        E = EllipticCurve.from_j(j)
+        R = ZZ/ZZ(p)
+        E = EllipticCurve.from_D(D, R)
         P = E.random()
+
         if P*(p+1-trace):
             E = E.quadratic_twist()
 
@@ -1003,13 +1075,12 @@ class WeierstrassCurve(Ring):
                             try:
                                 t, _ = cornacchias_algorithm(D, 4*N, use_hensel=True)
 
-                                prime = N + 1 + t
-                                if is_prime(prime):
-                                    return D, prime
+                                for trace in [t, -t]:
+                                    prime = N + 1 - trace
 
-                                prime = N + 1 - t
-                                if is_prime(prime):
-                                    return D, prime
+                                    if is_prime(prime):
+                                        return D, prime
+
                             except NoSolutionException:
                                 pass
 
@@ -1018,12 +1089,7 @@ class WeierstrassCurve(Ring):
         # Find suitable prime and discriminant
         D, p = construct_prime(order, max_r)
         Zp   = ZZ/ZZ(p)
-        Z    = Zp[Symbol('x')]
-
-        # Find j-invariant
-        hd = hilbert_class_polynomial(D)
-        r  = Z(hd).roots()[0]
-        E  = EllipticCurve.from_j(r)
+        E    = EllipticCurve.from_D(D, Zp)
 
         # Either this curve or the twist has the correct order
         if E.random()*order:
@@ -1066,8 +1132,12 @@ class WeierstrassCurve(Ring):
 
             s = ~delta.sqrt()
 
-            x, y = s*(self.G.x-alpha), self.G.y*s
-            return MontgomeryCurve(A=3*alpha*s, B=s, U=x, V=y, order=self.order())
+            if self.G_cache:
+                x, y = s*(self.G.x-alpha), self.G.y*s
+            else:
+                x, y = None, None
+
+            return MontgomeryCurve(A=3*alpha*s, B=s, U=x, V=y, order=self.order() // 2)
 
         raise NoSolutionException("'delta' is not a quadratic residue")
 

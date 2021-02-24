@@ -15,7 +15,7 @@ class EllipticCurveIsogeny(BaseObject):
         return ['curve', 'kernel']
 
 
-    @lru_cache(1)
+    @lru_cache(10)
     def codomain(self) -> EllipticCurve:
         a, b = self.curve.a, self.curve.b
         w, v = 0, 0
@@ -36,7 +36,7 @@ class EllipticCurveIsogeny(BaseObject):
         return E2
 
 
-    def _rat_map(self, P) -> WeierstrassPoint:
+    def _rat_map(self, P: WeierstrassPoint) -> WeierstrassPoint:
         E = self.codomain()
         x = P.x + sum((P+Q).x - Q.x for Q in self.points)
         y = P.y + sum((P+Q).y - Q.y for Q in self.points)

@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException, NotInvertibleException
 from samson.math.general import newton_method_sizes
 from samson.math.symbols import oo, Symbol
@@ -18,7 +18,7 @@ class PowerSeriesElement(RingElement):
             ring      (Ring): Parent ring.
         """
         self.val  = val[:ring.prec]
-        self.ring = ring
+        super().__init__(ring)
 
 
     def __getattribute__(self, name):
@@ -93,17 +93,6 @@ class PowerSeriesElement(RingElement):
         return PowerSeriesElement(self.val >> num, self.ring)
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        other = self.ring.coerce(other)
-        return PowerSeriesElement(self.val + other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        other = self.ring.coerce(other)
-        return PowerSeriesElement(self.val - other.val, self.ring)
-    
 
     def __invert__(self) -> 'PowerSeriesElement':
         p       = self.val
@@ -131,37 +120,6 @@ class PowerSeriesElement(RingElement):
             raise NotInvertibleException('Power series element not invertible when constant is zero', parameters={'p': p})
 
 
-    @left_expression_intercept
-    def __truediv__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        other = self.ring.coerce(other)
-        return self * ~other
-
-
-    def __mul__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
-        return PowerSeriesElement(self.val * other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __divmod__(self, other: 'PowerSeriesElement') -> ('PowerSeriesElement', 'PowerSeriesElement'):
-        other = self.ring.coerce(other)
-        q, r = divmod(self.val, other.val)
-        return PowerSeriesElement(q, self.ring), PowerSeriesElement(r, self.ring)
-
-
-    @left_expression_intercept
-    def __mod__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        return divmod(self, other)[1]
-
-
-    @left_expression_intercept
-    def __floordiv__(self, other: 'PowerSeriesElement') -> 'PowerSeriesElement':
-        return divmod(self, other)[0]
-
 
     def __neg__(self) -> 'PowerSeriesElement':
         return PowerSeriesElement(-self.val, self.ring)
@@ -178,12 +136,14 @@ class PowerSeriesElement(RingElement):
         return super().__hash__()
 
 
+
 class PowerSeriesRing(Ring):
     def __init__(self, ring: Ring, symbol: Symbol=None, prec: int=20):
         """
         Parameters:
             ring (Ring): Underlying ring.
         """
+        super().__init__()
         self._polyring = PolynomialRing(ring, symbol)
         symbol.top_ring = self
         self.symbol = symbol

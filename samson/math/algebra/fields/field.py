@@ -6,6 +6,10 @@ class Field(Ring):
     Algebraic structure that satisfies all of the properties of a ring and every element has a
     multiplicative inverse.
     """
+    def __init__(self):
+        super().__init__()
+
+
     def is_field(self) -> bool:
         return True
 
@@ -21,28 +25,8 @@ class FieldElement(RingElement):
         Parameters:
             field (Field): Field this element belongs to.
         """
+        super().__init__(field)
         self.field = field
-
-    @property
-    def ring(self) -> Field:
-        return self.field
-
-    @abstractmethod
-    def __add__(self, other: 'FieldElement') -> 'FieldElement':
-        pass
-
-    @abstractmethod
-    def __sub__(self, other: 'FieldElement') -> 'FieldElement':
-        pass
-
-    @abstractmethod
-    def __mul__(self, other: 'FieldElement') -> 'FieldElement':
-        pass
-
-
-    def _element_division(self, other: 'FieldElement') -> 'FieldElement':
-        other = self.ring.coerce(other)
-        return self * ~other
 
 
     def __floordiv__(self, other: 'FieldElement') -> 'FieldElement':

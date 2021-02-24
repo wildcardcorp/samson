@@ -1,7 +1,6 @@
 from samson.math.general import is_prime
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.symbols import Symbol
-from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.math.polynomial import Polynomial
 
 class FiniteFieldElement(FieldElement):
@@ -15,8 +14,8 @@ class FiniteFieldElement(FieldElement):
             val    (Polynomial): Value of the element.
             field (FiniteField): Parent field.
         """
-        self.field = field
-        self.val   = self.field.internal_field.coerce(val)
+        self.val   = field.internal_field.coerce(val)
+        super().__init__(field)
 
 
     def shorthand(self) -> str:
@@ -37,33 +36,6 @@ class FiniteFieldElement(FieldElement):
         return int(self)
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
-        other = self.ring.coerce(other)
-        return FiniteFieldElement(self.val + other.val, self.field)
-
-
-    def __mul__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
-        return FiniteFieldElement(self.val * other.val, self.field)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
-        other = self.ring.coerce(other)
-        return FiniteFieldElement(self.val - other.val, self.field)
-
-
-    @left_expression_intercept
-    def __mod__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
-        other = self.ring.coerce(other)
-        return FiniteFieldElement(self.val % other.val, self.field)
-
-
     def __invert__(self) -> 'FiniteFieldElement':
         return FiniteFieldElement(~self.val, self.field)
 
@@ -72,8 +44,7 @@ class FiniteFieldElement(FieldElement):
         return FiniteFieldElement(-self.val, self.field)
 
 
-    @left_expression_intercept
-    def __floordiv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
+    def __elemfloordiv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         return self.__truediv__(other)
 
 
@@ -135,6 +106,7 @@ class FiniteField(Field):
 
         self.zero = self.coerce(0)
         self.one  = self.coerce(1)
+        super().__init__()
 
 
     def __reprdir__(self):
@@ -155,6 +127,19 @@ class FiniteField(Field):
 
     def order(self) -> int:
         return self.p**self.n
+    
+
+    def is_superstructure_of(self, R: 'Ring') -> bool:
+        """
+        Determines whether `self` is a superstructure of `R`.
+
+        Parameters:
+            R (Ring): Possible substructure.
+
+        Returns:
+            bool: Whether `self` is a superstructure of `R`.
+        """
+        return self.internal_field.is_superstructure_of(R)
 
 
     def coerce(self, other: object) -> FiniteFieldElement:

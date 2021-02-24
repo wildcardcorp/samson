@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import is_prime, kth_root
@@ -20,7 +20,7 @@ class IntegerElement(RingElement):
             ring (Ring): Parent ring.
         """
         self.val  = val
-        self.ring = ring
+        super().__init__(ring)
 
 
 
@@ -82,44 +82,6 @@ class IntegerElement(RingElement):
             int: Ordinality.
         """
         return self.val
-
-
-    @left_expression_intercept
-    def __add__(self, other: 'IntegerElement') -> 'IntegerElement':
-        other = self.ring.coerce(other)
-        return IntegerElement(self.val + other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'IntegerElement') -> 'IntegerElement':
-        other = self.ring.coerce(other)
-        return IntegerElement(self.val - other.val, self.ring)
-
-
-    def __mul__(self, other: 'IntegerElement') -> 'IntegerElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
-        return IntegerElement(self.val * other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __divmod__(self, other: 'IntegerElement') -> ('IntegerElement', 'IntegerElement'):
-        other = self.ring.coerce(other)
-        q, r = divmod(self.val, other.val)
-        return IntegerElement(q, self.ring), IntegerElement(r, self.ring)
-
-
-    @left_expression_intercept
-    def __mod__(self, other: 'IntegerElement') -> 'IntegerElement':
-        return divmod(self, other)[1]
-
-
-    @left_expression_intercept
-    def __floordiv__(self, other: 'IntegerElement') -> 'IntegerElement':
-        return divmod(self, other)[0]
 
 
     def __neg__(self) -> 'IntegerElement':

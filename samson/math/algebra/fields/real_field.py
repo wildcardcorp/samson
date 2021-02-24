@@ -1,5 +1,4 @@
 from samson.math.algebra.fields.field import Field, FieldElement
-from samson.math.algebra.rings.ring import left_expression_intercept
 from samson.utilities.exceptions import CoercionException, NoSolutionException
 import mpmath
 import math
@@ -15,8 +14,8 @@ class RealElement(FieldElement):
             val     (MPF): Value of the element.
             field (Field): Parent field.
         """
-        self.val   = val
-        self.field = field
+        self.val = val
+        super().__init__(field)
 
 
     def shorthand(self) -> str:
@@ -31,25 +30,7 @@ class RealElement(FieldElement):
         return hash((self.val, self.field))
 
 
-
-    @left_expression_intercept
-    def __add__(self, other: 'RealElement') -> 'RealElement':
-        other = self.ring.coerce(other)
-        return self.field(self.val + other.val)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'RealElement') -> 'RealElement':
-        other = self.ring.coerce(other)
-        return self + -other
-
-
-    def __mul__(self, other: 'RealElement') -> 'RealElement':
-        other = self.ring.coerce(other)
-        return self.field(self.val * other.val)
-
     def __pow__(self, other: 'RealElement') -> 'RealElement':
-        other = self.ring.coerce(other)
         return self.field(self.val**other.val)
 
 
@@ -65,11 +46,6 @@ class RealElement(FieldElement):
         return n
 
 
-
-    @left_expression_intercept
-    def __mod__(self, other: 'RealElement') -> 'RealElement':
-        other = self.ring.coerce(other)
-        return RealElement(self.val % other.val, self.ring)
 
 
     def __invert__(self) -> 'RealElement':
@@ -87,8 +63,7 @@ class RealElement(FieldElement):
         return type(self) == type(other) and self.val == other.val and self.field == other.field
 
 
-    def _element_division(self, other: 'RingElement') -> 'RingElement':
-        other = self.field(other)
+    def __elemtruediv__(self, other: 'RingElement') -> 'RingElement':
         return self.field(self.val / other.val)
 
 
@@ -183,7 +158,7 @@ class RealField(Field):
         else:
             try:
                 return RealElement(self.ctx.mpf(other), self)
-            except ValueError as e:
+            except (ValueError, TypeError) as e:
                 raise CoercionException(other) from e
 
 

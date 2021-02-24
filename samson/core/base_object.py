@@ -65,12 +65,25 @@ class BaseObject(object):
         return self.__dict__.keys()
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         fields = ""
         if self.__reprdir__():
-            fields = f': {", ".join([color_format(FIELD_COLOR, k) + "=" + process_field(getattr(self, k)) for k in self.__reprdir__()])}'
+            fields = []
 
-        return f'<{cls_color(self.__class__.__name__)}{fields}>'
+            for k in self.__reprdir__():
+                key = ""
+                val = getattr(self, k)
+
+                if k != '__raw__':
+                    key = color_format(FIELD_COLOR, k) + "="
+                    val = process_field(val)
+                
+                fields.append(key + val)
+            
+            field_str = f': {", ".join([f for f in fields])}'
+
+        return f'<{cls_color(self.__class__.__name__)}{field_str}>'
+
 
     def __str__(self):
         return self.__repr__()

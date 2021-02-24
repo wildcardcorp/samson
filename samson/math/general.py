@@ -23,10 +23,10 @@ def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     Parameters:
         integer (int): Integer to encode.
         modulus (int): Modulus to reduce the integer over.
-    
+
     Returns:
         Polynomial: Polynomial representation.
-    
+
     Examples:
         >>> from samson.math.general import int_to_poly
         >>> int_to_poly(100)
@@ -55,10 +55,10 @@ def poly_to_int(poly: 'Polynomial') -> int:
     Parameters:
         poly (Polynomial): Polynomial to encode.
         modulus     (int): Modulus to reconstruct the integer with.
-    
+
     Returns:
         int: Integer representation.
-    
+
     Examples:
         >>> from samson.math.general import int_to_poly, _poly_to_int
         >>> poly_to_int(int_to_poly(100))
@@ -85,7 +85,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
 
     Returns:
         list: List of monomial bases mod g.
-    
+
     References:
         https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
     """
@@ -163,10 +163,10 @@ def gcd(*args) -> int:
     Parameters:
         a (int): First integer.
         b (int): Second integer.
-    
+
     Returns:
         int: GCD of `a` and `b`.
-    
+
     Examples:
         >>> from samson.math.general import gcd
         >>> gcd(256, 640)
@@ -204,10 +204,10 @@ def xgcd(a: int, b: int) -> (int, int, int):
     Parameters:
         a (int): First integer.
         b (int): Second integer.
-    
+
     Returns:
         (int, int, int): Formatted as (GCD, x, y).
-    
+
     Examples:
         >>> from samson.math.general import xgcd
         >>> xgcd(10, 5)
@@ -266,10 +266,10 @@ def lcm(*args) -> int:
     Parameters:
         a (int): First integer.
         b (int): Second integer.
-    
+
     Returns:
         int: Least common multiple.
-    
+
     Examples:
         >>> from samson.math.general import lcm
         >>> lcm(2, 5)
@@ -300,10 +300,10 @@ def mod_inv(a: int, n: int) -> int:
     Parameters:
         a (int): Integer.
         n (int): Modulus.
-    
+
     Returns:
         int: Modular inverse of `a` over `n`.
-    
+
     Examples:
         >>> from samson.math.general import mod_inv
         >>> mod_inv(5, 11)
@@ -377,6 +377,10 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
 
     if invert:
         s = ~s
+
+    if g.order_cache and not g.order_cache % u:
+        s.order_cache = g.order_cache // u
+
     return s
 
 
@@ -389,10 +393,10 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         a (int): Element `a`.
         b (int): Multiplier.
         s (int): The 'zero' value of the ring.
-    
+
     Returns:
         int: `a` * `b` within its ring.
-    
+
     Examples:
         >>> from samson.math.general import fast_mul
         >>> fast_mul(5, 12, 0)
@@ -416,6 +420,9 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
             s = (a + s)
         b >>= 1
         a = (a + a)
+    
+    if a.order_cache and not a.order_cache % b:
+        s.order_cache = a.order_cache // b
     return s
 
 
@@ -787,10 +794,10 @@ def tonelli(n: int, p: int) -> int:
     Parameters:
         n (int): Integer.
         p (int): Modulus.
-    
+
     Returns:
         int: Square root of `n` mod `p`.
-    
+
     Examples:
         >>> from samson.math.general import tonelli
         >>> tonelli(4, 7)
@@ -944,10 +951,10 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
     Parameters:
         system_matrix (Matrix): The `A` matrix.
         rhs           (Matrix): The right-hand side matrix.
-    
+
     Returns:
         Matrix: The `x` matrix.
-    
+
     Examples:
         >>> from samson.math.all import QQ
         >>> from samson.math.matrix import Matrix
@@ -1168,10 +1175,10 @@ def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) ->
         length   (int): Number of elements to generate.
         max_diff (int): Maximum difference between the sum of all elements before and the next element.
         starting (int): Minimum starting integer.
-    
+
     Returns:
         list: List of the superincreasing sequence.
-    
+
     Examples:
         >>> from samson.math.general import generate_superincreasing_seq
         >>> generate_superincreasing_seq(10, 2)
@@ -1219,10 +1226,10 @@ def random_int(n: int) -> int:
 
     Parameters:
         n (int): Upper bound.
-    
+
     Returns:
         int: Random integer.
-    
+
     Example:
         >>> from samson.math.general import random_int
         >>> random_int(1000) < 1000
@@ -1247,10 +1254,10 @@ def random_int_between(a: int, b :int) -> int:
     Parameters:
         a (int): Lower bound.
         b (int): Upper bound.
-    
+
     Returns:
         int: Random integer.
-    
+
     Example:
         >>> from samson.math.general import random_int_between
         >>> n = random_int_between(500, 1000)
@@ -1268,10 +1275,10 @@ def find_prime(bits: int, ensure_halfway: bool=True) -> int:
     Parameters:
         bits            (int): Bit length of prime.
         ensure_halfway (bool): Ensures the prime is at least halfway into the bitspace to prevent multiplications being one bit short (e.g. 256-bit int * 256-bit int = 511-bit int).
-    
+
     Returns:
         int: Random prime number.
-    
+
     Examples:
         >>> from samson.math.general import find_prime
         >>> find_prime(512) < 2**512
@@ -1294,10 +1301,10 @@ def next_prime(start_int: int) -> int:
 
     Parameters:
         start_int (int): Integer to start search at.
-    
+
     Returns:
         int: Prime.
-    
+
     Examples:
         >>> from samson.math.general import next_prime
         >>> next_prime(8)
@@ -1324,7 +1331,7 @@ def primes(start: int, stop: int=None) -> list:
     Parameters:
         start (int): Number to start at (inclusive).
         stop  (int): Number to stop at (exclusive).
-    
+
     Returns:
         list: Primes within the range.
     """
@@ -1347,10 +1354,10 @@ def berlekamp_massey(output_list: list) -> 'Polynomial':
 
     Parameters:
         output_list (list): Output of LFSR.
-    
+
     Returns:
         Polynomial: Polyomial that represents the shortest LFSR.
-    
+
     Examples:
         >>> from samson.prngs.flfsr import FLFSR
         >>> from samson.math.general import berlekamp_massey
@@ -1407,10 +1414,10 @@ def is_power_of_two(n: int) -> bool:
 
     Parameters:
         n (int): Integer.
-    
+
     Returns:
         bool: Whether or not `n` is a power of two.
-    
+
     Examples:
         >>> from samson.math.general import is_power_of_two
         >>> is_power_of_two(7)
@@ -1456,10 +1463,10 @@ def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterat
         iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
         f               (func): Pseudorandom map function of signature (`y`: RingElement, k: int) -> int.
         apply_reduction (bool): Whether or not to reduce the answer by the ring's order.
-    
+
     Returns:
         int: The discrete logarithm. Possibly None if it couldn't be found.
-    
+
     Examples:
         >>> from samson.math.general import pollards_kangaroo
         >>> from samson.math.algebra.all import *
@@ -1537,10 +1544,10 @@ def hasse_frobenius_trace_interval(p: int) -> (int, int):
 
     Parameters:
         p (int): Prime of the underlying field of the elliptic curve.
-    
+
     Returns:
         (int, int): Start and end ranges of the interval relative to `p`.
-    
+
     Examples:
         >>> from samson.math.general import hasse_frobenius_trace_interval
         >>> hasse_frobenius_trace_interval(53)
@@ -1754,6 +1761,11 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     if point_sum == sym_curve.POINT_AT_INFINITY:
         return torsion_quotient_ring(0)
 
+
+    # TODO: Can we speed this up? The problem with using BSGS is hashing these points. Since they're over a
+    # fraction field, we can have equivalent fractions that have different numerators and denominators.
+    # This is true even if they're simplified. Until I can come up with a better way to hash fractions,
+    # this will be a linear search.
     trace_point = p1
     for candidate in range(1, (l + 1) // 2):
         if point_sum.x == trace_point.x:
@@ -2157,7 +2169,7 @@ def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
 
     Returns:
         ResidueSymbol: Jacobi symbol.
-    
+
     Examples:
         >>> from samson.math.general import jacobi_symbol
         >>> jacobi_symbol(4, 7)
@@ -2199,7 +2211,7 @@ def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
 
     Parameters:
         n (int): Possible prime.
-    
+
     Returns:
         (int, int, int): Selfridge parameters.
     """
@@ -2271,10 +2283,10 @@ def is_strong_lucas_pseudoprime(n: int) -> bool:
 
     Parameters:
         n (int): Integer to test.
-    
+
     Returns:
         bool: Whether or not `n` is at least a strong Lucas pseudoprime.
-    
+
     Examples:
         >>> from samson.math.general import is_strong_lucas_pseudoprime
         >>> is_strong_lucas_pseudoprime(299360470275914662072095298694855259241)
@@ -2325,10 +2337,10 @@ def is_prime(n: int) -> bool:
 
     Parameters:
         n (int): Positive integer.
-    
+
     Returns:
         bool: Whether or not `n` is probably prime.
-    
+
     Examples:
         >>> from samson.math.general import is_prime, find_prime
         >>> is_prime(7)
@@ -2364,10 +2376,10 @@ def is_primitive_root(a: int, p: int) -> bool:
     Parameters:
         a (int): Possible primitive root.
         p (int): Modulus.
-    
+
     Returns:
         bool: Whether or not `a` is a primitive root.
-    
+
     Examples:
         >>> from samson.math.general import is_primitive_root
         >>> is_primitive_root(3, 10)
@@ -2402,10 +2414,10 @@ def product(elem_list: list, return_tree=False) -> object:
     Parameters:
         elem_list   (list): List of RingElements.
         return_tree (bool): Whether or not to return the intermediate tree results.
-    
+
     Returns:
         RingElement: Product of all RingElements.
-    
+
     Examples:
         >>> from samson.math.general import product
         >>> from samson.math.all import ZZ
@@ -2444,10 +2456,10 @@ def batch_gcd(elem_list: list) -> list:
 
     Parameters:
         elem_list (list): List of RingElements.
-    
+
     Returns:
         list: Greatest common denominators of any two elements.
-    
+
     Examples:
         >>> from samson.math.general import batch_gcd
         >>> batch_gcd([1909, 2923, 291, 205, 989, 62, 451, 1943, 1079, 2419])
@@ -2510,10 +2522,10 @@ def is_safe_prime(p: int) -> bool:
 
     Parameters:
         p (int): Prime to analyze.
-    
+
     Returns:
         bool: Whether `p` is a safe prime.
-    
+
     Examples:
         >>> from samson.math.general import is_safe_prime
         >>> from samson.protocols.diffie_hellman import DiffieHellman
@@ -2531,10 +2543,10 @@ def is_sophie_germain_prime(p: int) -> bool:
 
     Parameters:
         p (int): Prime to analyze.
-    
+
     Returns:
         bool: Whether `p` is a Sophie Germain prime.
-    
+
     Examples:
         >>> from samson.math.general import is_sophie_germain_prime
         >>> from samson.protocols.diffie_hellman import DiffieHellman
@@ -2553,7 +2565,7 @@ def is_carmichael_number(n: int, factors: dict=None) -> bool:
     Parameters:
         n        (int): Integer.
         factors (dict): Factors of `n`.
-    
+
     Returns:
         bool: Whether or not `n` is a Carmichael number.
 
@@ -2689,10 +2701,10 @@ def prime_number_theorem(n: int) -> int:
 
     Parameters:
         n (int): Maximum bound.
-    
+
     Returns:
         int: Approximate number of primes less than `n`.
-    
+
     References:
         https://en.wikipedia.org/wiki/Prime_number_theorem
     """
@@ -2800,7 +2812,7 @@ def log(y: 'RingElement', base: 'RingElement') -> int:
 
     Parameters:
         base (RingElement): Base.
-    
+
     Returns:
         int: `x` such that `base`^`x` == `y`.
     """
@@ -2875,7 +2887,7 @@ def binary_quadratic_forms(D: int) -> list:
 
     Parameters:
         D (int): Discriminant.
-    
+
     Returns:
         list: List of primitives BQFs satsifying the equation for D.
 

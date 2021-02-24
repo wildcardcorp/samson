@@ -1,5 +1,5 @@
 from samson.math.algebra.fields.field import Field, FieldElement
-from samson.math.algebra.rings.ring import Ring, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import gcd
 from fractions import Fraction
@@ -30,7 +30,7 @@ class FractionFieldElement(FieldElement):
 
         self.numerator   = numerator
         self.denominator = denominator
-        self.field       = field
+        super().__init__(field)
 
         if self.ring.precision:
             self.trim_to_precision()
@@ -120,24 +120,11 @@ class FractionFieldElement(FieldElement):
         return self.ring((self.numerator.gcd(other.numerator), lcm(self.denominator, other.denominator)))
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        other = self.ring.coerce(other)
+    def __elemadd__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         return FractionFieldElement(self.numerator * other.denominator + self.denominator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
-    @left_expression_intercept
-    def __sub__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        other = self.ring.coerce(other)
-        return self + (-other)
-
-
-    def __mul__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
+    def __elemmul__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
@@ -147,6 +134,7 @@ class FractionFieldElement(FieldElement):
 
     def __neg__(self) -> 'FractionFieldElement':
         return FractionFieldElement(-self.numerator, self.denominator, self.ring)
+
 
     def __invert__(self) -> 'FractionFieldElement':
         if not self:
@@ -160,6 +148,7 @@ class FractionFieldElement(FieldElement):
 
     def __int__(self):
         return int(self.numerator) // int(self.denominator)
+
 
     def __round__(self):
         q,r = divmod(self.numerator, self.denominator)
@@ -201,6 +190,7 @@ class FractionField(Field):
             ring     (Ring): Underlying ring.
             simplify (bool): Whether or not to simplify the fraction.
         """
+        super().__init__()
         self.ring      = ring
         self.simplify  = simplify
         self.precision = None

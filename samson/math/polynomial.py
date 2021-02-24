@@ -52,7 +52,7 @@ class Polynomial(RingElement):
 
 
         self.symbol = symbol or Symbol('x')
-        self.ring   = ring or self.coeff_ring[self.symbol]
+        super().__init__(ring or self.coeff_ring[self.symbol])
         self.coeffs.trim()
 
         if len(self.coeffs.values) == 0:
@@ -68,9 +68,11 @@ class Polynomial(RingElement):
             for idx, coeff in self.coeffs.values.items():
                 idx += idx_mod
 
+                # Skip zero coeffs unless the poly is zero
                 if coeff == coeff.ring.zero and not len(self.coeffs) == 1:
                     continue
 
+                # Remove implicit ones
                 if coeff == coeff.ring.one and idx != 0:
                     coeff_short_mul = ''
                 else:
@@ -84,6 +86,7 @@ class Polynomial(RingElement):
 
                     coeff_short_mul = shorthand + '*'
 
+                # Handle special indices
                 if idx == 0:
                     full_coeff = f'{coeff_short_mul[:-1]}'
                 elif idx == 1:
@@ -101,19 +104,24 @@ class Polynomial(RingElement):
 
     def tinyhand(self) -> str:
         return self.shorthand(True)
+    
 
+    def __reprdir__(self):
+        return ['__raw__', 'coeff_ring']
+    
 
-    def __repr__(self):
-        from samson.utilities.runtime import RUNTIME
-        return f"<Polynomial: {RUNTIME.default_short_printer(self)}, coeff_ring={self.coeff_ring}>"
+    @property
+    def __raw__(self):
+        return str(self)
+
 
     def __str__(self):
         from samson.utilities.runtime import RUNTIME
         return RUNTIME.default_short_printer(self)
 
 
-    def __call__(self, x: int) -> RingElement:
-        return self.evaluate(x)
+    def __call__(self, val: RingElement=None, **kwargs) -> RingElement:
+        return self.evaluate(val, **kwargs)
 
 
     def __hash__(self) -> int:
@@ -164,32 +172,49 @@ class Polynomial(RingElement):
 
 
 
-    def evaluate(self, x: RingElement) -> RingElement:
+    def evaluate(self, val: RingElement=None, **kwargs) -> RingElement:
         """
-        Evaluates the `Polynomial` at `x` using Horner's method.
-        
+        Evaluates the `Polynomial` at `val` using Horner's method.
+
         Parameters:
-            x (RingElement): Point to evaluate at.
-        
+            val (RingElement): Point to evaluate at.
+
         Returns:
-            RingElement: Evaluation at `x`.
+            RingElement: Evaluation at `val`.
         """
-        if not self.degree():
-            return self[0]
+        if val:
+            x = val
+            if not self.degree():
+                return self[0]
 
-        coeffs   = self.coeffs
-        total    = self.coeff_ring.zero
-        last_idx = coeffs.last()
+            coeffs   = self.coeffs
+            total    = self.coeff_ring.zero
+            last_idx = coeffs.last()
 
-        for idx, c in coeffs.values.items()[::-1]:
-            total *= x**(last_idx-idx)
-            total += c
-            last_idx = idx
+            for idx, c in coeffs.values.items()[::-1]:
+                total *= x**(last_idx-idx)
+                total += c
+                last_idx = idx
 
 
-        total *= x**idx
+            total *= x**idx
 
-        return total
+            return total
+
+        elif kwargs:
+            if self.symbol.repr in kwargs:
+                passed_kwargs = {k: v for k,v in kwargs.items() if k != self.symbol.repr}
+                self_eval     = self(kwargs[self.symbol.repr])
+
+                if passed_kwargs:
+                    self_eval = self_eval(**passed_kwargs)
+                return self_eval
+
+            else:
+                return self._create_poly({idx: coeff(**kwargs) for idx, coeff in self.coeffs.values.items()})
+
+        else:
+            raise ValueError('Either "val" or "kwargs" must be specified')
 
 
     def newton(self, x0, max_tries: int=10000):
@@ -258,7 +283,7 @@ class Polynomial(RingElement):
             if use_hensel or len(q_facs) == 1:
                 for fac, e in q_facs.items():
                     Q = ZZ/ZZ(fac**e)
-                    nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e)]
+                    nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e, use_number_field=True)]
                     all_facs.append(nroots)
 
                 for comb in itertools.product(*all_facs):
@@ -707,7 +732,7 @@ class Polynomial(RingElement):
 
         Returns:
             bool: Whether or not the Polynomial is irreducible over its ring.
-        
+
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Rabin's_test_of_irreducibility
             https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
@@ -1118,7 +1143,7 @@ class Polynomial(RingElement):
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs}, coeff_ring=self.coeff_ring.ring)
 
 
-    def __divmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
+    def __elemdivmod__(self, other: 'Polynomial') -> ('Polynomial', 'Polynomial'):
         """
         Examples:
             >>> from samson.math.all import Polynomial, ZZ, Symbol
@@ -1139,7 +1164,6 @@ class Polynomial(RingElement):
 
         """
         # Check for zero
-        other = self.ring.coerce(other)
         if not other:
             raise ZeroDivisionError
 
@@ -1191,9 +1215,7 @@ class Polynomial(RingElement):
         return q, r
 
 
-    def __add__(self, other: 'Polynomial') -> 'Polynomial':
-        other = self.ring.coerce(other)
-
+    def __elemadd__(self, other: 'Polynomial') -> 'Polynomial':
         vec = self._create_sparse([])
         for idx, coeff in self.coeffs:
             vec[idx] = coeff + other.coeffs[idx]
@@ -1205,9 +1227,7 @@ class Polynomial(RingElement):
         return self._create_poly(vec)
 
 
-    def __sub__(self, other: 'Polynomial') -> 'Polynomial':
-        other = self.ring.coerce(other)
-
+    def __elemsub__(self, other: 'Polynomial') -> 'Polynomial':
         vec = self._create_sparse([])
         for idx, coeff in self.coeffs:
             vec[idx] = coeff - other.coeffs[idx]
@@ -1220,13 +1240,7 @@ class Polynomial(RingElement):
 
 
 
-    def __mul__(self, other: object) -> object:
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
-
+    def __elemmul__(self, other: object) -> object:
         if not RUNTIME.poly_fft_heuristic(self, other):
             # Naive convolution
             new_coeffs = self._create_sparse([])

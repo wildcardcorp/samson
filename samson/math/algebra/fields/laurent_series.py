@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException, NotInvertibleException
 from samson.math.symbols import oo, Symbol
 from samson.math.algebra.rings.power_series_ring import PowerSeriesElement, PowerSeriesRing
@@ -12,17 +12,6 @@ class LaurentSeriesElement(NegativeDegreeElement):
     Element of an `LaurentSeriesRing`.
     """
 
-    def __init__(self, val: PowerSeriesElement, shift: int, ring: Ring):
-        """
-        Parameters:
-            val (PowerSeriesElement): Value of the element.
-            ring              (Ring): Parent ring.
-        """
-        self.val   = val
-        self.shift = shift
-        self.ring  = ring
-
-
     def __getattribute__(self, name):
         try:
             attr = object.__getattribute__(self, name)
@@ -33,12 +22,12 @@ class LaurentSeriesElement(NegativeDegreeElement):
 
 
     @property
-    def _poly(self):
+    def __raw__(self):
         return self.tinyhand()
 
 
     def __reprdir__(self):
-        return ['_poly', 'ring']
+        return ['__raw__', 'val', 'shift', 'ring']
 
 
     def __call__(self, val):
@@ -47,6 +36,10 @@ class LaurentSeriesElement(NegativeDegreeElement):
 
     def tinyhand(self) -> str:
         return self.val.val.shorthand(tinyhand=True, idx_mod=-self.shift)
+
+
+    def shorthand(self) -> str:
+        return self.tinyhand()
 
 
     def degree(self) -> 'int':
@@ -81,7 +74,7 @@ class LaurentSeriesRing(NegativeDegreeField):
         Parameters:
             ring (Ring): Underlying ring.
         """
-        self.ring = ring
+        super().__init__(ring)
         self.zero = self(0)
         self.one  = self(1)
 

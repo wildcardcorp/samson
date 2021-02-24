@@ -17,7 +17,8 @@ class CurvePolynomialElement(RingElement):
         """
         self.x_poly = x_poly
         self.y_poly = y_poly or ring.poly_ring.zero
-        self.ring   = ring
+        super().__init__(ring)
+
 
     def __repr__(self):
         return f"<CurvePolynomialElement: x_poly={self.x_poly}, y_poly={self.y_poly}, ring={self.ring}>"
@@ -104,11 +105,11 @@ class CurvePolynomialElement(RingElement):
 
 
     def __lt__(self, other: 'CurvePolynomialElement') -> bool:
-        raise NotImplementedError()
+        return self.x_poly < other.x_poly
 
 
     def __gt__(self, other: 'CurvePolynomialElement') -> bool:
-        raise NotImplementedError()
+        return self.x_poly > other.x_poly
 
 
 class CurvePolynomialRing(Ring):
@@ -123,6 +124,7 @@ class CurvePolynomialRing(Ring):
             a                    (int): `a` coefficient of the curve.
             b                    (int): `b` constant of the curve.
         """
+        super().__init__()
         self.poly_ring = poly_ring
         self.a = a
         self.b = b

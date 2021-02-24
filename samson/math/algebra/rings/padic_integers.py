@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import mod_inv
@@ -18,7 +18,7 @@ class PAdicIntegerElement(RingElement):
             ring (Ring): Parent ring.
         """
         self.val  = ([int(e) for e in val] + [0] * (ring.prec-len(val)))[:ring.prec]
-        self.ring = ring
+        super().__init__(ring)
 
 
     def shorthand(self) -> str:
@@ -85,9 +85,7 @@ class PAdicIntegerElement(RingElement):
         return self.val[idx]
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
-        other  = self.ring.coerce(other)
+    def __elemadd__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
         result = []
         carry  = 0
 
@@ -101,19 +99,7 @@ class PAdicIntegerElement(RingElement):
         return PAdicIntegerElement(result, self.ring)
 
 
-    @left_expression_intercept
-    def __sub__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
-        other = self.ring.coerce(other)
-        return self + -other
-
-
-    def __mul__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-
-        other  = self.ring.coerce(other)
+    def __elemmul__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
         result = [0]*self.ring.prec*2
 
         for i, a in enumerate(self.val):
@@ -142,7 +128,6 @@ class PAdicIntegerElement(RingElement):
         return self.ring.one / self
     
 
-
     def __lshift__(self, num: int):
         if num < 0:
             return self >> -num
@@ -158,7 +143,7 @@ class PAdicIntegerElement(RingElement):
 
 
 
-    def __truediv__(self, other: 'PAdicIntegerElement'):
+    def __elemtruediv__(self, other: 'PAdicIntegerElement'):
         """
         References:
             https://math.stackexchange.com/questions/250097/how-do-you-take-the-multiplicative-inverse-of-a-p-adic-number
@@ -188,18 +173,15 @@ class PAdicIntegerElement(RingElement):
 
 
 
-    @left_expression_intercept
-    def __divmod__(self, other: 'PAdicIntegerElement') -> ('PAdicIntegerElement', 'PAdicIntegerElement'):
-        return self/other, self.ring.zero
+    def __elemdivmod__(self, other: 'PAdicIntegerElement') -> ('PAdicIntegerElement', 'PAdicIntegerElement'):
+        return self / other, self.ring.zero
 
-    @left_expression_intercept
-    def __mod__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
+    def __elemmod__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
         return self.ring.zero
 
 
-    @left_expression_intercept
-    def __floordiv__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
-        return self/other
+    def __elemfloordiv__(self, other: 'PAdicIntegerElement') -> 'PAdicIntegerElement':
+        return self / other
 
 
     def __neg__(self) -> 'PAdicIntegerElement':
@@ -226,6 +208,7 @@ class PAdicIntegerElement(RingElement):
 class PAdicIntegerRing(Ring):
 
     def __init__(self, p: int, prec: int=20):
+        super().__init__()
         self.p    = int(p)
         self.prec = int(prec)
         self.zero = self(0)

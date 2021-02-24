@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import mod_inv
 
 class QuotientElement(RingElement):
@@ -12,7 +12,7 @@ class QuotientElement(RingElement):
             val (RingElement): Value of the element.
             ring       (Ring): Parent ring.
         """
-        self.ring = ring
+        super().__init__(ring)
         self.val  = val % self.ring.quotient
 
 
@@ -37,49 +37,8 @@ class QuotientElement(RingElement):
         return self.val(x)
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'QuotientElement') -> 'QuotientElement':
-        other = self.ring.coerce(other)
-        return QuotientElement(self.val + other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'QuotientElement') -> 'QuotientElement':
-        other = self.ring.coerce(other)
-        return QuotientElement(self.val - other.val, self.ring)
-
-
-    def __mul__(self, other: 'QuotientElement') -> 'QuotientElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
-        other = self.ring.coerce(other)
-        return QuotientElement(self.val * other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __mod__(self, other: 'QuotientElement') -> 'QuotientElement':
-        other = self.ring.coerce(other)
-        return QuotientElement(self.val % other.val, self.ring)
-
     def __invert__(self) -> 'QuotientElement':
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
-
-
-    def _element_division(self, other: 'QuotientElement') -> 'QuotientElement':
-        other = self.ring.coerce(other)
-        return self * ~other
-
-
-
-    @left_expression_intercept
-    def __floordiv__(self, other: 'QuotientElement') -> 'QuotientElement':
-        other = self.ring.coerce(other)
-        return QuotientElement(self.val // other.val, self.ring)
-
-    def __divmod__(self, other):
-        return self // other, self % other
 
 
     def __neg__(self) -> 'QuotientElement':
@@ -149,6 +108,7 @@ class QuotientRing(Ring):
             ring            (Ring): Underlying ring.
         """
         assert(quotient.ring == ring)
+        super().__init__()
         self.ring     = ring
         self.quotient = quotient
 

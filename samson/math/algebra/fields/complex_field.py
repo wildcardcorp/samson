@@ -50,7 +50,7 @@ class ComplexField(RealField):
 
             try:
                 return ComplexElement(self.ctx.mpc(other, imag), self)
-            except ValueError as e:
+            except (ValueError, TypeError) as e:
                 raise CoercionException((other, imag)) from e
 
 

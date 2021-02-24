@@ -49,7 +49,6 @@ class MontgomeryCurve(Ring):
         self.B    = B or self.ring.one
 
         self.zero = self(0)
-        self.one  = self.G
         self._order = order
 
 
@@ -82,11 +81,13 @@ class MontgomeryCurve(Ring):
 
     @property
     def p(self) -> int:
-        return int(self.ring.quotient)
+        return self.ring.characteristic()
 
 
     @property
     def G(self) -> 'MontgomeryPoint':
+        if not self.U:
+            self.U = self.find_gen().x
         return self(self.U)
 
 
@@ -144,7 +145,7 @@ class MontgomeryCurve(Ring):
         a = (3-A**2) / (3*B**2)
         b = (2*A**3 - 9*A) / (27*B**3)
 
-        return WeierstrassCurve(a=a, b=b, base_tuple=(x, y), cardinality=self.order())
+        return WeierstrassCurve(a=a, b=b, base_tuple=(x, y), cardinality=self.order()*2)
 
 
 
@@ -163,6 +164,7 @@ class MontgomeryPoint(RingElement):
         """
         self.x = curve.ring(x)
         self.curve = curve
+        self.order_cache  = None
 
 
     @property
@@ -179,16 +181,25 @@ class MontgomeryPoint(RingElement):
 
 
     def __add__(self, P2: 'MontgomeryPoint') -> 'MontgomeryPoint':
+        if P2 == self:
+            return self*2
         raise NotImplementedError()
 
     def __sub__(self, other: 'MontgomeryPoint') -> 'MontgomeryPoint':
         raise NotImplementedError()
 
 
+    def cache_mul(self, size: int) -> 'BitVectorCache':
+        """
+        Montgomery points can't use the BitVectorCache as they does support element addition.
+        """
+        return self
+
+
     # https://tools.ietf.org/html/rfc7748#section-5
     def __mul__(self, other):
         u = self.x
-        k = int(self.curve.ring(other))
+        k = other % self.curve.order()
         u2, w2 = (1, 0)
         u3, w3 = (u, 1)
         p = u.ring.characteristic()

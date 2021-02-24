@@ -39,9 +39,7 @@ X   New IoT ciphers
 
 
 X   Increase performance
-    X   Function level imports are EXPENSIVE (left_expression_intercept)
     X   Weierstrass curves
-    X   Polynomial mul/div (SGSS-FFT)
     X   Schoof's algorithm
     X   LLL
 

@@ -15,45 +15,6 @@ _frac = LazyLoader('_frac', globals(), 'samson.math.algebra.fields.fraction_fiel
 
 
 
-def try_poly_first(element: object, other: object, func: FunctionType) -> object:
-    """
-    Tests if `other` is a Polynomial, and gives precedence to its operator.
-
-    Parameters:
-        other (RingElement): Possible Polynomial.
-        func         (func): Function to execute.
-    
-    Returns:
-        RingElement/None: The output of the Polynomial's function if possible.
-    """
-    if issubclass(type(other), _poly.Polynomial) and other.coeff_ring == element.ring:
-        return func(other, element)
-
-
-def left_expression_intercept(func: FunctionType) -> object:
-    """
-    Intercepts "left" operators to give Polynomials precedence so elements from the coefficient ring can be coerced.
-    """
-
-    @wraps(func)
-    def poly_build(*args, **kwargs):
-        if RUNTIME.enable_poly_intercept:
-            try:
-                name = func.__name__
-                name = '__r' + name[2:]
-                poly_res = try_poly_first(*args, **kwargs, func=getattr(_poly.Polynomial, name))
-
-                if poly_res is not None:
-                    return poly_res
-
-            except Exception:
-                pass
-
-        return func(*args, **kwargs)
-
-    return poly_build
-
-
 class Ring(BaseObject):
 
     def order_factors(self):
@@ -86,6 +47,33 @@ class Ring(BaseObject):
             return self.ring.structure_depth+1
         else:
             return 1
+
+
+    def is_superstructure_of(self, R: 'Ring') -> bool:
+        """
+        Determines whether `self` is a superstructure of `R`.
+
+        Parameters:
+            R (Ring): Possible substructure.
+
+        Returns:
+            bool: Whether `self` is a superstructure of `R`.
+        """
+        if hasattr(self, 'coeff_ring'):
+            if self.coeff_ring == R:
+                return True
+            else:
+                return self.coeff_ring.is_superstructure_of(R)
+
+
+        elif hasattr(self, 'ring'):
+            if self.ring == R:
+                return True
+            else:
+                return self.ring.is_superstructure_of(R)
+
+        return False
+
 
 
     def random(self, size: object) -> 'RingElement':
@@ -196,7 +184,7 @@ class Ring(BaseObject):
         return self.find_element_of_order(self.order())
 
 
-    def find_element_of_order(self, n: int=None, n_facs: 'Factors'=None) -> 'RingElement':
+    def find_element_of_order(self, n: int=None, n_facs: 'Factors'=None, allow_order_call: bool=True) -> 'RingElement':
         """
         Finds an element of order `n`.
 
@@ -207,13 +195,21 @@ class Ring(BaseObject):
         Returns:
             RingElement: Element of order `n`.
         """
-        if not n_facs:
-            n_facs = factor(n)
+        if allow_order_call:
+            while True:
+                elem = self.random()
+                o    = elem.order()
+                if not o % n:
+                    return elem * (o // n)
 
-        while True:
-            elem = self.random()
-            if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs) == n:
-                return elem
+        else:
+            if not n_facs:
+                n_facs = factor(n)
+
+            while True:
+                elem = self.random()
+                if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs) == n:
+                    return elem
 
 
     def __truediv__(self, element: 'RingElement') -> 'QuotientRing':
@@ -224,11 +220,21 @@ class Ring(BaseObject):
 
 
     def __getitem__(self, x: int) -> 'RingElement':
-        if type(x).__name__ == 'Symbol':
+        type_x = type(x)
+        if type_x.__name__ == 'Symbol' or type_x is tuple and type(x[0]).__name__ == 'Symbol':
             from samson.math.algebra.rings.polynomial_ring import PolynomialRing
-            return PolynomialRing(self, x)
 
-        elif type(x) is list and type(x[0]).__name__ == 'Symbol':
+            if type_x is tuple:
+                ring = self
+                for symbol in x:
+                    ring = PolynomialRing(ring, symbol)
+                
+                return ring
+
+            else:
+                return PolynomialRing(self, x)
+
+        elif type_x is list and type(x[0]).__name__ == 'Symbol':
             from samson.math.algebra.rings.power_series_ring import PowerSeriesRing
             return PowerSeriesRing(self, x[0])
 
@@ -245,6 +251,7 @@ class Ring(BaseObject):
 class RingElement(BaseObject):
     def __init__(self, ring: Ring):
         self.ring = ring
+        self.order_cache = None
 
 
     def shorthand(self) -> str:
@@ -261,8 +268,41 @@ class RingElement(BaseObject):
     def __hash__(self) -> int:
         return hash((self.ring, self.val))
 
+
+    def __elemadd__(self, other: 'RingElement') -> 'RingElement':
+        return self.ring(self.val + other.val)
+
+
+    def __elemsub__(self, other: 'RingElement') -> 'RingElement':
+        return self + -other
+
+
+    def __elemmul__(self, other: 'RingElement') -> 'RingElement':
+        return self.ring(self.val * other.val)
+
+
+    def __elemmod__(self, other: 'RingElement') -> 'RingElement':
+        return self.ring(self.val % other.val)
+
+
+    def __elemfloordiv__(self, other: 'QuotientElement') -> 'QuotientElement':
+        return self.ring(self.val // other.val)
+
+
+    def __elemdivmod__(self, other: 'RingElement') -> ('RingElement', 'RingElement'):
+        return self // other, self % other
+
+
+    def __elemtruediv__(self, other: 'RingElement') -> 'RingElement':
+        return self * ~other
+
+
+
     def __add__(self, other: 'RingElement') -> 'RingElement':
-        pass
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) + other
+        else:
+            return self.__elemadd__(self.ring.coerce(other))
 
 
     def __radd__(self, other: 'RingElement') -> 'RingElement':
@@ -270,13 +310,27 @@ class RingElement(BaseObject):
 
 
     def __sub__(self, other: 'RingElement') -> 'RingElement':
-        pass
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) - other
+        else:
+            return self.__elemsub__(self.ring.coerce(other))
 
 
     def __rsub__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) - self
+    
 
-    __mul__ = fast_mul
+    def __mul__(self, other: 'RingElement') -> 'RingElement': 
+        gmul = self.ground_mul(other)
+        if gmul is not None:
+            return gmul
+
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) * other
+        else:
+            return self.__elemmul__(self.ring.coerce(other))
+
+
     __pow__ = square_and_mul
 
     def __rmul__(self, other: int) -> 'RingElement':
@@ -286,20 +340,39 @@ class RingElement(BaseObject):
         return self.ring.coerce(other) * self
 
 
+    def __mod__(self, other: 'RingElement') -> 'RingElement':
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) % other
+        else:
+            return self.__elemmod__(self.ring.coerce(other))
+
+
     def __rmod__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) % self
+
+
+    def __floordiv__(self, other: 'RingElement') -> 'RingElement':
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) // other
+        else:
+            return self.__elemfloordiv__(self.ring.coerce(other))
+
+
+    def __divmod__(self, other: 'RingElement') -> ('RingElement', 'RingElement'):
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return divmod(other.ring(self), other)
+        else:
+            return self.__elemdivmod__(self.ring.coerce(other))
 
 
     def __rdivmod__(self, other: 'RingElement') -> 'RingElement':
         return divmod(self.ring.coerce(other), self)
 
 
+    def __invert__(self) -> 'RingElement':
+        raise NotInvertibleException(f'{self} is not invertible', parameters={'a': self})
 
-    def _element_division(self, other: 'RingElement') -> 'RingElement':
-        raise NotInvertibleException("Element division not defined for ring", parameters=other)
 
-
-    @left_expression_intercept
     def __truediv__(self, other: 'RingElement') -> 'RingElement':
         # Is this just integer division?
         gmul = self.ground_div(other)
@@ -319,7 +392,7 @@ class RingElement(BaseObject):
 
         # Either we have element division or we have to promote
         try:
-            return self._element_division(other)
+            return self.__elemtruediv__(other)
 
         except NotInvertibleException:
             if RUNTIME.auto_promote:
@@ -396,10 +469,6 @@ class RingElement(BaseObject):
 
         if type_o is int:
             return fast_mul(self, other)
-
-        # This is like a bajillion times faster than importing Poly
-        elif type_o.__name__ in ['Polynomial', 'Symbol']:
-            return try_poly_first(self, other, _poly.Polynomial.__rmul__)
 
 
     def ground_div(self, other: 'RingElement') -> 'RingElement':
@@ -501,7 +570,6 @@ class RingElement(BaseObject):
             return self.val.get_ground()
 
 
-    @lru_cache(1)
     def order(self) -> int:
         """
         The minimum number of times the element can be added to itself before reaching the additive identity.
@@ -509,14 +577,17 @@ class RingElement(BaseObject):
         Returns:
             int: Order.
         """
-        from samson.math.symbols import oo
+        if not self.order_cache:
+            from samson.math.symbols import oo
 
-        if self.ring.order() == oo:
-            return oo
+            if self.ring.order() == oo:
+                return oo
 
 
-        ro_facs = self.ring.order_factors()
-        return self.find_maximum_subgroup(n_facs=ro_facs)
+            ro_facs = self.ring.order_factors()
+            self.order_cache = self.find_maximum_subgroup(n_facs=ro_facs)
+
+        return self.order_cache
 
 
 
@@ -619,11 +690,12 @@ class RingElement(BaseObject):
         Computes the `k`-th root of `self`.
 
         Parameters:
-            k           (int): Root to take.
-            return_all (bool): Whether or not to return all roots or just one.
+            k              (int): Root to take.
+            return_all    (bool): Whether or not to return all roots or just one.
+            root_kwargs (kwargs): Kwargs to use with polynomial roots function.
 
         Returns:
-            RingElement: Root.
+            RingElement: Root(s).
         """
         from samson.math.symbols import Symbol
 

@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
 from samson.math.symbols import oo, Symbol
 import operator
@@ -17,7 +17,7 @@ class NegativeDegreeElement(RingElement):
         """
         self.val   = val
         self.shift = shift
-        self.ring  = ring
+        super().__init__(ring)
 
 
     def valuation(self) -> 'int':
@@ -110,13 +110,11 @@ class NegativeDegreeElement(RingElement):
         return val
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
+    def __elemadd__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
         return self.__do_op(other, operator.add)
 
 
-    @left_expression_intercept
-    def __sub__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
+    def __elemsub__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
         return self.__do_op(other, operator.sub)
     
 
@@ -124,18 +122,7 @@ class NegativeDegreeElement(RingElement):
         return self.ring.ELEMENT(~self.val, -self.shift, self.ring)
 
 
-
-    @left_expression_intercept
-    def __truediv__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
-        other = self.ring.coerce(other)
-        return self * ~other
-
-
-    def __mul__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
-        gmul = self.ground_mul(other)
-        if gmul is not None:
-            return gmul
-
+    def __elemmul__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
         return self.__do_op(other, operator.mul)
 
 

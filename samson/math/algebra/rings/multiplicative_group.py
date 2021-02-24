@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import totient, index_calculus
 from samson.math.symbols import oo
 from samson.utilities.runtime import RUNTIME
@@ -15,18 +15,10 @@ class MultiplicativeGroupElement(RingElement):
             ring (Ring): Parent ring.
         """
         self.val  = val
-        self.ring = ring
+        super().__init__(ring)
 
 
-    @left_expression_intercept
-    def __add__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
-        other = self.ring.coerce(other)
-        return MultiplicativeGroupElement(self.val * other.val, self.ring)
-
-
-    @left_expression_intercept
-    def __sub__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
-        other = self.ring.coerce(-other)
+    def __elemadd__(self, other: 'MultiplicativeGroupElement') -> 'MultiplicativeGroupElement':
         return MultiplicativeGroupElement(self.val * other.val, self.ring)
 
 
@@ -42,7 +34,6 @@ class MultiplicativeGroupElement(RingElement):
         return MultiplicativeGroupElement(~self.val, self.ring)
 
 
-    @left_expression_intercept
     def __truediv__(self, other: 'MultiplicativeGroupElement') -> int:
         if type(other) is int:
             return self.val.kth_root(other)

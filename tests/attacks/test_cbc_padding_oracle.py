@@ -55,8 +55,8 @@ class CBCPaddingOracleTestCase(unittest.TestCase):
         ciphertext = encrypt_data()
         assert decrypt_data(ciphertext)
 
-        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), iv, block_size=block_size, threads=5)
-        recovered_plaintext = attack.execute(bytes(ciphertext))
+        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_data), block_size=block_size, threads=5)
+        recovered_plaintext = attack.execute(bytes(ciphertext), iv=iv)
 
         recovered_plaintext = padder.unpad(recovered_plaintext)
 
@@ -77,8 +77,8 @@ class CBCPaddingOracleTestCase(unittest.TestCase):
 
             return working_blocks[-1]
 
-        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_batch), iv, block_size=block_size, batch_requests=True)
-        recovered_plaintext = attack.execute(bytes(ciphertext))
+        attack = CBCPaddingOracleAttack(PaddingOracle(decrypt_batch), block_size=block_size, batch_requests=True)
+        recovered_plaintext = attack.execute(bytes(ciphertext), iv=iv)
 
         recovered_plaintext = padder.unpad(recovered_plaintext)
 

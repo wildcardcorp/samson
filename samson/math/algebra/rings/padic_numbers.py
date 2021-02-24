@@ -1,4 +1,4 @@
-from samson.math.algebra.rings.ring import Ring, RingElement, left_expression_intercept
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.padic_integers import PAdicIntegerRing, PAdicIntegerElement
 from samson.math.algebra.fields.negative_degree_field import NegativeDegreeElement, NegativeDegreeField
 from samson.utilities.exceptions import CoercionException
@@ -13,17 +13,6 @@ class PAdicNumberElement(NegativeDegreeElement):
     """
     Element of an `PAdicNumberField`.
     """
-
-    def __init__(self, val: PAdicIntegerElement, shift: int, ring: Ring):
-        """
-        Parameters:
-            val (PAdicIntegerElement): Value of the element.
-            ring               (Ring): Parent ring.
-        """
-        self.val   = val
-        self.shift = shift
-        self.ring  = ring
-
 
     def shorthand(self) -> str:
         parts = []
@@ -63,7 +52,7 @@ class PAdicNumberField(NegativeDegreeField):
     ELEMENT = PAdicNumberElement
 
     def __init__(self, ring: Ring):
-        self.ring = ring
+        super().__init__(ring)
         self.zero = self(0)
         self.one  = self(1)
     

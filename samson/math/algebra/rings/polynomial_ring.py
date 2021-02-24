@@ -23,6 +23,7 @@ class PolynomialRing(Ring):
         Parameters:
             ring (Ring): Underlying ring.
         """
+        super().__init__()
         self.ring   = ring
         self.symbol = symbol or Symbol('x')
         self.symbol.build(self)
@@ -64,31 +65,41 @@ class PolynomialRing(Ring):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             Polynomial: Coerced element.
         """
         from samson.math.sparse_vector import SparseVector
 
-        # Handle grounds
         type_o = type(other)
-        if type_o is int or hasattr(other, 'ring') and other.ring == self.ring:
-            other  = [other]
-            type_o = type(other)
 
-        if type_o is list or type_o is dict or type_o is SparseVector:
+        if type_o in [list, dict, SparseVector]:
             return Polynomial(other, coeff_ring=self.ring, ring=self, symbol=self.symbol)
+
 
         elif type_o is Polynomial:
             if other.ring == self:
                 return other
-            else:
-                coeff_coerced = other.change_ring(self.ring)
-                coeff_coerced.symbol = self.symbol
-                return coeff_coerced
+
+            # This check is in case we're using multivariate polynomials
+            elif other.ring == self.ring:
+                return self.coerce([other])
+
+            elif self.ring.is_superstructure_of(other.coeff_ring):
+                try:
+                    coeff_coerced = other.change_ring(self.ring)
+                    coeff_coerced.symbol = self.symbol
+                    return coeff_coerced
+                except CoercionException:
+                    pass
 
         elif type_o is Symbol and other.var.ring == self:
             return other.var
+
+        # Handle grounds
+        elif type_o is int or hasattr(other, 'ring') and other in self.ring:
+            return self.coerce([self.ring(other)])
+
 
         raise CoercionException(self, other)
 
