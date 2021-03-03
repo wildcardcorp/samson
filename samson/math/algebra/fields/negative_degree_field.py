@@ -132,9 +132,9 @@ class NegativeDegreeElement(RingElement):
 
     def __eq__(self, other: 'NegativeDegreeElement') -> bool:
         if type(other) is self.ring.ELEMENT:
-            other = other.val
+            other = other.val >> other.shift
 
-        return self.val == other
+        return self.val >> self.shift == other
 
 
     def __hash__(self):
@@ -166,7 +166,7 @@ class NegativeDegreeField(Ring):
 
 
     def __hash__(self) -> int:
-        return hash(self.ring, self.__class__)
+        return hash((self.ring, self.__class__))
 
 
     def __reprdir__(self):

@@ -1,9 +1,10 @@
 from samson.utilities.general import rand_bytes
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException, NoSolutionException
 from samson.auxiliary.complexity import add_complexity, KnownComplexities
+from samson.utilities.runtime import RUNTIME
 from functools import reduce
 from types import FunctionType
-from copy import deepcopy
+from copy import deepcopy, copy
 from enum import Enum
 import math
 
@@ -378,7 +379,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
     if invert:
         s = ~s
 
-    if g.order_cache and not g.order_cache % u:
+    if u and g.order_cache and not g.order_cache % u:
         s.order_cache = g.order_cache // u
 
     return s
@@ -421,7 +422,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         b >>= 1
         a = (a + a)
     
-    if a.order_cache and not a.order_cache % b:
+    if b and a.order_cache and not a.order_cache % b:
         s.order_cache = a.order_cache // b
     return s
 
@@ -1014,13 +1015,14 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
 
 
 @add_complexity(KnownComplexities.GRAM)
-def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
+def gram_schmidt(matrix: 'Matrix', full: bool=False, A_star: 'Matrix'=None, mu: 'Matrix'=None) -> 'Matrix':
     """
     Performs Gram-Schmidt orthonormalization.
 
     Parameters:
-        matrix  (Matrix): Matrix of row vectors.
-        normalize (bool): Whether or not to normalize the vectors.
+        matrix (Matrix): Matrix of row vectors.
+        full     (bool): Whether or not to include zero vectors.
+        A_star (Matrix): Previous `Q` matrix truncated to required
 
     Returns:
         Matrix: Orthonormalized row vectors.
@@ -1044,16 +1046,23 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
     R = matrix.coeff_ring
     n = matrix.num_rows
     A = matrix
-    A_star = []
 
-    mu = Matrix([[R.zero for _ in range(n)] for _ in range(n)])
+    if A_star:
+        A_star = [DenseVector(row) for row in A_star]
+    else:
+        A_star = []
+
+    if mu:
+        mu = deepcopy(mu)
+    else:
+        mu = Matrix([[R.zero for _ in range(n)] for _ in range(n)])
 
     # Number of non-zero rows
-    nnz = 0
+    nnz = len(A_star)
     zeroes = []
 
     # Orthogonalization
-    for j in range(n):
+    for j in range(len(A_star), n):
         ortho = A[j]
 
         for k in range(nnz):
@@ -1062,20 +1071,20 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False) -> 'Matrix':
 
         if ortho.sdot() != R.zero:
             A_star.append(ortho)
-            mu[j ,nnz] = R.one
+            mu[j, nnz] = R.one
             nnz += 1
         else:
             zeroes.append(j+len(zeroes))
 
 
     # Manipulating result matrices with zero vectors
-    if not full:
-        mu = Matrix([row for row in mu.T if any(row)]).T
-
     if full:
         zero = [DenseVector([R.zero for _ in range(n-len(zeroes))])]
         for j in zeroes:
             A_star = A_star[:j] + zero + A_star[j:]
+
+    else:
+        mu = Matrix([row for row in mu.T if any(row)]).T
 
     Q = Matrix([v.values for v in A_star])
     return Q, mu
@@ -1109,12 +1118,6 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     """
     from samson.math.all import QQ
     Matrix = _mat.Matrix
-    DenseVector = _dense.DenseVector
-
-
-    def vecs_to_matrix(vecs):
-        return Matrix([vec.values for vec in vecs])
-
 
     # Prepare ring and basis
     if type(in_basis.coeff_ring).__name__ != 'FractionField':
@@ -1124,47 +1127,53 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
 
     R     = in_basis.coeff_ring
     basis = deepcopy(in_basis)
-    n     = len(basis)
-    basis = [DenseVector(row) for row in basis.rows]
+    n     = min(len(basis), len(basis[0]))
 
-    ortho, mu = gram_schmidt(in_basis)
+    ortho, _mu = gram_schmidt(in_basis)
 
 
     # Prepare parameters
-    half  = R((R.ring.one, R.ring.one*2))
     delta = QQ(delta)
     d_num = int(delta.numerator)
     d_den = int(delta.denominator)
+    half  = R((R.ring.one, R.ring.one*2))
 
+
+    def mu_ij(i, j):
+        return ortho[j].proj_coeff(basis[i])
 
     # Perform LLL
     k = 1
     while k < n:
         for j in reversed(range(k)):
-            mu_kj = mu[k, j]
+            mu_kj = mu_ij(k, j)
 
             if abs(mu_kj) > half:
                 scalar    = round(mu_kj)
                 basis[k] -= basis[j] * scalar
-                ortho, mu = gram_schmidt(vecs_to_matrix(basis))
 
 
         # Prepare only needed vectors
         # 'o_k' needs to be specially handled since 'gram_schmidt' can remove vectors
-        o_k  = ortho[k] if len(ortho) >= k+1 else [R.zero * in_basis.num_cols]
-        M_k  = Matrix([o_k])
-        M_k1 = Matrix([ortho[k-1]])
+        M_k  = ortho[k, :] if len(ortho) >= k+1 else Matrix([[R.zero * in_basis.num_cols]])
+        M_k1 = ortho[k-1, :]
         O    = (M_k1 * M_k1.T)[0,0]
 
         # This should be ring-agnostic
-        if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu[k, k-1]**2 * O:
+        if (M_k * M_k.T)[0,0] * d_den >= O*d_num - d_den * mu_ij(k, k-1)**2 * O:
             k += 1
+
         else:
-            basis[k], basis[k-1] = deepcopy(basis[k-1]), deepcopy(basis[k])
-            ortho, mu = gram_schmidt(vecs_to_matrix(basis))
+            basis[k], basis[k-1] = copy(basis[k-1]), copy(basis[k])
+
+            # Update ortho 
+            o = ortho[k] + ortho[k-1].project(basis[k-1])
+            p = ortho[k-1] - o.project(basis[k])
+            ortho[k-1], ortho[k] = o, p
+
             k = max(k-1, 1)
 
-    return vecs_to_matrix(basis)
+    return basis
 
 
 def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) -> list:
@@ -2916,6 +2925,7 @@ def binary_quadratic_forms(D: int) -> list:
     return bqfs
 
 
+@RUNTIME.global_cache()
 def hilbert_class_polynomial(D: int) -> 'Polynomial':
     """
     Generates the Hilbert class polynomial for discriminant `D`.

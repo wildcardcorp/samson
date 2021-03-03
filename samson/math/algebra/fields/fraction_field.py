@@ -58,6 +58,10 @@ class FractionFieldElement(FieldElement):
         return self.numerator(x) / self.denominator(x)
 
 
+    def __reprdir__(self):
+        return ['numerator', 'denominator', 'field']
+
+
     def valuation(self, p: int) -> int:
         from samson.math.symbols import oo
 

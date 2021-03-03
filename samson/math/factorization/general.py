@@ -278,7 +278,8 @@ def williams_pp1(n: int, max_bound: int=None, max_attempts: int=50, exp_func: Fu
         https://programmingpraxis.com/2010/06/04/williams-p1-factorization-algorithm
     """
     sieve_of_eratosthenes = _samson_math.sieve_of_eratosthenes
-    gcd = _samson_math.gcd
+    gcd      = _samson_math.gcd
+    kth_root = _samson_math.kth_root
 
     if not max_bound:
         max_bound = max(kth_root(n, 15), 100000)

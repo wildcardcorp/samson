@@ -19,11 +19,12 @@ class DenseVector(BaseObject):
         return self.shorthand(True)
 
 
-    def __repr__(self):
-        return f'<DenseVector: values={RUNTIME.default_short_printer(self)}>'
+    @property
+    def __raw__(self):
+        return RUNTIME.default_short_printer(self)
 
-    def __str__(self):
-        return self.__repr__()
+    def __reprdir__(self):
+        return ['__raw__']
 
 
     def __hash__(self) -> int:
@@ -71,9 +72,9 @@ class DenseVector(BaseObject):
         return self.dot(self)
 
 
-    def prof_coeff(self, other: 'DenseVector') -> object:
+    def proj_coeff(self, other: 'DenseVector') -> object:
         return self.dot(other) / self.sdot()
 
 
     def project(self, other: 'DenseVector') -> 'DenseVector':
-        return self.prof_coeff(other) * self
+        return self * self.proj_coeff(other)

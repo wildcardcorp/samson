@@ -1,7 +1,7 @@
 from samson.auxiliary.progress import Progress
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing.pool import Pool as ProcessPool
-from functools import wraps
+from functools import wraps, lru_cache
 from types import FunctionType
 import math
 import logging
@@ -83,6 +83,8 @@ class RuntimeConfiguration(object):
 
         self.last_tb = None
 
+        self.global_cache_size = 128
+
 
         # Find mseive
         import distutils.spawn
@@ -131,7 +133,7 @@ class RuntimeConfiguration(object):
         Parameters:
             iterable (iterable): Iterable to report for. Can be set to `None`/updated manually.
             **kwargs   (kwargs): Keyword arguments to pass to the returned Progress object.
-        
+
         Returns:
             Progress: Progress reporting object.
         """
@@ -299,10 +301,10 @@ class RuntimeConfiguration(object):
 
         Parameters:
             threads (int): Number of threads to run.
-        
+
         Returns:
             list: Results.
-        
+
         Examples:
             >>> from samson.utilities.runtime import RUNTIME
             >>> @RUNTIME.threaded(threads=10)
@@ -321,10 +323,10 @@ class RuntimeConfiguration(object):
 
         Parameters:
             threads (int): Number of threads to run.
-        
+
         Returns:
             list: Results.
-        
+
         Examples:
             >>> from samson.utilities.runtime import RUNTIME
             >>> @RUNTIME.threaded(threads=10)
@@ -350,6 +352,16 @@ class RuntimeConfiguration(object):
             return _runner
 
         return _outer_wrap
+
+
+    def global_cache(self, size: int=None):
+        """
+        Wraps a function with a LRU cache of size `size`.
+        """
+        def _outer_wrap(func):
+            return lru_cache(size or self.global_cache_size)(func)
+        return _outer_wrap
+
 
 
     def _register_known_exploits(self):

@@ -182,7 +182,7 @@ class Polynomial(RingElement):
         Returns:
             RingElement: Evaluation at `val`.
         """
-        if val:
+        if val is not None:
             x = val
             if not self.degree():
                 return self[0]
@@ -282,11 +282,11 @@ class Polynomial(RingElement):
 
             if use_hensel or len(q_facs) == 1:
                 for fac, e in q_facs.items():
-                    Q = ZZ/ZZ(fac**e)
+                    Q      = ZZ/ZZ(fac**e)
                     nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e, use_number_field=True)]
                     all_facs.append(nroots)
 
-                for comb in itertools.product(*all_facs):
+                for comb in itertools.product(*[f for f in all_facs if f]):
                     root = R(crt(comb)[0])
 
                     if not self(root):
@@ -406,9 +406,13 @@ class Polynomial(RingElement):
 
             for root in roots:
                 zroot = ZZ(root)
-                dfr   = df(zroot)
 
-                if dfr:
+                if f(zroot):
+                    continue
+
+                dfr = df(zroot)
+
+                if dfr % p:
                     s = -f(zroot)/dfr + zroot
                     nroots.append(s)
                 else:

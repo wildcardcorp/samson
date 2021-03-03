@@ -164,7 +164,7 @@ class DSA(EncodablePKI, SignatureAlg):
             message  (bytes): Message.
             k          (int): `k` used in `message`'s signature.
             sig ((int, int)): Signature of `message`.
-        
+
         Returns:
             int: Derived `x`.
         """

@@ -148,9 +148,12 @@ class PAdicIntegerElement(RingElement):
         References:
             https://math.stackexchange.com/questions/250097/how-do-you-take-the-multiplicative-inverse-of-a-p-adic-number
         """
-        divisor  = self.ring.coerce(other)
+        divisor  = other
         result   = []
         dividend = PAdicIntegerElement([e for e in self.val], self.ring)
+
+        if not dividend:
+            return dividend
 
         a = divisor.val[0]
 
@@ -201,7 +204,7 @@ class PAdicIntegerElement(RingElement):
 
 
     def __hash__(self):
-        return super().__hash__()
+        return hash((self.ring, tuple(self.val)))
 
 
 

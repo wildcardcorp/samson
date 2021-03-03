@@ -2,7 +2,6 @@ from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellm
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
-from functools import wraps, lru_cache
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException
@@ -41,10 +40,9 @@ class Ring(BaseObject):
         return self.shorthand()
 
 
-    @property
     def structure_depth(self):
         if hasattr(self, 'ring'):
-            return self.ring.structure_depth+1
+            return self.ring.structure_depth()+1
         else:
             return 1
 
@@ -82,7 +80,7 @@ class Ring(BaseObject):
 
         Parameters:
             size (int/RingElement): The maximum ordinality/element (non-inclusive).
-    
+
         Returns:
             RingElement: Random element of the algebra.
         """
@@ -254,6 +252,9 @@ class RingElement(BaseObject):
         self.order_cache = None
 
 
+    def __reprdir__(self):
+        return list(self.__dict__.keys() - {'order_cache'})
+
     def shorthand(self) -> str:
         return f'{self.ring.shorthand()}({str(self.val)})'
 
@@ -277,6 +278,7 @@ class RingElement(BaseObject):
         return self + -other
 
 
+    @RUNTIME.global_cache()
     def __elemmul__(self, other: 'RingElement') -> 'RingElement':
         return self.ring(self.val * other.val)
 
@@ -298,6 +300,7 @@ class RingElement(BaseObject):
 
 
 
+    @RUNTIME.global_cache()
     def __add__(self, other: 'RingElement') -> 'RingElement':
         if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
             return other.ring(self) + other
@@ -756,7 +759,7 @@ class RingElement(BaseObject):
 
         Parameters:
             base (RingElement): Base.
-        
+
         Returns:
             int: `x` such that `base`^`x` == `self`.
         """

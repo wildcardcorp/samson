@@ -41,7 +41,6 @@ X   New IoT ciphers
 X   Increase performance
     X   Weierstrass curves
     X   Schoof's algorithm
-    X   LLL
 
 X   DualEC is incredibly slow
 

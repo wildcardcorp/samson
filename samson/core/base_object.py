@@ -1,5 +1,6 @@
 from samson.auxiliary.console_colors import ConsoleColors, color_format
 from samson.utilities.runtime import RUNTIME
+from copy import copy, deepcopy
 import dill
 
 FIELD_COLOR = '38;2;175;150;0'
@@ -66,7 +67,7 @@ class BaseObject(object):
 
 
     def __repr__(self) -> str:
-        fields = ""
+        field_str = ""
         if self.__reprdir__():
             fields = []
 
@@ -79,7 +80,7 @@ class BaseObject(object):
                     val = process_field(val)
                 
                 fields.append(key + val)
-            
+
             field_str = f': {", ".join([f for f in fields])}'
 
         return f'<{cls_color(self.__class__.__name__)}{field_str}>'
@@ -102,3 +103,11 @@ class BaseObject(object):
     def save(self, filepath: str):
         with open(filepath, 'wb+') as f:
             dill.dump(self, f)
+
+
+    def copy(self):
+        return copy(self)
+
+
+    def deepcopy(self):
+        return deepcopy(self)

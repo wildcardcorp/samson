@@ -1,7 +1,7 @@
 from samson.math.algebra.curves.weierstrass_curve import EllipticCurve, WeierstrassPoint
 from samson.utilities.exceptions import NoSolutionException
+from samson.utilities.runtime import RUNTIME
 from samson.core.base_object import BaseObject
-from functools import lru_cache
 
 class EllipticCurveIsogeny(BaseObject):
     def __init__(self, curve: EllipticCurve, kernel: WeierstrassPoint, pre_isomorphism: 'EllipticCurveIsogeny'=None):
@@ -15,7 +15,7 @@ class EllipticCurveIsogeny(BaseObject):
         return ['curve', 'kernel']
 
 
-    @lru_cache(10)
+    @RUNTIME.global_cache()
     def codomain(self) -> EllipticCurve:
         a, b = self.curve.a, self.curve.b
         w, v = 0, 0

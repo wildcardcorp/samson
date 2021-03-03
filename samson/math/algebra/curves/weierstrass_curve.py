@@ -5,7 +5,6 @@ from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
-from functools import lru_cache
 
 from samson.auxiliary.lazy_loader import LazyLoader
 _elliptic_curve_isogeny  = LazyLoader('_elliptic_curve_isogeny', globals(), 'samson.math.algebra.curves.elliptic_curve_isogeny')
@@ -120,6 +119,7 @@ class WeierstrassPoint(RingElement):
         return WeierstrassPoint(self.x, -self.y, self.curve)
 
 
+    @RUNTIME.global_cache()
     def __add__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if self == self.curve.POINT_AT_INFINITY:
             return P2
@@ -421,6 +421,7 @@ class WeierstrassCurve(Ring):
                 return self(x.x, x.y)
 
         if y is not None:
+            x, y = self.ring(x), self.ring(y)
             if verify and y**2 != x**3 + self.a*x + self.b:
                 raise CoercionException(f'Point ({x}, {y}) not on curve')
 
@@ -562,6 +563,7 @@ class WeierstrassCurve(Ring):
         return 1728*((4*a3)/(4*a3 + 27*R(self.b)**2))
 
 
+    @RUNTIME.global_cache()
     def is_supersingular(self) -> bool:
         """
         References:
@@ -588,7 +590,7 @@ class WeierstrassCurve(Ring):
 
 
 
-    @lru_cache(10)
+    @RUNTIME.global_cache()
     def embedding_degree(self) -> int:
         from samson.math.algebra.rings.integer_ring import ZZ
 
@@ -636,7 +638,7 @@ class WeierstrassCurve(Ring):
         return self.PAF_cache
 
 
-    @lru_cache(10)
+    @RUNTIME.global_cache()
     def cm_discriminant(self) -> int:
         """
         References:
@@ -1148,7 +1150,7 @@ class WeierstrassCurve(Ring):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            WeierstrassPoint: The `x`-th point.
         """

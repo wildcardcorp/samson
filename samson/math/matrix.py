@@ -26,8 +26,7 @@ class Matrix(RingElement):
 
         c_len = row_lens[0]
         r_len = len(rows)
-        if not is_coerced:
-            rows = [[self.coeff_ring.coerce(rows[r][c]) for c in range(c_len)] for r in range(r_len)]
+        rows  = [[self.coeff_ring.coerce(rows[r][c]) for c in range(c_len)] for r in range(r_len)]
 
         self.rows = rows
 
@@ -45,21 +44,33 @@ class Matrix(RingElement):
         else:
             str_meth = lambda elem: elem.shorthand()
 
-        max_elem_size = max([len(str_meth(elem)) for row in self.rows for elem in row])
-        base_adjust   = min(max_elem_size, get_terminal_size().columns - 10)
-        return "".join([NEWLINE + "[" + ", ".join(([str_meth(elem).rjust(base_adjust) for elem in row])) + "]" for row in self.rows])
+
+        term_max_size = get_terminal_size().columns - 10
+        row_strs      = []
+
+        col_adjusts = []
+        for row in self.T.rows:
+            max_elem_size = max([len(str_meth(elem)) for elem in row])
+            col_adjusts.append(min(max_elem_size, term_max_size))
+
+        for row in self.rows:
+            row_strs.append("[" + ", ".join([str_meth(elem).rjust(col_adjusts[idx]) for idx, elem in enumerate(row)]) + "]")
+        
+        return "".join([NEWLINE + row_str for row_str in row_strs])
 
 
     def tinyhand(self) -> str:
         return self.shorthand(True)
 
 
-    def __repr__(self):
+    @property
+    def __raw__(self):
         from samson.utilities.runtime import RUNTIME
-        return f'<Matrix: rows={RUNTIME.default_short_printer(self)}>'
+        return RUNTIME.default_short_printer(self)
+
 
     def __reprdir__(self):
-        return ['rows',]
+        return ['coeff_ring', 'num_rows', 'num_cols', '__raw__']
 
 
     @property
@@ -529,9 +540,24 @@ class Matrix(RingElement):
     def __getitem__(self, idx: object) -> 'RingElement':
         if type(idx) is tuple:
             if type(idx[0]) is slice:
-                return [row[idx[1]] for row in self.rows[idx[0]]]
+                val = [row[idx[1]] for row in self.rows[idx[0]]]
+
+                if type(val[0]) is not list:
+                    val = [[v] for v in val]
+
+                return Matrix(val)
+
             else:
-                return self.rows[idx[0]][idx[1]]
+                val = self.rows[idx[0]][idx[1]]
+                if type(val) is list:
+                    if type(idx[0]) is slice:
+                        val = [[v] for v in val]
+                    else:
+                        val = [val]
+                
+                    val = Matrix(val)
+
+                return val
         else:
             if type(idx) is slice:
                 return Matrix(self.rows[idx])
@@ -540,13 +566,39 @@ class Matrix(RingElement):
 
 
     def __setitem__(self, idx, value):
-        if type(idx) is int:
-            if type(value) is DenseVector:
-                value = value.values
+        # Just trying to get `value` into a list of lists
+        t_value = type(value)
+        if t_value is DenseVector:
+            value = [value.values]
+    
+        elif t_value is Matrix:
+            value = value.rows
+        
+        elif t_value is list:
+            pass
+
+        elif value in self.coeff_ring:
+            value = [self.coeff_ring(value)]
+
+
+        if type(idx) is tuple:
+            if type(idx[0]) is slice:
+                if type(idx[1]) is slice:
+                    for row, val in zip(self.rows[idx[0]], value):
+                        row[idx[1]] = val
+                else:
+                    for row, val in zip(self.rows[idx[0]], value):
+                        row[idx[1]] = val[0]
+
+            else:
+                self.rows[idx[0]][idx[1]] = value[0]
+
+        else:
+            if type(idx) is not slice:
+                value = value[0]
 
             self.rows[idx] = value
-        elif type(idx) is tuple:
-            self.rows[idx[0]][idx[1]] = value
+
 
 
     def __len__(self) -> int:
