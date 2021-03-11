@@ -1,6 +1,7 @@
 from samson.auxiliary.progress import Progress
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing.pool import Pool as ProcessPool
+from multiprocessing import cpu_count
 from functools import wraps, lru_cache
 from types import FunctionType
 import math
@@ -14,12 +15,12 @@ URANDOM = open("/dev/urandom", "rb")
 
 
 def default_poly_fft_heuristic(p1, p2):
-    max_deg = max(p1.degree(), p2.degree())
+    max_deg = max(len(p1)-p1.valuation(), len(p2)-p2.valuation())
     if not max_deg:
         return False
 
-    logn    = math.ceil(math.log2(max_deg))
-    n       = 2**logn
+    logn = math.ceil(math.log2(max_deg))
+    n    = 2**logn
 
     return p1.coeffs.sparsity * p2.coeffs.sparsity > 10*(3*n*logn+n)
 
@@ -83,7 +84,7 @@ class RuntimeConfiguration(object):
 
         self.last_tb = None
 
-        self.global_cache_size = 128
+        self.global_cache_size = 512
 
 
         # Find mseive
@@ -202,13 +203,13 @@ class RuntimeConfiguration(object):
         columns        = ['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType']
 
         if self.use_color and self.use_rich:
-            self._build_prims_rich_table(columns, filtered_prims)
+            self.__build_prims_rich_table(columns, filtered_prims)
         else:
-            self._build_prims_ascii_table(columns, filtered_prims)
+            self.__build_prims_ascii_table(columns, filtered_prims)
 
 
 
-    def _build_prims_ascii_table(self, col_names, primitives):
+    def __build_prims_ascii_table(self, col_names, primitives):
         lines = []
         all_columns = [col_names]
         max_column_sizes = [len(col) for col in all_columns[0]]
@@ -226,7 +227,7 @@ class RuntimeConfiguration(object):
         print(table)
 
 
-    def _build_prims_rich_table(self, col_names, primitives):
+    def __build_prims_rich_table(self, col_names, primitives):
         from rich.table import Table
         from rich import print
 
@@ -295,12 +296,28 @@ class RuntimeConfiguration(object):
         IPython.core.interactiveshell.InteractiveShell._showtraceback = showtraceback
 
 
-    def threaded(self, threads: int, starmap: bool=False):
+    def create_progress_callback(self, iterable, **kwargs):
+        from tqdm import tqdm
+        progress = tqdm(None, total=len(iterable), **kwargs)
+
+        def update_progress(item):
+            progress.update(1)
+            if progress.n == progress.total:
+                progress.close()
+
+        return update_progress
+
+
+    def threaded(self, threads: int, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
         """
         Runs the function with `threads` threads. The returned function should take an iterable.
 
         Parameters:
-            threads (int): Number of threads to run.
+            threads      (int): Number of threads to run.
+            starmap     (bool): Whether or not to "starmap" output (see Python multiprocessing).
+            visual      (bool): Whether or not to display a progress bar.
+            visual_args (dict): Kwargs for progress bar.
+            chunk_size   (int): Chunk sizes to use for visual mode. This is a tradeoff between progress granularity and communication overhead.
 
         Returns:
             list: Results.
@@ -314,44 +331,76 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
-        return self._build_concurrent_pool(threads, ThreadPool, starmap)
+        return self.__build_concurrent_pool(threads, ThreadPool, starmap, visual, visual_args)
 
 
-    def parallel(self, processes: int, starmap: bool=False):
+    def parallel(self, processes: int=None, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
         """
-        Runs the function with `threads` threads. The returned function should take an iterable.
+        Runs the function with `processes` processes. The returned function should take an iterable.
 
         Parameters:
-            threads (int): Number of threads to run.
+            processes    (int): Number of processes to run.
+            starmap     (bool): Whether or not to "starmap" output (see Python multiprocessing).
+            visual      (bool): Whether or not to display a progress bar.
+            visual_args (dict): Kwargs for progress bar.
+            chunk_size   (int): Chunk sizes to use for visual mode. This is a tradeoff between progress granularity and communication overhead.
 
         Returns:
             list: Results.
 
         Examples:
             >>> from samson.utilities.runtime import RUNTIME
-            >>> @RUNTIME.threaded(threads=10)
+            >>> @RUNTIME.parallel(processes=10)
             >>> def myfunc(i):
             >>>     return i
             >>> myfunc(range(5))
             [0, 1, 2, 3, 4]
 
         """
-        return self._build_concurrent_pool(processes, ProcessPool, starmap)
+        return self.__build_concurrent_pool(processes or cpu_count(), ProcessPool, starmap, visual, visual_args)
 
 
-    def _build_concurrent_pool(self, workers: int, pool_type: 'Pool', starmap: bool=False):
+
+    def __build_concurrent_pool(self, workers: int, pool_type: 'Pool', starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
+        if not visual_args:
+            visual_args = {}
+
         def _outer_wrap(func):
             def _runner(iterable):
+                local_func  = func
+                local_chunk = chunk_size
+
                 with pool_type(workers) as pool:
-                    if starmap:
+                    if visual:
+                        pool_runner = pool.imap_unordered
+                    elif starmap:
                         pool_runner = pool.starmap
                     else:
                         pool_runner = pool.map
 
-                    return pool_runner(func, iterable)
+
+                    # https://stackoverflow.com/questions/41920124/multiprocessing-use-tqdm-to-display-a-progress-bar
+                    if visual:
+                        from tqdm import tqdm
+                        num_items = len(iterable)
+                        if starmap:
+                            def wrapper(arg):
+                                return local_func(*arg)
+
+                            local_func = wrapper
+
+
+                        if not local_chunk:
+                            local_chunk = max(num_items // (workers*2), 1)
+
+                        return list(tqdm(pool_runner(local_func, iterable, chunksize=local_chunk), total=num_items, **visual_args))
+                    else:
+                        return pool_runner(local_func, iterable)
+
             return _runner
 
         return _outer_wrap
+
 
 
     def global_cache(self, size: int=None):

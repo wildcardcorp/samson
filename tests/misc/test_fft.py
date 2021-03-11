@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.symbols import Symbol
-from samson.math.fft import _convolution
+from samson.math.fft.gss import _convolution
 import unittest
 
 x = Symbol('x')

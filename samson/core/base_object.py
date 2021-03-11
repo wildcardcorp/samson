@@ -78,7 +78,7 @@ class BaseObject(object):
                 if k != '__raw__':
                     key = color_format(FIELD_COLOR, k) + "="
                     val = process_field(val)
-                
+
                 fields.append(key + val)
 
             field_str = f': {", ".join([f for f in fields])}'

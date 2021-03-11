@@ -3,7 +3,7 @@ from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths, pro
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
-from samson.utilities.general import add_or_increment, binary_search_unbounded
+from samson.utilities.general import add_or_increment
 from samson.utilities.runtime import RUNTIME
 from types import FunctionType
 import itertools
@@ -104,11 +104,11 @@ class Polynomial(RingElement):
 
     def tinyhand(self) -> str:
         return self.shorthand(True)
-    
+
 
     def __reprdir__(self):
         return ['__raw__', 'coeff_ring']
-    
+
 
     @property
     def __raw__(self):
@@ -131,6 +131,10 @@ class Polynomial(RingElement):
     def __iter__(self):
         for i in range(self.degree()+1):
             yield self[i]
+    
+
+    def __len__(self):
+        return self.degree()+1
 
 
     def __getitem__(self, idx: int) -> object:
@@ -267,8 +271,8 @@ class Polynomial(RingElement):
 
             facs = self.factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
-        
-    
+
+
         elif type(R) in [Zp, PAdicNumberField]:
             roots = self.change_ring(ZZ).hensel_lift(R.p, R.prec, use_number_field=type(R) == PAdicNumberField)
             return [r for r in roots if not self(r)]
@@ -360,12 +364,7 @@ class Polynomial(RingElement):
 
 
     def valuation(self):
-        from samson.math.symbols import oo
-
-        if not self.coeffs:
-            return oo
-
-        return min(self.coeffs.values.values())
+        return self.coeffs.values.keys()[0]
 
 
 
@@ -420,7 +419,7 @@ class Polynomial(RingElement):
                         nroots.append(R(zroot) + R(t)*p**(e-1))
 
             roots = nroots
-        
+
         return roots
 
 
@@ -1112,7 +1111,7 @@ class Polynomial(RingElement):
 
         Parameters:
             ring (Ring): Ring to embed into.
-        
+
         Returns:
             Polynomial: Resultant Polynomial.
 
@@ -1258,7 +1257,7 @@ class Polynomial(RingElement):
         else:
             # FFT conv
             from samson.math.general import gcd
-            from samson.math.fft import _convolution
+            from samson.math.fft.gss import _convolution
 
             self_powers  = list(self.coeffs.values.keys())
             other_powers = list(other.coeffs.values.keys())
@@ -1280,15 +1279,14 @@ class Polynomial(RingElement):
 
 
             # Shit polys to lowest power
-            self_smallest_pow  = small_self.coeffs.values.keys()[0]
-            other_smallest_pow = small_other.coeffs.values.keys()[0]
+            self_smallest_pow  = small_self.valuation()
+            other_smallest_pow = small_other.valuation()
 
             small_self  = small_self >> self_smallest_pow
             small_other = small_other >> other_smallest_pow
 
 
             # Convolve and reconstruct
-            # poly = self._create_poly(_convolution(small_self.coeffs, small_other.coeffs)) << (self_smallest_pow+other_smallest_pow)
             poly = self._create_poly(_convolution(list(small_self), list(small_other))) << (self_smallest_pow+other_smallest_pow)
 
             if denom > 1:

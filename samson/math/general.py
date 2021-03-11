@@ -421,7 +421,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
             s = (a + s)
         b >>= 1
         a = (a + a)
-    
+
     if b and a.order_cache and not a.order_cache % b:
         s.order_cache = a.order_cache // b
     return s
@@ -1166,7 +1166,7 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
         else:
             basis[k], basis[k-1] = copy(basis[k-1]), copy(basis[k])
 
-            # Update ortho 
+            # Update ortho
             o = ortho[k] + ortho[k-1].project(basis[k-1])
             p = ortho[k-1] - o.project(basis[k])
             ortho[k-1], ortho[k] = o, p
@@ -2953,7 +2953,7 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
     h     = len(bqfs)
     c1    = 3.05682737291380
     c2    = sum([1/RR(qf[0]) for qf in bqfs], RR(0))
-    prec  = c2*RR(3.142)*RR(D).sqrt() + h*c1 
+    prec  = c2*RR(3.142)*RR(D).sqrt() + h*c1
     prec *= 1.45
     prec += 10
     prec  = prec.ceil()
@@ -2988,7 +2988,7 @@ def newton_method_sizes(prec: int) -> list:
     while prec > 1:
         output.append(prec)
         prec = (prec + 1) >> 1
-    
+
     output.append(1)
     output.reverse()
 

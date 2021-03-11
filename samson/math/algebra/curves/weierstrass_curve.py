@@ -814,7 +814,6 @@ class WeierstrassCurve(Ring):
             WeierstrassCurve: Constructed curve.
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import random_int_between
 
         p = R.characteristic()
         Z = ZZ/ZZ(p)
@@ -1052,8 +1051,7 @@ class WeierstrassCurve(Ring):
             "Constructing elliptic curves of prime order" (http://www.math.leidenuniv.nl/~psh/bs.pdf)
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.symbols import Symbol
-        from samson.math.general import hilbert_class_polynomial, cornacchias_algorithm, primes, is_prime
+        from samson.math.general import cornacchias_algorithm, primes, is_prime
 
         def construct_prime(N: int, max_r: int):
             from samson.math.factorization.factors import Factors

@@ -30,6 +30,14 @@ class Factors(BaseObject):
         return self.factors.__iter__()
 
 
+    def __getstate__(self):
+        return self.factors
+
+
+    def __setstate__(self, state):
+        self.factors = state
+
+
     def __len__(self) -> int:
         return len(self.factors)
 
@@ -154,6 +162,9 @@ class Factors(BaseObject):
 
     def all_divisors(self) -> set:
         return {c.recombine() for c in self.all_combinations()}.union({1})
+
+
+    divisors = all_divisors
 
 
     def mobius(self) -> int:

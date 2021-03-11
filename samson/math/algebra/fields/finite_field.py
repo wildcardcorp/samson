@@ -20,7 +20,7 @@ class FiniteFieldElement(FieldElement):
 
     def shorthand(self) -> str:
         return self.field.shorthand() + f'({self.val.shorthand()})'
-    
+
 
     def __call__(self, arg):
         return self.val(arg)
@@ -127,7 +127,7 @@ class FiniteField(Field):
 
     def order(self) -> int:
         return self.p**self.n
-    
+
 
     def is_superstructure_of(self, R: 'Ring') -> bool:
         """

@@ -1,5 +1,4 @@
 from samson.math.algebra.curves.weierstrass_curve import EllipticCurve, WeierstrassPoint
-from samson.math.algebra.curves.montgomery_curve import MontgomeryCurve
 from samson.math.factorization.general import factor
 from samson.math.general import random_int_between, is_prime
 from samson.core.primitives import KeyExchangeAlg, Primitive
@@ -22,7 +21,7 @@ def find_ss_prime(a: int, b: int, min_bits: int, max_strength_diff: float=0.005)
         i += 1
         e = round(i*a_mod)
         p = f*a**e*b**i-1
-    
+
     return p
 
 
@@ -42,7 +41,7 @@ def extract_prime_powers(p):
     else:
         # Remove cofactor
         (_, _), (wb, eb), (wa, ea) = sorted(facs, key=lambda item: item[0])
-    
+
     return wa, ea, wb, eb
 
 

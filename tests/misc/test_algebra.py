@@ -99,13 +99,15 @@ class AlgebraTestCase(unittest.TestCase):
                     continue
 
                 smaller_orders = []
+                #print(algebra, RX)
                 for _ in range(10):
                     rand_elem = RX.zero
 
                     while rand_elem == RX.zero:
                         rand_elem = RX[random_int(50)]
 
-                    # Assert order is a multiple of the number of element
+                    # Assert order is a divisor of the ring order
+                    print(rand_elem)
                     self.assertEqual(rand_elem * RX.order(), RX.zero)
 
                     # Assert order is the minimum multiple (i.e. 1)

@@ -1,6 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
-from samson.math.symbols import oo, Symbol
+from samson.math.symbols import oo
 import operator
 
 
@@ -69,7 +69,7 @@ class NegativeDegreeElement(RingElement):
 
     def __rshift__(self, num: int):
         return self.ring.ELEMENT(self.val, self.shift+num, self.ring)
-    
+
 
     def __do_op(self, other, op):
         other = self.ring.coerce(other)
@@ -116,7 +116,7 @@ class NegativeDegreeElement(RingElement):
 
     def __elemsub__(self, other: 'NegativeDegreeElement') -> 'NegativeDegreeElement':
         return self.__do_op(other, operator.sub)
-    
+
 
     def __invert__(self) -> 'NegativeDegreeElement':
         return self.ring.ELEMENT(~self.val, -self.shift, self.ring)

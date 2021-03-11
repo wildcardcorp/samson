@@ -203,9 +203,9 @@ def coupon_collector_analysis(n: int) -> (float, float):
     """
     Determines the average number of attempts to collect all `n` items from a pseudorandom function.
 
-    Paramters:
+    Parameters:
         n (int): Number of items.
-    
+
     Returns:
         (float, float): Tuple formatted as (average_number, standard_deviation).
     
@@ -224,7 +224,7 @@ def ncr(n: int, r: int) -> int:
     Parameters:
         n (int): Number to choose from.
         r (int): Number of those to choose.
-    
+
     Returns:
         int: Number of elements in nCr.
     """

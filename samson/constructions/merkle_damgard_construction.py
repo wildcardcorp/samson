@@ -83,7 +83,8 @@ class MerkleDamgardConstruction(Hash):
         Returns:
             Bytes: Intermediate, hashed states.
         """
-        state = self.initial_state
+        state   = self.initial_state
+        message = Bytes.wrap(message)
 
         for block in get_blocks(self.pad_func(message), self.block_size):
             state = self.compression_func(block, state)

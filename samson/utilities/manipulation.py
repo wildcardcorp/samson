@@ -151,3 +151,21 @@ def unxorshift_right(x: int, n: int, bits: int) -> int:
     for i in range(1, bits // n + 1):
         y ^= (x >> n*i)
     return y
+
+
+def reverse_bits(x: int, bits: int) -> int:
+    """
+    Reverses the bit ordering of an integer.
+
+    Parameters:
+        x    (int): Integer to reverse.
+        bits (int): Bitspace to reverse.
+
+    Returns:
+        int: Reversed bit-order integer.
+    """
+    y = 0
+    for _ in range(bits):
+        y = (y << 1) | (x & 1)
+        x >>= 1
+    return y

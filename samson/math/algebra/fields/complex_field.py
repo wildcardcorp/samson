@@ -1,4 +1,3 @@
-from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.fields.real_field import RealField, RealElement
 from samson.utilities.exceptions import CoercionException
 

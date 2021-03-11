@@ -1,7 +1,6 @@
 from samson.math.general import newton_method_sizes
 from samson.math.symbols import Symbol
 from samson.core.base_object import BaseObject
-from samson.math.algebra.rings.padic_integers import Zp
 
 class EllipticCurveFormalGroup(BaseObject):
     def __init__(self, curve):
@@ -23,7 +22,7 @@ class EllipticCurveFormalGroup(BaseObject):
                 d = (w*z*-2*a - w**2*3*b + 1)
 
                 w = (n/d)
-        
+
         return w
 
 

@@ -48,12 +48,6 @@ class SparseVector(BaseObject):
         self.virtual_len = length
 
 
-    # def __repr__(self):
-    #     return f'<SparseVector: values={self.values}, virtual_len={self.virtual_len}>'
-
-    # def __str__(self):
-    #     return self.__repr__()
-
 
     def __hash__(self) -> int:
         return hash(tuple([_ for _ in self.values.items()]))
@@ -228,3 +222,16 @@ class SparseVector(BaseObject):
 
         vec.virtual_len = self.virtual_len
         return vec
+
+
+    def dense_vector(self):
+        from samson.math.dense_vector import DenseVector
+
+        vec = []
+        last = 0
+        for k,v in self.values.items():
+            vec.extend([self.zero]*(k-last-1))
+            vec.append(v)
+            last = k
+        
+        return DenseVector(vec)

@@ -128,7 +128,7 @@ class CBCPaddingOracleAttack(object):
         if not iv:
             iv        = ct_blocks[0]
             ct_blocks = ct_blocks[1:]
-        
+
         if pad:
             from samson.padding.pkcs7 import PKCS7
             new_plaintext = PKCS7(self.block_size).pad(new_plaintext)

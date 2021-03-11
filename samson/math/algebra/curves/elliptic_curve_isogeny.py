@@ -9,7 +9,7 @@ class EllipticCurveIsogeny(BaseObject):
         self.kernel = kernel
         self.points = [kernel*i for i in range(1, kernel.order())]
         self.pre_isomorphism = pre_isomorphism
-    
+
 
     def __reprdir__(self):
         return ['curve', 'kernel']

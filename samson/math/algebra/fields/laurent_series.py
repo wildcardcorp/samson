@@ -1,10 +1,7 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.utilities.exceptions import CoercionException, NotInvertibleException
-from samson.math.symbols import oo, Symbol
-from samson.math.algebra.rings.power_series_ring import PowerSeriesElement, PowerSeriesRing
+from samson.math.algebra.rings.ring import Ring
+from samson.math.algebra.rings.power_series_ring import PowerSeriesElement
 from samson.math.algebra.rings.polynomial_ring import Polynomial
 from samson.math.algebra.fields.negative_degree_field import NegativeDegreeElement, NegativeDegreeField
-import operator
 
 
 class LaurentSeriesElement(NegativeDegreeElement):

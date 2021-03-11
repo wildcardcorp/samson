@@ -72,6 +72,12 @@ class ECDSA(DSA):
         return ['d', 'G', 'Q', 'hash_obj']
 
 
+    def H(self, m: bytes) -> int:
+        h   = self.hash_obj.hash(m).int()
+        h >>= max(self.hash_obj.digest_size * 8 - self.q.bit_length(), 0)
+        return h
+
+
     def sign(self, message: bytes, k: int=None) -> (int, int):
         """
         Signs a `message`.
@@ -92,8 +98,7 @@ class ECDSA(DSA):
             k = k_in or random_int_between(1, self.q)
             inv_k = mod_inv(k, self.q)
 
-            z = self.hash_obj.hash(message).int()
-            z >>= max(self.hash_obj.digest_size * 8 - self.q.bit_length(), 0)
+            z = self.H(message)
 
             r = int((k * self.G).x) % self.q
             s = (inv_k * (z + self.d * r)) % self.q
@@ -107,12 +112,14 @@ class ECDSA(DSA):
         return (r, s)
 
 
-    def _build_verification_params(self, message: bytes, sig: (int, int)) -> (int, int, WeierstrassPoint):
+    def _build_verification_params(self, message: bytes, sig: (int, int), bypass_hash: bool=False) -> (int, int, WeierstrassPoint):
         (r, s) = sig
         w = mod_inv(s, self.q)
 
-        z = self.hash_obj.hash(message).int()
-        z >>= max(self.hash_obj.digest_size * 8 - self.q.bit_length(), 0)
+        if bypass_hash:
+            z = Bytes.wrap(message).int()
+        else:
+            z = self.H(message)
 
         u_1 = (z * w) % self.q
         u_2 = (r * w) % self.q
@@ -121,7 +128,7 @@ class ECDSA(DSA):
         return u_1, u_2, v
 
 
-    def verify(self, message: bytes, sig: (int, int)) -> bool:
+    def verify(self, message: bytes, sig: (int, int), bypass_hash: bool=False) -> bool:
         """
         Verifies a `message` against a `sig`.
 
@@ -132,8 +139,8 @@ class ECDSA(DSA):
         Returns:
             bool: Whether the signature is valid or not.
         """
-        r, _ = sig
-        _, _, v = self._build_verification_params(message, sig)
+        r, _    = sig
+        _, _, v = self._build_verification_params(message, sig, bypass_hash)
         return v.x == r
 
 
@@ -181,15 +188,18 @@ class ECDSA(DSA):
 
 
 
-    def biased_nonce_key_recovery(self, msgs: list, sigs: list, bias_size: int, is_high_bit_bias: bool) -> 'ECDSA':
+    def biased_nonce_key_recovery(self, msgs: list, sigs: list, bias_size: int, is_high_bit_bias: bool, partial_knowns: list=None, is_high_bit_partial: bool=None, partial_size: int=None) -> 'ECDSA':
         """
         Recovers the private key `d` from ECDSA signatures with high or low bits biased to a constant.
 
         Parameters:
-            msgs             (list): Messages that were signed.
-            sigs             (list): Signature pairs that align with `msgs`.
-            bias_size         (int): Size of bias in bits.
-            is_high_bit_bias (bool): Whether the bias is at the high bits (True) or low bits (False).
+            msgs                (list): Messages that were signed.
+            sigs                (list): Signature pairs that align with `msgs`.
+            bias_size            (int): Size of bias in bits.
+            is_high_bit_bias    (bool): Whether the bias is at the high bits (True) or low bits (False).
+            partial_knowns      (list): A list of partial knowns as integers such that `nonce` = `known + unknown`.
+            is_high_bit_partial (bool): Whether the partials are at the high bits (True) or low bits (False).
+            partial_size         (int): Size of the partials.
 
         Returns:
             ECDSA: Cracked ECDSA instance.
@@ -219,29 +229,51 @@ class ECDSA(DSA):
         References:
             https://blog.trailofbits.com/2020/06/11/ecdsa-handle-with-care/
             https://toadstyle.org/cryptopals/62.txt
+            "The Insecurity of the Elliptic Curve Digital Signature Algorithm with Partially Known Nonces" (https://ljk.imag.fr/membres/Jean-Guillaume.Dumas/Enseignements/ProjetsCrypto/FautesECC/Nguyen.pdf)
         """
-        from samson.math.all import ZZ, QQ, Matrix
+        from samson.math.all import ZZ, QQ, Matrix, trial_division
 
-        q = self.q
-        R = ZZ/ZZ(q)
+        q     = self.q
+        R     = ZZ/ZZ(q)
+        qbits = q.bit_length()
 
-        # Emulates ECDSA message processing
-        def H(m):
-            h   = self.hash_obj.hash(m).int()
-            h >>= max(self.hash_obj.digest_size * 8 - q.bit_length(), 0)
-            return h
+        # If location of partials is not specified, we assume the user wants it in the
+        # same location of the bias
+        if is_high_bit_partial is None:
+            is_high_bit_partial = is_high_bit_bias
+
+        if not partial_knowns:
+            partial_knowns = [0]*len(msgs)
+
+        if partial_size is None:
+            if is_high_bit_partial:
+                partial_size = max(qbits-(trial_division(partial, limit=3)[2] if partial else 0) for partial in partial_knowns)
+            else:
+                partial_size = max(partial.bit_length() for partial in partial_knowns)
 
 
         if is_high_bit_bias:
-            bias_start = q.bit_length()
-            bias_stop  = q.bit_length() - bias_size
+            if is_high_bit_partial:
+                bias_start = qbits
+                bias_stop  = qbits - max(bias_size, partial_size)
+                bias_denom = 1
+            else:
+                bias_start = qbits
+                bias_stop  = qbits - bias_size - partial_size
+                bias_denom = 2**partial_size
+
         else:
-            bias_start = bias_size
-            bias_stop  = 0
+            if is_high_bit_partial:
+                bias_start = bias_size + partial_size
+                bias_stop  = 0
+                bias_denom = 2**bias_size
+            else:
+                bias_start = bias_size
+                bias_stop  = 0
+                bias_denom = 2**max(bias_size, partial_size)
 
 
-        bias_denom   = 2**(q.bit_length() - bias_start)
-        mn, (rn, sn) = H(msgs[-1]), sigs[-1]
+        mn, (rn, sn), partialn = self.H(msgs[-1]), sigs[-1], partial_knowns[-1]
 
         # Builds the problem matrix
         # Note we use the difference between signatures to zero the bias
@@ -255,17 +287,17 @@ class ECDSA(DSA):
                 qs.append([QQ(0)]*i + [QQ(q)] + [QQ(0)]*(n-i+1))
 
 
-            mns = R(mn) / sn / bias_denom
+            mns = (partialn - R(mn) / sn) / bias_denom
             rns = R(rn) / sn / bias_denom
 
-            for m, (r, s) in zip(msgs[:-1], sigs[:-1]):
+            for m, (r, s), partial in zip(msgs[:-1], sigs[:-1], partial_knowns[:-1]):
                 t   = R(r) / s / bias_denom - rns
-                u   = R(H(m)) / s / bias_denom - mns
+                u   = (partial - R(self.H(m)) / s) / bias_denom - mns
                 ts.append(QQ(t))
                 us.append(QQ(u))
 
 
-            ts.append(QQ((2**(q.bit_length() - bias_start + bias_stop), q)))
+            ts.append(QQ((2**(qbits - bias_start + bias_stop), q)))
             ts.append(QQ(0))
             us.append(QQ(0))
             us.append(QQ(q))
@@ -280,9 +312,10 @@ class ECDSA(DSA):
         # We only have the difference between `k_i` and `k_n`, so we have
         # to do some addition calculations
         for k_row in [v for v in sol if v[-1] == q]:
-            for k_diff, m, (r, s) in zip(k_row[:-1], msgs[:-1], sigs[:-1]):
-                m      = H(m)
-                k_diff = ZZ(k_diff*bias_denom)
+            for k_diff, m, (r, s), partial in zip(k_row[:-1], msgs[:-1], sigs[:-1], partial_knowns[:-1]):
+                m      = self.H(m)
+                k_top  = -ZZ(k_diff*bias_denom)
+                k_diff = k_top + partial - partialn
                 d      = int(R(sn*m - s*mn - s*sn*(k_diff))/R(rn*s - r*sn))
 
                 if self.G*d == self.Q:
@@ -290,3 +323,29 @@ class ECDSA(DSA):
 
 
         raise NoSolutionException
+
+
+    def generate_fake_signature(self) -> (int, (int, int)):
+        """
+        Generates a fake signature using the hash value `z` as a free parameter. This will
+        not work if the implementation always hashes the message.
+
+        Returns:
+            (int, (int, int)): Formatted as (z, (r, s)).
+        
+        Example:
+            >>> from samson.all import *
+            >>> ecdsa  = ECDSA(P256.G)
+            >>> z, sig = ecdsa.generate_fake_signature()
+            >>> ecdsa.verify(z, sig, bypass_hash=True)
+            True
+
+        References:
+            https://kel.bz/post/ecdsa-is-weird/
+        """
+        a, b = [random_int_between(1, self.q) for _ in range(2)]
+        r    = int((a*self.G + b*self.Q).x)
+
+        b_inv = mod_inv(b, self.q)
+        s     = (r * b_inv) % self.q
+        return int(s*a % self.q), (int(r), int(s))

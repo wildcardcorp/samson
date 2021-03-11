@@ -40,12 +40,12 @@ class TqdmReporter(Reporter):
 
     def wrap_iteration(self, caller: object, iterable: object, kwargs) -> Progress:
         """
-        Wraps the `iterable` in the appropriate Progres class.
+        Wraps the `iterable` in the appropriate Progress class.
 
         Parameters:
             caller (object): Caller object.
             func     (func): Function being reported on.
-        
+
         Returns:
             Progress: Contextualized Progress object.
         """

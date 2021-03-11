@@ -366,6 +366,9 @@ def trial_division(n: int, limit: int=1000, prime_base: list=None, progress_upda
 
     facs = Factors()
 
+    if not n:
+        return facs
+
     if n < 0:
         n //= -1
         facs.add(-1)
@@ -388,10 +391,10 @@ def pollards_rho(n: int, max_attempts: int=None) -> int:
 
     Parameters:
         n (int): Integer to factor.
-    
+
     Returns:
         int: Factor of `n`.
-    
+
     Examples:
         >>> from samson.math.factorization.general import pollards_rho
         >>> pollards_rho(26515460203326943826)
@@ -451,10 +454,10 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
         B1       (int): Stage 1 bound for max factor.
         B2       (int): Maximum bound. Used in stage 2 if no factors were found.
         attempts (int): Number of attempts to perform.
-    
+
     Returns:
         int: Factor of `n`.
-    
+
     Examples:
         >>> from samson.math.factorization.general import ecm
         >>> ecm(26515460203326943826)
@@ -529,10 +532,10 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
     Parameters:
         n           (int): Possible perfect power.
         precision (float): Required precision of natural comprime bases.
-    
+
     Returns:
         (bool, int, int): Formatted as (is_composite_power, root, exponent).
-    
+
     Examples:
         >>> from samson.math.factorization.general import is_composite_power
         >>> is_composite_power(1806031142**10*2)
@@ -600,13 +603,13 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
         ecm_attempts          (int): Maximum number of ECM attempts before giving up.
         perfect_power_checks (bool): Whether or not to check for perfect powers.
         mersenne_check       (bool): Whether or not to check if `n` is a Mersenne number and factor accordingly (see `_mersenne_factor`).
-        visual               (bool): Whether or not to display progress bar.
+        visual               (bool): Whether or not to display a progress bar.
         reraise_interrupt    (bool): Whether or not to reraise a KeyboardInterrupt.
         user_stop_func       (func): A function that takes in (`n`, facs) and returns True if the user wants to stop factoring.
 
     Returns:
         Factors: Factorization of `n`.
-    
+
     Examples:
         >>> from samson.math.factorization.general import factor
         >>> dict(factor(26515460203326943826)) == {2: 1, 3262271209: 1, 4063957057: 1} # equality because pytest sorts dicts weird

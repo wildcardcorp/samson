@@ -1,9 +1,18 @@
 from samson.utilities.runtime import RUNTIME
 from samson.core.base_object import BaseObject
+from samson.math.general import gcd
+from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.fft.all import ntt_convolution, gss_convolution
+from types import FunctionType
 
 class DenseVector(BaseObject):
-    def __init__(self, values: list):
-        self.values = values
+    def __init__(self, values: list, coeff_ring: 'Ring'=None):
+        if coeff_ring:
+            self.coeff_ring = coeff_ring
+        else:
+            self.coeff_ring = values[0].ring if hasattr(values[0], 'ring') else ZZ
+
+        self.values = [self.coeff_ring(v) for v in values]
 
 
     def shorthand(self, tinyhand: bool=False) -> str:
@@ -48,8 +57,12 @@ class DenseVector(BaseObject):
 
 
     def __getitem__(self, idx: object) -> 'RingElement':
-        return self.values[idx]
-
+        result = self.values[idx]
+        if type(idx) is slice:
+            return DenseVector(result)
+        else:
+            return result
+    
 
     def __setitem__(self, idx, value):
         self.values[idx] = value
@@ -60,12 +73,7 @@ class DenseVector(BaseObject):
 
 
     def dot(self, other: 'DenseVector') -> object:
-        if hasattr(self.values[0], 'ring'):
-            zero = self.values[0].ring.zero
-        else:
-            zero = 0
-
-        return sum([a*b for a,b in zip(self.values, other.values)], zero)
+        return sum([a*b for a,b in zip(self.values, other.values)], self.coeff_ring.zero)
 
 
     def sdot(self) -> object:
@@ -78,3 +86,88 @@ class DenseVector(BaseObject):
 
     def project(self, other: 'DenseVector') -> 'DenseVector':
         return self * self.proj_coeff(other)
+
+
+    def apply_elementwise(self, func: FunctionType) -> 'DenseVector':
+        """
+        Applies a function to each element and returns a `DenseVector` of the results.
+
+        Parameters:
+            func (func): Function to apply.
+
+        Returns:
+            DenseVector: Result DenseVector.
+        """
+        return DenseVector([func(e) for e in self.values])
+
+
+    def change_ring(self, ring: 'Ring') -> 'DenseVector':
+        """
+        Returns a new DenseVector with the coefficients coerced into `ring`.
+
+        Parameters:
+            ring (Ring): Ring to embed into.
+
+        Returns:
+            DenseVector: Resultant DenseVector.
+        """
+        return DenseVector(self.values, coeff_ring=ring)
+
+
+    def convolve(self, other: 'DenseVector') -> 'DenseVector':
+        """
+        Performs linear convolution between two vectors.
+
+        Parameters:
+            other (DenseVector): Other vector to convolve with.
+
+        Returns:
+            DenseVector: Convolved vector.
+        """
+        l_self = len(self)
+        for i in range(l_self):
+            if self[i]:
+                break
+
+        p1_min  = i
+        l_other = len(other)
+
+        for i in range(l_other):
+            if other[i]:
+                break
+        
+        p2_min = i
+        max_deg = max(l_self-p1_min, l_other-p2_min)
+        logn    = max_deg.bit_length()
+        n       = 2**logn
+
+        vec_a = self[p1_min:]
+        vec_b = other[p2_min:]
+
+        # Decide whether to do naive convolution or FFT convo
+        if max_deg and max_deg**2 > 10*(3*n*logn+n):
+            if self.coeff_ring == ZZ:
+                return DenseVector(ntt_convolution(vec_a.values, vec_b.values))
+
+            elif self.coeff_ring == ZZ.fraction_field():
+                content_a = gcd(*vec_a.values)
+                content_b = gcd(*vec_b.values)
+
+                vec_a_zz = vec_a * ~content_a
+                vec_b_zz = vec_b * ~content_b
+                vec_c_zz = DenseVector(ntt_convolution(vec_a_zz.values, vec_b_zz.values))
+
+                return vec_c_zz*(content_a*content_b)
+
+
+            # TODO: Check for Quotient ring
+            else:
+                return gss_convolution(vec_a.values, vec_b.values).dense_vector()
+
+        else:
+            vec = [0]*(len(vec_a) + len(vec_b))
+            for i, a in enumerate(vec_a):
+                for j, b in enumerate(vec_b):
+                    vec[i+j] += a*b
+            
+            return DenseVector(vec)

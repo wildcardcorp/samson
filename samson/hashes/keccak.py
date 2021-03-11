@@ -3,7 +3,7 @@ from samson.utilities.bytes import Bytes
 from samson.utilities.manipulation import left_rotate
 from samson.constructions.sponge_construction import SpongeConstruction
 from samson.core.primitives import Hash, Primitive
-from samson.core.metadata import ConstructionType, SizeSpec, SizeType
+from samson.core.metadata import ConstructionType, SizeSpec, SizeType, FrequencyType
 
 # https://github.com/ctz/keccak/blob/master/keccak.py
 
@@ -31,16 +31,18 @@ class Keccak(SpongeConstruction, Hash):
     SHA3 winner based on the SpongeConstruction.
     """
 
+    USAGE_FREQUENCY    = FrequencyType.NORMAL
     CONSTRUCTION_TYPES = [ConstructionType.SPONGE]
     OUTPUT_SIZE        = SizeSpec(size_type=SizeType.ARBITRARY, sizes=[224, 256, 384, 512])
 
-    def __init__(self, r: int, c: int, digest_bit_size: int, auto_reset_state: bool=True):
+    def __init__(self, r: int, c: int, digest_bit_size: int, auto_reset_state: bool=True, padding: int=0x01):
         """
         Parameters:
             r                 (int): Bit-size of the sponge function.
             c                 (int): Sponge capacity.
             digest_bit_size   (int): Desired size of output.
             auto_reset_state (bool): Whether or not to reset the internal state before hashing.
+            padding           (int): The domain-specific padding number.
         """
         super().__init__(self.keccak_f, self.pad, r, c)
         Primitive.__init__(self)
@@ -49,6 +51,7 @@ class Keccak(SpongeConstruction, Hash):
         self.n = int(log(self.w, 2) * 2 + 12)
         self.digest_size = (digest_bit_size // 8)
         self.auto_reset_state = auto_reset_state
+        self.padding = padding
 
 
     def __reprdir__(self):
@@ -57,15 +60,15 @@ class Keccak(SpongeConstruction, Hash):
 
     def pad(self, in_bytes: bytes) -> bytes:
         bit_rate_bytes = (self.r + 7) // 8
-        pad_len = (bit_rate_bytes - len(in_bytes)) % bit_rate_bytes
+        pad_len = bit_rate_bytes - (len(in_bytes) % bit_rate_bytes)
 
         if pad_len == 0:
             pad_len = bit_rate_bytes
 
         if pad_len == 1:
-            return in_bytes + bytes([0x81])
+            return in_bytes + bytes([self.padding + 0x80])
         else:
-            return in_bytes + bytes([0x01] + ([0] * (pad_len - 2)) + [0x80])
+            return in_bytes + bytes([self.padding] + ([0] * (pad_len - 2)) + [0x80])
 
 
     def keccak_f(self, A):

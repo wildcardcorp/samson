@@ -62,7 +62,7 @@ class Vigenere(BaseObject):
 
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """

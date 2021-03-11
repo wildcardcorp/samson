@@ -226,7 +226,7 @@ class Ring(BaseObject):
                 ring = self
                 for symbol in x:
                     ring = PolynomialRing(ring, symbol)
-                
+
                 return ring
 
             else:
@@ -321,9 +321,9 @@ class RingElement(BaseObject):
 
     def __rsub__(self, other: 'RingElement') -> 'RingElement':
         return self.ring.coerce(other) - self
-    
 
-    def __mul__(self, other: 'RingElement') -> 'RingElement': 
+
+    def __mul__(self, other: 'RingElement') -> 'RingElement':
         gmul = self.ground_mul(other)
         if gmul is not None:
             return gmul

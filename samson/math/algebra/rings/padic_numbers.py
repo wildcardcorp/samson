@@ -1,11 +1,7 @@
-from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.algebra.rings.padic_integers import PAdicIntegerRing, PAdicIntegerElement
+from samson.math.algebra.rings.ring import Ring
+from samson.math.algebra.rings.padic_integers import PAdicIntegerRing
 from samson.math.algebra.fields.negative_degree_field import NegativeDegreeElement, NegativeDegreeField
-from samson.utilities.exceptions import CoercionException
 from samson.auxiliary.lazy_loader import LazyLoader
-from samson.math.general import mod_inv
-from samson.math.symbols import oo
-import operator
 
 _integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
 
@@ -55,7 +51,7 @@ class PAdicNumberField(NegativeDegreeField):
         super().__init__(ring)
         self.zero = self(0)
         self.one  = self(1)
-    
+
 
     def _precheck_val(self, other):
         other  = int(other)

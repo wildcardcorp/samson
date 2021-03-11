@@ -2,6 +2,7 @@ from samson.math.dense_vector import DenseVector
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import gaussian_elimination, lll, gram_schmidt
+from samson.utilities.runtime import RUNTIME
 from shutil import get_terminal_size
 from types import FunctionType
 from copy import deepcopy
@@ -37,7 +38,6 @@ class Matrix(RingElement):
         self.ring = ring
 
 
-
     def shorthand(self, tinyhand: bool=False) -> str:
         if tinyhand:
             str_meth = lambda elem: elem.tinyhand()
@@ -52,12 +52,15 @@ class Matrix(RingElement):
         for row in self.T.rows:
             max_elem_size = max([len(str_meth(elem)) for elem in row])
             col_adjusts.append(min(max_elem_size, term_max_size))
+        
+        max_row_str = len(str(len(self.rows)))
 
-        for row in self.rows:
-            row_strs.append("[" + ", ".join([str_meth(elem).rjust(col_adjusts[idx]) for idx, elem in enumerate(row)]) + "]")
+        row_strs.append(" "*(2+max_row_str) + '  '.join([str(idx).rjust(col_adj) for idx, col_adj in enumerate(col_adjusts)]))
+
+        for ridx, row in enumerate(self.rows):
+            row_strs.append(f"{str(ridx).rjust(max_row_str)} [" + ", ".join([str_meth(elem).rjust(col_adjusts[idx]) for idx, elem in enumerate(row)]) + "]")
         
         return "".join([NEWLINE + row_str for row_str in row_strs])
-
 
     def tinyhand(self) -> str:
         return self.shorthand(True)
@@ -65,7 +68,6 @@ class Matrix(RingElement):
 
     @property
     def __raw__(self):
-        from samson.utilities.runtime import RUNTIME
         return RUNTIME.default_short_printer(self)
 
 
@@ -94,7 +96,7 @@ class Matrix(RingElement):
 
         Returns:
             Matrix: Transposed `Matrix`.
-        
+
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).transpose()
@@ -131,7 +133,7 @@ class Matrix(RingElement):
             size        (int): Number of rows/columns.
             coeff_ring (Ring): Ring elements will be in.
             ring       (Ring): Parent ring.
-        
+
         Returns:
             Matrix: Identity matrix.
         """
@@ -149,10 +151,10 @@ class Matrix(RingElement):
             cols          (int): Number of columns.
             coeff_ring   (Ring): Ring elements will be in.
             ring         (Ring): Parent ring.
-        
+
         Returns:
             Matrix: `Matrix` filled with `value`.
-        
+
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix.fill(ZZ.zero, 3, 4)
@@ -171,10 +173,10 @@ class Matrix(RingElement):
 
         Parameters:
             func (func): Function to apply.
-        
+
         Returns:
             Matrix: Result matrix.
-        
+
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).apply_elementwise(lambda elem: elem**2)
@@ -193,7 +195,7 @@ class Matrix(RingElement):
 
         Parameters:
             ring (Ring): Ring to embed into.
-        
+
         Returns:
             Matrix: Resultant Matrix.
         """
@@ -308,10 +310,10 @@ class Matrix(RingElement):
 
         Parameters:
             other (Matrix): Other `Matrix`.
-        
+
         Returns:
             Matrix: The joined matrices.
-        
+
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).row_join(Matrix([[5,6], [7,8]], ZZ))
@@ -338,10 +340,10 @@ class Matrix(RingElement):
 
         Parameters:
             other (Matrix): Other `Matrix`.
-        
+
         Returns:
             Matrix: The joined matrices.
-        
+
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).col_join(Matrix([[5,6], [7,8]], ZZ))
@@ -391,10 +393,10 @@ class Matrix(RingElement):
 
         Parameters:
             normalize (bool): Whether or not to normalize the vectors.
-        
+
         Returns:
             Matrix: Orthonormalized row vectors.
-        
+
         Examples:
             >>> from samson.math.all import QQ
             >>> from samson.math.matrix import Matrix
@@ -419,7 +421,7 @@ class Matrix(RingElement):
 
         Returns:
             Matrix: Normalized `Matrix`.
-        
+
         Examples:
             >>> from samson.math.all import QQ, Matrix
             >>> Matrix([[4,4,4,4]]*4, QQ).normalize()
@@ -440,10 +442,10 @@ class Matrix(RingElement):
 
         Parameters:
             rhs (Matrix): The right-hand side matrix.
-        
+
         Returns:
             Matrix: The `x` matrix.
-        
+
         Examples:
             >>> from samson.math.all import QQ
             >>> from samson.math.matrix import Matrix
@@ -518,12 +520,12 @@ class Matrix(RingElement):
 
         Returns:
             Matrix: Right kernel.
-    
+
         References:
             https://en.wikipedia.org/wiki/Kernel_(linear_algebra)#Computation_by_Gaussian_elimination
         """
         AI = self.col_join(Matrix.identity(self.num_cols, self.coeff_ring))
-        c =  AI.T.rref()
+        c  = AI.T.rref()
         return Matrix([row[self.num_rows:] for row in c if not any(row[:self.num_rows])])
 
 
@@ -554,7 +556,7 @@ class Matrix(RingElement):
                         val = [[v] for v in val]
                     else:
                         val = [val]
-                
+
                     val = Matrix(val)
 
                 return val
@@ -570,12 +572,15 @@ class Matrix(RingElement):
         t_value = type(value)
         if t_value is DenseVector:
             value = [value.values]
-    
+
         elif t_value is Matrix:
             value = value.rows
-        
+
         elif t_value is list:
-            pass
+            if type(value[0]) is not list:
+                value = [value]
+            else:
+                value = value
 
         elif value in self.coeff_ring:
             value = [self.coeff_ring(value)]
@@ -616,10 +621,6 @@ class Matrix(RingElement):
             return Matrix([[self.rows[r][c] + other.rows[r][c] for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
         else:
             raise ValueError("other type not addible")
-
-
-    def __sub__(self, other: 'Matrix') -> 'Matrix':
-        return self + -other
 
 
     def __mul__(self, other: 'Matrix') -> 'Matrix':

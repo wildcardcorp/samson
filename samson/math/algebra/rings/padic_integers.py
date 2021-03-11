@@ -61,7 +61,7 @@ class PAdicIntegerElement(RingElement):
             int: Ordinality.
         """
         return int(self)
-    
+
 
     def __int__(self) -> int:
         """
@@ -126,7 +126,7 @@ class PAdicIntegerElement(RingElement):
             raise ZeroDivisionError
 
         return self.ring.one / self
-    
+
 
     def __lshift__(self, num: int):
         if num < 0:

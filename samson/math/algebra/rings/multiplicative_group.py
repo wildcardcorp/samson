@@ -169,7 +169,7 @@ class MultiplicativeGroup(Ring):
             MultiplicativeGroupElement: Coerced element.
         """
         if type(other) is not MultiplicativeGroupElement or other.ring.ring != self.ring:
-            if hasattr(other, 'ring') and other == other.ring.zero:
+            if not other:
                 raise ValueError("Zero is not part of the multiplicative group")
 
             return MultiplicativeGroupElement(self.ring(other), self)

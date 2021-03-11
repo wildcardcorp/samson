@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from samson.math.algebra.rings.ring import RingElement, Ring
 
 class Field(Ring):
