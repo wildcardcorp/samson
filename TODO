@@ -16,11 +16,9 @@ CURRENT
 ===============
 X   Insecure Twist attack
 X   DenseVector
-    X   Convolution
     X   Coercion
 
 X   SIKE
-
 X   GNFS
 
 X   Separate key parameters from use? Explains some gaps in functions vs data

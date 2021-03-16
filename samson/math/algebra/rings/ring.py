@@ -1,10 +1,10 @@
-from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log, mod_inv
+from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log, mod_inv, xlcm, gcd
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
 from samson.utilities.runtime import RUNTIME
 from samson.auxiliary.lazy_loader import LazyLoader
-from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException
+from samson.utilities.exceptions import CoercionException, NotInvertibleException, NoSolutionException, SearchspaceExhaustedException
 from samson.utilities.general import binary_search_unbounded, binary_search
 from samson.core.base_object import BaseObject
 
@@ -194,10 +194,25 @@ class Ring(BaseObject):
             RingElement: Element of order `n`.
         """
         if allow_order_call:
+            if self.order() % n:
+                raise ValueError(f"Ring order is not divisible by {n}. No element exists with this order.")
+
+            max_order = None
             while True:
                 elem = self.random()
                 o    = elem.order()
-                if not o % n:
+
+                if o % n:
+                    # Merge elements to find elements of successively higher order
+                    if max_order:
+                        merged = max_order.merge(elem)
+                        if not merged.order() % n:
+                            return merged * (o // n)
+
+                        max_order = merged
+                    else:
+                        max_order = elem
+                else:
                     return elem * (o // n)
 
         else:
@@ -207,6 +222,7 @@ class Ring(BaseObject):
             while True:
                 elem = self.random()
                 if not n*elem and elem.find_maximum_subgroup(n=n, n_facs=n_facs) == n:
+                    elem.order_cache = n
                     return elem
 
 
@@ -243,6 +259,7 @@ class Ring(BaseObject):
     def is_field(self) -> bool:
         from samson.math.symbols import oo
         return self.order() != oo and is_prime(self.order())
+
 
 
 
@@ -377,6 +394,9 @@ class RingElement(BaseObject):
 
 
     def __truediv__(self, other: 'RingElement') -> 'RingElement':
+        if not other:
+            raise ZeroDivisionError
+
         # Is this just integer division?
         gmul = self.ground_div(other)
         if gmul is not None:
@@ -778,3 +798,65 @@ class RingElement(BaseObject):
                 raise NotInvertibleException("Logarithm not found", parameters={'g': g, 'k': k, 'h': h})
         else:
             return pohlig_hellman(g, h)
+
+
+
+    def merge(self, other: 'RingElement') -> 'RingElement':
+        """
+        Constructs an element such that its order is the LCM of the orders of `self` and `other`.
+
+        Parameters:
+            other (RingElement): Second element.
+
+        Returns:
+            RingElement: Element with order lcm(`self`.order(), `other`.order()).
+        """
+        n1 = self.order()
+        n2 = other.order()
+
+        if not n1 % n2:
+            return self
+
+        elif not n2 % n1:
+            return other
+
+        l, k1, k2 = xlcm(n1, n2)
+        g = (self*(n1 // k1)) + (other*(n2 // k2))
+        g.order_cache = l
+
+        assert not g*l
+        return g
+
+
+    def linear_relation(self, other: 'RingElement') -> (int, int):
+        """
+        Finds a relation `n` and `m` such that `self`*`n` == `other`*`m`.
+
+        Parameters:
+            other (RingElement): Other element.
+
+        Returns:
+            (int, int): Formatted as (`n`, `m`).
+        """
+        n1 = self.order()
+        n2 = other.order()
+
+        g = gcd(n1, n2)
+
+        if g == 1:
+            return 0, n2
+
+        n1 //= g
+        n2 //= g
+
+        P = self*n1
+        Q = other*n2
+
+        for h in factor(g).divisors():
+            try:
+                Q2 = Q*h
+                return n1 * (Q2/P), n2*h
+            except SearchspaceExhaustedException:
+                pass
+
+        raise NoSolutionException("No solution for linear relation (how did this happen?)")

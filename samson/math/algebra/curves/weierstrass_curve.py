@@ -3,58 +3,12 @@ from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
 from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
+from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
 
 from samson.auxiliary.lazy_loader import LazyLoader
 _elliptic_curve_isogeny  = LazyLoader('_elliptic_curve_isogeny', globals(), 'samson.math.algebra.curves.elliptic_curve_isogeny')
-
-def _additive_transfer(P, Q):
-    """
-    References:
-        https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
-        https://hxp.io/blog/25/SharifCTF-2016-crypto350-British-Elevator-writeup/
-    """
-    from samson.math.algebra.rings.padic_numbers import Qp
-
-    # Move everything into p-adic numbers
-    E    = P.ring
-    p    = E.ring.characteristic()
-    Qp2  = Qp(p, 10)
-    QpA  = Qp2(E.a)
-    QpB  = Qp2(E.b)
-    Ep   = EllipticCurve(QpA, QpB)
-
-    QpxP = Qp2(P.x)
-    QpxQ = Qp2(Q.x)
-
-
-    # Lift points to the new curve
-    def lift_point(x, y):
-        Qpy = (x ** 3 + QpA * x + QpB).sqrt()
-        QpP = Ep(x, (-Qpy, Qpy)[Qpy.val[0] == y])
-        return QpP
-
-
-    PQp = lift_point(QpxP, P.y)
-    QQp = lift_point(QpxQ, Q.y)
-
-
-    # Take the formal logarithm
-    formal_log = Ep.formal_group().log()
-
-    pQQp = p * QQp
-    pPQp = p * PQp
-
-    tQ = -pQQp.x / pQQp.y
-    tP = -pPQp.x / pPQp.y
-
-    lQ = formal_log(tQ) / p
-    lP = formal_log(tP) / p
-
-    return int((lQ / lP)[0])
-
-
 
 
 class WeierstrassPoint(RingElement):
@@ -158,14 +112,14 @@ class WeierstrassPoint(RingElement):
             return self*mod_inv(other, self.order())
 
         # Is it an anomalous curve? Do additive transfer
-        elif not (self.ring.random() * self.ring.ring.characteristic()):
-            return _additive_transfer(other, self)
+        elif not (self * self.ring.ring.characteristic()):
+            phi = self.additive_transfer_map()
+            return int((phi(self) / phi(other))[0])
 
         else:
             E        = self.ring
             P        = E(other)
             ord_facs = factor(P.order())
-            F        = E.ring
 
             # Check if we can do the MOV attack
             if RUNTIME.enable_MOV_attack:
@@ -173,9 +127,6 @@ class WeierstrassPoint(RingElement):
 
                 # Is it even economical?
                 if k < 7 and max(ord_facs).bit_length() > RUNTIME.index_calculus_supremacy:
-                    from samson.math.algebra.fields.finite_field import FiniteField as GF
-                    K  = GF(int(F.quotient), k)
-                    E_ = WeierstrassCurve(K(E.a), K(E.b))
                     Q  = self
 
                     # Implementation detail: Elliptic curve operations faster than
@@ -192,28 +143,16 @@ class WeierstrassPoint(RingElement):
                     if res * P == Q:
                         return res
 
-                    Km = K.mul_group()
 
                     # Confine points to the large subgroup
                     Qp = Q * small_subgroup
                     Pp = P * small_subgroup
 
-                    P_ = E_(Pp.x, Pp.y)
-                    Q_ = E_(Qp.x, Qp.y)
+                    phi = Pp.multiplicative_transfer_map()
+                    W1  = phi(Pp)
+                    W2  = phi(Qp)
 
-                    while True:
-                        # Find a random point of `n`-torsion
-                        g  = E_.find_element_of_order(P.order(), ord_facs)
-                        R  = g * small_subgroup
-                        W2 = Q_.weil_pairing(R, large_subgroup)
-
-                        # Make sure it generates the whole group
-                        if Km(W2).order() == large_subgroup:
-                            break
-
-                    W1 = P_.weil_pairing(R, large_subgroup)
-
-                    return crt([(W2.log(W1), large_subgroup), (res, small_subgroup)])[0]
+                    return crt([(W2/W1, large_subgroup), (res, small_subgroup)])[0]
 
             return pohlig_hellman(P, self, factors=ord_facs)
 
@@ -299,12 +238,13 @@ class WeierstrassPoint(RingElement):
         return t
 
 
-    def weil_pairing(self, Q: 'WeierstrassPoint', n: int) -> 'RingElement':
+    def weil_pairing(self, Q: 'WeierstrassPoint', n: int=None) -> 'RingElement':
         """
         References:
             https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/ell_point.py#L1520
         """
         E = self.ring
+        n = n or self.order()
 
         if not Q in E:
             raise ValueError(f"Q: {Q} is not on {E}")
@@ -334,6 +274,89 @@ class WeierstrassPoint(RingElement):
 
         except ZeroDivisionError:
             return one
+
+
+
+    def tate_pairing(self, Q: 'WeierstrassPoint', n: int=None, k :int=None) -> 'RingElement':
+        n = n or self.order()
+        k = k or self.ring.embedding_degree()
+        p = self.ring.ring.characteristic()
+
+        return self.miller(Q, n)**((p**k-1) // n)
+
+
+    def multiplicative_transfer_map(self) -> 'FunctionType':
+        """
+        Generates a map to `Fq*` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
+
+        Returns:
+            FunctionType: Map function.
+        """
+        from samson.math.algebra.fields.finite_field import FiniteField as GF
+        E = self.curve
+        F = E.ring
+
+        k  = E.embedding_degree()
+        K  = GF(F.characteristic(), k)
+        E_ = WeierstrassCurve(K(E.a), K(E.b))
+        Km = K.mul_group()
+
+        P = E_(self)
+        o = P.order()
+
+        while True:
+            R  = E_.find_element_of_order(o)
+            W2 = P.weil_pairing(R, o)
+
+            if Km(W2).order() == o:
+                def mul_trans(Q):
+                    return Km(E_(Q).weil_pairing(R, o))
+
+                return Map(E, Km, mul_trans)
+
+
+
+    def additive_transfer_map(self) -> 'FunctionType':
+        """
+        Generates a map to `Qp` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
+
+        Returns:
+            FunctionType: Map function.
+
+        References:
+            https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
+            https://hxp.io/blog/25/SharifCTF-2016-crypto350-British-Elevator-writeup/
+        """
+        from samson.math.algebra.rings.padic_numbers import Qp
+        E = self.ring
+        p = E.ring.characteristic()
+
+        if self * p:
+            raise ValueError(f"{self.ring} is not trace one")
+
+
+        # Move everything into p-adic numbers
+        Qp2  = Qp(p, 10)
+        QpA  = Qp2(E.a)
+        QpB  = Qp2(E.b)
+        Ep   = EllipticCurve(QpA, QpB)
+        formal_log = Ep.formal_group().log()
+
+        # Lift points to the new curve
+        def lift_point(x, y):
+            Qpy = (x ** 3 + QpA * x + QpB).sqrt()
+            QpP = Ep(x, (-Qpy, Qpy)[Qpy.val[0] == y])
+            return QpP
+        
+
+        def add_trans(P):
+            QpxP = Qp2(P.x)
+            PQp  = lift_point(QpxP, P.y)
+            pPQp = p * PQp
+            tP   = -pPQp.x / pPQp.y
+            return formal_log(tP) / p
+
+        return Map(E, Qp2, add_trans)
 
 
 
@@ -414,7 +437,7 @@ class WeierstrassCurve(Ring):
 
 
     def coerce(self, x: 'RingElement', y: 'RingElement'=None, verify: bool=True) -> WeierstrassPoint:
-        if type(x) is WeierstrassPoint:
+        if issubclass(type(x), WeierstrassPoint):
             if x.curve == self:
                 return x
             else:
@@ -476,6 +499,10 @@ class WeierstrassCurve(Ring):
         from samson.math.algebra.curves.elliptic_curve_formal_group import EllipticCurveFormalGroup
         return EllipticCurveFormalGroup(self)
 
+
+
+    def find_gen(self) -> WeierstrassPoint:
+        return self.abelian_group_generators()[0]
 
 
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:
@@ -741,12 +768,12 @@ class WeierstrassCurve(Ring):
         phi    = None
 
         for p, e in n_facs.items():
-            Q   = P*(n // p**e)
+            Q = P*(n // p**e)
 
             for i in range(1, e+1):
                 phi = EllipticCurveIsogeny(E, Q*(p**(e-i)), pre_isomorphism=phi)
                 Q   = phi._rat_map(Q)
-                E   = phi.codomain()
+                E   = phi.codomain
 
             P = phi(P)
 
@@ -1100,7 +1127,7 @@ class WeierstrassCurve(Ring):
 
 
 
-    def to_montgomery_form(self) -> 'WeierstrassCurve':
+    def to_montgomery_form(self) -> ('WeierstrassCurve', Map):
         """
         References:
             https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_Weierstrass_curves
@@ -1136,8 +1163,10 @@ class WeierstrassCurve(Ring):
                 x, y = s*(self.G.x-alpha), self.G.y*s
             else:
                 x, y = None, None
-
-            return MontgomeryCurve(A=3*alpha*s, B=s, U=x, V=y, order=self.order() // 2)
+            
+            curve     = MontgomeryCurve(A=3*alpha*s, B=s, U=x, V=y, order=self.order() // 2)
+            point_map = Map(self, curve, lambda point: curve(s*(point.x-alpha)))
+            return curve, point_map
 
         raise NoSolutionException("'delta' is not a quadratic residue")
 
@@ -1241,6 +1270,102 @@ class WeierstrassCurve(Ring):
         self.dpoly_cache[n] = d_poly
 
         return d_poly
+
+
+    def abelian_group_generators(self) -> (WeierstrassPoint, WeierstrassPoint):
+        """
+        Finds two generators that together fully generate the curve. This is useful when
+        the curve is isomorphic to a direct product of two abelian additive groups and not
+        just one.
+
+        Returns:
+            (WeierstrassPoint, WeierstrassPoint): Formatted as (Generator of group one, generator of group two).
+
+        References:
+            https://github.com/sagemath/sage/blob/ca088c9c9326542accea1f878e791b82cb37a3e1/src/sage/schemes/elliptic_curves/ell_finite_field.py#L843
+        """
+        N  = self.order()
+        P1 = self.zero
+        P2 = self.zero
+
+        n1 = 1
+        n2 = 1
+
+        # Preload P1 by merging in a bunch of points
+        # Hopefully, this brings us close enough to a generator
+        for _ in range(10):
+            Q = 0
+            while not Q:
+                Q = self.random()
+
+            if Q*n1:
+                P1 = P1.merge(Q)
+                n1 = P1.order()
+
+
+        while n1*n2 != N:
+            Q = 0
+            while not Q:
+                Q = self.random()
+
+            # If Q1 != 0, then it has a greater order than P1, so we should merge it into P1.
+            # Additionally, if P2 != 0, we need to update P2 to keep a basis
+            if Q*n1:
+                if n2 > 1:
+                    P3 = P1 * (n1 // n2)
+
+                P1 = P1.merge(Q)
+                n1 = P1.order()
+
+                if n2 > 1:
+                    a, m = P1.linear_relation(P3)
+                    P3  -= P1 * (a // m)
+
+                    if m == n2:
+                        P2 = P3
+
+                    else:
+                        a, m = P1.linear_relation(P2)
+                        P2 -= P1 * (a // m)
+
+                        P2 = P2.merge(P3)
+                        n2 = P2.order()
+
+
+            # Q's order divides P1's order
+            else:
+                n1a = n1 // gcd(n1, N // n1)
+                n1b = n1 // n1a
+
+                Q  *= n1a
+                P1a = P1*n1a
+
+                if not Q:
+                    continue
+
+                for m in sorted(factor(n1b).divisors()):
+                    try:
+                        a = bsgs(P1a*m, Q*m, end=(n1b // m))
+                        break
+                    except SearchspaceExhaustedException:
+                        pass
+
+                a *= m*n1a
+
+                # If `m` > 1, then P1 and Q are linearly independent,
+                # so let's bring that into our basis
+                if m > 1:
+                    Q -= P1 * (a // m)
+
+                    if n2 == 1:
+                        P2 = Q
+                        n2 = P2.order()
+                    else:
+                        P2 = P2.merge(Q)
+                        n2 = P2.order()
+
+        return P1, P2
+
 
 
 EllipticCurve = WeierstrassCurve

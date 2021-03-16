@@ -200,7 +200,7 @@ class QuotientRing(Ring):
         return type(self) == type(other) and self.ring == other.ring and self.quotient == other.quotient
 
     def __hash__(self) -> int:
-        return hash((self.ring, self.__class__))
+        return hash((self.ring, self.__class__, self.quotient))
 
 
     def is_field(self) -> bool:

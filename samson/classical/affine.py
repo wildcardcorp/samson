@@ -64,7 +64,7 @@ class AffineCipher(BaseObject):
         Decrypts `ciphertext`.
 
         Parameters:
-            ciphertext (str): Stringt to be decrypted.
+            ciphertext (str): String to be decrypted.
 
         Returns:
             str: Resulting plaintext.

@@ -1,20 +1,29 @@
 from samson.math.algebra.curves.weierstrass_curve import EllipticCurve, WeierstrassPoint
+from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException
 from samson.utilities.runtime import RUNTIME
 from samson.core.base_object import BaseObject
 
-class EllipticCurveIsogeny(BaseObject):
+class EllipticCurveIsogeny(Map):
     def __init__(self, curve: EllipticCurve, kernel: WeierstrassPoint, pre_isomorphism: 'EllipticCurveIsogeny'=None):
         self.curve  = curve
         self.kernel = kernel
         self.points = [kernel*i for i in range(1, kernel.order())]
         self.pre_isomorphism = pre_isomorphism
+        self.map_func = self._rat_map
 
 
     def __reprdir__(self):
         return ['curve', 'kernel']
 
 
+    @property
+    def domain(self):
+        return self.curve
+
+
+
+    @property
     @RUNTIME.global_cache()
     def codomain(self) -> EllipticCurve:
         a, b = self.curve.a, self.curve.b
@@ -37,7 +46,7 @@ class EllipticCurveIsogeny(BaseObject):
 
 
     def _rat_map(self, P: WeierstrassPoint) -> WeierstrassPoint:
-        E = self.codomain()
+        E = self.codomain
         x = P.x + sum((P+Q).x - Q.x for Q in self.points)
         y = P.y + sum((P+Q).y - Q.y for Q in self.points)
         if x or y:
@@ -58,8 +67,8 @@ class EllipticCurveIsogeny(BaseObject):
             return E.zero
 
 
-    def __call__(self, P) -> WeierstrassPoint:
-        if self.pre_isomorphism:
-            P = self.pre_isomorphism(P)
+    # def __call__(self, P) -> WeierstrassPoint:
+    #     if self.pre_isomorphism:
+    #         P = self.pre_isomorphism(P)
 
-        return self._rat_map(P)
+    #     return self._rat_map(P)

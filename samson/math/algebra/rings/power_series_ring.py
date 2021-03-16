@@ -162,7 +162,7 @@ class PowerSeriesRing(Ring):
 
 
     def __hash__(self) -> int:
-        return hash(self._polyring, self.__class__)
+        return hash((self._polyring, self.__class__, self.prec))
 
 
 
@@ -204,4 +204,4 @@ class PowerSeriesRing(Ring):
 
 
     def __eq__(self, other: 'PowerSeriesRing') -> bool:
-        return type(self) == type(other) and other._polyring == self._polyring
+        return type(self) == type(other) and other._polyring == self._polyring and self.prec == self.prec

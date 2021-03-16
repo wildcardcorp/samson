@@ -74,16 +74,18 @@ class SIDH(KeyExchangeAlg):
         wa, ea, wb, eb = extract_prime_powers(curve.ring.characteristic())
 
         if use_a:
+            self.prime_power = (wa, ea)
             order = wa**ea
             P, Q  = Pa, Qa
             U, V  = Pb, Qb
         else:
+            self.prime_power = (wb, eb)
             order = wb**eb
             P, Q  = Pb, Qb
             U, V  = Pa, Qa
 
-        self.n = random_int_between(1, order)
-        self.m = random_int_between(1, order)
+        self.n = n or random_int_between(1, order)
+        self.m = m or random_int_between(1, order)
         self.R = P*self.n + Q*self.m
 
         self.phi = curve.isogeny(self.R)
@@ -93,7 +95,7 @@ class SIDH(KeyExchangeAlg):
 
     @property
     def pub(self):
-        return (self.phi.codomain(), self.iU, self.iV)
+        return (self.phi.codomain, self.iU, self.iV)
 
 
 
@@ -111,7 +113,7 @@ class SIDH(KeyExchangeAlg):
         S   = iU*self.n + iV*self.m
         Eab = Eb.isogeny(S)
 
-        return Eab.codomain().j_invariant()
+        return Eab.codomain.j_invariant()
 
 
     @staticmethod
@@ -126,7 +128,7 @@ class SIDH(KeyExchangeAlg):
             max_strength_diff (float): Maximum strength difference between prime-power subgroups.
 
         Returns:
-            EllipticCurve, WeierstrassPoint, WeierstrassPoint, WeierstrassPoint, WeierstrassPoint): Formatted as (curve, Pa, Qa, Pb, Qb).
+            (EllipticCurve, WeierstrassPoint, WeierstrassPoint, WeierstrassPoint, WeierstrassPoint): Formatted as (curve, Pa, Qa, Pb, Qb).
         """
         from samson.math.algebra.rings.integer_ring import ZZ
         from samson.math.symbols import Symbol

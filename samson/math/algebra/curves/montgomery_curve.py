@@ -1,7 +1,9 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.factorization.general import factor
+from samson.math.map import Map
 from samson.utilities.bytes import Bytes
-from samson.utilities.exceptions import NoSolutionException
+from samson.utilities.exceptions import CoercionException
 
 # https://tools.ietf.org/html/rfc7748
 def cswap(swap: int, x_2: int, x_3: int) -> (int, int):
@@ -32,7 +34,7 @@ class MontgomeryCurve(Ring):
     """
 
     # https://tools.ietf.org/html/rfc7748#section-3
-    def __init__(self, A: RingElement, U: RingElement, V: RingElement, a24: int=None, oid: str=None, ring: Ring=None, order: int=None, B: RingElement=None):
+    def __init__(self, A: RingElement, U: RingElement=None, V: RingElement=None, a24: int=None, oid: str=None, ring: Ring=None, order: int=None, B: RingElement=None):
         """
         Parameters:
             A   (int): An element in the finite field GF(p), not equal to -2 or 2.
@@ -75,7 +77,7 @@ class MontgomeryCurve(Ring):
         while True:
             try:
                 return self(self.ring.random(size))
-            except NoSolutionException:
+            except CoercionException:
                 pass
 
 
@@ -92,6 +94,8 @@ class MontgomeryCurve(Ring):
 
 
     def order(self) -> int:
+        if not self._order:
+            self._order = self.to_weierstrass_form()[0].order() // 2
         return self._order
 
 
@@ -118,7 +122,7 @@ class MontgomeryCurve(Ring):
         if verify:
             v = (x**3 + self.A*x**2 + x)/self.B
             if not v.is_square():
-                raise NoSolutionException(f"{x} is not on curve {self}")
+                raise CoercionException(f"{x} is not on curve {self}")
 
         return MontgomeryPoint(self.ring(x), self)
 
@@ -140,12 +144,62 @@ class MontgomeryCurve(Ring):
         A = self.A
         B = self.B
 
-        x = (self.U/B) + (A/(3*B))
-        y = self.V/B
+        if self.U is not None and self.V is not None:
+            x = (self.U/B) + (A/(3*B))
+            y = self.V/B
+            G = (x, y)
+        else:
+            G = None
+
         a = (3-A**2) / (3*B**2)
         b = (2*A**3 - 9*A) / (27*B**3)
 
-        return WeierstrassCurve(a=a, b=b, base_tuple=(x, y), cardinality=self.order()*2)
+        curve     = WeierstrassCurve(a=a, b=b, base_tuple=G, cardinality=self.order()*2 if self._order else None)
+        point_map = Map(self, curve, lambda point: curve((point.x/B) + (A/(3*B))))
+
+        return curve, point_map
+
+
+    def __two_isogeny(self, P):
+        x2   = P.x
+        A, B = 2*(1-2*x2), self.B*x2
+
+        curve = MontgomeryCurve(A=A, B=B)
+
+
+        def map_func(Q):
+            x, y = Q.x, Q.Y
+            xp2x = x**2*x2
+            xp2  = x-x2
+
+            xP = (xp2x - x)/(xp2)
+            #yP = y*(xp2x-2*x*x2**2+x2)/xp2**2
+            return curve(xP)
+        
+        return Map(domain=self, codomain=curve, map_func=map_func)
+
+
+    def isogeny(self, P: 'MontgomeryPoint') -> 'EllipticCurveIsogeny':
+        if P.ring != self:
+            raise ValueError(f'{P} is not on {self}')
+
+        n      = P.order()
+        n_facs = factor(n)
+        phi    = None
+
+        for p, e in n_facs.items():
+            Q = P*(n // p**e)
+
+            for i in range(1, e+1):
+                old_phi = phi
+                phi = self.__two_isogeny(Q*(p**(e-i)))
+                #phi = EllipticCurveIsogeny(E, Q*(p**(e-i)), pre_isomorphism=phi)
+                Q   = phi(Q)
+                phi.pre_isomorphism = old_phi
+
+            P = phi(P)
+
+        return phi
 
 
 

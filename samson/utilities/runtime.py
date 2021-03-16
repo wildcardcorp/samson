@@ -84,7 +84,7 @@ class RuntimeConfiguration(object):
 
         self.last_tb = None
 
-        self.global_cache_size = 512
+        self.global_cache_size = 1024
 
 
         # Find mseive
@@ -296,17 +296,6 @@ class RuntimeConfiguration(object):
         IPython.core.interactiveshell.InteractiveShell._showtraceback = showtraceback
 
 
-    def create_progress_callback(self, iterable, **kwargs):
-        from tqdm import tqdm
-        progress = tqdm(None, total=len(iterable), **kwargs)
-
-        def update_progress(item):
-            progress.update(1)
-            if progress.n == progress.total:
-                progress.close()
-
-        return update_progress
-
 
     def threaded(self, threads: int, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
         """
@@ -331,7 +320,7 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
-        return self.__build_concurrent_pool(threads, ThreadPool, starmap, visual, visual_args)
+        return self.__build_concurrent_pool(threads, ThreadPool, starmap, visual, visual_args, chunk_size)
 
 
     def parallel(self, processes: int=None, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
@@ -357,7 +346,7 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
-        return self.__build_concurrent_pool(processes or cpu_count(), ProcessPool, starmap, visual, visual_args)
+        return self.__build_concurrent_pool(processes or cpu_count(), ProcessPool, starmap, visual, visual_args, chunk_size)
 
 
 

@@ -265,17 +265,19 @@ class Polynomial(RingElement):
         R = self.coeff_ring
         is_field = R.is_field()
 
-        if is_field or R == ZZ:
+
+        if type(R) in [Zp, PAdicNumberField]:
+            roots = self.change_ring(ZZ).hensel_lift(R.p, R.prec, use_padic=True, use_number_field=type(R) == PAdicNumberField)
+            return [r for r in roots if not self(r)]
+
+
+        elif is_field or R == ZZ:
             if is_field and self.degree() == 1:
                 return [-self.monic()[0]]
 
             facs = self.factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
-
-        elif type(R) in [Zp, PAdicNumberField]:
-            roots = self.change_ring(ZZ).hensel_lift(R.p, R.prec, use_number_field=type(R) == PAdicNumberField)
-            return [r for r in roots if not self(r)]
 
         else:
             from samson.math.general import crt
@@ -287,31 +289,35 @@ class Polynomial(RingElement):
             if use_hensel or len(q_facs) == 1:
                 for fac, e in q_facs.items():
                     Q      = ZZ/ZZ(fac**e)
-                    nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e, use_number_field=True)]
-                    all_facs.append(nroots)
+                    nroots = [Q(r) for r in self.change_ring(ZZ).hensel_lift(fac, e, use_padic=False)]
+                    if nroots:
+                        all_facs.append(nroots)
 
-                for comb in itertools.product(*[f for f in all_facs if f]):
-                    root = R(crt(comb)[0])
+                if all_facs:
+                    for comb in itertools.product(*[f for f in all_facs if f]):
+                        root = R(crt(comb)[0])
 
-                    if not self(root):
-                        results.append(root)
+                        if not self(root):
+                            results.append(root)
 
             else:
                 P = int(product(q_facs))
 
                 for fac in q_facs:
                     nroots = self.change_ring(ZZ/fac).roots()
-                    all_facs.append(nroots)
+                    if nroots:
+                        all_facs.append(nroots)
 
 
-                for comb in itertools.product(*all_facs):
-                    candidate = crt(comb)[0]
+                if all_facs:
+                    for comb in itertools.product(*all_facs):
+                        candidate = crt(comb)[0]
 
-                    # Essentially Hensel lifting
-                    for _ in range(int(R.quotient) // P):
-                        if not self(candidate):
-                            results.append(candidate)
-                        candidate += P
+                        # Essentially Hensel lifting
+                        for _ in range(int(R.quotient) // P):
+                            if not self(candidate):
+                                results.append(candidate)
+                            candidate += P
 
             return results
 
@@ -364,11 +370,11 @@ class Polynomial(RingElement):
 
 
     def valuation(self):
-        return self.coeffs.values.keys()[0]
+        return self.coeffs.values.keys()[0] if self else 0
 
 
 
-    def hensel_lift(self, p: int, k: int, last_roots: list=None, use_number_field: bool=False) -> list:
+    def hensel_lift(self, p: int, k: int, last_roots: list=None, use_padic: bool=False, use_number_field: bool=False) -> list:
         """
         Finds roots in `ZZ/ZZ(p**k)` where `p` is the coefficient ring's characteristic.
 
@@ -394,7 +400,7 @@ class Polynomial(RingElement):
 
         roots = last_roots or self.change_ring(ZZ/ZZ(p)).roots()
         for e in range(k if last_roots else 2, k+1):
-            R      = Zp(p, e)
+            R = Zp(p, e)
 
             if use_number_field:
                 R = R.fraction_field()
@@ -406,12 +412,12 @@ class Polynomial(RingElement):
             for root in roots:
                 zroot = ZZ(root)
 
-                if f(zroot):
+                if not use_padic and f(zroot):
                     continue
 
                 dfr = df(zroot)
 
-                if dfr % p:
+                if (use_padic and dfr) or (not use_padic and dfr % p):
                     s = -f(zroot)/dfr + zroot
                     nroots.append(s)
                 else:
@@ -1321,7 +1327,7 @@ class Polynomial(RingElement):
 
 
     def __eq__(self, other: 'Polynomial') -> bool:
-        return type(self) == type(other) and self.coeffs == other.coeffs
+        return type(self) == type(other) and self.coeff_ring == other.coeff_ring and self.coeffs == other.coeffs
 
 
     def __lt__(self, other: 'Polynomial') -> bool:

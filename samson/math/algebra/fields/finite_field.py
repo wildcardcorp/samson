@@ -24,6 +24,14 @@ class FiniteFieldElement(FieldElement):
 
     def __call__(self, arg):
         return self.val(arg)
+    
+
+    def __iter__(self):
+        return self.val.val.__iter__()
+
+
+    def __getitem__(self, idx):
+        return self.val.val[idx]
 
 
     def ordinality(self) -> int:

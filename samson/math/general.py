@@ -294,6 +294,34 @@ def lcm(*args) -> int:
     return total
 
 
+def xlcm(a: 'RingElement', b: 'RingElement') -> 'RingElement':
+    """
+    Extended least common multiple. Finds the LCM and two integers `n` and `m` such that
+    `l` == `n`*`m` and gcd(`n`, `m`) == 1.
+
+    Parameters:
+        a (RingElement): First element.
+        b (RingElement): Second element.
+
+    Returns:
+        (RingElement, RingElement, RingElement): Formatted as (LCM, `n`, `m`).
+
+    References:
+        https://github.com/sagemath/sage/blob/fbca269f627bf6a8bc6f0a611ed7e26260ebc994/src/sage/arith/misc.py#L1835
+    """
+    g = gcd(a, b)
+    l = (a*b) // g
+    g = gcd(a, b // g)
+
+    # Remove all common factors from a
+    while g != 1:
+        a //= g
+        g   = gcd(a, g)
+
+    return l, a, l // a
+
+
+
 def mod_inv(a: int, n: int) -> int:
     """
     Calculates the modular inverse.

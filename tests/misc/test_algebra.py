@@ -107,7 +107,6 @@ class AlgebraTestCase(unittest.TestCase):
                         rand_elem = RX[random_int(50)]
 
                     # Assert order is a divisor of the ring order
-                    print(rand_elem)
                     self.assertEqual(rand_elem * RX.order(), RX.zero)
 
                     # Assert order is the minimum multiple (i.e. 1)

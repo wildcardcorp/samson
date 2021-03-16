@@ -12,7 +12,7 @@ class SearchspaceExhaustedException(Exception):
 
 class CoercionException(Exception):
     def __init__(self, *args, **kwargs):
-        args = [str(a) for a in args]
+        args = [(str(a), type(a)) for a in args]
         super().__init__(*args, **kwargs)
 
 

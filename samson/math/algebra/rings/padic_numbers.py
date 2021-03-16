@@ -75,6 +75,10 @@ class PAdicNumberField(NegativeDegreeField):
            PAdicNumberElement: The `x`-th element.
         """
         return self(x)
+    
+
+    def is_field(self):
+        return _integer_ring.ZZ(self.p).is_prime()
 
 
     @property
