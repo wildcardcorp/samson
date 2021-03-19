@@ -114,8 +114,8 @@ class X509Certificate(PEMEncodable):
         signature_alg = rfc2459.AlgorithmIdentifier()
         signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
 
-        if self.PARAM_ENCODER:
-            signature_alg['parameters'] = Any(encoder.encode(self.PARAM_ENCODER.encode(self.key)))
+        if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
+            signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
 
 
         # Extensions
@@ -152,11 +152,11 @@ class X509Certificate(PEMEncodable):
         tbs_cert['subject']              = subject
         tbs_cert['subjectPublicKeyInfo'] = pub_info
 
-        # TODO: pyasn1 doesn't see these as optional
-        # This means samson encodes certs wrong that don't include
-        # these values
-        tbs_cert['issuerUniqueID']  = self.issuer_unique_id or 0
-        tbs_cert['subjectUniqueID'] = self.subject_unique_id or 0
+        if self.issuer_unique_id is not None:
+            tbs_cert['issuerUniqueID'] = self.issuer_unique_id
+
+        if self.subject_unique_id is not None:
+            tbs_cert['subjectUniqueID'] = self.subject_unique_id
 
 
         if len(extensions):
@@ -167,7 +167,7 @@ class X509Certificate(PEMEncodable):
         if self.signature_value is not None:
             sig_value = Bytes.wrap(self.signature_value).int()
         else:
-            encoded_tbs = encoder.encode(tbs_cert, asn1Spec=self.SIGNED_SPEC)
+            encoded_tbs = encoder.encode(tbs_cert)
             sig_value   = signing_alg.sign(signing_key, encoded_tbs)
 
 
@@ -177,7 +177,7 @@ class X509Certificate(PEMEncodable):
         cert['signatureAlgorithm'] = signature_alg
         cert['signatureValue']     = sig_value
 
-        encoded = encoder.encode(cert, asn1Spec=self.SPEC)
+        encoded = encoder.encode(cert)
         return X509Certificate.transport_encode(encoded, **kwargs)
 
 
@@ -192,7 +192,7 @@ class X509Certificate(PEMEncodable):
         sig_value     = cert[cls.SIG_KEY]
         signature_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])].replace('-', '_')
         tbs_cert      = cert[cls.SIGNED_PART]
-        encoded_tbs   = encoder.encode(tbs_cert, asn1Spec=cls.SIGNED_SPEC)
+        encoded_tbs   = encoder.encode(tbs_cert)
 
         alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
         return alg.verify(verification_key, encoded_tbs, sig_value)
@@ -224,7 +224,7 @@ class X509Certificate(PEMEncodable):
         else:
             sig_params = None
 
-        validity   = tbs_cert['validity']
+        validity = tbs_cert['validity']
 
         def parse_time(time_val):
             if 'utcTime' in time_val and time_val['utcTime'].hasValue():

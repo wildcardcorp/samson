@@ -3,6 +3,7 @@ from .cbc_padding_oracle_attack import CBCPaddingOracleAttack
 from .crime_attack import CRIMEAttack
 from .diffie_hellman_subgroup_confinement_attack import DiffieHellmanSubgroupConfinementAttack
 from .ecb_prepend_attack import ECBPrependAttack
+from .insecure_twist_attack import InsecureTwistAttack
 from .invalid_curve_attack import InvalidCurveAttack
 from .mangers_attack import MangersAttack
 from .nostradamus_attack import NostradamusAttack
@@ -14,4 +15,4 @@ from .xor_dictionary_attack import XORDictionaryAttack
 from .xor_transposition_attack import XORTranspositionAttack
 
 
-__all__ = ["CBCIVKeyEquivalenceAttack", "CBCPaddingOracleAttack", "CRIMEAttack", "DiffieHellmanSubgroupConfinementAttack", "ECBPrependAttack", "InvalidCurveAttack", "MangersAttack", "NostradamusAttack", "OCBAuthForgeryAttack", "PKCS1v15PaddingOracleAttack", "RC4PrependAttack", "XORBitflippingAttack", "XORDictionaryAttack", "XORTranspositionAttack"]
+__all__ = ["CBCIVKeyEquivalenceAttack", "CBCPaddingOracleAttack", "CRIMEAttack", "DiffieHellmanSubgroupConfinementAttack", "ECBPrependAttack", "InsecureTwistAttack", "InvalidCurveAttack", "MangersAttack", "NostradamusAttack", "OCBAuthForgeryAttack", "PKCS1v15PaddingOracleAttack", "RC4PrependAttack", "XORBitflippingAttack", "XORDictionaryAttack", "XORTranspositionAttack"]

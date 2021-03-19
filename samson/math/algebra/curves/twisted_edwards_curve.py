@@ -65,7 +65,7 @@ class TwistedEdwardsCurve(Ring):
 
     @property
     def q(self):
-        return int(self.ring.quotient)
+        return self.ring.characteristic()
 
 
     def order(self):
@@ -93,7 +93,7 @@ class TwistedEdwardsCurve(Ring):
         return issubclass(type(other), TwistedEdwardsCurve) and self.b == other.b and self.q == other.q and self.l == other.l and self.d == other.d
 
     def __hash__(self) -> int:
-        return Bytes(self.oid.encode()).int()
+        return Bytes(self.oid.encode()).int() if self.oid else hash((self.a, self.d)) 
 
 
 

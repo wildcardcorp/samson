@@ -132,7 +132,7 @@ class MontgomeryCurve(Ring):
         return type(self) == type(other) and self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
 
     def __hash__(self) -> int:
-        return Bytes(self.oid.encode()).int()
+        return Bytes(self.oid.encode()).int() if self.oid else hash((self.A, self.B))
 
 
     def to_weierstrass_form(self) -> 'WeierstrassCurve':
@@ -158,6 +158,16 @@ class MontgomeryCurve(Ring):
         point_map = Map(self, curve, lambda point: curve((point.x/B) + (A/(3*B))))
 
         return curve, point_map
+
+
+
+    def find_gen(self):
+        E, _ = self.to_weierstrass_form()
+        G    = E.find_gen()
+
+        s     = self.B
+        alpha = self.A/(3*s)
+        return self(s*(G.x-alpha))
 
 
     def __two_isogeny(self, P):
@@ -219,6 +229,11 @@ class MontgomeryPoint(RingElement):
         self.x = curve.ring(x)
         self.curve = curve
         self.order_cache  = None
+    
+    
+
+    def __hash__(self):
+        return hash((self.curve, self.x))
 
 
     @property

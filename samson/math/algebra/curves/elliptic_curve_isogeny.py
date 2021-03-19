@@ -11,6 +11,7 @@ class EllipticCurveIsogeny(Map):
         self.points = [kernel*i for i in range(1, kernel.order())]
         self.pre_isomorphism = pre_isomorphism
         self.map_func = self._rat_map
+        self.codomain = self._get_codomain()
 
 
     def __reprdir__(self):
@@ -23,9 +24,7 @@ class EllipticCurveIsogeny(Map):
 
 
 
-    @property
-    @RUNTIME.global_cache()
-    def codomain(self) -> EllipticCurve:
+    def _get_codomain(self) -> EllipticCurve:
         a, b = self.curve.a, self.curve.b
         w, v = 0, 0
 
@@ -65,10 +64,3 @@ class EllipticCurveIsogeny(Map):
                 pass
 
             return E.zero
-
-
-    # def __call__(self, P) -> WeierstrassPoint:
-    #     if self.pre_isomorphism:
-    #         P = self.pre_isomorphism(P)
-
-    #     return self._rat_map(P)

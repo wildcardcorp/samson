@@ -1,4 +1,4 @@
-from samson.math.general import mod_inv, random_int_between
+from samson.math.general import mod_inv, random_int_between, gcd
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassPoint
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import NoSolutionException
@@ -11,7 +11,7 @@ from samson.encoding.jwk.jwk_ec_public_key import JWKECPublicKey
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PKCS1ECDSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_ecdsa_private_key import PKCS8ECDSAPrivateKey
 from samson.encoding.x509.x509_ecdsa_public_key import X509ECDSAPublicKey
-from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms, X509ECDSACertificateSigningRequest
+from samson.encoding.x509.x509_ecdsa_certificate import X509ECDSACertificate, X509ECDSASigningAlgorithms, X509ECDSACertificateSigningRequest, X509ECDSAParams
 from samson.encoding.dns_key.dns_key_ecdsa_key import DNSKeyECDSAPublicKey, DNSKeyECDSAPrivateKey
 from samson.encoding.general import PKIEncoding
 from samson.core.metadata import EphemeralType, EphemeralSpec, SizeType, SizeSpec, FrequencyType
@@ -47,6 +47,7 @@ class ECDSA(DSA):
 
     X509_SIGNING_ALGORITHMS = X509ECDSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509ECDSASigningAlgorithms.ecdsa_with_SHA256
+    X509_SIGNING_PARAMS     = X509ECDSAParams
 
     KEY_SIZE        = SizeSpec(size_type=SizeType.RANGE, sizes=[192, 224, 256, 384, 521])
     OUTPUT_SIZE     = SizeSpec(size_type=SizeType.RANGE, typical=[384, 448, 512, 768, 1042])
@@ -96,6 +97,9 @@ class ECDSA(DSA):
 
         while True:
             k = k_in or random_int_between(1, self.q)
+            if not k_in and gcd(k, self.q) != 1:
+                continue
+
             inv_k = mod_inv(k, self.q)
 
             z = self.H(message)

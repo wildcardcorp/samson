@@ -19,9 +19,8 @@ class IntegerElement(RingElement):
             val   (int): Value of the element.
             ring (Ring): Parent ring.
         """
-        self.val  = val
+        self.val = val
         super().__init__(ring)
-
 
 
     def tinyhand(self) -> str:
@@ -95,7 +94,7 @@ class IntegerElement(RingElement):
         return self.val == other
 
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return super().__hash__()
 
 

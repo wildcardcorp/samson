@@ -2,7 +2,7 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
@@ -42,7 +42,7 @@ class WeierstrassPoint(RingElement):
 
 
     def __hash__(self):
-        return hash(self.curve) ^ hash(self.x) ^ hash(self.y)
+        return hash((self.curve, self.x, self.y))
 
 
     def __int__(self) -> int:
@@ -113,7 +113,7 @@ class WeierstrassPoint(RingElement):
 
         # Is it an anomalous curve? Do additive transfer
         elif not (self * self.ring.ring.characteristic()):
-            phi = self.additive_transfer_map()
+            phi = self.curve.additive_transfer_map()
             return int((phi(self) / phi(other))[0])
 
         else:
@@ -316,51 +316,6 @@ class WeierstrassPoint(RingElement):
 
 
 
-    def additive_transfer_map(self) -> 'FunctionType':
-        """
-        Generates a map to `Qp` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
-
-        Returns:
-            FunctionType: Map function.
-
-        References:
-            https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
-            https://hxp.io/blog/25/SharifCTF-2016-crypto350-British-Elevator-writeup/
-        """
-        from samson.math.algebra.rings.padic_numbers import Qp
-        E = self.ring
-        p = E.ring.characteristic()
-
-        if self * p:
-            raise ValueError(f"{self.ring} is not trace one")
-
-
-        # Move everything into p-adic numbers
-        Qp2  = Qp(p, 10)
-        QpA  = Qp2(E.a)
-        QpB  = Qp2(E.b)
-        Ep   = EllipticCurve(QpA, QpB)
-        formal_log = Ep.formal_group().log()
-
-        # Lift points to the new curve
-        def lift_point(x, y):
-            Qpy = (x ** 3 + QpA * x + QpB).sqrt()
-            QpP = Ep(x, (-Qpy, Qpy)[Qpy.val[0] == y])
-            return QpP
-        
-
-        def add_trans(P):
-            QpxP = Qp2(P.x)
-            PQp  = lift_point(QpxP, P.y)
-            pPQp = p * PQp
-            tP   = -pPQp.x / pPQp.y
-            return formal_log(tP) / p
-
-        return Map(E, Qp2, add_trans)
-
-
-
-
 class PointAtInfinity(WeierstrassPoint):
     def __reprdir__(self):
         return ['curve']
@@ -519,9 +474,9 @@ class WeierstrassCurve(Ring):
             p = self.ring.order()
 
             if self.is_supersingular():
-                ipp, p, n = is_perfect_power(p)
-                if not ipp:
-                    raise RuntimeError('Supersingular curve over ring with non-perfect power order')
+                _ipp, p, n = is_perfect_power(p)
+                if not is_prime(p):
+                    raise RuntimeError('Supersingular curve over ring with non-prime power order')
 
                 self.cardinality_cache = (p+1)**n
                 return self.cardinality_cache
@@ -611,8 +566,8 @@ class WeierstrassCurve(Ring):
             return not self.cardinality_cache % (p+1)
 
         else:
-            ipp, p, n = is_perfect_power(R.order())
-            return ipp and not self.random()*(p+1)**n
+            _, p, n = is_perfect_power(R.order())
+            return is_prime(p) and not self.random()*(p+1)**n
 
 
 
@@ -734,6 +689,10 @@ class WeierstrassCurve(Ring):
                 D = R.random()
                 if not D.is_square():
                     break
+        else:
+            if R(D).is_square():
+                raise ValueError(f'Cannot compute quadratic twist. {D} is square')
+
 
         b4, b6 = 2*self.a, 4*self.b
         twist  = WeierstrassCurve(8*b4*D**2, 16*b6*D**3)
@@ -880,13 +839,41 @@ class WeierstrassCurve(Ring):
         Returns:
             WeierstrassCurve: Constructed curve.
         """
-        from samson.math.general import hilbert_class_polynomial
+        from samson.math.general import hilbert_class_polynomial, cornacchias_algorithm
+
+        # We do this first to ensure there's even an answer
+        sols   = cornacchias_algorithm(abs(D), 4*R.characteristic(), all_sols=True)
 
         Hd     = hilbert_class_polynomial(-D)
         j_invs = Hd.change_ring(R).roots()
 
         if j_invs:
-            return EllipticCurve.from_j(j_invs[0])
+            E = EllipticCurve.from_j(j_invs[0])
+            P = E.random()
+
+            def try_trace(t):
+                if not P*(E.p + 1 - t):
+                    return E.p + 1 - t
+
+                elif not P*(E.p + 1 + t):
+                    return E.p + 1 + t
+            
+            # While we're here, let's get the order
+            for t, _ in sols:
+                order = try_trace(t)
+                if order:
+                    break
+            
+            # Check the non-primitive solutions
+            if not order:
+                for t, _ in cornacchias_algorithm(abs(D), R.characteristic(), all_sols=True):
+                    order = try_trace(t*2)
+                    if order:
+                        break
+
+            E.cardinality_cache = order
+
+            return E
         else:
             raise NoSolutionException
 
@@ -919,7 +906,7 @@ class WeierstrassCurve(Ring):
         #             D_MAP[D] = roots[0][0]
 
 
-        D_MAP = [11, 19, 43, 67, 163, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
+        D_MAP = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
 
         valid_Ds = [D for D in D_MAP if gcd(D, trace) == 1]
 
@@ -1365,6 +1352,50 @@ class WeierstrassCurve(Ring):
                         n2 = P2.order()
 
         return P1, P2
+
+
+
+    def additive_transfer_map(self) -> 'FunctionType':
+        """
+        Generates a map to `Qp` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
+
+        Returns:
+            FunctionType: Map function.
+
+        References:
+            https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
+            https://hxp.io/blog/25/SharifCTF-2016-crypto350-British-Elevator-writeup/
+        """
+        from samson.math.algebra.rings.padic_numbers import Qp
+        E = self
+        p = E.ring.characteristic()
+
+        if self.random() * p:
+            raise ValueError(f"{E} is not trace one")
+
+
+        # Move everything into p-adic numbers
+        Qp2  = Qp(p, 10)
+        QpA  = Qp2(E.a)
+        QpB  = Qp2(E.b)
+        Ep   = EllipticCurve(QpA, QpB)
+        formal_log = Ep.formal_group().log()
+
+        # Lift points to the new curve
+        def lift_point(x, y):
+            Qpy = (x ** 3 + QpA * x + QpB).sqrt()
+            QpP = Ep(x, (-Qpy, Qpy)[Qpy.val[0] == y])
+            return QpP
+        
+
+        def add_trans(P):
+            QpxP = Qp2(P.x)
+            PQp  = lift_point(QpxP, P.y)
+            pPQp = p * PQp
+            tP   = -pPQp.x / pPQp.y
+            return formal_log(tP) / p
+
+        return Map(E, Qp2, add_trans)
 
 
 

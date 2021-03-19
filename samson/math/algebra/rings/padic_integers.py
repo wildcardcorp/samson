@@ -227,7 +227,7 @@ class PAdicIntegerRing(Ring):
 
 
     def __hash__(self) -> int:
-        return hash(self.__class__)
+        return hash((self.__class__, self.p, self.prec))
 
 
     def element_at(self, x: int) -> PAdicIntegerElement:

@@ -6,7 +6,7 @@ from samson.encoding.jwk.jwk_rsa_private_key import JWKRSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_private_key import PKCS1RSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_rsa_private_key import PKCS8RSAPrivateKey
 from samson.encoding.pkcs1.pkcs1_rsa_public_key import PKCS1RSAPublicKey
-from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms, X509RSACertificateSigningRequest
+from samson.encoding.x509.x509_rsa_certificate import X509RSACertificate, X509RSASigningAlgorithms, X509RSACertificateSigningRequest, X509RSAParams
 from samson.encoding.x509.x509_rsa_public_key import X509RSAPublicKey
 from samson.encoding.dns_key.dns_key_rsa_key import DNSKeyRSAPublicKey, DNSKeyRSAPrivateKey
 from samson.encoding.general import PKIEncoding
@@ -51,6 +51,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
     X509_SIGNING_ALGORITHMS = X509RSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509RSASigningAlgorithms.sha256WithRSAEncryption
+    X509_SIGNING_PARAMS     = X509RSAParams
 
     SECURITY_PROOF  = SecurityProofType.INTEGER_FACTORIZATION
     USAGE_FREQUENCY = FrequencyType.PROLIFIC

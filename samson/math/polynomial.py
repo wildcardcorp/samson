@@ -150,12 +150,12 @@ class Polynomial(RingElement):
 
 
     def __getstate__(self):
-        return {'coeffs': self.coeffs, 'symbol_repr': self.symbol.repr}
+        return {'coeffs': self.coeffs, 'coeff_ring': self.coeff_ring, 'symbol_repr': self.symbol.repr}
 
 
     def __setstate__(self, state):
         from samson.math.symbols import Symbol
-        o = Polynomial(state['coeffs'], symbol=Symbol(state['symbol_repr']))
+        o = Polynomial(state['coeffs'], state['coeff_ring'], symbol=Symbol(state['symbol_repr']))
         self.coeffs     = o.coeffs
         self.coeff_ring = o.coeff_ring
         self.ring       = o.ring

@@ -350,14 +350,15 @@ class RuntimeConfiguration(object):
 
 
 
-    def __build_concurrent_pool(self, workers: int, pool_type: 'Pool', starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
+    def __build_concurrent_pool(self, workers: int, pool_type: 'Pool', starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None, terminate_filter: FunctionType=None):
         if not visual_args:
             visual_args = {}
 
         def _outer_wrap(func):
             def _runner(iterable):
-                local_func  = func
-                local_chunk = chunk_size
+                local_func      = func
+                local_chunk     = chunk_size
+                local_term_filt = terminate_filter
 
                 with pool_type(workers) as pool:
                     if visual:
@@ -373,16 +374,31 @@ class RuntimeConfiguration(object):
                         from tqdm import tqdm
                         num_items = len(iterable)
                         if starmap:
-                            def wrapper(arg):
+                            def star_wrapper(arg):
                                 return local_func(*arg)
 
-                            local_func = wrapper
+                            local_func = star_wrapper
 
 
                         if not local_chunk:
                             local_chunk = max(num_items // (workers*2), 1)
 
-                        return list(tqdm(pool_runner(local_func, iterable, chunksize=local_chunk), total=num_items, **visual_args))
+
+                        visual_runner = tqdm(pool_runner(local_func, iterable, chunksize=local_chunk), total=num_items, **visual_args)
+
+                        if local_term_filt:
+                            results = []
+                            for result in visual_runner:
+                                results.append(result)
+
+                                if local_term_filt(results):
+                                    pool.terminate()
+                                    break
+                            
+                            return results
+                        else:
+                            return list(visual_runner)
+
                     else:
                         return pool_runner(local_func, iterable)
 

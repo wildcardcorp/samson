@@ -90,6 +90,46 @@ class SmoothGen(PGen):
 
 
 
+class CongruentGen(PGen):
+    def __init__(self, size: int, res: int, mod: int):
+        self.size = size
+
+        if not res:
+            raise ValueError('"res" cannot be zero')
+
+        if not res % 2 and not mod % 2:
+            raise ValueError('Both "res" and "mod" cannot be even')
+
+
+        self.res = res
+        self.mod = mod
+
+
+    def _gen(self, constraints: list):
+        mod = self.mod
+        p   = 0
+
+        # This ensures we only try odd numbers
+        if self.mod % 2:
+            if self.res % 2:
+                mod *= 2
+            else:
+                p   += self.mod
+                mod *= 2
+
+
+        # Construct `p` to be the smallest integer of bitlength `size`
+        # and congruent to `res` % `mod`
+        p += mod*(2**(self.size-1) // mod) + mod + self.res
+
+        while p.bit_length() == self.size:
+            if is_prime(p):
+                yield p
+
+            p += mod
+
+
+
 
 class ResidueConstraint(object):
     def __init__(self, res: int, mod: int):
@@ -120,9 +160,10 @@ class PrimRootConstraint(object):
 
 
 class PGGenType(object):
-    RANDOM = RandGen
-    SMOOTH = SmoothGen
-    ROCA   = ROCAGen
+    RANDOM    = RandGen
+    SMOOTH    = SmoothGen
+    ROCA      = ROCAGen
+    CONGRUENT = CongruentGen
 
 
 class PGConstraints(object):

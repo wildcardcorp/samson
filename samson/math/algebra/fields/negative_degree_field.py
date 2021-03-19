@@ -138,7 +138,7 @@ class NegativeDegreeElement(RingElement):
 
 
     def __hash__(self):
-        return super().__hash__()
+        return hash((self.val, self.shift, self.ring))
 
 
 

@@ -1892,6 +1892,23 @@ def schoofs_algorithm(curve: object) -> int:
     return curve.p + 1 - frobenius_trace(curve)
 
 
+@RUNTIME.global_cache(8)
+def __build_bsgs_table(g: 'RingElement', end: int, e: 'RingElement'=None, start: int=0):
+    search_range = end - start
+    table        = {}
+    m            = kth_root(search_range, 2)
+
+    if not e:
+        e = g.ring.zero
+
+    for i in range(m):
+        table[e] = i
+        e += g
+    
+    return m, table
+
+
+
 def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, start: int=0) -> int:
     """
     Performs Baby-step Giant-step with an arbitrary finite cyclic group.
@@ -1925,16 +1942,7 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
         24
 
     """
-    search_range = end - start
-    table        = {}
-    m            = kth_root(search_range, 2)
-
-    if not e:
-        e = g.ring.zero
-
-    for i in range(m):
-        table[e] = i
-        e += g
+    m, table = __build_bsgs_table(g, end, e, start)
 
     factor = g * m
     o = g * start
@@ -2079,7 +2087,7 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
             if x == X:
                 break
 
-        r   = B-b
+        r = B-b
         if not r:
             continue
 
@@ -2880,13 +2888,14 @@ def find_smooth_close_to(n: int, max_j: int=5, primes: list=None) -> int:
     return n
 
 
-def cornacchias_algorithm(d: int, p: int, **root_kwargs) -> (int, int):
+def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -> (int, int):
     """
-    Solves the Diophantine equation `x`^2 +`d`*`y`^2 = `p`.
+    Solves the Diophantine equation `x`^2 + `d`*`y`^2 = `p`.
 
     Parameters:
-        d (int): `d` parameter.
-        p (int): `p` parameter.
+        d         (int): `d` parameter.
+        p         (int): `p` parameter.
+        all_sols (bool): Whether or not to return all (primitive) solutions.
 
     Returns:
         (int, int): Formatted as (`x`, `y`).
@@ -2899,6 +2908,7 @@ def cornacchias_algorithm(d: int, p: int, **root_kwargs) -> (int, int):
 
     R = ZZ/ZZ(p)
     D = R(-d)
+    sols = []
 
     if D.is_square():
         for root in D.kth_root(2, True, **root_kwargs):
@@ -2913,9 +2923,17 @@ def cornacchias_algorithm(d: int, p: int, **root_kwargs) -> (int, int):
 
             result = ZZ(p-t**2)/d
             if result in ZZ and result.is_square():
-                return (t, int(result.kth_root(2)))
+                sol = (t, int(result.kth_root(2)))
 
-    raise NoSolutionException()
+                if all_sols:
+                    sols.append(sol)
+                else:
+                    return sol
+
+    if sols:
+        return set(sols)
+    else:
+        raise NoSolutionException()
 
 
 def binary_quadratic_forms(D: int) -> list:

@@ -14,7 +14,7 @@ class MultiplicativeGroupElement(RingElement):
             val   (int): Value of the element.
             ring (Ring): Parent ring.
         """
-        self.val  = val
+        self.val = val
         super().__init__(ring)
 
 

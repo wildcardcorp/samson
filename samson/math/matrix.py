@@ -667,3 +667,7 @@ class Matrix(RingElement):
 
     def __eq__(self, other: 'Matrix') -> bool:
         return type(self) == type(other) and self.rows == other.rows
+
+
+    def __hash__(self):
+        return hash((self.__class__, *[tuple(r) for r in self.rows]))

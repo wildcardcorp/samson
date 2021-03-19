@@ -132,9 +132,8 @@ class PowerSeriesElement(RingElement):
         return self.val == other
 
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return super().__hash__()
-
 
 
 class PowerSeriesRing(Ring):

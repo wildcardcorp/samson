@@ -1,6 +1,7 @@
 from samson.encoding.general import bytes_to_der_sequence
 from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PublicPoint
+from samson.encoding.x509.x509_ecdsa_params import X509ECDSAParams
 from samson.utilities.bytes import Bytes
 from samson.math.algebra.curves.named import WS_OID_LOOKUP
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
@@ -24,7 +25,7 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
     def encode(self, **kwargs) -> bytes:
         alg_id = SequenceOf()
         alg_id.setComponentByPosition(0, ObjectIdentifier([1, 2, 840, 10045, 2, 1]))
-        alg_id.setComponentByPosition(1, ObjectIdentifier(ber_decoder.decode(b'\x06' + bytes([len(self.key.G.curve.oid)]) + self.key.G.curve.oid)[0].asTuple()))
+        alg_id.setComponentByPosition(1, X509ECDSAParams.encode(self.key))
 
         zero_fill = math.ceil(self.key.G.curve.order().bit_length() / 8)
 
@@ -50,16 +51,8 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
         from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 
-        curve_oid = items[1][1].asTuple()
         params, _ = decoder.decode(bytes(items[2]))
-
-        d = Bytes(params[1]).int()
-        x, y = ECDSA.decode_point(Bytes(int(params[2])))
-
-        oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-        curve = WS_OID_LOOKUP[oid_bytes]
-
-        ecdsa = ECDSA(d=d, G=curve.G)
-        ecdsa.Q = curve(x, y)
-
+        ecdsa     = X509ECDSAParams.decode(items[1][1], params[2])
+        d         = Bytes(params[1]).int()
+        ecdsa.d   = d
         return PKCS8ECDSAPrivateKey(ecdsa)

@@ -11,7 +11,7 @@ def parse_ec_params(items, curve_idx, pub_point_idx):
 
     curve_oid = items[curve_idx].asTuple()
     oid_bytes = ber_encoder.encode(ObjectIdentifier(curve_oid))[2:]
-    curve = WS_OID_LOOKUP[oid_bytes]
+    curve     = WS_OID_LOOKUP[oid_bytes]
 
     x_y_bytes = Bytes(int(items[pub_point_idx]))
     x, y = ECDSA.decode_point(x_y_bytes)

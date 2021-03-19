@@ -14,7 +14,7 @@ class FiniteFieldElement(FieldElement):
             val    (Polynomial): Value of the element.
             field (FiniteField): Parent field.
         """
-        self.val   = field.internal_field.coerce(val)
+        self.val = field.internal_field.coerce(val)
         super().__init__(field)
 
 

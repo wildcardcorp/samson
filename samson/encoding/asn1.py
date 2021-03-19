@@ -2,7 +2,7 @@ from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 from samson.hashes.md5 import MD5
 from samson.hashes.md2 import MD2
-from pyasn1_modules import rfc2459
+from pyasn1_modules import rfc2459, rfc5280
 from pyasn1.codec.der import encoder
 from pyasn1.type.univ import ObjectIdentifier, OctetString
 
@@ -29,9 +29,9 @@ RDN_TYPE_LOOKUP = {
     'O': rfc2459.OrganizationName,
     'C': rfc2459.X520countryName,
     'L': rfc2459.UTF8String,
-    'ST': rfc2459.X520StateOrProvinceName,
+    'ST': rfc5280.X520StateOrProvinceName,
     'OU': rfc2459.X520OrganizationalUnitName,
-    'emailAddress': rfc2459.emailAddress,
+    'emailAddress': rfc5280.EmailAddress,
     'serialNumber': rfc2459.CertificateSerialNumber,
     'streetAddress': rfc2459.StreetAddress
 
@@ -122,7 +122,8 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
             rdn_payload = RDN_TYPE_LOOKUP[k]()
             rdn_payload.setComponentByPosition(0, v)
 
-        attr['value'] = OctetString(encoder.encode(rdn_payload))
+        #attr['value'] = OctetString(encoder.encode(rdn_payload))
+        attr['value'] = rdn_payload
 
         rdn = rfc2459.RelativeDistinguishedName()
         rdn.setComponentByPosition(0, attr)

@@ -81,4 +81,4 @@ class MatrixRing(Ring):
 
 
     def __hash__(self) -> int:
-        return hash((self.ring, self.__class__))
+        return hash((self.ring, self.__class__, self.size))

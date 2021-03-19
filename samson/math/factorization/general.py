@@ -356,7 +356,7 @@ def is_perfect_power(n: int) -> (bool, int, int):
 
         p = next_prime(p+1)
 
-    return is_prime(n), n, 1
+    return False, n, 1
 
 
 

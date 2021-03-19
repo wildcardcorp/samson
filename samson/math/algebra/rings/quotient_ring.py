@@ -53,7 +53,7 @@ class QuotientElement(RingElement):
 
 
     def __hash__(self) -> bool:
-        return hash(self.val) + hash(self.ring)
+        return hash((self.val, self.ring))
 
 
     def is_invertible(self) -> bool:

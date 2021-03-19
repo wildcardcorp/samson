@@ -69,8 +69,8 @@ class X509CertificateSigningRequest(X509Certificate):
         signature_alg = rfc5280.AlgorithmIdentifier()
         signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
 
-        if self.PARAM_ENCODER:
-            signature_alg['parameters'] = Any(encoder.encode(self.PARAM_ENCODER.encode(self.key)))
+        if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
+            signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
 
 
         # Inject or compute the CRI signature

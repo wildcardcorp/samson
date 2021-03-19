@@ -5,7 +5,7 @@ from samson.encoding.openssh.openssh_dsa_key import OpenSSHDSAPrivateKey, OpenSS
 from samson.encoding.x509.x509_dsa_public_key import X509DSAPublicKey
 from samson.encoding.pkcs1.pkcs1_dsa_private_key import PKCS1DSAPrivateKey
 from samson.encoding.pkcs8.pkcs8_dsa_private_key import PKCS8DSAPrivateKey
-from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DSASigningAlgorithms, X509DSACertificateSigningRequest
+from samson.encoding.x509.x509_dsa_certificate import X509DSACertificate, X509DSASigningAlgorithms, X509DSACertificateSigningRequest, X509DSAParams
 from samson.encoding.general import PKIEncoding
 from samson.core.encodable_pki import EncodablePKI
 from samson.core.primitives import SignatureAlg, Primitive
@@ -36,6 +36,7 @@ class DSA(EncodablePKI, SignatureAlg):
 
     X509_SIGNING_ALGORITHMS = X509DSASigningAlgorithms
     X509_SIGNING_DEFAULT    = X509DSASigningAlgorithms.id_dsa_with_sha256
+    X509_SIGNING_PARAMS     = X509DSAParams
 
     EPHEMERAL       = EphemeralSpec(ephemeral_type=EphemeralType.KEY, size=SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda dsa: dsa.q.bit_length()))
     USAGE_FREQUENCY = FrequencyType.OFTEN

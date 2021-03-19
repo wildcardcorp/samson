@@ -1,4 +1,5 @@
 from samson.core.base_object import BaseObject
+from samson.utilities.runtime import RUNTIME
 
 class Map(BaseObject):
     def __init__(self, domain: 'Ring', codomain: 'Ring', map_func: 'FunctionType', pre_isomorphism: 'Map'=None):
@@ -24,8 +25,14 @@ class Map(BaseObject):
             return self.domain
 
 
+    @RUNTIME.global_cache()
     def __call__(self, element):
         if self.pre_isomorphism:
             element = self.pre_isomorphism(element)
         
         return self.map_func(element)
+
+
+    def __hash__(self):
+        return hash((self.domain, self.codomain, self.map_func))
+
