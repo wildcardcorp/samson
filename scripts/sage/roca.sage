@@ -205,7 +205,7 @@ if __name__ == '__main__':
 
 
     rsa = RSA.import_key(key)
-    n   = int(rsa.n)
+    n   = int(rsa.key.n)
     if not check_roca(n):
         print("[-] Provided RSA key is not vulnerable to ROCA")
         sys.exit(1)

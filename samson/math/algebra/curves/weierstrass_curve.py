@@ -2,7 +2,7 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
@@ -16,9 +16,10 @@ class WeierstrassPoint(RingElement):
     Point on a Weierstrass curve.
     """
 
-    def __init__(self, x: int, y: int, curve: 'WeierstrassCurve'):
-        self.x     = curve.ring.coerce(x)
-        self.y     = curve.ring.coerce(y)
+    def __init__(self, x: RingElement, y: RingElement, curve: 'WeierstrassCurve', z: RingElement=None):
+        self._x    = curve.ring.coerce(x)
+        self._y    = curve.ring.coerce(y)
+        self._z    = curve.ring.coerce(z or curve.ring.one)
         self.curve = curve
         self.order_cache  = None
 
@@ -41,6 +42,30 @@ class WeierstrassPoint(RingElement):
         return self.x
 
 
+    def _collapse_coords(self):
+        if self._z != self._x.ring.one:
+            z_inv = ~self._z
+            self._x *= z_inv
+            self._y *= z_inv
+            self._z  = self._x.ring.one
+
+
+    @property
+    def x(self):
+        self._collapse_coords()
+        return self._x
+
+    @property
+    def y(self):
+        self._collapse_coords()
+        return self._y
+
+    @property
+    def z(self):
+        self._collapse_coords()
+        return self._z
+
+
     def __hash__(self):
         return hash((self.curve, self.x, self.y))
 
@@ -50,15 +75,27 @@ class WeierstrassPoint(RingElement):
 
 
     def __eq__(self, P2: 'WeierstrassPoint') -> bool:
-        return self.curve == P2.curve and self.x == P2.x and self.y == P2.y
+        X1, Y1, Z1 = self._x, self._y, self._z
+        X2, Y2, Z2 = P2._x, P2._y, P2._z
+        U1 = Y2*Z1
+        U2 = Y1*Z2
+        V1 = X2*Z1
+        V2 = X1*Z2
+
+        return self.curve == P2.curve and V2 == V1 and U1 == U2
 
 
     def __lt__(self, other: 'WeierstrassPoint') -> bool:
         other = self.ring.coerce(other)
         if self.ring != other.ring:
             raise ValueError("Cannot compare elements with different underlying rings.")
+        
+        X1, Z1 = self._x, self._z
+        X2, Z2 = other._x, other._z
+        V1 = X2*Z1
+        V2 = X1*Z2
 
-        return self.x < other.x
+        return V2 < V1
 
 
     def __gt__(self, other: 'WeierstrassPoint') -> bool:
@@ -66,33 +103,75 @@ class WeierstrassPoint(RingElement):
         if self.ring != other.ring:
             raise ValueError("Cannot compare elements with different underlying rings.")
 
-        return self.x > other.x
+        X1, Z1 = self._x, self._z
+        X2, Z2 = other._x, other._z
+        V1 = X2*Z1
+        V2 = X1*Z2
+
+        return V2 > V1
 
 
     def __neg__(self) -> 'WeierstrassPoint':
-        return WeierstrassPoint(self.x, -self.y, self.curve)
+        return WeierstrassPoint(self._x, -self._y, self.curve, self._z)
 
+
+    def __double(self):
+        if not self._y:
+            return self.curve.POINT_AT_INFINITY
+
+        X, Y, Z = self._x, self._y, self._z
+        W  = self.curve.a*(Z*Z) + (X*X)*3
+        S  = Y*Z
+        B  = X*Y*S
+        B4 = B*4
+        H  = W*W - B4*2
+        X_ = H*S*2
+        S2 = S*S*8
+        Y_ = W*(B4 - H) - (Y*Y)*S2
+        Z_ = S*S2
+
+        return WeierstrassPoint(x=X_, y=Y_, z=Z_, curve=self.curve)
+
+
+    def add_no_cache(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
+        # https://en.wikibooks.org/wiki/Cryptography/Prime_Curve/Standard_Projective_Coordinates
+        if self.curve.POINT_AT_INFINITY == P2:
+            return self
+
+        elif self.curve.POINT_AT_INFINITY == self:
+            return P2
+
+        X1, Y1, Z1 = self._x, self._y, self._z
+        X2, Y2, Z2 = P2._x, P2._y, P2._z
+        A = self.curve.a
+
+        U1 = Y2*Z1
+        U2 = Y1*Z2
+        V1 = X2*Z1
+        V2 = X1*Z2
+
+        if V1 == V2:
+            if U1 == U2:
+                return self.__double()
+            else:
+                return self.curve.POINT_AT_INFINITY
+
+        U  = U1 - U2
+        V  = V1 - V2
+        W  = Z1*Z2
+        VS = V*V
+        VT = VS*V
+        A  = (U*U)*W - VT - VS*V2*2
+        X3 = V*A
+        Y3 = U*(VS*V2 - A) - VT*U2
+        Z3 = VT*W
+
+        return WeierstrassPoint(x=X3, y=Y3, z=Z3, curve=self.curve)
+                
 
     @RUNTIME.global_cache()
     def __add__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
-        if self == self.curve.POINT_AT_INFINITY:
-            return P2
-
-        if P2 == self.curve.POINT_AT_INFINITY:
-            return self
-
-        if self == -P2:
-            return self.curve.POINT_AT_INFINITY
-
-        if self == P2:
-            m = (3*self.x**2 + self.curve.a) / (2 * self.y)
-        else:
-            m = (P2.y - self.y) / (P2.x - self.x)
-
-        x = m**2 - self.x - P2.x
-        y = m * (self.x - x) - self.y
-
-        return WeierstrassPoint(x, y, self.curve)
+        return self.add_no_cache(P2)
 
 
     def __radd__(self, P2: 'WeierstrassPoint') -> 'WeierstrassPoint':
@@ -107,9 +186,19 @@ class WeierstrassPoint(RingElement):
         return -self + P2
 
 
+    def __mul__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
+        result = super().__mul__(other)
+        result._collapse_coords()
+        return result
+
+
+
     def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if type(other) is int:
             return self*mod_inv(other, self.order())
+        
+        elif not self:
+            return 0
 
         # Is it an anomalous curve? Do additive transfer
         elif not (self * self.ring.ring.characteristic()):
@@ -121,38 +210,34 @@ class WeierstrassPoint(RingElement):
             P        = E(other)
             ord_facs = factor(P.order())
 
-            # Check if we can do the MOV attack
-            if RUNTIME.enable_MOV_attack:
-                k = E.embedding_degree()
+            # Is it even economical?
+            if RUNTIME.enable_MOV_attack and max(ord_facs).bit_length() > RUNTIME.index_calculus_supremacy and (E.is_supersingular() or E.embedding_degree() < 7):
+                Q = self
 
-                # Is it even economical?
-                if k < 7 and max(ord_facs).bit_length() > RUNTIME.index_calculus_supremacy:
-                    Q  = self
-
-                    # Implementation detail: Elliptic curve operations faster than
-                    # poly mul/div, so only do index calculus on large groups
-                    large_facs     = {p: e for p,e in ord_facs.items() if p.bit_length() > RUNTIME.index_calculus_supremacy}
-                    small_facs     = ord_facs - large_facs
-                    large_facs     = ord_facs - small_facs
-                    large_subgroup = product([p**e for p,e in large_facs.items()])
-                    small_subgroup = P.order() // large_subgroup
+                # Implementation detail: Elliptic curve operations faster than
+                # poly mul/div, so only do index calculus on large groups
+                large_facs     = {p: e for p,e in ord_facs.items() if p.bit_length() > RUNTIME.index_calculus_supremacy}
+                small_facs     = ord_facs - large_facs
+                large_facs     = ord_facs - small_facs
+                large_subgroup = product([p**e for p,e in large_facs.items()])
+                small_subgroup = P.order() // large_subgroup
 
 
-                    res = pohlig_hellman(P * large_subgroup, Q * large_subgroup, factors=small_facs)
+                res = pohlig_hellman(P * large_subgroup, Q * large_subgroup, factors=small_facs)
 
-                    if res * P == Q:
-                        return res
+                if res * P == Q:
+                    return res
 
 
-                    # Confine points to the large subgroup
-                    Qp = Q * small_subgroup
-                    Pp = P * small_subgroup
+                # Confine points to the large subgroup
+                Qp = Q * small_subgroup
+                Pp = P * small_subgroup
 
-                    phi = Pp.multiplicative_transfer_map()
-                    W1  = phi(Pp)
-                    W2  = phi(Qp)
+                phi = Pp.multiplicative_transfer_map()
+                W1  = phi(Pp)
+                W2  = phi(Qp)
 
-                    return crt([(W2/W1, large_subgroup), (res, small_subgroup)])[0]
+                return crt([(W2/W1, large_subgroup), (res, small_subgroup)])[0]
 
             return pohlig_hellman(P, self, factors=ord_facs)
 
@@ -285,12 +370,12 @@ class WeierstrassPoint(RingElement):
         return self.miller(Q, n)**((p**k-1) // n)
 
 
-    def multiplicative_transfer_map(self) -> 'FunctionType':
+    def multiplicative_transfer_map(self) -> 'Map':
         """
         Generates a map to `Fq*` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
 
         Returns:
-            FunctionType: Map function.
+            Map: Map function.
         """
         from samson.math.algebra.fields.finite_field import FiniteField as GF
         E = self.curve
@@ -313,6 +398,59 @@ class WeierstrassPoint(RingElement):
                     return Km(E_(Q).weil_pairing(R, o))
 
                 return Map(E, Km, mul_trans)
+    
+
+
+    @RUNTIME.global_cache(2)
+    def __build_bsgs_table(self, g: 'WeierstrassPoint', e: 'WeierstrassPoint',  end: int, start: int=0):
+        search_range = end - start
+        table        = {}
+        m            = kth_root(search_range, 2)
+
+        # Defer inversions until we can batch them
+        points = []
+        for i in range(m):
+            points.append(e)
+            e = e.add_no_cache(g)
+
+        invs = batch_inv([point._z for point in points])
+        one  = self._x.ring.one
+
+        # Perform inversions then cache
+        for i in range(m):
+            e = points[i]
+            z = invs[i]
+            e._x, e._y, e._z = e._x*z, e._y*z, one
+            table[e] = i
+        
+        return table, m
+
+
+
+    def bsgs(self, g: 'WeierstrassPoint', end: int, start: int=0, congruence: tuple=None, e: 'WeierstrassPoint'=None) -> int:
+        h = self
+        if congruence:
+            r, n = congruence
+            e = e or g*r
+            G = g*n
+        else:
+            e = e or g.ring.zero
+            G = g
+
+        table, m = self.__build_bsgs_table(G, e, end, start)
+        factor   = G * m
+        o = G * start
+        e = h
+        for i in range(m):
+            e = h - o
+            if e in table:
+                return i*m + table[e] + start
+
+            o += factor
+
+        raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
+
+            
 
 
 
@@ -321,16 +459,16 @@ class PointAtInfinity(WeierstrassPoint):
         return ['curve']
 
 
-    def __eq__(self, P2: 'WeierstrassPoint') -> bool:
-        return self is P2
-
-
     def __hash__(self):
         return object.__hash__(self)
 
 
     def __neg__(self) -> 'WeierstrassPoint':
         return self
+    
+
+    def order(self):
+        return 1
 
 
 
@@ -339,7 +477,7 @@ class WeierstrassCurve(Ring):
     Elliptic curve of form y**2 = x**3 + a*x + b
     """
 
-    def __init__(self, a: RingElement, b: RingElement, ring: Ring=None, base_tuple: tuple=None, cardinality: int=None, check_singularity: bool=True):
+    def __init__(self, a: RingElement, b: RingElement, ring: Ring=None, base_tuple: tuple=None, cardinality: int=None, check_singularity: bool=True, cm_discriminant: int=None, embedding_degree: int=None):
         """
         Parameters:
             a          (RingElement): `a` coefficient.
@@ -351,9 +489,23 @@ class WeierstrassCurve(Ring):
         """
         from samson.math.symbols import Symbol
 
+        if not ring:
+            if not hasattr(a, 'ring'):
+                ring = b.ring
+
+            elif not hasattr(b, 'ring'):
+                ring = a.ring
+
+            else:
+                if a.ring.is_superstructure_of(b.ring):
+                    ring = a.ring
+                else:
+                    ring = b.ring
+
+
         self.ring = ring or a.ring
-        self.a  = self.ring(a)
-        self.b  = self.ring(b)
+        self.a    = self.ring(a)
+        self.b    = self.ring(b)
 
 
         if check_singularity:
@@ -364,13 +516,15 @@ class WeierstrassCurve(Ring):
             base_tuple = WeierstrassPoint(*base_tuple, self)
 
         self.G_cache     = base_tuple
-        self.PAF_cache   = None
         self.dpoly_cache = {}
 
         self.cardinality_cache = cardinality
         self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
-        self.zero = PointAtInfinity(self.ring.zero, self.ring.zero, self)
+        self.zero = PointAtInfinity(self.ring.zero, self.ring.one, self, self.ring.one)
+        self.PAF_cache = self.zero
+        self.__cm_discriminant_cache = cm_discriminant
+        self.__embedding_degree = embedding_degree
 
 
 
@@ -429,6 +583,13 @@ class WeierstrassCurve(Ring):
     @property
     def p(self) -> int:
         return self.ring.characteristic()
+    
+
+    def defining_polynomial(self) -> 'Polynomial':
+        from samson.math.symbols import Symbol
+        x = Symbol('x')
+        _ = self.ring[x]
+        return x**3 + self.a*x + self.b
 
 
     @staticmethod
@@ -458,6 +619,72 @@ class WeierstrassCurve(Ring):
 
     def find_gen(self) -> WeierstrassPoint:
         return self.abelian_group_generators()[0]
+    
+
+    def a_invariants(self):
+        z = self.ring.zero
+        return z, z, z, self.a, self.b
+
+
+    def b_invariants(self):
+        a1, a2, a3, a4, a6 = self.a_invariants()
+
+        a12 = a1**2
+        a32 = a3**2
+        a24 = a2*4
+        a64 = a6*4
+        return a12 + a24, a1*a3 + a4*2, a32 + a64, a12 * a6 + a24 + a64 - a1*a3*a4 + a2*a32 - a4**2
+
+
+    def c_invariants(self):
+        b2, b4, b6, _b8 = self.b_invariants()
+        return b2**2 - b4*24, -b2**3 + b2*b4*36 - b6*216
+    
+
+    @RUNTIME.global_cache()
+    def isomorphisms(self, other: 'WeierstrassCurve') -> list:
+        """
+        References:
+            https://github.com/sagemath/sage/blob/develop/src/sage/schemes/elliptic_curves/ell_generic.py#L2283
+        """
+        from samson.math.symbols import Symbol
+        from samson.math.algebra.curves.elliptic_curve_isomorphism import EllipticCurveIsomorphism
+
+        E, F = self, other
+        j    = E.j_invariant()
+        R    = E.ring
+
+        if j != other.j_invariant():
+            raise NoSolutionException('Curves are not isomorphic')
+
+        a1E, a2E, a3E, _a4E, _a6E = E.a_invariants()
+        a1F, a2F, a3F, _a4F, _a6F = F.a_invariants()
+        c4E, c6E = E.c_invariants()
+        c4F, c6F = F.c_invariants()
+
+        if not j:
+            m, um = 6, c6E/c6F
+
+        elif j == R(1728):
+            m, um = 4, c4E/c4F
+
+        else:
+            m, um = 2, (c6E*c4F)/(c6F*c4E)
+
+        x  = Symbol('x')
+        _P = R[x]
+        us = list((x**m - um).roots())
+
+        isos = []
+        for u in us:
+            s = (a1F*u - a1E)/2
+            r = (a2F*u**2 + a1E*s + s**2 - a2E)/3
+            t = (a3F*u**3 - a1E*r - a3E)/2
+            isos.append(EllipticCurveIsomorphism(E, F, u, r, s, t))
+        
+        return isos
+
+
 
 
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:
@@ -515,14 +742,44 @@ class WeierstrassCurve(Ring):
                 # order is greater than the interval, then the discrete logarithm of the point
                 # at infinity will be the curve's order
                 start, end = hasse_frobenius_trace_interval(p)
-                while True:
+                n, m = 1, 1
+                largest_elem = self.zero
+
+                # This algorithm either finds an element whose order is not within the size of the
+                # Hasse-Frobenius interval or computes the order of the curve.
+                while n*m < (start + p):
                     try:
                         g = self.random()
-                        bsgs(g, self.zero, e=self.zero, start=1, end=end-start)
+                        if g and not g*n:
+                            # If this is true, then `n` is the sqrt of the curve's prime.
+                            # It's possible this curve is actually sqrt(p)Z x sqrt(p)Z,
+                            # so we're looking for a linearly independent point
+                            if n == end // 2 - 1:
+                                g.order_cache = g.find_maximum_subgroup(n)
+                                j, k = g.linear_relation(largest_elem)
+                                if not j:
+                                    m = lcm(m, k)
+
+                            continue
+
+
+                        g_ord = self.zero.bsgs(g, start=1, end=end-start)
+                        n     = lcm(g_ord, n)
+                        g.order_cache = g_ord
+                        if g_ord != n:
+                            g = g.merge(largest_elem)
+
+                        largest_elem = g
                     except SearchspaceExhaustedException:
                         break
 
-                order = bsgs(g, self.zero, e=self.zero, start=start + p, end=end + p)
+                if n*m < (start + p): 
+                    parity = int(self.defining_polynomial().is_irreducible())
+                    order  = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), (parity, 2)]))
+                else:
+                    order = n*m
+                    if not self.G_cache:
+                        self.G_cache = largest_elem
 
                 self.cardinality_cache = order
 
@@ -574,13 +831,16 @@ class WeierstrassCurve(Ring):
 
     @RUNTIME.global_cache()
     def embedding_degree(self) -> int:
-        from samson.math.algebra.rings.integer_ring import ZZ
+        if self.__embedding_degree is not None:
+            return self.__embedding_degree
+        else:
+            from samson.math.algebra.rings.integer_ring import ZZ
 
-        Fo = self.ring.order()
-        Eo = self.order()
+            Fo = self.ring.order()
+            Eo = self.order()
 
-        Zem = (ZZ/ZZ(Eo)).mul_group()
-        return Zem(Fo).order()
+            Zem = (ZZ/ZZ(Eo)).mul_group()
+            return Zem(Fo).order()
 
 
 
@@ -626,20 +886,23 @@ class WeierstrassCurve(Ring):
         References:
             https://safecurves.cr.yp.to/disc.html
         """
-        from samson.math.factorization.general import factor
-        from samson.math.factorization.factors import Factors
-        t = self.trace()
-        p = self.ring.characteristic()
-        d = t**2-4*p
+        if self.__cm_discriminant_cache is not None:
+            return self.__cm_discriminant_cache
+        else:
+            from samson.math.factorization.general import factor
+            from samson.math.factorization.factors import Factors
+            t = self.trace()
+            p = self.ring.characteristic()
+            d = t**2-4*p
 
-        facs = factor(d)
-        s    = Factors({p: e // 2 for p,e in facs.items()})
-        D    = d // s.recombine()**2
+            facs = factor(d)
+            s    = Factors({p: e // 2 for p,e in facs.items()})
+            D    = d // s.recombine()**2
 
-        if D % 4 != 1:
-            D *= 4
+            if D % 4 != 1:
+                D *= 4
 
-        return D
+            return D
 
 
 
@@ -830,7 +1093,7 @@ class WeierstrassCurve(Ring):
     @staticmethod
     def from_D(D: int, R: Ring):
         """
-        Generates a `WeierstrassCurve` over field 'R' with complex multiplication discriminant `D`.
+        Generates a `WeierstrassCurve` over field `R` with complex multiplication discriminant `D`.
 
         Parameters:
             D  (int): Complex multiplication discriminant.
@@ -1114,6 +1377,7 @@ class WeierstrassCurve(Ring):
 
 
 
+    @RUNTIME.global_cache()
     def to_montgomery_form(self) -> ('WeierstrassCurve', Map):
         """
         References:
@@ -1131,7 +1395,7 @@ class WeierstrassCurve(Ring):
         _ = self.ring[z]
 
         # Curve equation must have roots
-        roots = (z**3 + self.a*z + self.b).roots()
+        roots = self.defining_polynomial().roots()
 
         if not roots:
             raise NoSolutionException("Curve equation has no roots")
@@ -1186,19 +1450,19 @@ class WeierstrassCurve(Ring):
         return WeierstrassPoint(x, y, self)
 
 
-    def random(self, size: WeierstrassPoint=None) -> WeierstrassPoint:
+    def random(self, size: 'RingElement'=None) -> WeierstrassPoint:
         """
         Generate a random element.
 
         Parameters:
-            size (int): The ring-specific 'size' of the element.
+            size (RingElement): The ring-specific 'size' of the element.
     
         Returns:
             WeierstrassPoint: Random element of the algebra.
         """
         while True:
             try:
-                return self.recover_point_from_x(self.ring.random())
+                return self.recover_point_from_x(self.ring.random(size))
             except NoSolutionException:
                 pass
 
@@ -1355,12 +1619,13 @@ class WeierstrassCurve(Ring):
 
 
 
-    def additive_transfer_map(self) -> 'FunctionType':
+    @RUNTIME.global_cache()
+    def additive_transfer_map(self) -> 'Map':
         """
         Generates a map to `Qp` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
 
         Returns:
-            FunctionType: Map function.
+            Map: Map function.
 
         References:
             https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf
@@ -1375,7 +1640,7 @@ class WeierstrassCurve(Ring):
 
 
         # Move everything into p-adic numbers
-        Qp2  = Qp(p, 10)
+        Qp2  = Qp(p, 8)
         QpA  = Qp2(E.a)
         QpB  = Qp2(E.b)
         Ep   = EllipticCurve(QpA, QpB)

@@ -377,14 +377,16 @@ class RuntimeConfiguration(object):
                             def star_wrapper(arg):
                                 return local_func(*arg)
 
-                            local_func = star_wrapper
+                            run_func = star_wrapper
+                        else:
+                            run_func = local_func
 
 
                         if not local_chunk:
                             local_chunk = max(num_items // (workers*2), 1)
 
 
-                        visual_runner = tqdm(pool_runner(local_func, iterable, chunksize=local_chunk), total=num_items, **visual_args)
+                        visual_runner = tqdm(pool_runner(run_func, iterable, chunksize=local_chunk), total=num_items, **visual_args)
 
                         if local_term_filt:
                             results = []

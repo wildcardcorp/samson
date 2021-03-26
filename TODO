@@ -14,7 +14,6 @@ CURRENT
 
 0.3.0
 ===============
-X   Insecure Twist attack
 X   DenseVector
     X   Coercion
 
@@ -44,7 +43,6 @@ X   New IoT ciphers
 
 
 X   Increase performance
-    X   Weierstrass curves
     X   Schoof's algorithm
 
 X   DualEC is incredibly slow

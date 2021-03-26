@@ -102,6 +102,9 @@ class FiniteField(Field):
                 while True:
                     poly = P.random(max_elem).monic()
 
+                    if poly.degree() < n:
+                        poly += x**n
+
                     if poly and poly.is_irreducible():
                         reducing_poly = poly
                         break
@@ -126,7 +129,7 @@ class FiniteField(Field):
 
 
     def shorthand(self) -> str:
-        return f'F_({self.p}**{self.n})' if self.n > 1 else f'F_{self.p}'
+        return f'F_({self.p}^{self.n})' if self.n > 1 else f'F_{self.p}'
 
 
     def characteristic(self) -> int:

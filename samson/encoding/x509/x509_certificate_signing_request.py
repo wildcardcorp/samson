@@ -34,7 +34,7 @@ class X509CertificateSigningRequest(X509Certificate):
 
         # Subject RDN
         subject = rfc5280.Name()
-        subject.setComponentByPosition(0, parse_rdn(self.subject))
+        subject.setComponentByPosition(0, parse_rdn(self.subject, byte_encode=True))
 
         info['subject'] = subject
 

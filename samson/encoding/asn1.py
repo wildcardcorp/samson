@@ -80,7 +80,7 @@ SIGNING_ALG_OIDS = {
 INVERSE_SIGNING_ALG_OIDS = {v:k for k,v in SIGNING_ALG_OIDS.items()}
 
 
-def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
+def parse_rdn(rdn_str: str, byte_encode: bool=False) -> rfc2459.RDNSequence:
     rdn_parts = rdn_str.split('=')
     rdn_seq   = rfc2459.RDNSequence()
 
@@ -122,8 +122,10 @@ def parse_rdn(rdn_str: str) -> rfc2459.RDNSequence:
             rdn_payload = RDN_TYPE_LOOKUP[k]()
             rdn_payload.setComponentByPosition(0, v)
 
-        #attr['value'] = OctetString(encoder.encode(rdn_payload))
-        attr['value'] = rdn_payload
+        if byte_encode:
+            attr['value'] = OctetString(encoder.encode(rdn_payload))
+        else:
+            attr['value'] = rdn_payload
 
         rdn = rfc2459.RelativeDistinguishedName()
         rdn.setComponentByPosition(0, attr)

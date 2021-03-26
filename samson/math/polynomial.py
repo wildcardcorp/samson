@@ -4,9 +4,13 @@ from samson.math.factorization.general import factor as factor_int, pk_1_smalles
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
 from samson.utilities.general import add_or_increment
+from samson.utilities.manipulation import get_blocks
 from samson.utilities.runtime import RUNTIME
 from types import FunctionType
 import itertools
+
+from samson.auxiliary.lazy_loader import LazyLoader
+_integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
 
 class Polynomial(RingElement):
 
@@ -175,6 +179,32 @@ class Polynomial(RingElement):
             return self.coeff_ring.zero
 
 
+    def LT(self) -> RingElement:
+        """
+        Returns the leading term.
+
+        Returns:
+            RingElement: Term of the highest degree.
+        """
+        try:
+            return self.LC()*self.LM()
+        except IndexError:
+            return self.coeff_ring.zero
+
+
+
+    def LM(self) -> RingElement:
+        """
+        Returns the leading monomial.
+
+        Returns:
+            RingElement: Monomial of the highest degree.
+        """
+        try:
+            return self.symbol**(self.degree())
+        except IndexError:
+            return self.coeff_ring.zero
+
 
     def evaluate(self, val: RingElement=None, **kwargs) -> RingElement:
         """
@@ -258,9 +288,10 @@ class Polynomial(RingElement):
             https://crypto.stanford.edu/pbc/notes/numbertheory/poly.html
             https://math.stackexchange.com/questions/170128/roots-of-a-polynomial-mod-n
         """
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
         from samson.math.algebra.rings.padic_integers import Zp
         from samson.math.algebra.rings.padic_numbers import PAdicNumberField
+        from samson.math.symbols import oo
 
         R = self.coeff_ring
         is_field = R.is_field()
@@ -279,7 +310,7 @@ class Polynomial(RingElement):
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
 
-        else:
+        elif R.order() != oo:
             from samson.math.general import crt
 
             all_facs = []
@@ -320,6 +351,9 @@ class Polynomial(RingElement):
                             candidate += P
 
             return results
+        
+        else:
+            raise NotImplementedError(f"Polynomial factorization not implemented over {R}")
 
 
     def small_roots(self) -> list:
@@ -329,7 +363,7 @@ class Polynomial(RingElement):
         Returns:
             list: List of roots.
         """
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
         return coppersmiths(self.coeff_ring.characteristic(), self.change_ring(ZZ))
 
 
@@ -388,7 +422,7 @@ class Polynomial(RingElement):
         References:
             https://en.wikipedia.org/wiki/Hensel%27s_lemma
         """
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
         from samson.math.algebra.rings.padic_integers import Zp
 
         if not ZZ(p).is_prime():
@@ -749,7 +783,7 @@ class Polynomial(RingElement):
             https://www.imomath.com/index.php?options=623&lmm=0#:~:text=Table%20of%20contents)-,Irreducibility,nonconstant%20polynomials%20with%20integer%20coefficients.&text=Every%20quadratic%20or%20cubic%20polynomial,3%E2%88%924x%2B1.
         """
         from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime, batch_gcd
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
 
         n = self.degree()
 
@@ -916,7 +950,7 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
         """
         from samson.math.general import next_prime
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
 
         # 'f' must be content-free
         f = self // self.content()
@@ -1013,7 +1047,7 @@ class Polynomial(RingElement):
             True
 
         """
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
         from samson.math.all import QQ, Symbol
         from samson.math.factorization.factors import Factors
 
@@ -1410,3 +1444,20 @@ class Polynomial(RingElement):
 
             result = s_q.content().gcd(o_q.content())*(fac // c)
             return self.ring(result.coeffs.map(lambda idx, val: (idx, val.numerator)))
+
+
+    def __kronecker_substitution(self, g):
+        """
+        References:
+            https://math.mit.edu/classes/18.783/2015/LectureNotes3.pdf
+        """
+        ZZ = _integer_ring.ZZ
+
+        f = self
+        p = f.coeff_ring.characteristic()
+        d = max(f, g, key=lambda poly: poly.degree())
+        n = 2*p.bit_length()+(d.degree()+1).bit_length()
+        a = f.change_ring(ZZ)(2**n)
+        b = g.change_ring(ZZ)(2**n)
+        c = int(a*b)
+        return P([int(b[::-1], 2) % p for b in get_blocks(bin(c)[2:][::-1], n, True)])

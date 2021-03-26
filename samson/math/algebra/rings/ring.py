@@ -166,6 +166,10 @@ class Ring(BaseObject):
         raise NotImplementedError()
 
 
+    def isomorphisms(self) -> list:
+        raise NotImplementedError()
+
+
     def find_gen(self) -> 'RingElement':
         """
         Finds a generator of the `Ring`.

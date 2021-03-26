@@ -41,13 +41,16 @@ def get_params(bit_size):
         return M_PRIME_TABLE[2048]
 
 
+def get_roca_log(N):
+    Mp, _, _, _ = get_params(N.bit_length())
+    Zm = (ZZ/ZZ(Mp)).mul_group()
+    g  = Zm(65537)
+    return pohlig_hellman(g, Zm(N))
+
 
 def check_roca(N):
-    Mp, _, _, _ = get_params(N.bit_length())
     try:
-        Zm = (ZZ/ZZ(Mp)).mul_group()
-        g  = Zm(65537)
-        _  = pohlig_hellman(g, Zm(N))
+        get_roca_log(N)
         return True
     except SearchspaceExhaustedException:
         return False

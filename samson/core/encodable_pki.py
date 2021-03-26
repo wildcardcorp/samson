@@ -19,7 +19,7 @@ class EncodablePKI(object):
         Returns:
             object: PKI instance.
         """
-        if buffer.startswith(b'----'):
+        if buffer.strip().startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
         for encoding in ORDER:

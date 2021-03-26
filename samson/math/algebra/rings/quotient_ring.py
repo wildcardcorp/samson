@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import mod_inv
+from samson.utilities.exceptions import CoercionException
 
 class QuotientElement(RingElement):
     """
@@ -42,14 +43,15 @@ class QuotientElement(RingElement):
 
 
     def __neg__(self) -> 'QuotientElement':
-        return QuotientElement((-self.val), self.ring)
+        return QuotientElement(-self.val, self.ring)
 
 
     def __eq__(self, other: 'QuotientElement') -> bool:
-        if type(other) is int:
-            return self.val == other
-
-        return type(self) == type(other) and self.val == other.val and self.ring == other.ring
+        try:
+            other = self.ring(other)
+            return self.val == other.val and self.ring == other.ring
+        except CoercionException:
+            return False
 
 
     def __hash__(self) -> bool:
@@ -189,7 +191,7 @@ class QuotientRing(Ring):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            QuotientElement: The `x`-th element.
         """
@@ -213,7 +215,7 @@ class QuotientRing(Ring):
 
         Parameters:
             size (int/RingElement): The maximum ordinality/element (non-inclusive).
-    
+
         Returns:
             RingElement: Random element of the algebra.
         """

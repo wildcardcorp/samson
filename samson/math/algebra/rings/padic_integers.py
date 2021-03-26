@@ -161,10 +161,11 @@ class PAdicIntegerElement(RingElement):
             raise ZeroDivisionError
 
         i = 0
+        a_inv = mod_inv(a, self.ring.p)
         while i < self.ring.prec:
             b = dividend.val[i]
             if a:
-                c         = (b*mod_inv(a, self.ring.p)) % self.ring.p
+                c         = (b*a_inv) % self.ring.p
                 dividend -= (divisor << i) * c
             else:
                 c = 0
@@ -289,9 +290,6 @@ class PAdicIntegerRing(Ring):
 
         if type(other) is int:
             return PAdicIntegerElement(self._decompose_integer(other), self)
-
-
-
 
         raise CoercionException(self, other)
 

@@ -286,7 +286,7 @@ class PKIAutoParser(object):
             subclasses.extend(subclass.__subclasses__())
 
 
-        if buffer.startswith(b'----'):
+        if buffer.strip().startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
         for encoding in ORDER:
@@ -305,7 +305,7 @@ class PKIAutoParser(object):
     def import_key(buffer: bytes, passphrase: bytes=None):
         from samson.encoding.pem import pem_decode
 
-        if buffer.startswith(b'----'):
+        if buffer.strip().startswith(b'----'):
             buffer = pem_decode(buffer, passphrase)
 
         return PKIAutoParser.get_encoding(buffer, passphrase=passphrase).decode(buffer, passphrase=passphrase)

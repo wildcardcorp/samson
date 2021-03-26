@@ -183,7 +183,7 @@ class X509Certificate(PEMEncodable):
 
     @classmethod
     def verify(cls, buffer: bytes, verification_key: object) -> bool:
-        if buffer.startswith(b'----'):
+        if buffer.strip().startswith(b'----'):
             buffer = pem_decode(buffer)
 
         # Decode the full cert and get the encoded TBSCertificate

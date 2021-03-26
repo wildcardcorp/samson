@@ -126,7 +126,7 @@ class IntegerRing(Ring):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            IntegerElement: The `x`-th element.
         """
@@ -147,7 +147,7 @@ class IntegerRing(Ring):
 
         Parameters:
             other (int): Object to coerce.
-        
+
         Returns:
             IntegerElement: Coerced element.
         """

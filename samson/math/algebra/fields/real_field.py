@@ -31,7 +31,7 @@ class RealElement(FieldElement):
 
 
     def __pow__(self, other: 'RealElement') -> 'RealElement':
-        return self.field(self.val**other.val)
+        return self.field(self.val**self.field(other).val)
 
 
     def __abs__(self):

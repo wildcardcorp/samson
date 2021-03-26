@@ -16,7 +16,7 @@ def longest_subsequence(seq_a: list, seq_b: list) -> list:
     Parameters:
         seq_a (list): First enumerable.
         seq_b (list): Second enumerable.
-    
+
     Returns:
         list: Longest subsequence.
     """
@@ -33,7 +33,7 @@ def hamming_distance(bytes1: bytes, bytes2: bytes) -> int:
     Parameters:
         bytes1 (bytes): First byte-string.
         bytes2 (bytes): Second byte-string.
-    
+
     Returns:
         int: Hamming distance.
     """
@@ -56,7 +56,7 @@ def str_hamming_distance(s1: str, s2: str) -> int:
     Parameters:
         s1 (str): First string.
         s2 (str): Second string.
-    
+
     Returns:
         int: Hamming Distance.
     """
@@ -73,7 +73,7 @@ def levenshtein_distance(seq_a: list, seq_b: list) -> int:
     Parameters:
         seq_a (list): First enumerable.
         seq_b (list): Second enumerable.
-    
+
     Returns:
         int: Levenshtein Distance.
     """
@@ -106,7 +106,7 @@ def count_items(items: list) -> dict:
 
     Parameters:
         items (list): Enumerable of items.
-    
+
     Returns:
         dict: Dictionary of {item, count}.
     """
@@ -126,7 +126,7 @@ def chisquare(observed_dict: dict, expected_freq_dict: dict, length_override: in
     Parameters:
         observed_dict      (dict): Dictionary of observed items and their counts.
         expected_freq_dict (dict): Dictionary of expected items and their counts.
-    
+
     Returns:
         float: Chi-squared score.
     """
@@ -188,7 +188,7 @@ def birthday_attack_analysis(bits: int, probability: float) -> float:
     Parameters:
         bits          (int): Number of bits in the keyspace.
         probability (float): Target probability.
-    
+
     Returns:
         float: Average number of attempts before collision.
     
@@ -208,7 +208,7 @@ def coupon_collector_analysis(n: int) -> (float, float):
 
     Returns:
         (float, float): Tuple formatted as (average_number, standard_deviation).
-    
+
     References:
         https://brilliant.org/wiki/coupon-collector-problem/
     """
@@ -248,7 +248,7 @@ def num_expected_collisions(bits: int, num_inputs: int) -> float:
     Parameters:
         bits       (int): Number of bits in the keyspace.
         num_inputs (int): Hypothetical number of inputs.
-    
+
     Returns:
         float: Number of expected collisions.
     """
@@ -264,10 +264,10 @@ def probability_of_x_occurences(n: int, x: int, p: float) -> float:
         n (int): Number of trials.
         x (int): Number of times for event to occur.
         p (int): Probability event will occur.
-    
+
     Returns:
         float: Probability of total event.
-    
+
     References:
         https://math.stackexchange.com/questions/2348827/probability-of-an-event-occurring-x-number-of-times-in-a-sequence-of-events
     """
@@ -283,7 +283,7 @@ def probability_of_at_least_x_occurences(n: int, x: int, p: float) -> float:
         n (int): Number of trials.
         x (int): Number of times for event to occur.
         p (int): Probability event will occur.
-    
+
     Returns:
         float: Probability of total event.
     """
@@ -300,7 +300,7 @@ def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> in
 
     Returns:
         int: Number of attempts.
-    
+
     Examples:
         >>> from samson.analysis.general import number_of_attempts_to_reach_probability, simulate_event
         >>> d = number_of_attempts_to_reach_probability(1/100, 0.5)

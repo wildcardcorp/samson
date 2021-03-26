@@ -1849,7 +1849,7 @@ def frobenius_trace(curve: object) -> int:
         x = Symbol('x')
         _ = curve.ring[x]
 
-        defining_poly = x**3 + curve.a*x + curve.b
+        defining_poly = curve.defining_polynomial()
         bases         = frobenius_monomial_base(defining_poly)
         rational_char = bases[1]
         rational_char = frobenius_map(rational_char, defining_poly, bases=bases)
@@ -1942,19 +1942,22 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
         24
 
     """
-    m, table = __build_bsgs_table(g, end, e, start)
+    if hasattr(h, 'bsgs'):
+        return h.bsgs(g, end=end, start=start, e=e)
+    else:
+        m, table = __build_bsgs_table(g, end, e, start)
 
-    factor = g * m
-    o = g * start
-    e = h
-    for i in range(m):
-        e = h - o
-        if e in table:
-            return i*m + table[e] + start
+        factor = g * m
+        o = g * start
+        e = h
+        for i in range(m):
+            e = h - o
+            if e in table:
+                return i*m + table[e] + start
 
-        o += factor
+            o += factor
 
-    raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
+        raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
 
 @add_complexity(KnownComplexities.PH)
@@ -2100,6 +2103,12 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
 
         if int(res)*g == y:
             return int(res)
+        else:
+            print(n, r.order())
+            Z  = ZZ/ZZ(n // r.order())
+            g *= r.order()
+            y *= r.order()
+
 
 
 
@@ -3039,3 +3048,32 @@ def newton_method_sizes(prec: int) -> list:
     output.reverse()
 
     return output
+
+
+
+def batch_inv(elements: list) -> list:
+    """
+    Efficiently inverts a list of elements using a single inversion (cost 3m + I).
+
+    Parameters:
+        elements (list): Elements to invert.
+
+    Returns:
+        list: List of inverted elements.
+
+    References:
+        https://math.mit.edu/classes/18.783/2015/LectureNotes8.pdf
+    """
+    R = elements[0].ring
+    B = [R.one]
+    for a in elements:
+        B.append(B[-1]*a)
+    
+    gamma = ~B[-1]
+
+    invs = []
+    for i in reversed(range(1, len(elements)+1)):
+        invs.append(B[i-1]*gamma)
+        gamma *= elements[i-1]
+
+    return invs[::-1]

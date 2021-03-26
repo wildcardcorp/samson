@@ -28,9 +28,11 @@ def find_ss_prime(a: int, b: int, min_bits: int, max_strength_diff: float=0.005)
 def find_linearly_independent_points(E, n):
     while True:
         P, Q = [E.find_element_of_order(n, allow_order_call=True) for _ in range(2)]
-        w = P.weil_pairing(Q, n)
-        if w.ring.mul_group()(w).order() == n:
+        if not P.linear_relation(Q)[0]:
             return P, Q
+        # w = P.weil_pairing(Q, n)
+        # if w.ring.mul_group()(w).order() == n:
+        #     return P, Q
 
 
 def extract_prime_powers(p):

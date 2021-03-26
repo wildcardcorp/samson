@@ -36,3 +36,22 @@ class Map(BaseObject):
     def __hash__(self):
         return hash((self.domain, self.codomain, self.map_func))
 
+
+    def is_endomorphism(self):
+        return self.domain == self.codomain
+
+
+    @RUNTIME.global_cache()
+    def degree(self):
+        if not self.is_endomorphism():
+            raise ValueError('Cannot find the degree of a non-endomorphism')
+        
+        P = self.domain.random()
+        Q = self(P)
+        i = 1
+
+        while Q != P:
+            Q  = self(Q)
+            i += 1
+
+        return i
