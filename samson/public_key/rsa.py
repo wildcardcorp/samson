@@ -155,6 +155,10 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         return True
 
 
+    def __hash__(self):
+        return super().__hash__()
+
+
     def encrypt(self, plaintext: bytes) -> int:
         """
         Encrypts `plaintext`.

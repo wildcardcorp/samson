@@ -448,10 +448,12 @@ class ECDSATestCase(unittest.TestCase):
     def test_import_x509_cert(self):
         from subprocess import check_call
 
-        ec = ECDSA.import_key(TEST_X509_CERT).key
+        cert = ECDSA.import_key(TEST_X509_CERT)
+        ec   = cert.key
         self.assertEqual((ec.Q.x, ec.Q.y), (715947441162623524308031264370421599762967653523544747480787993496487140462283488974903669322082866021662891001767126467535751404779526256673589715857924084, 6284315030597594553103397980681739738230677011801289227519057103940802676199779900446162742685830902816710685363967012731548834638923262185574277733031408959))
 
-        cert = ec.export_public_key(encoding=PKIEncoding.X509_CERT).encode().decode()
+        # .export_public_key(encoding=PKIEncoding.X509_CERT)
+        cert = cert.encode().decode()
         check_call([f'echo -n \"{cert}\" | openssl x509 -text'], shell=True)
 
 

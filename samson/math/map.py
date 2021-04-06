@@ -1,11 +1,13 @@
 from samson.core.base_object import BaseObject
 from samson.utilities.runtime import RUNTIME
+from samson.utilities.exceptions import NotInvertibleException
 
 class Map(BaseObject):
-    def __init__(self, domain: 'Ring', codomain: 'Ring', map_func: 'FunctionType', pre_isomorphism: 'Map'=None):
+    def __init__(self, domain: 'Ring', codomain: 'Ring', map_func: 'FunctionType', pre_isomorphism: 'Map'=None, inv_map: 'FunctionType'=None):
         self.domain   = domain
         self.codomain = codomain
         self.map_func = map_func
+        self.inv_map = inv_map
         self.pre_isomorphism = pre_isomorphism
     
 
@@ -55,3 +57,11 @@ class Map(BaseObject):
             i += 1
 
         return i
+
+
+
+    def __invert__(self):
+        if self.inv_map:
+            return Map(self.codomain, self.domain, self.inv_map, inv_map=self.map_func)
+        else:
+            raise NotInvertibleException("Map is uninvertible", parameters={'a': self})

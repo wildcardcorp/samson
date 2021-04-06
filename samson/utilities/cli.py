@@ -25,7 +25,20 @@ LOGO = """
 |_______/  \_______/|__/ |__/ |__/|_______/  \______/ |__/  |__/
                                                                 
                                                                 
-                                                                """
+                                                                """.replace("$", "%")
+
+
+def apply_logo_theme(colors):
+    from samson.utilities.manipulation import stretch_key
+    from samson.auxiliary.console_colors import color_format
+    lines = LOGO.splitlines()
+    color_map = stretch_key(colors, 6)
+    
+    logo  = '\n'.join(lines[:2]) + '\n'
+    logo += '\n'.join(color_format(color, line) for color, line in zip(color_map, lines[2:8]))
+    logo += '\n'.join(lines[8:])
+    return logo
+
 
 def start_repl():
     """
@@ -34,10 +47,16 @@ def start_repl():
     import IPython
     import sys
     from samson import VERSION
+    from samson.auxiliary.console_colors import ConsoleColors
+    from samson.auxiliary.samson_prompt import SamsonPrompt
     from traitlets.config import Config
 
+
+    logo_theme = [ConsoleColors.BRIGHT_WHITE]
+
+
     banner = f"""
-{LOGO}
+{apply_logo_theme(logo_theme)}
     v{VERSION} -- https://github.com/wildcardcorp/samson
 
 Python {sys.version}
@@ -50,6 +69,8 @@ IPython {IPython.__version__}
         start_exec,
         f'print("""{banner}""")'
     ]
+
+    conf.TerminalInteractiveShell.prompts_class = SamsonPrompt
 
     conf.InteractiveShell.confirm_exit = False
     conf.TerminalInteractiveShell.term_title_format = f"samson v{VERSION}"

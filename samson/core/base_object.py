@@ -90,7 +90,13 @@ class BaseObject(object):
         return self.__repr__()
 
     def __hash__(self):
-        return object.__hash__(self)
+        dic_items  = []
+        for k,v in self.__dict__.items():
+            if type(v) is list:
+                v = tuple(v)
+            dic_items.append((k, v))
+            
+        return hash((self.__class__, tuple(dic_items)))
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.__dict__ == other.__dict__

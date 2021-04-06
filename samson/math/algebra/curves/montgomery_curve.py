@@ -56,11 +56,11 @@ class MontgomeryCurve(Ring):
 
 
     def __reprdir__(self):
-        return ['p', 'A', 'B', 'U', 'V']
+        return ['A', 'B', 'ring']
 
 
     def shorthand(self) -> str:
-        return f'MontgomeryCurve{{A={self.A}, B={self.B}, U={self.U}, V={self.V}}}'
+        return f'MontgomeryCurve{{A={self.A}, B={self.B}, ring={self.ring}}}'
 
 
 
@@ -90,7 +90,7 @@ class MontgomeryCurve(Ring):
     def G(self) -> 'MontgomeryPoint':
         if not self.U:
             self.U = self.find_gen().x
-        return self(self.U)
+        return self(self.U, self.V)
 
 
     def order(self) -> int:
@@ -105,31 +105,48 @@ class MontgomeryCurve(Ring):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            MontgomeryPoint: The `x`-th point.
         """
         return self.G*x
 
 
-    def coerce(self, x: 'RingElement', verify: bool=True) -> 'MontgomeryPoint':
+    def __call__(self, x: 'RingElement', y: 'RingElement'=None, verify: bool=True) -> 'MontgomeryPoint':
+        return self.coerce(x, y, verify)
+
+
+    def coerce(self, x: 'RingElement', y: 'RingElement'=None, verify: bool=True) -> 'MontgomeryPoint':
         if type(x) is MontgomeryPoint:
             if x.curve == self:
                 return x
             else:
-                return self(x.x)
+                return self(x.x, x.y)
 
         if verify:
             v = (x**3 + self.A*x**2 + x)/self.B
-            if not v.is_square():
+            if y:
+                if y**2 != v:
+                    raise CoercionException(f"({x}, {y}) is not on curve {self}")
+
+            elif not v.is_square():
                 raise CoercionException(f"{x} is not on curve {self}")
 
-        return MontgomeryPoint(self.ring(x), self)
+            else:
+                y = v.sqrt()
+
+
+
+        if not y:
+            v = (x**3 + self.A*x**2 + x)/self.B
+            y = v.sqrt()
+
+        return MontgomeryPoint(self.ring(x), self.ring(y), self)
 
 
 
     def __eq__(self, other) -> bool:
-        return type(self) == type(other) and self.p == other.p and self.A == other.A and self.U == other.U and self.V == other.V
+        return type(self) == type(other) and self.p == other.p and self.A == other.A and self.B == other.B
 
     def __hash__(self) -> int:
         return Bytes(self.oid.encode()).int() if self.oid else hash((self.A, self.B))
@@ -143,19 +160,29 @@ class MontgomeryCurve(Ring):
         from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
         A = self.A
         B = self.B
+        inv_B  = ~B
+        inv_B3 = ~(B*3)
 
         if self.U is not None and self.V is not None:
-            x = (self.U/B) + (A/(3*B))
-            y = self.V/B
+            x = (self.U*inv_B) + (A*inv_B3)
+            y = self.V*inv_B
             G = (x, y)
         else:
             G = None
 
-        a = (3-A**2) / (3*B**2)
-        b = (2*A**3 - 9*A) / (27*B**3)
 
-        curve     = WeierstrassCurve(a=a, b=b, base_tuple=G, cardinality=self.order()*2 if self._order else None)
-        point_map = Map(self, curve, lambda point: curve((point.x/B) + (A/(3*B))))
+        def map_func(point):
+            return curve((point.x*inv_B) + (A*inv_B3), point.y*inv_B)
+
+        a = (3-A**2) * (inv_B3*inv_B)
+        b = (2*A**3 - 9*A) * (inv_B3**3)
+
+        curve = WeierstrassCurve(a=a, b=b, base_tuple=G, cardinality=self.order()*2 if self._order else None)
+
+        def inv_map_func(point):
+            return self(self.B*(point.x-self.A*inv_B3), self.B*point.y)
+
+        point_map = Map(self, curve, map_func, inv_map=inv_map_func)
 
         return curve, point_map
 
@@ -178,14 +205,15 @@ class MontgomeryCurve(Ring):
 
 
         def map_func(Q):
-            x, y = Q.x, Q.Y
+            x, y = Q.x, Q.y
             xp2x = x**2*x2
             xp2  = x-x2
+            xp2_inv = ~xp2
 
-            xP = (xp2x - x)/(xp2)
-            #yP = y*(xp2x-2*x*x2**2+x2)/xp2**2
-            return curve(xP)
-        
+            xP = (xp2x - x)*xp2_inv
+            yP = y*(xp2x-2*x*x2**2+x2)*(xp2_inv**2)
+            return curve(xP, yP)
+
         return Map(domain=self, codomain=curve, map_func=map_func)
 
 
@@ -220,20 +248,22 @@ class MontgomeryPoint(RingElement):
     Provides scalar multiplication.
     """
 
-    def __init__(self, x: int, curve: MontgomeryCurve):
+    def __init__(self, x: RingElement, y: RingElement, curve: MontgomeryCurve):
         """
         Parameters:
-            x                 (int): x-coordinate.
+            x         (RingElement): x-coordinate.
+            y         (RingElement): y-coordinate.
             curve (MontgomeryCurve): The underlying curve.
         """
         self.x = curve.ring(x)
+        self.y = curve.ring(y)
         self.curve = curve
         self.order_cache  = None
     
     
 
     def __hash__(self):
-        return hash((self.curve, self.x))
+        return hash((self.curve, self.x, self.y))
 
 
     @property
@@ -246,7 +276,7 @@ class MontgomeryPoint(RingElement):
 
 
     def __eq__(self, other: 'MontgomeryPoint') -> bool:
-        return self.x == other.x and self.curve == other.curve
+        return self.x == other.x and self.y == other.y and self.curve == other.curve
 
 
     def __add__(self, P2: 'MontgomeryPoint') -> 'MontgomeryPoint':
@@ -260,13 +290,41 @@ class MontgomeryPoint(RingElement):
 
     def cache_mul(self, size: int) -> 'BitVectorCache':
         """
-        Montgomery points can't use the BitVectorCache as they does support element addition.
+        Montgomery points can't use the BitVectorCache as they do not support element addition.
         """
         return self
 
 
-    # https://tools.ietf.org/html/rfc7748#section-5
+    def __recover_y(self, xP, yP, xQ, zQ, xR, zR):
+        v1 = xP*zQ
+        v2 = xQ + v1
+        v3 = xQ - v1
+        v3 = v3**2
+        v3 = v3 * xR
+        v1 = self.curve.A*2*zQ
+        v2 = v2 + v1
+        v4 = xP * xQ
+        v4 = v4 + zQ
+        v2 = v2 * v4
+        v1 = v1*zQ
+        v2 = v2 - v1
+        v2 = v2*zR
+        Y = v2 - v3
+        v1 = self.curve.B*2 * yP
+        v1 = v1 * zQ
+        v1 = v1 * zR
+        X = v1 * xQ
+        Z = v1 * zQ
+
+        return X, Y, Z
+
+
     def __mul__(self, other):
+        """
+        References:
+            "Montgomery curves and their arithmetic" (https://eprint.iacr.org/2017/212.pdf)
+            https://tools.ietf.org/html/rfc7748#section-5
+        """
         u = self.x
         k = other % self.curve.order()
         u2, w2 = (1, 0)
@@ -274,7 +332,7 @@ class MontgomeryPoint(RingElement):
         p = u.ring.characteristic()
         A = self.curve.A
 
-        for i in reversed(range(p.bit_length())):
+        for i in reversed(range(other.bit_length())):
             b = 1 & (k >> i)
             u2, u3 = cswap(b, u2, u3)
             w2, w3 = cswap(b, w2, w3)
@@ -285,14 +343,18 @@ class MontgomeryPoint(RingElement):
             u2, u3 = cswap(b ,u2, u3)
             w2, w3 = cswap(b, w2, w3)
 
-        return MontgomeryPoint(u2 * w2**(p-2), self.curve)
+        X, Y, Z = self.__recover_y(self.x, self.y, u2, w2, u3, w3)
+        Z_inv = Z**(p-2)
+        return MontgomeryPoint(X*Z_inv, Y*Z_inv, self.curve)
 
 
 
     def to_weierstrass_coordinate(self) -> 'WeierstrassPoint':
         A = self.curve.A
         B = self.curve.B
-        return (self.x/B) + (A/(3*B))
+
+        inv_B = ~B
+        return (self.x*inv_B) + (A/(B*3)), self.y*inv_B
 
 
 

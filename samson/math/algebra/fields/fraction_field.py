@@ -1,7 +1,7 @@
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import Ring
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import gcd
+# from samson.math.general import xgcd
 from fractions import Fraction
 
 
@@ -19,9 +19,16 @@ class FractionFieldElement(FieldElement):
         """
         if field.simplify:
             try:
-                divisor       = gcd(numerator, denominator)
-                numerator   //= divisor
-                denominator //= divisor
+                # Simplification in non-integral domains
+                # Total ring of fractions
+                if hasattr(denominator, 'partial_inverse'):
+                    n, d        = denominator.partial_inverse()
+                    numerator  *= n
+                    denominator = d
+
+                d             = numerator.gcd(denominator)
+                numerator   //= d
+                denominator //= d
             except Exception:
                 pass
 

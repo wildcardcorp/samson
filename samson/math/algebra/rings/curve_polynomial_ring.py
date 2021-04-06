@@ -42,12 +42,7 @@ class CurvePolynomialElement(RingElement):
     def __sub__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         return CurvePolynomialElement(self.x_poly - other.x_poly, self.y_poly - other.y_poly, self.ring)
 
-    def __mul__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
-        if type(other) is int:
-            return super().__mul__(other)
-
-        other = self.ring.coerce(other)
-
+    def __elemmul__(self, other: 'CurvePolynomialElement') -> 'CurvePolynomialElement':
         nx = self.x_poly * other.x_poly
         xy = self.x_poly * other.y_poly
         yx = self.y_poly * other.x_poly

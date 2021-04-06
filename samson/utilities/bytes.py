@@ -78,6 +78,10 @@ class Bytes(bytearray):
         return self.__repr__()
 
 
+    def __hash__(self):
+        return hash(self.int())
+
+
     def __deepcopy__(self, memo):
         result = Bytes(bytes_like=bytearray(self), byteorder=self.byteorder)
         memo[id(self)] = result

@@ -278,7 +278,7 @@ class PAdicIntegerRing(Ring):
 
         Parameters:
             other (int): Object to coerce.
-        
+
         Returns:
             PAdicIntegerElement: Coerced element.
         """

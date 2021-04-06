@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import mod_inv
+from samson.math.general import mod_inv, xgcd
 from samson.utilities.exceptions import CoercionException
 
 class QuotientElement(RingElement):
@@ -14,7 +14,7 @@ class QuotientElement(RingElement):
             ring       (Ring): Parent ring.
         """
         super().__init__(ring)
-        self.val  = val % self.ring.quotient
+        self.val = val % self.ring.quotient
 
 
     def __reprdir__(self):
@@ -88,6 +88,12 @@ class QuotientElement(RingElement):
 
         else:
             return super().is_square()
+
+
+
+    def partial_inverse(self):
+        d, n, _ = xgcd(self.val, self.ring.quotient)
+        return n, d
 
 
 
@@ -227,4 +233,7 @@ class QuotientRing(Ring):
         if type(size) is int:
             return self[random_int(size)]
         else:
-            return self[random_int(size.ordinality())]
+            r = self[random_int(size.ordinality())]
+            while r >= size:
+                r = self[random_int(size.ordinality())]
+            return r

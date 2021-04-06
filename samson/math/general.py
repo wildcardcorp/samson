@@ -321,7 +321,7 @@ def xlcm(a: 'RingElement', b: 'RingElement') -> 'RingElement':
     return l, a, l // a
 
 
-
+@RUNTIME.global_cache()
 def mod_inv(a: int, n: int) -> int:
     """
     Calculates the modular inverse.
@@ -406,9 +406,6 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
 
     if invert:
         s = ~s
-
-    if u and g.order_cache and not g.order_cache % u:
-        s.order_cache = g.order_cache // u
 
     return s
 

@@ -11,6 +11,7 @@ import itertools
 
 from samson.auxiliary.lazy_loader import LazyLoader
 _integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_symbol        = LazyLoader('_symbol', globals(), 'samson.math.symbols')
 
 class Polynomial(RingElement):
 
@@ -22,7 +23,7 @@ class Polynomial(RingElement):
             symbol   (Symbol): Symbol to use as the indeterminate.
             ring       (Ring): Parent PolynomialRing.
         """
-        from samson.math.symbols import Symbol
+        Symbol = _symbol.Symbol
 
         self.coeff_ring = coeff_ring
         c_type = type(coeffs)
@@ -85,7 +86,7 @@ class Polynomial(RingElement):
                     else:
                         shorthand = coeff.shorthand()
 
-                    if poly_coeffs and idx != 0:
+                    if idx != 0:
                         shorthand = f'({shorthand})'
 
                     coeff_short_mul = shorthand + '*'
@@ -158,7 +159,7 @@ class Polynomial(RingElement):
 
 
     def __setstate__(self, state):
-        from samson.math.symbols import Symbol
+        Symbol = _symbol.Symbol
         o = Polynomial(state['coeffs'], state['coeff_ring'], symbol=Symbol(state['symbol_repr']))
         self.coeffs     = o.coeffs
         self.coeff_ring = o.coeff_ring
@@ -1222,13 +1223,14 @@ class Polynomial(RingElement):
         is_field  = self.coeff_ring.is_field()
 
         zero, one = self.coeff_ring.zero, self.coeff_ring.one
+        o_lc_inv  = ~other.LC()
 
         while r and r.degree() >= n:
             r_start = r
             # Fields have exact division, but we have to
             # keep track of remainders for non-trivial Euclidean division
             if is_field:
-                t, rem = r.LC() / other.LC(), zero
+                t, rem = r.LC() * o_lc_inv, zero
             else:
                 t, rem = divmod(r.LC(), other.LC())
 
@@ -1256,6 +1258,26 @@ class Polynomial(RingElement):
             q >>= (n-r_deg)
 
         return q, r
+
+
+    def _hensel_division(self, other: 'Polynomial') -> 'Polynomial':
+        """
+        Finds the quotient of `self` // `other` in O(`n`log`n`) time.
+
+        References:
+            "Algebra and Computation, Lecture 6" (http://people.csail.mit.edu/madhu/ST12/scribe/lect06.pdf)
+        """
+        Symbol = _symbol.Symbol
+
+        def rev(poly):
+            return poly.ring(list(poly)[::-1])
+
+        f_hat  = rev(self)
+        g_hat  = rev(other)
+        T      = self.coeff_ring[[Symbol('y')]]
+        T.prec = self.degree()-other.degree()+1
+        return rev((T(f_hat)/T(g_hat)).val)
+
 
 
     def __elemadd__(self, other: 'Polynomial') -> 'Polynomial':
@@ -1446,7 +1468,7 @@ class Polynomial(RingElement):
             return self.ring(result.coeffs.map(lambda idx, val: (idx, val.numerator)))
 
 
-    def __kronecker_substitution(self, g):
+    def _kronecker_substitution(self, g):
         """
         References:
             https://math.mit.edu/classes/18.783/2015/LectureNotes3.pdf
@@ -1460,4 +1482,4 @@ class Polynomial(RingElement):
         a = f.change_ring(ZZ)(2**n)
         b = g.change_ring(ZZ)(2**n)
         c = int(a*b)
-        return P([int(b[::-1], 2) % p for b in get_blocks(bin(c)[2:][::-1], n, True)])
+        return self.ring([int(b[::-1], 2) % p for b in get_blocks(bin(c)[2:][::-1], n, True)])

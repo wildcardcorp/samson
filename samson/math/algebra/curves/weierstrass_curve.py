@@ -2,10 +2,11 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
+import math
 
 from samson.auxiliary.lazy_loader import LazyLoader
 _elliptic_curve_isogeny  = LazyLoader('_elliptic_curve_isogeny', globals(), 'samson.math.algebra.curves.elliptic_curve_isogeny')
@@ -28,8 +29,17 @@ class WeierstrassPoint(RingElement):
         return ['x', 'y', 'curve']
 
 
+
+    def __getitem__(self, idx):
+        return [self.x, self.y, self.z][idx]
+
+
     def shorthand(self) -> str:
         return f'{self.curve.shorthand()}({{x={self.x}, y={self.y}}})'
+
+
+    def tinyhand(self) -> str:
+        return f'({self.x} : {self.y} : {self.z})'
 
 
     @property
@@ -72,17 +82,17 @@ class WeierstrassPoint(RingElement):
 
     def __int__(self) -> int:
         return int(self.x)
+    
 
+    def fast_compare_x(self, P2: 'WeierstrassPoint') -> bool:
+        return P2._x*self._z == self._x*P2._z
+
+
+    def fast_compare_y(self, P2: 'WeierstrassPoint') -> bool:
+        return P2._y*self._z == self._y*P2._z
 
     def __eq__(self, P2: 'WeierstrassPoint') -> bool:
-        X1, Y1, Z1 = self._x, self._y, self._z
-        X2, Y2, Z2 = P2._x, P2._y, P2._z
-        U1 = Y2*Z1
-        U2 = Y1*Z2
-        V1 = X2*Z1
-        V2 = X1*Z2
-
-        return self.curve == P2.curve and V2 == V1 and U1 == U2
+        return self.curve == P2.curve and self.fast_compare_x(P2) and self.fast_compare_y(P2)
 
 
     def __lt__(self, other: 'WeierstrassPoint') -> bool:
@@ -167,6 +177,10 @@ class WeierstrassPoint(RingElement):
         Z3 = VT*W
 
         return WeierstrassPoint(x=X3, y=Y3, z=Z3, curve=self.curve)
+
+
+    def mul_no_cache(self, other: int) -> 'WeierstrassPoint':
+        return super().__mul__(other)
                 
 
     @RUNTIME.global_cache()
@@ -186,8 +200,8 @@ class WeierstrassPoint(RingElement):
         return -self + P2
 
 
-    def __mul__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
-        result = super().__mul__(other)
+    def __mul__(self, other: int) -> 'WeierstrassPoint':
+        result = self.mul_no_cache(other)
         result._collapse_coords()
         return result
 
@@ -370,6 +384,7 @@ class WeierstrassPoint(RingElement):
         return self.miller(Q, n)**((p**k-1) // n)
 
 
+    @RUNTIME.global_cache(4)
     def multiplicative_transfer_map(self) -> 'Map':
         """
         Generates a map to `Fq*` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
@@ -398,20 +413,24 @@ class WeierstrassPoint(RingElement):
                     return Km(E_(Q).weil_pairing(R, o))
 
                 return Map(E, Km, mul_trans)
-    
+
 
 
     @RUNTIME.global_cache(2)
-    def __build_bsgs_table(self, g: 'WeierstrassPoint', e: 'WeierstrassPoint',  end: int, start: int=0):
+    def _build_bsgs_table(self, g: 'WeierstrassPoint', end: int, start: int, r: int, n: int):
         search_range = end - start
         table        = {}
-        m            = kth_root(search_range, 2)
+        m            = kth_root(search_range // n, 2)
+
+        # Align `e` with congruence
+        e = g * ((r-start) % n)
+        G = g*n
 
         # Defer inversions until we can batch them
         points = []
         for i in range(m):
             points.append(e)
-            e = e.add_no_cache(g)
+            e = e.add_no_cache(G)
 
         invs = batch_inv([point._z for point in points])
         one  = self._x.ring.one
@@ -422,35 +441,35 @@ class WeierstrassPoint(RingElement):
             z = invs[i]
             e._x, e._y, e._z = e._x*z, e._y*z, one
             table[e] = i
-        
+
         return table, m
 
 
 
     def bsgs(self, g: 'WeierstrassPoint', end: int, start: int=0, congruence: tuple=None, e: 'WeierstrassPoint'=None) -> int:
+        """
+        References:
+            "MIT class 18.783, lecture notes #8: Point counting" (https://math.mit.edu/classes/18.783/2019/LectureNotes8.pdf)
+        """
         h = self
         if congruence:
             r, n = congruence
-            e = e or g*r
-            G = g*n
         else:
-            e = e or g.ring.zero
-            G = g
+            r, n = 0, 1
 
-        table, m = self.__build_bsgs_table(G, e, end, start)
-        factor   = G * m
-        o = G * start
-        e = h
+        table, m = self._build_bsgs_table(g, end, start, r, n)
+        factor   = g * (m*n)
+        o        = g*start
+
         for i in range(m):
             e = h - o
             if e in table:
-                return i*m + table[e] + start
+                return (i*m + table[e])*n + start + ((r-start) % n)
 
             o += factor
 
         raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
-            
 
 
 
@@ -745,8 +764,22 @@ class WeierstrassCurve(Ring):
                 n, m = 1, 1
                 largest_elem = self.zero
 
-                # This algorithm either finds an element whose order is not within the size of the
-                # Hasse-Frobenius interval or computes the order of the curve.
+                parity = int(self.defining_polynomial().is_irreducible())
+
+                # Here we attempt to balance the exponential time BSGS and poly time Schoof
+                trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3))] if t_mod % n or n < 2]
+
+                if trace_mods:
+                    o_con = crt([frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
+                    r     = p+1-o_con[0] % o_con[1]
+                    order_congruence = (int(r), int(o_con[1]))
+                else:
+                    order_congruence = (0, 1)
+                
+
+                order_congruence = crt([order_congruence, (parity, 2)])
+
+                # Computes the order of the curve even in non-cyclic groups
                 while n*m < (start + p):
                     try:
                         g = self.random()
@@ -763,7 +796,7 @@ class WeierstrassCurve(Ring):
                             continue
 
 
-                        g_ord = self.zero.bsgs(g, start=1, end=end-start)
+                        g_ord = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), order_congruence]))
                         n     = lcm(g_ord, n)
                         g.order_cache = g_ord
                         if g_ord != n:
@@ -773,10 +806,7 @@ class WeierstrassCurve(Ring):
                     except SearchspaceExhaustedException:
                         break
 
-                if n*m < (start + p): 
-                    parity = int(self.defining_polynomial().is_irreducible())
-                    order  = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), (parity, 2)]))
-                else:
+
                     order = n*m
                     if not self.G_cache:
                         self.G_cache = largest_elem
@@ -1415,8 +1445,16 @@ class WeierstrassCurve(Ring):
             else:
                 x, y = None, None
             
-            curve     = MontgomeryCurve(A=3*alpha*s, B=s, U=x, V=y, order=self.order() // 2)
-            point_map = Map(self, curve, lambda point: curve(s*(point.x-alpha)))
+            A     = 3*alpha*s
+            curve = MontgomeryCurve(A=A, B=s, U=x, V=y, order=self.order() // 2)
+
+            inv_B  = ~s
+            inv_B3 = ~(s*3)
+
+            def inv_map_func(point):
+                return self((point.x*inv_B) + (A*inv_B3), point.y*inv_B)
+
+            point_map = Map(self, curve, lambda point: curve(s*(point.x-alpha), s*point.y), inv_map=inv_map_func)
             return curve, point_map
 
         raise NoSolutionException("'delta' is not a quadratic residue")

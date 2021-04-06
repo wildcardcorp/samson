@@ -12,6 +12,9 @@ class ConsoleColors(Enum):
     DEEP_RED  = "38;2;200;50;0"
     DEEP_GRAY = "38;2;125;125;125"
     LAVENDER  = "38;2;175;100;175"
+    MAYA_BLUE = "38;2;85;205;252"
+    AMARANTH_PINK = "38;2;247;168;184"
+    BRIGHT_WHITE = "38;2;255;255;255"
 
 PREFIX = '\033['
 SUFFIX = '\033[0m'
