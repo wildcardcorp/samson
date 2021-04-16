@@ -11,22 +11,7 @@ class PAdicNumberElement(NegativeDegreeElement):
     """
 
     def shorthand(self) -> str:
-        parts = []
-        p = str(self.ring.p)
-        for i, e in enumerate(self.val.val):
-            if e:
-                i -= self.shift
-                if not i:
-                    parts.append(str(e))
-                elif i == 1:
-                    parts.append(f"{e}*{p}")
-                else:
-                    parts.append(f"{e}*{p}^{i}")
-
-        vals = ' + '.join(parts)
-        if not vals:
-            vals = '0'
-        return vals + f' + O({self.ring.p}^{self.ring.prec})'
+        return self.val.shorthand(-self.shift)
 
 
     def tinyhand(self) -> str:

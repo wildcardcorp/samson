@@ -46,8 +46,6 @@ class RealElement(FieldElement):
         return n
 
 
-
-
     def __invert__(self) -> 'RealElement':
         return self**-1
 
@@ -94,8 +92,11 @@ class RealElement(FieldElement):
         return self
 
 
-    def log(self, other: 'RealElement') -> 'RealElement':
-        other = self.field(other)
+    def log(self, other: 'RealElement'=None) -> 'RealElement':
+        if other is None:
+            other = self.field.e
+        else:
+            other = self.field(other)
         return self.field(self.field.ctx.log(self.val, other.val))
 
 
@@ -104,7 +105,15 @@ class RealElement(FieldElement):
 
 
     def ceil(self) -> 'RealElement':
-        return self.field(math.ceil(self.val))
+        return self.field(self.field.ctx.ceil(self.val))
+
+
+    def floor(self) -> 'RealElement':
+        return self.field(self.field.ctx.floor(self.val))
+    
+
+    def li(self, offset: bool=False):
+        return self.field(self.field.ctx.li(self.val, offset=offset))
 
 
 class RealField(Field):
@@ -128,6 +137,10 @@ class RealField(Field):
     def __reprdir__(self):
         return ['prec']
 
+
+    @property
+    def e(self):
+        return self(self.ctx.e)
 
 
     def characteristic(self) -> int:

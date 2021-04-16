@@ -97,21 +97,20 @@ class FiniteField(Field):
 
             if n == 1:
                 reducing_poly = Polynomial([0, 1], self.internal_ring)
+
+            elif p == 2:
+                from samson.auxiliary.gf2_irreducible_poly_db import build_gf2_irreducible_poly
+                reducing_poly = build_gf2_irreducible_poly(P, n)
+
             else:
-                max_elem = x**(n+1)
-                while True:
-                    poly = P.random(max_elem).monic()
-
-                    if poly.degree() < n:
-                        poly += x**n
-
-                    if poly and poly.is_irreducible():
-                        reducing_poly = poly
-                        break
+                reducing_poly = P.find_irreducible_poly(n)
 
 
         self.reducing_poly   = reducing_poly
         self.internal_field  = P/P(reducing_poly)
+        if n > 1:
+            self.internal_field.quotient.cache_div((n-1)*2)
+
         self.symbol          = x
         self.symbol.top_ring = self
 
@@ -159,7 +158,7 @@ class FiniteField(Field):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             FiniteFieldElement: Coerced element.
         """

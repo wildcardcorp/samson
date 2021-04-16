@@ -3,6 +3,8 @@ from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths, pro
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
 from samson.math.factorization.factors import Factors
 from samson.math.sparse_vector import SparseVector
+from samson.auxiliary.theme import POLY_COLOR_WHEEL, color_format
+from samson.math.fft.karatsuba import karatsuba
 from samson.utilities.general import add_or_increment
 from samson.utilities.manipulation import get_blocks
 from samson.utilities.runtime import RUNTIME
@@ -12,6 +14,23 @@ import itertools
 from samson.auxiliary.lazy_loader import LazyLoader
 _integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
 _symbol        = LazyLoader('_symbol', globals(), 'samson.math.symbols')
+
+
+def _should_kronecker(n):
+    b = n.bit_length()
+    if b < 6:
+        return 20
+    elif b < 9:
+        return 30
+    elif b < 21:
+        return 40
+    elif b < 26:
+        return 60
+    elif b < 31:
+        return 80
+    else:
+        return _symbol.oo
+    
 
 class Polynomial(RingElement):
 
@@ -66,10 +85,11 @@ class Polynomial(RingElement):
 
 
     def shorthand(self, tinyhand: bool=False, idx_mod: int=0) -> str:
-        poly_repr   = []
-        poly_coeffs = type(self.LC().get_ground()) is Polynomial
+        poly_repr = []
 
         if self.LC():
+            idx_color = POLY_COLOR_WHEEL[self.coeff_ring.structure_depth()-1 % len(POLY_COLOR_WHEEL)]
+
             for idx, coeff in self.coeffs.values.items():
                 idx += idx_mod
 
@@ -97,7 +117,7 @@ class Polynomial(RingElement):
                 elif idx == 1:
                     full_coeff = f'{coeff_short_mul}{self.symbol}'
                 else:
-                    full_coeff = f'{coeff_short_mul}{self.symbol}{RUNTIME.poly_exp_separator}{idx}'
+                    full_coeff = f'{coeff_short_mul}{self.symbol}{RUNTIME.poly_exp_separator}{color_format(idx_color, idx)}'
 
                 poly_repr.append(full_coeff)
 
@@ -250,6 +270,43 @@ class Polynomial(RingElement):
 
         else:
             raise ValueError('Either "val" or "kwargs" must be specified')
+
+
+
+    def modular_composition(self, h, mod):
+        """
+        Evaluates the `Polynomial` at `val` using Horner's method.
+
+        Parameters:
+            val (RingElement): Point to evaluate at.
+
+        Returns:
+            RingElement: Evaluation at `val`.
+        """
+        x = h % mod
+        if not self.degree():
+            return self[0]
+
+        coeffs   = self.coeffs
+        total    = self.coeff_ring.zero
+        last_idx = coeffs.last()
+
+        for idx, c in coeffs.values.items()[::-1]:
+            total *= x**(last_idx-idx)
+            total += c
+            total %= mod
+            last_idx = idx
+
+
+        total *= x**idx
+
+        return total % mod
+
+
+
+    def reverse(self) -> 'Polynomial':
+        n = self.degree()
+        return self._create_poly({n-idx: c for idx, c in self.coeffs.values.items()})
 
 
     def newton(self, x0, max_tries: int=10000):
@@ -1269,14 +1326,13 @@ class Polynomial(RingElement):
         """
         Symbol = _symbol.Symbol
 
-        def rev(poly):
-            return poly.ring(list(poly)[::-1])
-
-        f_hat  = rev(self)
-        g_hat  = rev(other)
+        f_hat  = self.reverse()
+        g_hat  = other.reverse()
         T      = self.coeff_ring[[Symbol('y')]]
-        T.prec = self.degree()-other.degree()+1
-        return rev((T(f_hat)/T(g_hat)).val)
+        n, m   = self.degree(), other.degree()
+        T.prec = n-m+1
+        res    = (T(f_hat)/T(g_hat)).val.reverse()
+        return res << (n-m-res.degree())
 
 
 
@@ -1305,20 +1361,74 @@ class Polynomial(RingElement):
 
 
 
+    def _karatsuba(self, other):
+        n = self.degree()
+        m = other.degree()
+
+        if n == 2 or m == 2:
+            a, b, c, d, e, f = (*self, *other)
+            d0, d1, d2       = a*d, b*e, c*f
+
+            d01 = (a+b)*(d+e)
+            d02 = (a+c)*(d+f)
+            d12 = (b+c)*(e+f)
+            return self._create_poly({0: d0, 1: d01-d1-d0, 2: d02-d2-d0+d1, 3: d12-d1-d2, 4: d2})
+
+        elif n == 1 or m == 1:
+            a, b, c, d = (*self, *other)
+            ac, bd     = a*c, b*d
+            return self._create_poly({0: ac, 1: (a+b)*(c+d)-ac-bd, 2: bd})
+
+        elif n == 0 or m == 0:
+            return self*other
+
+        else:
+            d  = max(n, m)
+            d2 = d // 2
+            a, b = self[:d2], self[d2:]
+            c, d = other[:d2], other[d2:]
+
+            z0 = a._karatsuba(c)
+            z1 = (a+b)._karatsuba(c+d)
+            z2 = b._karatsuba(d)
+
+            return (z2 << d2*2) + ((z1 - z2 - z0) << d2) + z0
+
+
+
     def __elemmul__(self, other: object) -> object:
         if not RUNTIME.poly_fft_heuristic(self, other):
+            if self.ring.ring.__class__.__name__ == 'QuotientRing' and self.ring.ring.ring == _integer_ring.ZZ and self.degree() > _should_kronecker(self.ring.characteristic()):
+                # Kronecker substitution for small ZZ/ZZ(n)
+                return self._kronecker_substitution(other)
+
+            elif self.ring.use_karatsuba:
+                n, m = self.degree(), other.degree()
+
+                if n and m:
+                    # Fast heuristic for karatsuba
+                    convolution_estimate = self.coeffs.sparsity*other.coeffs.sparsity
+                    karatsuba_cutoff     = max(n, m)**1.58
+
+                    if convolution_estimate > karatsuba_cutoff:
+                        return karatsuba(self, other)
+
             # Naive convolution
-            new_coeffs = self._create_sparse([])
+            new_coeffs = {}
 
             for i, coeff_h in self.coeffs:
                 for j, coeff_g in other.coeffs:
-                    new_coeffs[i+j] += coeff_h*coeff_g
+                    c = i+j
+                    if c in new_coeffs:
+                        new_coeffs[c] += coeff_h*coeff_g
+                    else:
+                        new_coeffs[c] = coeff_h*coeff_g
+                    
 
-            poly = self._create_poly(new_coeffs)
+            poly = self._create_poly(self._create_sparse(new_coeffs))
 
         else:
             # FFT conv
-            from samson.math.general import gcd
             from samson.math.fft.gss import _convolution
 
             self_powers  = list(self.coeffs.values.keys())
@@ -1477,9 +1587,15 @@ class Polynomial(RingElement):
 
         f = self
         p = f.coeff_ring.characteristic()
-        d = max(f, g, key=lambda poly: poly.degree())
-        n = 2*p.bit_length()+(d.degree()+1).bit_length()
+        d = max(f.degree(), g.degree())
+        n = 2*p.bit_length()+(d+1).bit_length()
         a = f.change_ring(ZZ)(2**n)
         b = g.change_ring(ZZ)(2**n)
         c = int(a*b)
         return self.ring([int(b[::-1], 2) % p for b in get_blocks(bin(c)[2:][::-1], n, True)])
+
+
+    def cache_div(self, prec: int):
+        from samson.math.poly_division_cache import PolyDivisionCache
+        self.__div_cache = PolyDivisionCache(self, prec)
+        self.__relemdivmod__ = self.__div_cache.__relemdivmod__

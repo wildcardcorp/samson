@@ -13,6 +13,13 @@ _quot = LazyLoader('_quot', globals(), 'samson.math.algebra.rings.quotient_ring'
 _frac = LazyLoader('_frac', globals(), 'samson.math.algebra.fields.fraction_field')
 
 
+def set_precendence_override(should_override):
+    def _wrapper(func):
+        func.has_precedence_override = should_override
+        return func
+    
+    return _wrapper
+
 
 class Ring(BaseObject):
 
@@ -108,7 +115,7 @@ class Ring(BaseObject):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             RingElement: Coerced element.
         """
@@ -155,7 +162,7 @@ class Ring(BaseObject):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            RingElement: The `x`-th element.
         """
@@ -268,6 +275,7 @@ class Ring(BaseObject):
 
 
 class RingElement(BaseObject):
+
     def __init__(self, ring: Ring):
         self.ring = ring
         self.order_cache = None
@@ -299,7 +307,6 @@ class RingElement(BaseObject):
         return self + -other
 
 
-    @RUNTIME.global_cache()
     def __elemmul__(self, other: 'RingElement') -> 'RingElement':
         return self.ring(self.val * other.val)
 
@@ -320,13 +327,23 @@ class RingElement(BaseObject):
         return self * ~other
 
 
+    def __check_precendence_override(self, other, other_func):
+        try:
+            return getattr(other, other_func).has_precedence_override
+        except AttributeError:
+            return False
 
-    @RUNTIME.global_cache()
+
     def __add__(self, other: 'RingElement') -> 'RingElement':
-        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
-            return other.ring(self) + other
-        else:
-            return self.__elemadd__(self.ring.coerce(other))
+        if hasattr(other, 'ring'):
+            if self.ring == other.ring:
+                return self.__elemadd__(other)
+
+            elif other.ring.is_superstructure_of(self.ring):
+                return other.ring(self) + other
+
+
+        return self.__elemadd__(self.ring.coerce(other))
 
 
     def __radd__(self, other: 'RingElement') -> 'RingElement':
@@ -349,10 +366,15 @@ class RingElement(BaseObject):
         if gmul is not None:
             return gmul
 
-        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
-            return other.ring(self) * other
-        else:
-            return self.__elemmul__(self.ring.coerce(other))
+
+        if hasattr(other, 'ring'):
+            if self.ring == other.ring:
+                return self.__elemmul__(other)
+
+            elif other.ring.is_superstructure_of(self.ring):
+                return other.ring(self) * other
+        
+        return self.__elemmul__(self.ring.coerce(other))
 
 
     __pow__ = square_and_mul
@@ -367,6 +389,8 @@ class RingElement(BaseObject):
     def __mod__(self, other: 'RingElement') -> 'RingElement':
         if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
             return other.ring(self) % other
+        elif self.__check_precendence_override(other, '__relemmod__'):
+            return other.__relemmod__(self)
         else:
             return self.__elemmod__(self.ring.coerce(other))
 
@@ -385,6 +409,8 @@ class RingElement(BaseObject):
     def __divmod__(self, other: 'RingElement') -> ('RingElement', 'RingElement'):
         if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
             return divmod(other.ring(self), other)
+        elif self.__check_precendence_override(other, '__relemdivmod__'):
+            return other.__relemdivmod__(self)
         else:
             return self.__elemdivmod__(self.ring.coerce(other))
 

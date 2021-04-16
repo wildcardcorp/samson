@@ -11,6 +11,7 @@ import math
 # Resolve circular dependencies while reducing function-level imports
 from samson.auxiliary.lazy_loader import LazyLoader
 _integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_real_field    = LazyLoader('_real_field', globals(), 'samson.math.algebra.fields.real_field')
 _complex_field = LazyLoader('_complex_field', globals(), 'samson.math.algebra.fields.complex_field')
 _poly          = LazyLoader('poly', globals(), 'samson.math.polynomial')
 _mat           = LazyLoader('mat', globals(), 'samson.math.matrix')
@@ -123,7 +124,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
 def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polynomial':
     """
     Computes `f`**p % `g` using the Frobenius map.
-    
+
     Parameters:
         f (Polynomial): Base.
         g (Polynomial): Modulus.
@@ -1329,12 +1330,13 @@ def find_prime(bits: int, ensure_halfway: bool=True) -> int:
 
 
 
-def next_prime(start_int: int) -> int:
+def next_prime(start_int: int, step: int=2) -> int:
     """
     Finds the next prime.
 
     Parameters:
         start_int (int): Integer to start search at.
+        step      (int): Distance to step forward.
 
     Returns:
         int: Prime.
@@ -1353,7 +1355,8 @@ def next_prime(start_int: int) -> int:
 
     start_int |= 1
     while not is_prime(start_int):
-        start_int += 2
+        start_int += step
+        
 
     return start_int
 
@@ -1753,6 +1756,34 @@ def frobenius_endomorphism(point: object, q: int) -> object:
 
 
 
+def __fast_double_elliptic_frobenius(T, curve, point):
+    p_x, p_y = point.x, point.y
+    Q = p_y.numerator.ring
+    P = Q.ring.poly_ring
+    g = Q.quotient.x_poly
+    monomials = frobenius_monomial_base(g)
+
+    Z  = Q(curve.defining_polynomial())**((curve.p-1)//2)
+    Yq = Z*p_y
+
+    def frobenius(f):
+        num = frobenius_map(f.numerator.val.x_poly, g, bases=monomials)
+        den = frobenius_map(f.denominator.val.x_poly, g, bases=monomials)
+        return T((num, den))
+
+    def compose(f, h):
+        num = Q(f.numerator.val.x_poly.modular_composition(h.numerator.val.x_poly, g))
+        den = Q(P(f.denominator.val.x_poly.modular_composition(h.denominator.val.x_poly, g)))
+        return T((num, den))
+
+    Xq  = frobenius(p_x)
+    Xq2 = frobenius(Xq)
+    Yq2 = Yq * compose(T(Z), Xq)
+    
+    return point.__class__(x=Xq, y=Yq, curve=point.curve), point.__class__(x=Xq2, y=Yq2, curve=point.curve)
+
+
+
 def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     """
     Finds the Frobenius trace modulo `l` for faster computation.
@@ -1763,6 +1794,9 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
 
     Returns:
         QuotientElement: Modular residue of the Frobenius trace.
+
+    References:
+        "Fast algorithms for computing the eigenvalue in the Schoof-Elkies-Atkin algorithm" (https://hal.inria.fr/inria-00001009/document)
     """
     from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
@@ -1770,6 +1804,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
 
     torsion_quotient_ring = ZZ/ZZ(l)
     psi = curve.division_poly(l)
+    psi.x_poly.cache_div(psi.x_poly.degree()*2)
 
     # Build symbolic torsion group
     R = curve.curve_poly_ring
@@ -1782,11 +1817,15 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     p_x = T(R((x, 0)))
     p_y = T(R((0, 1)))
 
-    point = sym_curve(p_x, p_y)
+    point = sym_curve(p_x, p_y, verify=False)
 
     # Generate symbolic points
-    p1 = frobenius_endomorphism(point, curve.p)
-    p2 = frobenius_endomorphism(p1, curve.p)
+    if l < 40:
+        p1, p2 = __fast_double_elliptic_frobenius(T, curve, point)
+    else:
+        p1 = frobenius_endomorphism(point, curve.p)
+        p2 = frobenius_endomorphism(p1, curve.p)
+
     determinant = (curve.p % l) * point
 
     point_sum = determinant + p2
@@ -2745,13 +2784,27 @@ def coppersmiths(N: int, f: 'Polynomial', beta: float=1, epsilon: float=None, X:
     return [root for root in roots if gcd(N, root) >= Nb]
 
 
+def __get_log_precision(n: int):
+    RR = _real_field.RR
+    RealField = _real_field.RealField
 
-def prime_number_theorem(n: int) -> int:
+    # Determine required precision
+    z     = RR(n)
+    prec  = z.log()*z
+    prec  = prec.log(10).ceil()
+    prec *= RR(10).log(2)
+    prec  = int(prec)+5
+
+    return RealField(prec)
+
+
+def prime_number_theorem(n: int, use_heuristic: bool=False) -> int:
     """
     Approximates the number of primes less than `n`.
 
     Parameters:
-        n (int): Maximum bound.
+        n              (int): Maximum bound.
+        use_heuristic (bool): Whether to use the fast heuristic.
 
     Returns:
         int: Approximate number of primes less than `n`.
@@ -2759,10 +2812,38 @@ def prime_number_theorem(n: int) -> int:
     References:
         https://en.wikipedia.org/wiki/Prime_number_theorem
     """
-    return n // math.floor(math.log(n))
+    # The simple version is generally more accurate for `n` < 3000 (empirically)
+    if n < 3000 or use_heuristic:
+        return n // math.floor(math.log(n))
+    else:
+        RR = __get_log_precision(n)
+        return int(round(RR(n).li(offset=True)))
 
 
 pnt = prime_number_theorem
+
+
+def approxmiate_nth_prime(n: int) -> int:
+    """
+    Approximates the `n`-th prime using the prime number theorem.
+
+    Parameters:
+        n (int): Which prime to approxmiate.
+
+    Returns:
+        int: Approximation of the prime.
+
+    References:
+        https://en.wikipedia.org/wiki/Prime_number_theorem#Approximations_for_the_nth_prime_number
+    """
+    RR_high = __get_log_precision(n)
+    n       = RR_high(n)
+    logn    = n.log()
+    llogn   = logn.log()
+
+    b = logn + llogn - 1 + (llogn-2)/logn - (llogn**2-6*llogn+11)/(2*logn**2)
+    return int(round(n*b))
+
 
 
 @add_complexity(KnownComplexities.IC)

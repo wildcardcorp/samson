@@ -23,6 +23,19 @@ class IntegerElement(RingElement):
         super().__init__(ring)
 
 
+    # Explicitly define for speed
+    def __elemadd__(self, other: 'RingElement') -> 'RingElement':
+        return IntegerElement(self.val + other.val, self.ring)
+
+
+    def __elemmul__(self, other: 'RingElement') -> 'RingElement':
+        return IntegerElement(self.val * other.val, self.ring)
+
+
+    def __elemmod__(self, other: 'RingElement') -> 'RingElement':
+        return IntegerElement(self.val % other.val, self.ring)
+
+
     def tinyhand(self) -> str:
         return str(self.val)
 
@@ -81,6 +94,10 @@ class IntegerElement(RingElement):
             int: Ordinality.
         """
         return self.val
+
+
+    def ground_mul(self, other: 'IntegerElement') -> 'IntegerElement':
+        return IntegerElement(self.val * int(other), self.ring)
 
 
     def __neg__(self) -> 'IntegerElement':
@@ -151,20 +168,22 @@ class IntegerRing(Ring):
         Returns:
             IntegerElement: Coerced element.
         """
-        try:
-            if other.ring(int(other)) == other:
-                other = int(other)
-        except:
-            pass
+        type_o = type(other)
 
-        if type(other) is int:
-            return IntegerElement(other, self)
-
-        elif type(other) is IntegerElement:
+        if type_o is IntegerElement:
             return other
+
+        elif type_o is int:
+            return IntegerElement(other, self)
 
         elif other.ring == _all_mod.QQ and other.denominator == ZZ.one:
             return other.numerator
+
+        try:
+            if other.ring(int(other)) == other:
+                return self.coerce(int(other))
+        except:
+            pass
 
         raise CoercionException(self, other)
 

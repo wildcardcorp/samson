@@ -11,13 +11,24 @@ X   Flush+Reload key recovery
 
 CURRENT
 ---------------
+X   BSGS involution
+X   Poly conv chunking
+X   Math themes (Poly powers, p-adic)
+X   SIKE
+X   Faster Schoof's algorithm
+    X   Faster poly mul -> Poly Karatsuba (https://mathstrek.blog/2012/10/08/polynomial-multiplication-karatsuba-and-fast-fourier-transform/)
+        X This is a mul/add tradeoff... We need a dynamic cost estimation
+    X   Faster poly div -> Cached Hensel division ('cache_div', etc)
+    X   Inversion deferment
+    X   BSGS?
+
 
 0.3.0
 ===============
 X   DenseVector
     X   Coercion
 
-X   SIKE
+
 X   GNFS
 
 X   Separate key parameters from use? Explains some gaps in functions vs data
@@ -41,9 +52,6 @@ X   New IoT ciphers
     X   NSA Simon
     X   NSA Speck
 
-
-X   Increase performance
-    X   Schoof's algorithm
 
 X   DualEC is incredibly slow
 

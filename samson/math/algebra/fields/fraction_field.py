@@ -1,7 +1,6 @@
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import Ring
 from samson.math.algebra.rings.integer_ring import ZZ
-# from samson.math.general import xgcd
 from fractions import Fraction
 
 

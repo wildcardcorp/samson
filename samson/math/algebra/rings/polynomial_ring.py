@@ -2,6 +2,7 @@ from samson.math.algebra.rings.ring import Ring
 from samson.utilities.exceptions import CoercionException
 from samson.math.polynomial import Polynomial
 from samson.math.symbols import Symbol
+from samson.math.general import random_int
 
 
 class PolynomialRing(Ring):
@@ -18,12 +19,13 @@ class PolynomialRing(Ring):
 
     """
 
-    def __init__(self, ring: Ring, symbol: Symbol=None):
+    def __init__(self, ring: Ring, symbol: Symbol=None, use_karatsuba: bool=False):
         """
         Parameters:
             ring (Ring): Underlying ring.
         """
         super().__init__()
+        self.use_karatsuba = use_karatsuba
         self.ring   = ring
         self.symbol = symbol or Symbol('x')
         self.symbol.build(self)
@@ -136,6 +138,39 @@ class PolynomialRing(Ring):
             RingElement: A generator element.
         """
         return self.symbol
+
+
+    def find_irreducible_poly(self, n: int, sparsity: int=None) -> Polynomial:
+        """
+        Finds a sparse, irreducible polynomial. Uses as many unit values as possible.
+
+        Parameters:
+            n        (int): Degree.
+            sparsity (int): Number of non-zeroes to have.
+
+        Returns:
+            Polynomial: Irreducible polynomial
+        """
+        sparsity = sparsity or n.bit_length()-2
+        x = self.symbol
+        p = x**n
+
+        degrees = list(range(1,n))
+        R   = self.ring
+        one = R.one
+
+        while True:
+            degrees.sort(key=lambda i: random_int(n**2))
+            q = p
+            for d in degrees[:sparsity-1]:
+                q += one*x**d
+
+            q += R.random()*x**degrees[sparsity-1]
+            q += one
+
+            if q.is_irreducible():
+                return q
+
 
 
     def random(self, size: object) -> object:

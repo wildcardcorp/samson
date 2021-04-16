@@ -14,7 +14,8 @@ class ConsoleColors(Enum):
     LAVENDER  = "38;2;175;100;175"
     MAYA_BLUE = "38;2;85;205;252"
     AMARANTH_PINK = "38;2;247;168;184"
-    BRIGHT_WHITE = "38;2;255;255;255"
+    BRIGHT_WHITE  = "38;2;255;255;255"
+    ORANGE        = "38;2;252;123;3"
 
 PREFIX = '\033['
 SUFFIX = '\033[0m'

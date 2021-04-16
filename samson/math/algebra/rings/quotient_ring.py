@@ -1,6 +1,10 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import mod_inv, xgcd
+from samson.math.general import mod_inv, xgcd, gcd, tonelli, generalized_eulers_criterion, ResidueSymbol, random_int
 from samson.utilities.exceptions import CoercionException
+
+from samson.auxiliary.lazy_loader import LazyLoader
+_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+_poly         = LazyLoader('_poly', globals(), 'samson.math.polynomial')
 
 class QuotientElement(RingElement):
     """
@@ -38,6 +42,19 @@ class QuotientElement(RingElement):
         return self.val(x)
 
 
+    # We explicitly include these operators to prevent a ring coercion (speed reasons)
+    def __elemadd__(self, other: 'RingElement') -> 'RingElement':
+        return QuotientElement(self.val + other.val, self.ring)
+
+
+    def __elemmul__(self, other: 'RingElement') -> 'RingElement':
+        return QuotientElement(self.val * other.val, self.ring)
+
+
+    def __elemmod__(self, other: 'RingElement') -> 'RingElement':
+        return QuotientElement(self.val % other.val, self.ring)
+
+
     def __invert__(self) -> 'QuotientElement':
         return QuotientElement(mod_inv(self.val, self.ring.quotient), self.ring)
 
@@ -65,25 +82,22 @@ class QuotientElement(RingElement):
         Returns:
             bool: Whether the element is invertible.
         """
-        from samson.math.general import gcd
         return gcd(self.val, self.ring.quotient) == self.ring.ring.one
 
 
     def sqrt(self) -> 'QuotientElement':
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
 
         if self.ring.ring == ZZ and self.ring.is_field():
-            from samson.math.general import tonelli
             return self.ring(tonelli(int(self), int(self.ring.quotient)))
         else:
             return self.kth_root(2)
 
 
     def is_square(self) -> bool:
-        from samson.math.algebra.rings.integer_ring import ZZ
+        ZZ = _integer_ring.ZZ
 
         if self.ring.ring == ZZ:
-            from samson.math.general import generalized_eulers_criterion, ResidueSymbol
             return generalized_eulers_criterion(int(self), 2, int(self.ring.quotient)) != ResidueSymbol.DOES_NOT_EXIST
 
         else:
@@ -129,8 +143,8 @@ class QuotientRing(Ring):
 
 
     def characteristic(self) -> int:
-        from samson.math.algebra.rings.integer_ring import IntegerElement
-        from samson.math.polynomial import Polynomial
+        IntegerElement = _integer_ring.IntegerElement
+        Polynomial = _poly.Polynomial
 
         quotient = self.quotient.get_ground()
 
@@ -146,15 +160,15 @@ class QuotientRing(Ring):
 
     @property
     def p(self) -> int:
-        from samson.math.algebra.rings.integer_ring import IntegerElement
+        IntegerElement = _integer_ring.IntegerElement
         if type(self.quotient) is IntegerElement:
             return int(self.quotient)
 
 
 
     def order(self) -> int:
-        from samson.math.algebra.rings.integer_ring import IntegerElement
-        from samson.math.polynomial import Polynomial
+        IntegerElement = _integer_ring.IntegerElement
+        Polynomial = _poly.Polynomial
 
         quotient = self.quotient.get_ground()
         type_o   = type(quotient)
@@ -180,7 +194,7 @@ class QuotientRing(Ring):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             QuotientElement: Coerced element.
         """
@@ -225,8 +239,6 @@ class QuotientRing(Ring):
         Returns:
             RingElement: Random element of the algebra.
         """
-        from samson.math.general import random_int
-
         if not size:
             size = self.order()-1
 

@@ -1,5 +1,5 @@
 from math import log, sqrt, pi, ceil, log1p
-from samson.math.general import random_int
+from samson.math.general import random_int, lcm
 from tqdm import tqdm
 import operator as _operator
 import json
@@ -191,14 +191,14 @@ def birthday_attack_analysis(bits: int, probability: float) -> float:
 
     Returns:
         float: Average number of attempts before collision.
-    
+
     References:
         https://en.wikipedia.org/wiki/Birthday_attack#Mathematics
     """
     return sqrt(2 * 2**bits * -log1p(-probability))
 
 
-EULER_MASCHERONI_CONSTANT = 0.577216
+EULER_MASCHERONI_CONSTANT = 0.5772156649015329
 def coupon_collector_analysis(n: int) -> (float, float):
     """
     Determines the average number of attempts to collect all `n` items from a pseudorandom function.
@@ -313,6 +313,15 @@ def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> in
     return ceil(log1p(-desired_prob)/log1p(-p))
 
 
+def __float_to_discrete_probability(p: float):
+    from samson.math.algebra.rings.integer_ring import ZZ
+    QQ     = ZZ.fraction_field()
+    p_frac = QQ(p)
+    space  = int(lcm(p_frac.numerator, p_frac.denominator))
+    cutoff = int(p_frac*space)
+    return space, cutoff
+
+
 def simulate_event(p: float, attempts: int) -> int:
     """
     Simulates an event with probability `p` for `attempts` attempts and returns the number of times it occured.
@@ -324,11 +333,11 @@ def simulate_event(p: float, attempts: int) -> int:
     Returns:
         int: Number of occurences.
     """
-    space = ceil(1/p)
+    space, cutoff = __float_to_discrete_probability(p)
     total = 0
 
     for _ in range(attempts):
-        total += not random_int(space)
+        total += random_int(space) < cutoff
 
     return total
 
@@ -345,8 +354,8 @@ def simulate_until_event(p: float, runs: int, visual: bool=False) -> float:
     Returns:
         float: Average number of attempts.
     """
-    space = ceil(1/p)
-    total = 0
+    space, cutoff = __float_to_discrete_probability(p)
+    total  = 0
 
     r_iter = range(runs)
     if visual:
@@ -356,7 +365,7 @@ def simulate_until_event(p: float, runs: int, visual: bool=False) -> float:
         curr = 0
         while True:
             curr += 1
-            if not random_int(space):
+            if random_int(space) < cutoff:
                 break
 
         total += curr

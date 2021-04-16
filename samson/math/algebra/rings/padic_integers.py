@@ -3,6 +3,7 @@ from samson.utilities.exceptions import CoercionException
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import mod_inv
 from samson.math.symbols import oo
+from samson.auxiliary.theme import PADIC_COEFF, PADIC_DEGREE, color_format
 
 _integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
 
@@ -21,17 +22,19 @@ class PAdicIntegerElement(RingElement):
         super().__init__(ring)
 
 
-    def shorthand(self) -> str:
+    def shorthand(self, idx_mod: int=0) -> str:
         parts = []
         p = str(self.ring.p)
         for i, e in enumerate(self.val):
             if e:
+                i += idx_mod
+                e  = color_format(PADIC_COEFF, e)
                 if not i:
                     parts.append(str(e))
                 elif i == 1:
                     parts.append(f"{e}*{p}")
                 else:
-                    parts.append(f"{e}*{p}^{i}")
+                    parts.append(f"{e}*{p}^{color_format(PADIC_DEGREE, i)}")
 
         vals = ' + '.join(parts)
         if not vals:

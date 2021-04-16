@@ -420,7 +420,14 @@ class WeierstrassPoint(RingElement):
     def _build_bsgs_table(self, g: 'WeierstrassPoint', end: int, start: int, r: int, n: int):
         search_range = end - start
         table        = {}
+        y_table      = {}
         m            = kth_root(search_range // n, 2)
+
+        # If we have no congruence, we can apply the involution speedup
+        if n == 1:
+            bs_size = max(m // 2, 1)
+        else:
+            bs_size = m
 
         # Align `e` with congruence
         e = g * ((r-start) % n)
@@ -428,7 +435,7 @@ class WeierstrassPoint(RingElement):
 
         # Defer inversions until we can batch them
         points = []
-        for i in range(m):
+        for i in range(bs_size):
             points.append(e)
             e = e.add_no_cache(G)
 
@@ -436,13 +443,14 @@ class WeierstrassPoint(RingElement):
         one  = self._x.ring.one
 
         # Perform inversions then cache
-        for i in range(m):
+        for i in range(bs_size):
             e = points[i]
             z = invs[i]
             e._x, e._y, e._z = e._x*z, e._y*z, one
-            table[e] = i
+            table[e.x]   = i
+            y_table[e.x] = e.y
 
-        return table, m
+        return table, y_table, m
 
 
 
@@ -450,6 +458,7 @@ class WeierstrassPoint(RingElement):
         """
         References:
             "MIT class 18.783, lecture notes #8: Point counting" (https://math.mit.edu/classes/18.783/2019/LectureNotes8.pdf)
+            "Computing Elliptic Curve Discrete Logarithms with Improved Baby-step Giant-step Algorithm" (https://eprint.iacr.org/2015/605.pdf)
         """
         h = self
         if congruence:
@@ -457,16 +466,30 @@ class WeierstrassPoint(RingElement):
         else:
             r, n = 0, 1
 
-        table, m = self._build_bsgs_table(g, end, start, r, n)
-        factor   = g * (m*n)
-        o        = g*start
+        table, y_table,  m = self._build_bsgs_table(g, end, start, r, n)
 
-        for i in range(m):
-            e = h - o
-            if e in table:
-                return (i*m + table[e])*n + start + ((r-start) % n)
+        mb     = m.bit_length()
+        o      = g*start
+        factor = -g * (m*n)
+        z      = h-o
 
-            o += factor
+        for b in range((m+mb-1) // mb):
+            points = []
+            for i in range(mb):
+                points.append(z)
+                z = z.add_no_cache(factor)
+
+            invs = batch_inv([point._z for point in points])
+
+            for i, (e, inv) in enumerate(zip(points, invs)):
+                x = e._x*inv
+                if x in table:
+                    baby_idx = table[x]
+                    if y_table[x] != e._y*inv:
+                        baby_idx = -baby_idx
+
+                    return (m*(mb*b+i) + baby_idx)*n + start + ((r-start) % n)
+
 
         raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
@@ -705,7 +728,6 @@ class WeierstrassCurve(Ring):
 
 
 
-
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:
         """
         Calculates the cardinality (number of points) of the curve and caches the result.
@@ -731,7 +753,7 @@ class WeierstrassCurve(Ring):
             if algorithm == EllipticCurveCardAlg.AUTO:
                 curve_size = p.bit_length()
 
-                if curve_size < 6:
+                if curve_size < 11:
                     algorithm = EllipticCurveCardAlg.BRUTE_FORCE
                 elif curve_size <= 96:
                     algorithm = EllipticCurveCardAlg.BSGS
@@ -767,7 +789,11 @@ class WeierstrassCurve(Ring):
                 parity = int(self.defining_polynomial().is_irreducible())
 
                 # Here we attempt to balance the exponential time BSGS and poly time Schoof
-                trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3))] if t_mod % n or n < 2]
+                trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3.2))] if t_mod % n or n < 2]
+
+                # If we're going to 11, we might as well use 3^2, too
+                if 11 in trace_mods:
+                    trace_mods[0] = 9
 
                 if trace_mods:
                     o_con = crt([frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
@@ -803,13 +829,13 @@ class WeierstrassCurve(Ring):
                             g = g.merge(largest_elem)
 
                         largest_elem = g
-                    except SearchspaceExhaustedException:
-                        break
+                    except SearchspaceExhaustedException as e:
+                        raise e
 
 
-                    order = n*m
-                    if not self.G_cache:
-                        self.G_cache = largest_elem
+                order = n*m
+                if not self.G_cache:
+                    self.G_cache = largest_elem
 
                 self.cardinality_cache = order
 

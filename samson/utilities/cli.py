@@ -11,6 +11,7 @@ autodoc(globals())
 x = Symbol('x')
 y = Symbol('y')
 z = Symbol('z')
+ZZ[x]
 
 logger = logging.getLogger("samson.repl")
 """
