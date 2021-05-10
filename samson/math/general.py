@@ -17,6 +17,7 @@ _poly          = LazyLoader('poly', globals(), 'samson.math.polynomial')
 _mat           = LazyLoader('mat', globals(), 'samson.math.matrix')
 _dense         = LazyLoader('dense', globals(), 'samson.math.dense_vector')
 _factor_gen    = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
+_ell_curve     = LazyLoader('_ell_curve', globals(), 'samson.math.algebra.curves.weierstrass_curve')
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
@@ -1741,21 +1742,6 @@ def find_representative(quotient_element: 'QuotientElement', valid_range: list) 
 
 
 
-def frobenius_endomorphism(point: object, q: int) -> object:
-    """
-    Computes the Frobenius endomorphism of the `point`.
-
-    Parameters:
-        point (object): Original point.
-        q        (int): Power to raise to.
-
-    Returns:
-        object: Resultant point.
-    """
-    return point.__class__(x=point.x**q, y=point.y**q, curve=point.curve)
-
-
-
 def __fast_double_elliptic_frobenius(T, curve, point):
     p_x, p_y = point.x, point.y
     Q = p_y.numerator.ring
@@ -1772,14 +1758,14 @@ def __fast_double_elliptic_frobenius(T, curve, point):
         return T((num, den))
 
     def compose(f, h):
-        num = Q(f.numerator.val.x_poly.modular_composition(h.numerator.val.x_poly, g))
+        num = Q(P(f.numerator.val.x_poly.modular_composition(h.numerator.val.x_poly, g)))
         den = Q(P(f.denominator.val.x_poly.modular_composition(h.denominator.val.x_poly, g)))
         return T((num, den))
 
     Xq  = frobenius(p_x)
     Xq2 = frobenius(Xq)
     Yq2 = Yq * compose(T(Z), Xq)
-    
+
     return point.__class__(x=Xq, y=Yq, curve=point.curve), point.__class__(x=Xq2, y=Yq2, curve=point.curve)
 
 
@@ -1798,7 +1784,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     References:
         "Fast algorithms for computing the eigenvalue in the Schoof-Elkies-Atkin algorithm" (https://hal.inria.fr/inria-00001009/document)
     """
-    from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve
+    EllipticCurve = _ell_curve.EllipticCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
     ZZ = _integer_ring.ZZ
 
@@ -1810,7 +1796,7 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     R = curve.curve_poly_ring
     S = R/psi
     T = Frac(S, simplify=False)
-    sym_curve = WeierstrassCurve(a=T([curve.a]), b=T([curve.b]), ring=T, check_singularity=False)
+    sym_curve = EllipticCurve(a=T([curve.a]), b=T([curve.b]), ring=T, check_singularity=False)
 
     x = R.poly_ring.symbol
 
@@ -1823,8 +1809,9 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
     if l < 40:
         p1, p2 = __fast_double_elliptic_frobenius(T, curve, point)
     else:
-        p1 = frobenius_endomorphism(point, curve.p)
-        p2 = frobenius_endomorphism(p1, curve.p)
+        F  = sym_curve.frobenius_endomorphism()
+        p1 = F(point)
+        p2 = F(p1)
 
     determinant = (curve.p % l) * point
 
@@ -2421,12 +2408,125 @@ def is_strong_lucas_pseudoprime(n: int) -> bool:
 
 PRIMES_UNDER_1000 = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997}
 
-def is_prime(n: int) -> bool:
+
+def exhaustive_primality_proof(N: int) -> bool:
     """
-    Determines if `n` is probably prime using the Baillie-PSW primality test.
+    Proves whether or not `N` is prime by exhaustively testing for divisors.
 
     Parameters:
-        n (int): Positive integer.
+        N (int): Integer to test.
+
+    Returns:
+        bool: Whether or not `N` is prime.
+    """
+    if N in PRIMES_UNDER_1000:
+        return True
+
+    for p in sieve_of_eratosthenes(kth_root(N, 2)):
+        if not N % p:
+            return False
+
+    return True
+
+
+def ecpp(N: int, recursive: bool=True) -> bool:
+    """
+    Uses Atkin-Morain Elliptic curve primality proving to prove whether or not `N` is prime.
+
+    Parameters:
+        N          (int): Integer to test.
+        recursive (bool): Whether or not to recursively test all used primes.
+
+    Returns:
+        bool: Whether or not `N` is prime.
+
+    References:
+        https://en.wikipedia.org/wiki/Elliptic_curve_primality#Atkin%E2%80%93Morain_elliptic_curve_primality_test_(ECPP)
+    """
+    EllipticCurve = _ell_curve.EllipticCurve
+    ZZ = _integer_ring.ZZ
+    factor = _factor_gen.factor
+
+    class_one_Ds = [-3, -4, -7, -8, -11, -12, -16, -19, -27, -28, -43, -67, -163]
+    R = ZZ/ZZ(N)
+
+    for d in class_one_Ds:
+        if gcd(N, -d) == 1 and R(d).is_square():
+            try:
+                E = EllipticCurve.generate_curve_with_D(d, R)
+
+                # Find a divisor above the bound
+                m_facs   = factor(E.order())
+                divisors = list(m_facs.divisors())
+                divisors.sort()
+
+                bound = (kth_root(N, 4)+1)**2
+                for d in divisors[1:]:
+                    if d > bound:
+                        break
+
+
+                if d == E.order() and is_prime(d):
+                    continue
+
+                # We do this because it only uses trial division internally
+                d_facs = m_facs/(m_facs/d)
+                P = E.find_gen()
+                if P.order() < d:
+                    continue
+
+                for p, e in d_facs.items():
+                    if recursive and not is_prime(p, True):
+                        raise RuntimeError(f'Unexpected ECPP error. {p} is not a prime, so factorization has failed')
+
+                    if not P*p**e:
+                        return False
+
+                return True
+            except NoSolutionException:
+                pass
+            except NotInvertibleException as e:
+                return False
+
+    raise RuntimeError(f'No suitable discriminant found for ECPP over {N}')
+
+
+def lucas_lehmer_test(n: int) -> bool:
+    """
+    Provably determines whether a Mersenne number `n` is prime.
+
+    Parameters:
+        n (int): Mersenne number to test.
+
+    Returns:
+        bool: Whether or not `n` is prime.
+
+    References:
+        https://en.wikipedia.org/wiki/Lucas%E2%80%93Lehmer_primality_test
+    """
+    assert is_power_of_two(n+1)
+    if n == 3:
+        return True
+
+    k = n.bit_length()
+    if not is_prime(k, prove=True):
+        return False
+
+    s = 4
+    for _ in range(k-2):
+        s = ((s*s)-2) % n
+    
+    return s == 0
+
+
+def is_prime(n: int, prove: bool=False) -> bool:
+    """
+    Determines if `n` is probably prime using the Baillie-PSW primality test if `prove` is False.
+    Otherwise, a combination of ECPP, Lucas-Lehmer, and exhaustive testing is used.
+
+    Parameters:
+        n      (int): Positive integer.
+        prove (bool): Whether or not to prove `n` is prime.
 
     Returns:
         bool: Whether or not `n` is probably prime.
@@ -2448,14 +2548,29 @@ def is_prime(n: int) -> bool:
     if n < 0:
         return False
 
-    if n in PRIMES_UNDER_1000:
-        return True
+    if prove:
+        if is_power_of_two(n+1):
+            return lucas_lehmer_test(n)
 
-    for prime in PRIMES_UNDER_1000:
-        if (n % prime) == 0:
-            return False
+        elif n.bit_length() < 35:
+            return exhaustive_primality_proof(n)
 
-    return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)
+        else:
+            # Attempt to prove composite (fast)
+            if not is_prime(n, prove=False):
+                return False
+
+            return ecpp(n)
+
+    else:
+        if n in PRIMES_UNDER_1000:
+            return True
+
+        for prime in PRIMES_UNDER_1000:
+            if (n % prime) == 0:
+                return False
+
+        return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)
 
 
 def is_primitive_root(a: int, p: int) -> bool:
@@ -3142,6 +3257,9 @@ def batch_inv(elements: list) -> list:
     References:
         https://math.mit.edu/classes/18.783/2015/LectureNotes8.pdf
     """
+    if not elements:
+        return []
+
     R = elements[0].ring
     B = [R.one]
     for a in elements:

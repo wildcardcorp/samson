@@ -107,6 +107,11 @@ class CurvePolynomialElement(RingElement):
         return self.x_poly > other.x_poly
 
 
+    @property
+    def val(self):
+        return self.x_poly
+
+
 class CurvePolynomialRing(Ring):
     """
     Polynomial ring that represents an Elliptic curve.

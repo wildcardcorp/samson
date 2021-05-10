@@ -400,7 +400,7 @@ class Polynomial(RingElement):
 
                 if all_facs:
                     for comb in itertools.product(*all_facs):
-                        candidate = crt(comb)[0]
+                        candidate = R(crt(comb)[0])
 
                         # Essentially Hensel lifting
                         for _ in range(int(R.quotient) // P):
@@ -754,7 +754,7 @@ class Polynomial(RingElement):
         r = n // d
         S = [f]
 
-        f_quot   = f.ring / f
+        f_quot = f.ring / f
         if self.coeff_ring.order() != oo:
             q = self.coeff_ring.order()
 
@@ -798,7 +798,7 @@ class Polynomial(RingElement):
                     h = f_quot(h)
                     j = h
                     for _ in range(d-1):
-                        j = frobenius_map(j, f, bases=bases)
+                        j  = frobenius_map(j, f, bases=bases)
                         h *= j
 
                     g = (h**exponent).val - one
@@ -1361,48 +1361,13 @@ class Polynomial(RingElement):
 
 
 
-    def _karatsuba(self, other):
-        n = self.degree()
-        m = other.degree()
-
-        if n == 2 or m == 2:
-            a, b, c, d, e, f = (*self, *other)
-            d0, d1, d2       = a*d, b*e, c*f
-
-            d01 = (a+b)*(d+e)
-            d02 = (a+c)*(d+f)
-            d12 = (b+c)*(e+f)
-            return self._create_poly({0: d0, 1: d01-d1-d0, 2: d02-d2-d0+d1, 3: d12-d1-d2, 4: d2})
-
-        elif n == 1 or m == 1:
-            a, b, c, d = (*self, *other)
-            ac, bd     = a*c, b*d
-            return self._create_poly({0: ac, 1: (a+b)*(c+d)-ac-bd, 2: bd})
-
-        elif n == 0 or m == 0:
-            return self*other
-
-        else:
-            d  = max(n, m)
-            d2 = d // 2
-            a, b = self[:d2], self[d2:]
-            c, d = other[:d2], other[d2:]
-
-            z0 = a._karatsuba(c)
-            z1 = (a+b)._karatsuba(c+d)
-            z2 = b._karatsuba(d)
-
-            return (z2 << d2*2) + ((z1 - z2 - z0) << d2) + z0
-
-
-
     def __elemmul__(self, other: object) -> object:
-        if not RUNTIME.poly_fft_heuristic(self, other):
-            if self.ring.ring.__class__.__name__ == 'QuotientRing' and self.ring.ring.ring == _integer_ring.ZZ and self.degree() > _should_kronecker(self.ring.characteristic()):
-                # Kronecker substitution for small ZZ/ZZ(n)
-                return self._kronecker_substitution(other)
+        if self.ring.ring.__class__.__name__ == 'QuotientRing' and self.ring.ring.ring == _integer_ring.ZZ and self.degree() > _should_kronecker(self.ring.characteristic()):
+            # Kronecker substitution for small ZZ/ZZ(n)
+            return self._kronecker_substitution(other)
 
-            elif self.ring.use_karatsuba:
+        elif not RUNTIME.poly_fft_heuristic(self, other):
+            if self.ring.use_karatsuba:
                 n, m = self.degree(), other.degree()
 
                 if n and m:
@@ -1423,7 +1388,7 @@ class Polynomial(RingElement):
                         new_coeffs[c] += coeff_h*coeff_g
                     else:
                         new_coeffs[c] = coeff_h*coeff_g
-                    
+
 
             poly = self._create_poly(self._create_sparse(new_coeffs))
 

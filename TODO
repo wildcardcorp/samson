@@ -13,14 +13,8 @@ CURRENT
 ---------------
 X   BSGS involution
 X   Poly conv chunking
-X   Math themes (Poly powers, p-adic)
+X   Poly conv broken (broke in ZZ/ZZ(2) with deg 7858)
 X   SIKE
-X   Faster Schoof's algorithm
-    X   Faster poly mul -> Poly Karatsuba (https://mathstrek.blog/2012/10/08/polynomial-multiplication-karatsuba-and-fast-fourier-transform/)
-        X This is a mul/add tradeoff... We need a dynamic cost estimation
-    X   Faster poly div -> Cached Hensel division ('cache_div', etc)
-    X   Inversion deferment
-    X   BSGS?
 
 
 0.3.0

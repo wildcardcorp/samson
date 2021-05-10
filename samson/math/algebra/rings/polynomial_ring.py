@@ -151,25 +151,31 @@ class PolynomialRing(Ring):
         Returns:
             Polynomial: Irreducible polynomial
         """
-        sparsity = sparsity or n.bit_length()-2
+        logn = n.bit_length()
+        sparsity = sparsity or logn-2
         x = self.symbol
         p = x**n
 
         degrees = list(range(1,n))
-        R   = self.ring
-        one = R.one
+        R       = self.ring
+        one     = R.one
+
+        max_attempts = n*logn
 
         while True:
-            degrees.sort(key=lambda i: random_int(n**2))
-            q = p
-            for d in degrees[:sparsity-1]:
-                q += one*x**d
+            for _ in range(max_attempts):
+                degrees.sort(key=lambda i: random_int(n**2))
+                q = p
+                for d in degrees[:sparsity-1]:
+                    q += one*x**d
 
-            q += R.random()*x**degrees[sparsity-1]
-            q += one
+                q += R.random()*x**degrees[sparsity-1]
+                q += one
 
-            if q.is_irreducible():
-                return q
+                if q.is_irreducible():
+                    return q
+            
+            sparsity += 1
 
 
 

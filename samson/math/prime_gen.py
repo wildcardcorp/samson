@@ -9,17 +9,25 @@ class PGen(object):
         self.size = size
 
     def generate(self, constraints: list=None) -> int:
-        p = 2
+        for p in self.generate_many(constraints=constraints):
+            return p
+
+
+    def generate_many(self, constraints: list=None) -> list:
+        p = 1
         constraints = constraints or []
         gen = self._gen(constraints)
 
         try:
-            while not (is_prime(p) and p.bit_length() == self.size and all([c(p) for c in constraints])):
-                p = gen.__next__()
+            while True:
+                while not (is_prime(p) and p.bit_length() == self.size and all([c(p) for c in constraints])):
+                    p = gen.__next__()
+
+                yield p
+                p = 1
         except StopIteration:
             raise SearchspaceExhaustedException
 
-        return p
 
 
 class RandGen(PGen):

@@ -2,7 +2,7 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l, legendre, cornacchias_algorithm, hilbert_class_polynomial, random_int, random_int_between, find_prime, primes
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
@@ -10,6 +10,24 @@ import math
 
 from samson.auxiliary.lazy_loader import LazyLoader
 _elliptic_curve_isogeny  = LazyLoader('_elliptic_curve_isogeny', globals(), 'samson.math.algebra.curves.elliptic_curve_isogeny')
+
+
+def _get_possible_traces_for_D(D, N):
+    sols = []
+    try:
+        sols.extend([t for t,_ in cornacchias_algorithm(abs(D), 4*N, use_hensel=True, all_sols=True)])
+    except NoSolutionException:
+        pass
+
+    try:
+        sols.extend([t*2 for t,_ in cornacchias_algorithm(abs(D), N, use_hensel=True, all_sols=True)])
+    except NoSolutionException:
+        pass
+
+    if not sols:
+        raise NoSolutionException
+    
+    return sols
 
 
 class WeierstrassPoint(RingElement):
@@ -20,14 +38,13 @@ class WeierstrassPoint(RingElement):
     def __init__(self, x: RingElement, y: RingElement, curve: 'WeierstrassCurve', z: RingElement=None):
         self._x    = curve.ring.coerce(x)
         self._y    = curve.ring.coerce(y)
-        self._z    = curve.ring.coerce(z or curve.ring.one)
+        self._z    = curve.ring.coerce(curve.ring.one if z is None else z)
         self.curve = curve
         self.order_cache  = None
 
 
     def __reprdir__(self):
         return ['x', 'y', 'curve']
-
 
 
     def __getitem__(self, idx):
@@ -53,7 +70,7 @@ class WeierstrassPoint(RingElement):
 
 
     def _collapse_coords(self):
-        if self._z != self._x.ring.one:
+        if self._z and self._z != self._x.ring.one:
             z_inv = ~self._z
             self._x *= z_inv
             self._y *= z_inv
@@ -415,6 +432,18 @@ class WeierstrassPoint(RingElement):
                 return Map(E, Km, mul_trans)
 
 
+    def __batch_invert_zs(self, points):
+        zeroes = [idx for idx, point in enumerate(points) if not point._z]
+        invs   = batch_inv([point._z for point in points if point._z])
+        zero   = self._x.ring.zero
+
+        total = 0
+        for idx in zeroes:
+            invs.insert(idx+total, zero)
+            total += 1
+
+        return invs
+
 
     @RUNTIME.global_cache(2)
     def _build_bsgs_table(self, g: 'WeierstrassPoint', end: int, start: int, r: int, n: int):
@@ -425,7 +454,9 @@ class WeierstrassPoint(RingElement):
 
         # If we have no congruence, we can apply the involution speedup
         if n == 1:
-            bs_size = max(m // 2, 1)
+            # TODO: How to reduce baby steps with involution map?
+            # bs_size = max(m // 2, 1)
+            bs_size = m
         else:
             bs_size = m
 
@@ -439,14 +470,14 @@ class WeierstrassPoint(RingElement):
             points.append(e)
             e = e.add_no_cache(G)
 
-        invs = batch_inv([point._z for point in points])
-        one  = self._x.ring.one
+        invs = self.__batch_invert_zs(points)
 
         # Perform inversions then cache
         for i in range(bs_size):
             e = points[i]
             z = invs[i]
-            e._x, e._y, e._z = e._x*z, e._y*z, one
+            if z:
+                e._x, e._y, e._z = e._x*z, e._y*z, e._z*z
             table[e.x]   = i
             y_table[e.x] = e.y
 
@@ -466,7 +497,7 @@ class WeierstrassPoint(RingElement):
         else:
             r, n = 0, 1
 
-        table, y_table,  m = self._build_bsgs_table(g, end, start, r, n)
+        table, y_table, m = self._build_bsgs_table(g, end, start, r, n)
 
         mb     = m.bit_length()
         o      = g*start
@@ -479,7 +510,7 @@ class WeierstrassPoint(RingElement):
                 points.append(z)
                 z = z.add_no_cache(factor)
 
-            invs = batch_inv([point._z for point in points])
+            invs = self.__batch_invert_zs(points)
 
             for i, (e, inv) in enumerate(zip(points, invs)):
                 x = e._x*inv
@@ -563,7 +594,7 @@ class WeierstrassCurve(Ring):
         self.cardinality_cache = cardinality
         self.curve_poly_ring   = self[Symbol('x'), Symbol('y')]
 
-        self.zero = PointAtInfinity(self.ring.zero, self.ring.one, self, self.ring.one)
+        self.zero = PointAtInfinity(self.ring.zero, self.ring.one, self, self.ring.zero)
         self.PAF_cache = self.zero
         self.__cm_discriminant_cache = cm_discriminant
         self.__embedding_degree = embedding_degree
@@ -658,6 +689,10 @@ class WeierstrassCurve(Ring):
         return EllipticCurveFormalGroup(self)
 
 
+    def frobenius_endomorphism(self) -> Map:
+        F = self.ring.frobenius_endomorphism()
+        return Map(domain=self, codomain=self, map_func=lambda P: self(F(P.x), F(P.y)))
+
 
     def find_gen(self) -> WeierstrassPoint:
         return self.abelian_group_generators()[0]
@@ -728,12 +763,13 @@ class WeierstrassCurve(Ring):
 
 
 
-    def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO) -> int:
+    def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO, check_supersingular: bool=True) -> int:
         """
         Calculates the cardinality (number of points) of the curve and caches the result.
 
         Parameters:
             algorithm (EllipticCurveCardAlg): Algorithm to use.
+            check_supersingular       (bool): Whether or not to check whether the curve is supersingular.
 
         Returns:
             int: Cardinality of the curve.
@@ -741,7 +777,7 @@ class WeierstrassCurve(Ring):
         if not self.cardinality_cache:
             p = self.ring.order()
 
-            if self.is_supersingular():
+            if check_supersingular and self.is_supersingular():
                 _ipp, p, n = is_perfect_power(p)
                 if not is_prime(p):
                     raise RuntimeError('Supersingular curve over ring with non-prime power order')
@@ -755,23 +791,37 @@ class WeierstrassCurve(Ring):
 
                 if curve_size < 11:
                     algorithm = EllipticCurveCardAlg.BRUTE_FORCE
-                elif curve_size <= 96:
+                elif curve_size <= 160:
                     algorithm = EllipticCurveCardAlg.BSGS
                 else:
                     algorithm = EllipticCurveCardAlg.SCHOOFS
 
 
             if algorithm == EllipticCurveCardAlg.BRUTE_FORCE:
-                g      = self.ring.find_gen()
-                points = []
+                g = self.ring.find_gen()
 
-                for i in range(g.order()):
-                    try:
-                        points.append(self(g*i))
-                    except NoSolutionException:
-                        pass
+                # Finite field
+                if self.ring.is_field() and self.ring.characteristic() == self.ring.order():
+                    p     = self.ring.characteristic()
+                    poly  = self.defining_polynomial()
+                    total = 1
+                    for i in range(g.order()):
+                        total += 1+legendre(int(poly(g*i)), p).value
 
-                self.cardinality_cache = len(set(points + [-point for point in points]))+1
+                    order = total
+
+                else:
+                    points = []
+
+                    for i in range(g.order()):
+                        try:
+                            points.append(self(g*i))
+                        except NoSolutionException:
+                            pass
+                    
+                    order = len(set(points + [-point for point in points]))+1
+
+                self.cardinality_cache = order
 
 
             elif algorithm == EllipticCurveCardAlg.BSGS:
@@ -786,51 +836,51 @@ class WeierstrassCurve(Ring):
                 n, m = 1, 1
                 largest_elem = self.zero
 
-                parity = int(self.defining_polynomial().is_irreducible())
+                if p.bit_length() > 64:
+                    parity = int(self.defining_polynomial().is_irreducible())
 
-                # Here we attempt to balance the exponential time BSGS and poly time Schoof
-                trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3.2))] if t_mod % n or n < 2]
+                    # Here we attempt to balance the exponential time BSGS and poly time Schoof
+                    trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3.5))] if t_mod % n or n < 2]
 
-                # If we're going to 11, we might as well use 3^2, too
-                if 11 in trace_mods:
-                    trace_mods[0] = 9
+                    # If we're going to 11, we might as well use 3^2, too
+                    if 11 in trace_mods:
+                        trace_mods[0] = 9
 
-                if trace_mods:
-                    o_con = crt([frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
-                    r     = p+1-o_con[0] % o_con[1]
-                    order_congruence = (int(r), int(o_con[1]))
+                    if trace_mods:
+                        o_con = crt([frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
+                        r     = p+1-o_con[0] % o_con[1]
+                        order_congruence = (int(r), int(o_con[1]))
+                    else:
+                        order_congruence = (0, 1)
+
+
+                    order_congruence = crt([order_congruence, (parity, 2)])
                 else:
                     order_congruence = (0, 1)
-                
-
-                order_congruence = crt([order_congruence, (parity, 2)])
 
                 # Computes the order of the curve even in non-cyclic groups
                 while n*m < (start + p):
-                    try:
-                        g = self.random()
-                        if g and not g*n:
-                            # If this is true, then `n` is the sqrt of the curve's prime.
-                            # It's possible this curve is actually sqrt(p)Z x sqrt(p)Z,
-                            # so we're looking for a linearly independent point
-                            if n == end // 2 - 1:
-                                g.order_cache = g.find_maximum_subgroup(n)
-                                j, k = g.linear_relation(largest_elem)
-                                if not j:
-                                    m = lcm(m, k)
+                    g = self.random()
+                    if g and not g*n:
+                        # If this is true, then `n` is the sqrt of the curve's prime.
+                        # It's possible this curve is actually sqrt(p)Z x sqrt(p)Z,
+                        # so we're looking for a linearly independent point
+                        if n == end // 2 - 1:
+                            g.order_cache = g.find_maximum_subgroup(n)
+                            j, k = g.linear_relation(largest_elem)
+                            if not j:
+                                m = lcm(m, k)
 
-                            continue
+                        continue
 
 
-                        g_ord = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), order_congruence]))
-                        n     = lcm(g_ord, n)
-                        g.order_cache = g_ord
-                        if g_ord != n:
-                            g = g.merge(largest_elem)
+                    g_ord = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), order_congruence]))
+                    n     = lcm(g_ord, n)
+                    g.order_cache = g_ord
+                    if g_ord != n:
+                        g = g.merge(largest_elem)
 
-                        largest_elem = g
-                    except SearchspaceExhaustedException as e:
-                        raise e
+                    largest_elem = g
 
 
                 order = n*m
@@ -875,13 +925,12 @@ class WeierstrassCurve(Ring):
         elif p % 4 == 3 and j == R(1728):
             return True
 
-        elif self.cardinality_cache:
-            return not self.cardinality_cache % (p+1)
+        elif self.cardinality_cache or p < 233:
+            return not self.cardinality(check_supersingular=False) % (p+1)
 
         else:
             _, p, n = is_perfect_power(R.order())
             return is_prime(p) and not self.random()*(p+1)**n
-
 
 
 
@@ -945,15 +994,10 @@ class WeierstrassCurve(Ring):
         if self.__cm_discriminant_cache is not None:
             return self.__cm_discriminant_cache
         else:
-            from samson.math.factorization.general import factor
             from samson.math.factorization.factors import Factors
             t = self.trace()
             p = self.ring.characteristic()
-            d = t**2-4*p
-
-            facs = factor(d)
-            s    = Factors({p: e // 2 for p,e in facs.items()})
-            D    = d // s.recombine()**2
+            D = factor(t**2-4*p).square_free().recombine()
 
             if D % 4 != 1:
                 D *= 4
@@ -1135,7 +1179,7 @@ class WeierstrassCurve(Ring):
                 D *= 4
 
             try:
-                E = EllipticCurve.from_D(int(D), R)
+                E = EllipticCurve.from_D(int(D), R, strict=False)
                 if E.is_supersingular():
                     return E
 
@@ -1147,7 +1191,7 @@ class WeierstrassCurve(Ring):
 
 
     @staticmethod
-    def from_D(D: int, R: Ring):
+    def from_D(D: int, R: Ring, strict: bool=True):
         """
         Generates a `WeierstrassCurve` over field `R` with complex multiplication discriminant `D`.
 
@@ -1158,39 +1202,34 @@ class WeierstrassCurve(Ring):
         Returns:
             WeierstrassCurve: Constructed curve.
         """
-        from samson.math.general import hilbert_class_polynomial, cornacchias_algorithm
+        if strict:
+            sols = _get_possible_traces_for_D(D, R.characteristic())
 
-        # We do this first to ensure there's even an answer
-        sols   = cornacchias_algorithm(abs(D), 4*R.characteristic(), all_sols=True)
-
+        order  = 0
         Hd     = hilbert_class_polynomial(-D)
         j_invs = Hd.change_ring(R).roots()
 
         if j_invs:
             E = EllipticCurve.from_j(j_invs[0])
-            P = E.random()
 
-            def try_trace(t):
-                if not P*(E.p + 1 - t):
-                    return E.p + 1 - t
+            if E.p.bit_length() > 8 and strict:
+                P = E.random()
 
-                elif not P*(E.p + 1 + t):
-                    return E.p + 1 + t
-            
-            # While we're here, let's get the order
-            for t, _ in sols:
-                order = try_trace(t)
-                if order:
-                    break
-            
-            # Check the non-primitive solutions
-            if not order:
-                for t, _ in cornacchias_algorithm(abs(D), R.characteristic(), all_sols=True):
-                    order = try_trace(t*2)
+                def try_trace(t):
+                    if not P*(E.p + 1 - t):
+                        return E.p + 1 - t
+
+                    elif not P*(E.p + 1 + t):
+                        return E.p + 1 + t
+
+                # While we're here, let's get the order
+                for t in sols:
+                    order = try_trace(t)
                     if order:
                         break
 
-            E.cardinality_cache = order
+                if order:
+                    E.cardinality_cache = order
 
             return E
         else:
@@ -1207,7 +1246,6 @@ class WeierstrassCurve(Ring):
             "Generating Anomalous Elliptic Curves" (http://www.monnerat.info/publications/anomalous.pdf)
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import random_int_between, is_prime, kth_root, gcd
 
         if not trace % 2:
             raise ValueError("Algorithm can only generate curves with odd trace")
@@ -1271,7 +1309,6 @@ class WeierstrassCurve(Ring):
             "ELLIPTIC CURVES OF NEARLY PRIME ORDER." (https://eprint.iacr.org/2020/001.pdf)
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import random_int, is_prime
 
         def build_curve(p, a, negate):
             mod = -negate*2 + 1
@@ -1384,7 +1421,6 @@ class WeierstrassCurve(Ring):
             "Constructing elliptic curves of prime order" (http://www.math.leidenuniv.nl/~psh/bs.pdf)
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import cornacchias_algorithm, primes, is_prime
 
         def construct_prime(N: int, max_r: int):
             from samson.math.factorization.factors import Factors
@@ -1406,13 +1442,12 @@ class WeierstrassCurve(Ring):
 
                         if -D % 8 == 5:
                             try:
-                                t, _ = cornacchias_algorithm(D, 4*N, use_hensel=True)
+                                for t in _get_possible_traces_for_D(D, N):
+                                    for trace in [t, -t]:
+                                        prime = N + 1 - trace
 
-                                for trace in [t, -t]:
-                                    prime = N + 1 - trace
-
-                                    if is_prime(prime):
-                                        return D, prime
+                                        if is_prime(prime):
+                                            return D, prime
 
                             except NoSolutionException:
                                 pass
@@ -1430,6 +1465,61 @@ class WeierstrassCurve(Ring):
 
         E.cardinality_cache = order
         return E
+
+
+
+    @staticmethod
+    def generate_curve_with_prime_order(size: int, return_both: bool=False) -> 'WeierstrassCurve':
+        """
+        Generates a curve with a prime order. This method actually finds two prime curves,
+        so the `return_both` determines whether to include the second.
+
+        Parameters:
+            size         (int): Size in bits of the curve to generate.
+            return_both (bool): Whether or not to return both prime curves.
+
+        Returns:
+            WeierstrassCurve: Generated curve.
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        D_MAP    = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
+        d_fields = [ZZ/ZZ(d) for d in D_MAP]
+
+        while True:
+            p = find_prime(size)
+            R = ZZ/ZZ(p)
+
+            for DR in d_fields:
+                d = DR.characteristic()
+
+                if DR(p).is_square() and R(d).is_square():
+                    try:
+                        for t,_ in cornacchias_algorithm(d, 4*p, all_sols=True):
+                            for trace in [t, -t]:
+                                n = p+1-trace
+
+                                if is_prime(n):
+                                    E1 = EllipticCurve.generate_curve_with_D(d, R)
+
+                                    if E1.random()*n:
+                                        E1 = E1.quadratic_twist()
+
+
+                                    result = E1
+
+                                    if return_both:
+                                        E2 = EllipticCurve.generate_curve_with_D(d, ZZ/ZZ(n))
+
+                                        if E2.random()*p:
+                                            E2 = E2.quadratic_twist()
+                                        
+                                        result = (E1, E2)
+
+                                    return result
+
+                    except NoSolutionException:
+                        pass
 
 
 
@@ -1599,94 +1689,103 @@ class WeierstrassCurve(Ring):
         References:
             https://github.com/sagemath/sage/blob/ca088c9c9326542accea1f878e791b82cb37a3e1/src/sage/schemes/elliptic_curves/ell_finite_field.py#L843
         """
-        N  = self.order()
-        P1 = self.zero
-        P2 = self.zero
+        while True:
+            N  = self.order()
+            P1 = self.zero
+            P2 = self.zero
 
-        n1 = 1
-        n2 = 1
+            n1 = 1
+            n2 = 1
 
-        # Preload P1 by merging in a bunch of points
-        # Hopefully, this brings us close enough to a generator
-        for _ in range(10):
-            Q = 0
-            while not Q:
-                Q = self.random()
+            # Preload P1 by merging in a bunch of points
+            # Hopefully, this brings us close enough to a generator
+            for _ in range(10):
+                Q = 0
+                while not Q:
+                    Q = self.random()
 
-            if Q*n1:
-                P1 = P1.merge(Q)
-                n1 = P1.order()
-
-
-        while n1*n2 != N:
-            Q = 0
-            while not Q:
-                Q = self.random()
-
-            # If Q1 != 0, then it has a greater order than P1, so we should merge it into P1.
-            # Additionally, if P2 != 0, we need to update P2 to keep a basis
-            if Q*n1:
-                if n2 > 1:
-                    P3 = P1 * (n1 // n2)
-
-                P1 = P1.merge(Q)
-                n1 = P1.order()
-
-                if n2 > 1:
-                    a, m = P1.linear_relation(P3)
-                    P3  -= P1 * (a // m)
-
-                    if m == n2:
-                        P2 = P3
-
-                    else:
-                        a, m = P1.linear_relation(P2)
-                        P2 -= P1 * (a // m)
-
-                        P2 = P2.merge(P3)
-                        n2 = P2.order()
+                if Q*n1:
+                    P1 = P1.merge(Q)
+                    n1 = P1.order()
 
 
-            # Q's order divides P1's order
-            else:
-                n1a = n1 // gcd(n1, N // n1)
-                n1b = n1 // n1a
+            while True:
+                if n1*n2 == N:
+                    return P1, P2
+                elif n1*n2 > N:
+                    break
 
-                Q  *= n1a
-                P1a = P1*n1a
+                Q = 0
+                while not Q:
+                    Q = self.random()
 
-                if not Q:
-                    continue
+                # If Q1 != 0, then it has a greater order than P1, so we should merge it into P1.
+                # Additionally, if P2 != 0, we need to update P2 to keep a basis
+                if Q*n1:
+                    if n2 > 1:
+                        P3 = P1 * (n1 // n2)
 
-                for m in sorted(factor(n1b).divisors()):
-                    try:
-                        a = bsgs(P1a*m, Q*m, end=(n1b // m))
-                        break
-                    except SearchspaceExhaustedException:
-                        pass
+                    P1 = P1.merge(Q)
+                    n1 = P1.order()
 
-                a *= m*n1a
+                    if n2 > 1:
+                        a, m = P1.linear_relation(P3)
+                        P3  -= P1 * (a // m)
 
-                # If `m` > 1, then P1 and Q are linearly independent,
-                # so let's bring that into our basis
-                if m > 1:
-                    Q -= P1 * (a // m)
+                        if m == n2:
+                            P2 = P3
 
-                    if n2 == 1:
-                        P2 = Q
-                        n2 = P2.order()
-                    else:
-                        P2 = P2.merge(Q)
-                        n2 = P2.order()
+                        else:
+                            a, m = P1.linear_relation(P2)
+                            P2 -= P1 * (a // m)
 
-        return P1, P2
+                            P2 = P2.merge(P3)
+                            n2 = P2.order()
+
+
+                # Q's order divides P1's order
+                else:
+                    n1a = n1 // gcd(n1, N // n1)
+                    n1b = n1 // n1a
+
+                    Q_orig = Q
+                    Q  *= n1a
+                    P1a = P1*n1a
+
+                    # In case Q.order() | P.order(), but are linearly dependent (e.g. Z/8 + Z/2)
+                    if not Q:
+                        if P1.linear_relation(Q)[0] == 0:
+                            P2 = P2.merge(Q_orig)
+                            n2 = P2.order()
+                        continue
+
+                    for m in sorted(factor(n1b).divisors()):
+                        try:
+                            a = bsgs(P1a*m, Q*m, end=(n1b // m))
+                            break
+                        except SearchspaceExhaustedException:
+                            pass
+
+                    a *= m*n1a
+
+                    # If `m` > 1, then P1 and Q are linearly independent,
+                    # so let's bring that into our basis
+                    if m > 1:
+                        Q -= P1 * (a // m)
+
+                        if n2 == 1:
+                            P2 = Q
+                            n2 = P2.order()
+                        else:
+                            P2 = P2.merge(Q)
+                            n2 = P2.order()
 
 
 
     @RUNTIME.global_cache()
     def additive_transfer_map(self) -> 'Map':
         """
-        Generates a map to `Qp` such that if `Q` = `self`*`d`, then `phi(Q)` = `phi(self)`*`d`.
+        Generates a map to `Qp` such that if `Q` = `P`*`d`, then `phi(Q)` = `phi(P)`*`d`.
 
         Returns:
             Map: Map function.

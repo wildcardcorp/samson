@@ -93,8 +93,12 @@ class Factors(BaseObject):
     def __truediv__(self, other: 'RingElement') -> 'Factors':
         t = type(other)
         if t is int:
-            from samson.math.factorization.general import factor
-            other = factor(other)
+            from samson.math.factorization.general import trial_division
+            keys  = list(self.keys())
+            if -1 in keys:
+                keys.remove(-1)
+
+            other = trial_division(other, prime_base=keys)
 
         elif t not in [Factors, dict, SortedDict]:
             other = other.factor()
@@ -162,6 +166,11 @@ class Factors(BaseObject):
 
     def all_divisors(self) -> set:
         return {c.recombine() for c in self.all_combinations()}.union({1})
+    
+
+    def square_free(self):
+        s = Factors({p: e // 2 for p,e in self.items()})
+        return self // s.recombine()**2
 
 
     divisors = all_divisors

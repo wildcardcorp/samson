@@ -205,7 +205,7 @@ def parse_doc(func):
 
     returns = None
     if 'Returns' in parsed:
-        split   = parsed['Returns'][0].split(':')
+        split   = parsed['Returns'][0].split(':', 1)
         r_type  = split[0].rstrip(':')
         r_desc  = split[1].strip()
 
@@ -241,12 +241,15 @@ def parse_doc(func):
             if url_start > -1:
                 name = ref[:url_start]
                 url  = ref[url_start:]
+                url  = url.strip(" \"\'")
+                if name and url[-1] == ')':
+                    url = url[:-1]
 
             else:
                 name = ref
                 url  = ""
 
-            dref = DocReference(name.strip("\"\' ("), url.strip("() \"\'"))
+            dref = DocReference(name.strip("\"\' ("), url)
 
             references.append(dref)
 

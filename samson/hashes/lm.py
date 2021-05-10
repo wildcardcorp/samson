@@ -53,7 +53,7 @@ class LM(BaseObject):
         Parameters:
             lm_hash (bytes): Hash to crack.
             charset (bytes): Character set to use.
-        
+
         Returns:
             Bytes: Cracked LM hash.
         """
@@ -97,7 +97,7 @@ class LM(BaseObject):
         Parameters:
             cracked  (bytes): Cracked password of LM hash.
             ntlm_hex (bytes): Target NTLM hash in hex format.
-        
+
         Returns:
             Bytes: The NTLM hash's password.
         """
@@ -116,3 +116,51 @@ class LM(BaseObject):
 
             if ntlm.hash(cracked_copy).hex() == ntlm_hex:
                 return Bytes(cracked_copy)
+
+
+    @staticmethod
+    def reconstruct_from_sam(hashcat_lm_list: bytes, sam_ntlm_list: bytes) -> dict:
+        """
+        Given a list of hashcat-formatted, cracked LM halves (<LM>:<PLAINTEXT>) and a list
+        of SAM accounts (<USERNAME>:<RID>:<LM>:<NTLM>), this function reconstructs the plaintext
+        passwords with casing.
+
+        Parameters:
+            hashcat_lm_list (bytes): List or newline-delimited bytes of hashcat LM halves.
+            sam_ntlm_list   (bytes): List or newline-delimited bytes of SAM accounts.
+
+        Returns:
+            dict: Dictionary of {`username`: `password`}.
+        """
+        if type(hashcat_lm_list) is bytes:
+            hashcat_lm_list = hashcat_lm_list.strip().split(b'\n')
+        
+        if type(sam_ntlm_list) is bytes:
+            sam_ntlm_list = sam_ntlm_list.strip().split(b'\n')
+
+        lookup_table = {}
+        for kv in hashcat_lm_list:
+            k,v = kv.split(b':')
+            lookup_table[k] = v
+
+        lookup_table[b'aad3b435b51404ee'] = b''
+
+        sam_list = [sam_entry.split(b':') for sam_entry in sam_ntlm_list]
+
+        cracked = {}
+        for sam in sam_list:
+            try:
+                username = sam[0]
+                lm       = sam[2]
+                ntlm     = sam[3]
+
+                h0, h1   = lm[:16], lm[16:]
+                lm_pass  = lookup_table[h0] + lookup_table[h1]
+
+                if lm_pass:
+                    password = LM.lm_to_ntlm(lm_pass, ntlm)
+                    cracked[username] = password
+            except KeyError:
+                pass
+
+        return cracked

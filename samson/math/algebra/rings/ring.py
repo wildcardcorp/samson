@@ -11,7 +11,7 @@ from samson.core.base_object import BaseObject
 _poly = LazyLoader('_poly', globals(), 'samson.math.polynomial')
 _quot = LazyLoader('_quot', globals(), 'samson.math.algebra.rings.quotient_ring')
 _frac = LazyLoader('_frac', globals(), 'samson.math.algebra.fields.fraction_field')
-
+_symb = LazyLoader('_symb', globals(), 'samson.math.symbols')
 
 def set_precendence_override(should_override):
     def _wrapper(func):
@@ -24,7 +24,7 @@ def set_precendence_override(should_override):
 class Ring(BaseObject):
 
     def order_factors(self):
-        from samson.math.symbols import oo
+        oo = _symb.oo
 
         if not hasattr(self, '_order_factor_cache'):
             self._order_factor_cache = None
@@ -184,7 +184,7 @@ class Ring(BaseObject):
         Returns:
             RingElement: A generator element.
         """
-        from samson.math.symbols import oo
+        oo = _symb.oo
 
         if self.order() == oo:
             return self.one
@@ -268,9 +268,16 @@ class Ring(BaseObject):
 
 
     def is_field(self) -> bool:
-        from samson.math.symbols import oo
+        oo = _symb.oo
         return self.order() != oo and is_prime(self.order())
+    
 
+    def frobenius_endomorphism(self) -> 'Map':
+        from samson.math.map import Map
+        p = self.characteristic()
+        if not is_prime(p):
+            raise ValueError(f'Characteristic of {self} not prime')
+        return Map(domain=self, codomain=self, map_func=lambda r: self(r)**p)
 
 
 
@@ -538,7 +545,7 @@ class RingElement(BaseObject):
         type_o = type(other)
 
         if type_o is int and self.order() > 1:
-            from samson.math.symbols import oo
+            oo = _symb.oo
 
             if self.order() != oo:
                 other = mod_inv(other, self.order())
@@ -631,7 +638,7 @@ class RingElement(BaseObject):
             int: Order.
         """
         if not self.order_cache:
-            from samson.math.symbols import oo
+            oo = _symb.oo
 
             if self.ring.order() == oo:
                 return oo
@@ -750,7 +757,7 @@ class RingElement(BaseObject):
         Returns:
             RingElement: Root(s).
         """
-        from samson.math.symbols import Symbol
+        Symbol = _symb.Symbol
 
         x = Symbol('x')
         _ = self.ring[x]
@@ -813,7 +820,7 @@ class RingElement(BaseObject):
         Returns:
             int: `x` such that `base`^`x` == `self`.
         """
-        from samson.math.symbols import oo
+        oo = _symb.oo
 
         mul = self.ring.mul_group()
         h   = mul(self)
