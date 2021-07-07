@@ -1,6 +1,6 @@
 from samson.utilities.manipulation import left_rotate, right_rotate, unxorshift_left
 from samson.prngs.xorshift import DEFAULT_SHFT_R
-from samson.core.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG, CrackingDifficulty
 
 MASK32 = 0xFFFFFFFF
 MASK64 = 0xFFFFFFFFFFFFFFFF
@@ -12,6 +12,7 @@ class Xoshiro128PlusPlus(IterativePRNG):
     """
     NATIVE_BITS = 32
     STATE_SIZE  = 4
+    CRACKING_DIFFICULTY = CrackingDifficulty.EXTREME
 
 
     @staticmethod
@@ -67,6 +68,7 @@ class Xoshiro256PlusPlus(IterativePRNG):
     """
     NATIVE_BITS = 64
     STATE_SIZE  = 4
+    CRACKING_DIFFICULTY = CrackingDifficulty.EXTREME
 
 
     @staticmethod

@@ -78,11 +78,7 @@ class FractionFieldElement(FieldElement):
 
 
     def sqrt(self) -> 'FractionFieldElement':
-        if type(self.ring.ring).__name__ == 'IntegerRing':
-            from samson.math.general import kth_root_qq
-            return kth_root_qq(self, 2)
-        else:
-            return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+        return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
 
 
     def trim_to_precision(self) -> 'FractionFieldElement':

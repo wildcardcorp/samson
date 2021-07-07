@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.utilities.exceptions import CoercionException
+from samson.utilities.exceptions import CoercionException, NoSolutionException
 from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import is_prime, kth_root
 from samson.math.factorization.general import factor
@@ -52,8 +52,12 @@ class IntegerElement(RingElement):
         return self.is_prime()
 
 
-    def kth_root(self, k: int) -> 'IntegerElement':
-        return ZZ(kth_root(int(self), k))
+    def kth_root(self, k: int, strict: bool=True) -> 'IntegerElement':
+        root = kth_root(int(self), k)
+        if strict and self != root**k:
+            raise NoSolutionException
+
+        return ZZ(root)
 
 
     def is_square(self) -> bool:
@@ -97,7 +101,10 @@ class IntegerElement(RingElement):
 
 
     def ground_mul(self, other: 'IntegerElement') -> 'IntegerElement':
-        return IntegerElement(self.val * int(other), self.ring)
+        try:
+            return IntegerElement(self.val * int(other), self.ring)
+        except Exception:
+            pass
 
 
     def __neg__(self) -> 'IntegerElement':

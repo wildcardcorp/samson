@@ -427,6 +427,9 @@ class RingElement(BaseObject):
 
 
     def __invert__(self) -> 'RingElement':
+        if self in [self.ring.one, -self.ring.one]:
+            return self
+
         raise NotInvertibleException(f'{self} is not invertible', parameters={'a': self})
 
 

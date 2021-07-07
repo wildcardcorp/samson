@@ -877,6 +877,7 @@ class WeierstrassCurve(Ring):
                     g_ord = self.zero.bsgs(g, start=start + p, end=end + p, congruence=crt([(0, n), order_congruence]))
                     n     = lcm(g_ord, n)
                     g.order_cache = g_ord
+
                     if g_ord != n:
                         g = g.merge(largest_elem)
 
@@ -1268,7 +1269,7 @@ class WeierstrassCurve(Ring):
         valid_Ds = [D for D in D_MAP if gcd(D, trace) == 1]
 
         # `trace` can't be 5430965739045 mod 10861931478090 or 2277501761535 mod 4555003523070
-        # (odd multiples of 3*5*7*17*13 and 3*5*7*17*31, which are the minimum factors to not be comprime to any of our discriminant)
+        # (odd multiples of 3*5*7*17*13 and 3*5*7*17*31, which are the minimum factors to not be coprime to any of our discriminants)
         if not valid_Ds:
             raise ValueError("Odd trace algorithm cannot find suitable discriminant")
 
@@ -1285,8 +1286,7 @@ class WeierstrassCurve(Ring):
 
             if p.bit_length() == bit_size and is_prime(p) and not (4*p - trace**2) % D:
                 y2 = (4*p - trace**2) // D
-                y  = kth_root(y2, 2)
-                if y**2 == y2:
+                if ZZ(y2).is_square():
                     break
 
 

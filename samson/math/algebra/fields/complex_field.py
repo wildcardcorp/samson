@@ -10,8 +10,17 @@ class ComplexElement(RealElement):
         return self.field(self.field.ctx.sqrt(self.val))
 
 
-    def kth_root(self, k:int) -> 'ComplexElement':
-        return self**(self.field(1)/self.field(k))
+    def kth_root(self, k: int, return_all: bool=False) -> 'ComplexElement':
+        C    = self.field
+        base = self**(C(1)/C(k))
+
+        if return_all:
+            roots = [base]
+            roots.extend([base*C.e**(2*C.pi*1j*i / k) for i in range(1, k)])
+            return roots
+
+        else:
+            return base
 
 
     def real(self):
@@ -44,8 +53,12 @@ class ComplexField(RealField):
 
         else:
             imag = 0
-            if type(other) in [tuple, list]:
+            type_o = type(other)
+            if type_o in [tuple, list]:
                 other, imag = other
+
+            elif type_o == RealElement:
+                other = other.val
 
             try:
                 return ComplexElement(self.ctx.mpc(other, imag), self)
@@ -53,24 +66,17 @@ class ComplexField(RealField):
                 raise CoercionException((other, imag)) from e
 
 
-    def random(self, size: object=None) -> object:
+    def random(self, size: object=None) -> ComplexElement:
         """
         Generate a random element.
 
         Parameters:
-            size (int/FieldElement): The maximum ordinality/element (non-inclusive).
+            size (int/ComplexElement): The maximum ordinality/element (non-inclusive).
     
         Returns:
-            FieldElement: Random element of the algebra.
+            ComplexElement: Random element of the algebra.
         """
-        from samson.math.general import random_int
-
-        if not size:
-            size = 2**self.prec
-
-        n, d = self(size).val.as_integer_ratio()
-        a, b = [self(random_int(n))/self(max(1, random_int(d))) for _ in range(2)]
-        return self((a,b))
+        return self(super().random(size) + super().random(size)*1j)
 
 
 CC = ComplexField()

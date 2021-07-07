@@ -62,6 +62,7 @@ class Matrix(RingElement):
         
         return "".join([NEWLINE + row_str for row_str in row_strs])
 
+
     def tinyhand(self) -> str:
         return self.shorthand(True)
 
@@ -603,7 +604,6 @@ class Matrix(RingElement):
                 value = value[0]
 
             self.rows[idx] = value
-
 
 
     def __len__(self) -> int:

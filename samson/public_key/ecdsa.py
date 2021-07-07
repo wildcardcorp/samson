@@ -127,7 +127,7 @@ class ECDSA(DSA):
 
         u_1 = (z * w) % self.q
         u_2 = (r * w) % self.q
-        v = u_1 * self.G + u_2 * self.Q
+        v   = u_1 * self.G + u_2 * self.Q
 
         return u_1, u_2, v
 
@@ -336,7 +336,7 @@ class ECDSA(DSA):
 
         Returns:
             (int, (int, int)): Formatted as (z, (r, s)).
-        
+
         Example:
             >>> from samson.all import *
             >>> ecdsa  = ECDSA(P256.G)

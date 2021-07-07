@@ -1,4 +1,5 @@
 from samson.core.base_object import BaseObject
+from samson.core.metadata import CrackingDifficulty
 from samson.utilities.bytes import Bytes
 
 w, n, m, r = (32, 624, 397, 31)
@@ -77,6 +78,8 @@ class MT19937(BaseObject):
     References:
         https://jazzy.id.au/2010/09/22/cracking_random_number_generators_part_3.html
     """
+
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
     def __init__(self, seed: int=0):
         """

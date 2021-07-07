@@ -1,5 +1,5 @@
 from samson.math.algebra.rings.ring import Ring
-from samson.utilities.exceptions import CoercionException
+from samson.utilities.exceptions import CoercionException, NoSolutionException
 from samson.math.matrix import Matrix
 
 class MatrixRing(Ring):
@@ -8,7 +8,7 @@ class MatrixRing(Ring):
 
     Examples:
         >>> from samson.math.all import *
-        >>> M = MatrixRing(3, ZZ)
+        >>> M = MatrixRing(ZZ, 3)
         >>> M.one * 5
         <Matrix: rows=
         [5, 0, 0]
@@ -17,14 +17,14 @@ class MatrixRing(Ring):
 
     """
 
-    def __init__(self, size: int, ring: Ring):
+    def __init__(self, ring: Ring, size: int):
         """
         Parameters:
-            size  (int): Size of matrices.
             ring (Ring): Underlying ring.
+            size  (int): Size of matrices.
         """
-        self.size        = size
         self.ring        = ring
+        self.size        = size
         self.order_cache = None
 
         self.zero = Matrix.fill(self.ring.zero, self.size, coeff_ring=self.ring, ring=self)
@@ -82,3 +82,35 @@ class MatrixRing(Ring):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__, self.size))
+
+
+    def random(self, size: object=None) -> 'RingElement':
+        """
+        Generate a random element.
+
+        Parameters:
+            size (int/RingElement): The maximum ordinality/element (non-inclusive).
+
+        Returns:
+            RingElement: Random element of the algebra.
+        """
+        return Matrix([[self.ring.random(size) for _ in range(self.size)] for _ in range(self.size)])
+
+
+
+    def dft(self, w: 'RingElement'=None, unitary: bool=False) -> 'Matrix':
+        if not w:
+            roots = self.ring.one.kth_root(self.size, return_all=True)
+            non_trivial = [r for r in roots if r != self.ring.one]
+
+            if not non_trivial:
+                raise NoSolutionException(f'{self.ring} does not have a non-trivial {self.size}-th root of unity')
+
+            w = non_trivial[0]
+
+        dft = Matrix([[w**(i*j) for j in range(self.size)] for i in range(self.size)])
+
+        if unitary:
+            dft /= self.ring(self.size).sqrt()
+
+        return dft

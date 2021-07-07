@@ -62,7 +62,6 @@ class RealElement(FieldElement):
         return type(self) == type(other) and self.val == other.val and self.field == other.field
 
 
-
     def __elemtruediv__(self, other: 'RingElement') -> 'RingElement':
         return self.field(self.val / other.val)
 
@@ -82,11 +81,19 @@ class RealElement(FieldElement):
         return self.field(self.field.ctx.sqrt(self.val))
 
 
-    def kth_root(self, k:int) -> 'RealElement':
+    def kth_root(self, k: int, return_all: bool=False) -> 'RealElement':
         if self < 0 and not k % 2:
-            raise NoSolutionException
+            raise NoSolutionException(f'No even roots for negative number')
 
-        return self**(self.field(1)/self.field(k))
+        base = self**(self.field(1)/self.field(k))
+        if return_all:
+            if k % 2:
+                return [base]
+            else:
+                return [base, -base]
+
+        else:
+            return base
 
 
     def get_ground(self) -> 'RealElement':
@@ -111,10 +118,22 @@ class RealElement(FieldElement):
 
     def floor(self) -> 'RealElement':
         return self.field(self.field.ctx.floor(self.val))
-    
+
 
     def li(self, offset: bool=False):
         return self.field(self.field.ctx.li(self.val, offset=offset))
+
+
+    def sin(self):
+        return self.field(self.field.ctx.sin(self.val))
+
+
+    def cos(self):
+        return self.field(self.field.ctx.sin(self.val))
+    
+
+    def is_effectively_zero(self) -> bool:
+        return abs(self) < self.field(1)/2**self.field.prec
 
 
 class RealField(Field):
@@ -139,9 +158,27 @@ class RealField(Field):
         return ['prec']
 
 
+
+    def __getstate__(self):
+        return {'prec': self.prec}
+
+
+    def __setstate__(self, state):
+        R = self.__class__(state['prec'])
+        self.prec = R.prec
+        self.ctx  = R.ctx
+        self.one  = R.one
+        self.zero = R.zero
+
+
     @property
     def e(self):
         return self(self.ctx.e)
+
+
+    @property
+    def pi(self):
+        return self(self.ctx.pi)
 
 
     @property
@@ -232,17 +269,11 @@ class RealField(Field):
 
         Parameters:
             size (int/FieldElement): The maximum ordinality/element (non-inclusive).
-    
+
         Returns:
             FieldElement: Random element of the algebra.
         """
-        from samson.math.general import random_int
-
-        if not size:
-            size = 2**self.prec
-
-        n, d = self(size).val.as_integer_ratio()
-        return self(random_int(n))/self(max(1, random_int(d)))
+        return self(self.ctx.rand())
 
 
 RR = RealField()

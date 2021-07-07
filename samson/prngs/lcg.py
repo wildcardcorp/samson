@@ -4,6 +4,7 @@ from samson.math.matrix import Matrix
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
 from samson.core.base_object import BaseObject
+from samson.core.metadata import CrackingDifficulty
 import functools
 
 
@@ -11,6 +12,8 @@ class LCG(BaseObject):
     """
     Linear congruential generator of the form `(a*X + c) mod m`.
     """
+
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
     def __init__(self, X: int, a: int, c: int, m: int, trunc: int=0):
         """

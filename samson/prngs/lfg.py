@@ -1,5 +1,6 @@
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.core.base_object import BaseObject
+from samson.core.metadata import CrackingDifficulty
 from types import FunctionType
 from copy import deepcopy
 
@@ -10,6 +11,7 @@ class LFG(BaseObject):
     """
     Lagged Fibonacci generator
     """
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
     ADD_OP = lambda a, b: a + b
     SUB_OP = lambda a, b: a - b

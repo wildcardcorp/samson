@@ -743,7 +743,7 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
 
 
         if use_smooth_p:
-            # If we used Pollard's rho, then we've probably removed all factors < 45
+            # If we used Pollard's rho, then we've probably removed all factors < 45 bits
             # Therefore, the worst case scenario for P-1 is that `n` is a semiprime
             # whose smallest factor is 46 bits and largest factor is the smooth `p-1`
             # we have to target.
@@ -823,7 +823,7 @@ def msieve(n: int, *args) -> Factors:
     Parameters:
         n      (int): Integer to factor.
         *args (list): Arguments to pass into msieve.
-    
+
     Returns:
         Factors: Factorization of `n`.
     """

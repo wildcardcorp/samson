@@ -134,7 +134,7 @@ class LM(BaseObject):
         """
         if type(hashcat_lm_list) is bytes:
             hashcat_lm_list = hashcat_lm_list.strip().split(b'\n')
-        
+
         if type(sam_ntlm_list) is bytes:
             sam_ntlm_list = sam_ntlm_list.strip().split(b'\n')
 

@@ -1,5 +1,5 @@
 from samson.prngs.xorshift import DEFAULT_SHFT_R, MASK32, MASK64
-from samson.core.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG, CrackingDifficulty
 
 # https://github.com/XMPPwocky/nodebeefcl/blob/master/beef.py
 # https://github.com/v8/v8/blob/ceade6cf239e0773213d53d55c36b19231c820b5/src/js/math.js#L143
@@ -15,6 +15,8 @@ class MWC1616(IterativePRNG):
     MASK        = MASK32
     HALF_SIZE   = 16
     HALF_MASK   = 0xFFFF
+
+    CRACKING_DIFFICULTY = CrackingDifficulty.EXPENSIVE
 
     def __init__(self, seed: (int, int), a: int=18030, b: int=30903):
         """
@@ -75,6 +77,8 @@ class MWC(IterativePRNG):
     MASK        = MASK64
     HALF_SIZE   = 32
     HALF_MASK   = MASK32
+
+    CRACKING_DIFFICULTY = CrackingDifficulty.EXPENSIVE
 
     def __init__(self, seed: ((int, int)), a: int=0xFFFFDA61):
         """

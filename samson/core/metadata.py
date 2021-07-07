@@ -237,3 +237,11 @@ class FrequencySpec(object):
 
     def __eq__(self, other):
         return type(other) == type(self) and self.frequency_type == other.frequency_type and self.value == other.value
+
+
+
+class CrackingDifficulty(Enum):
+    TRIVIAL   = 0   # Cracks instantly (~ 1 millisecond)
+    NORMAL    = 1   # Requires some work (~1 second)
+    EXPENSIVE = 2   # Cost a lot (~100 second)
+    EXTREME   = 3   # Generally too expensive to try

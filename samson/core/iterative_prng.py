@@ -1,6 +1,7 @@
 from z3 import BitVecs, Solver, LShR, Bool, Implies, sat, RotateLeft
 from samson.utilities.exceptions import NoSolutionException
 from samson.core.base_object import BaseObject
+from samson.core.metadata import CrackingDifficulty
 from inspect import isclass
 import random
 
@@ -9,6 +10,9 @@ class IterativePRNG(BaseObject):
     """
     Base class for PRNGs that iterate over fixed-size state.
     """
+
+    CRACKING_DIFFICULTY = CrackingDifficulty.NORMAL
+
     def __init__(self, seed: list):
         """
         Parameters:

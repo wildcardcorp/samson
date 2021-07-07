@@ -1,6 +1,8 @@
-from samson.core.iterative_prng import IterativePRNG
+from samson.core.iterative_prng import IterativePRNG, CrackingDifficulty
 from samson.core.base_object import BaseObject
 from samson.utilities.manipulation import unxorshift_left, unxorshift_right
+from samson.utilities.exceptions import NoSolutionException
+from samson.math.algebra.rings.integer_ring import ZZ
 
 # https://en.wikipedia.org/wiki/Xorshift
 
@@ -201,6 +203,8 @@ class Xorshift128Plus(IterativePRNG):
 class Xorshift1024Star(BaseObject):
     NATIVE_BITS = 64
     STATE_SIZE  = 16
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+
 
     def __init__(self, seed: list, p: int=0):
         """
@@ -251,3 +255,24 @@ class Xorshift1024Star(BaseObject):
         self.state = [p_1, *s]
 
         return (s0 * 1181783497276652981) & MASK64
+
+
+
+    def crack(self, outputs: list):
+        if len(outputs) < 17:
+            raise ValueError('Not enough samples')
+
+        samples   = outputs[:16]
+        next_outs = outputs[16:]
+
+        R     = ZZ/ZZ(2**64)
+        inv_a = ~R(1181783497276652981)
+        state = [int(R(o)*inv_a) for o in samples]
+
+        # Search for the correct offset
+        for offset in range(16):
+            prng = Xorshift1024Star(state[offset:] + state[:offset])
+            if [prng.generate() for _ in range(len(next_outs))] == next_outs:
+                return prng
+
+        raise NoSolutionException('No solution for samples')

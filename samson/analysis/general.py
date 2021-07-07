@@ -261,9 +261,9 @@ def probability_of_x_occurences(n: int, x: int, p: float) -> float:
     Calculates the probability of an event with probability `p` occuring exactly `x` times in `n` trials.
 
     Parameters:
-        n (int): Number of trials.
-        x (int): Number of times for event to occur.
-        p (int): Probability event will occur.
+        n   (int): Number of trials.
+        x   (int): Number of times for event to occur.
+        p (float): Probability event will occur.
 
     Returns:
         float: Probability of total event.
@@ -280,9 +280,9 @@ def probability_of_at_least_x_occurences(n: int, x: int, p: float) -> float:
     Calculates the probability of an event with probability `p` occuring at least `x` times in `n` trials.
 
     Parameters:
-        n (int): Number of trials.
-        x (int): Number of times for event to occur.
-        p (int): Probability event will occur.
+        n   (int): Number of trials.
+        x   (int): Number of times for event to occur.
+        p (float): Probability event will occur.
 
     Returns:
         float: Probability of total event.
@@ -295,8 +295,8 @@ def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> in
     Calculates the minimum number of attempts of an event with probability `p` to occur with `desired_prob` probability.
 
     Parameters:
-        p            (int): Probability event will occur.
-        desired_prob (int): Probability to reach.
+        p            (float): Probability event will occur.
+        desired_prob (float): Probability to reach.
 
     Returns:
         int: Number of attempts.
@@ -327,8 +327,8 @@ def simulate_event(p: float, attempts: int) -> int:
     Simulates an event with probability `p` for `attempts` attempts and returns the number of times it occured.
 
     Parameters:
-        p        (int): Probability event will occur.
-        attempts (int): Number of attempts.
+        p        (float): Probability event will occur.
+        attempts   (int): Number of attempts.
 
     Returns:
         int: Number of occurences.
@@ -347,9 +347,9 @@ def simulate_until_event(p: float, runs: int, visual: bool=False) -> float:
     Simulates an event with probability `p` for `runs` runs and returns the average number of attempts until it occured.
 
     Parameters:
-        p       (int): Probability event will occur.
-        runs    (int): Number of runs.
-        visual (bool): Whether or not to display a progress bar.
+        p       (float): Probability event will occur.
+        runs      (int): Number of runs.
+        visual   (bool): Whether or not to display a progress bar.
 
     Returns:
         float: Average number of attempts.

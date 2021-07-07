@@ -629,12 +629,53 @@ class Polynomial(RingElement):
         return self._create_poly([(idx, coeff % mod) for idx, coeff in self.coeffs])
 
 
-    def square_free_decomposition(self) -> list:
+    def _yun_sff(self):
+        """
+        Yun's square-free factorization for characteristic zero integral domains.
+
+        References:
+            https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
+        """
+        assert self.coeff_ring.characteristic() == 0
+        
+        f  = self
+        fp = self.derivative()
+
+        a0 = gcd(f, fp)
+        bi = f // a0
+        ci = fp // a0
+        di = ci - bi
+
+        facs = []
+        while bi.degree():
+            ai = gcd(bi, di)
+            bi = bi // ai
+            ci = di // ai
+            di = ci - bi.derivative()
+            facs.append(ai)
+
+        polys = [fac for fac in facs if fac.degree()]
+        f     = self
+
+        factors = Factors()
+        for poly in polys:
+            while True:
+                q, r = divmod(f, poly)
+                if r:
+                    break
+
+                factors.add(poly)
+                f = q
+
+        return factors
+
+
+    def square_free_decomposition(self) -> Factors:
         """
         Decomposes a Polynomial into its square-free factors. Used as the first step in factorization.
 
         Returns:
-            list: Square-free factors of self.
+            Factors: Square-free factors of self.
 
         Examples:
             >>> from samson.math.all import Polynomial, ZZ
@@ -643,11 +684,14 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> poly = -1*x**18 + x**7 + 3*x**3
             >>> poly.square_free_decomposition()
-            {<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3}
+            Factors({<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3})
 
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
         """
+        if not self.coeff_ring.characteristic():
+            return self._yun_sff()
+
         is_field = self.coeff_ring.is_field()
         def cond_monic(poly):
             if is_field:
@@ -659,15 +703,15 @@ class Polynomial(RingElement):
         c = cond_monic(gcd(f, cond_monic(f.derivative())))
         w = f // c
 
-        factors = {}
+        factors = Factors()
 
         i = 1
         while w != self.ring.one:
-            y = cond_monic(gcd(w, c))
+            y   = cond_monic(gcd(w, c))
             fac = cond_monic(w // y)
 
             if fac != self.ring.one:
-                add_or_increment(factors, fac, i)
+                factors.add(fac, i)
 
             w, c, i = y, c // y, i + 1
 
@@ -677,7 +721,7 @@ class Polynomial(RingElement):
 
             new_facs = c.square_free_decomposition()
             for new_fac in new_facs:
-                add_or_increment(factors, new_fac, self.coeff_ring.characteristic() or 1)
+                factors.add(new_fac, self.coeff_ring.characteristic() or 1)
 
         return factors
 
@@ -827,6 +871,85 @@ class Polynomial(RingElement):
     edf = equal_degree_factorization
 
 
+    def _is_irred_ZZ(self):
+        from samson.math.general import find_coprime, batch_gcd
+    
+        ZZ   = _integer_ring.ZZ
+        one  = self.coeff_ring.one
+        zero = self.coeff_ring.zero
+        n    = self.degree()
+
+        poly = self
+        if self.LC() < one:
+            poly = -self
+
+        coeff_zero = -poly.coeffs[0]
+
+        # Poly's of form x**n - c
+        if poly.coeffs.sparsity == 2:
+            is_neg = coeff_zero < zero
+
+            # There doesn't exist a square root of a negative number
+            # (x**4+16).is_irreducible() == True
+            if not n % 2 and is_neg:
+                return True
+
+            # Check if a root exists of c0
+            root = kth_root(abs(coeff_zero), n)
+            if is_neg:
+                root = -root
+
+            if root**n == coeff_zero:
+                # (x**4-16).is_irreducible() == False
+                if poly.LC() == one:
+                    return False
+
+                # If LC is not one, then we have to check if that has a root
+                # whose exponent divides degree.
+                else:
+                    for fac in ZZ(n).factor():
+                        fac = int(fac)
+                        # (9*x**4-16).is_irreducible() == False
+                        if kth_root(poly.LC(), fac)**fac == poly.LC():
+                            return False
+
+                    # (3*x**4-16).is_irreducible() == True
+                    return True
+
+
+            else:
+                # Coeff zero is not a root of degree
+                # (x**4-15).is_irreducible() == True
+                return True
+
+
+        # Eisenstein’s Criterion
+        # NOTE: We use 'batch_gcd' to cut down on the factors we have to consider
+        # and hopefully break apart large factors.
+        p_facs = [g.factor() for g in batch_gcd(poly.coeffs.values.values()[:-1]) if g != ZZ.one]
+        p_facs = sum(p_facs, Factors())
+        for fac in p_facs:
+            # p∣a0,a1,…,ak,p∤ak+1 and p2∤a0, where k = n-1
+            if not sum([c % fac for c in poly.coeffs.values.values()[:-1]]):
+                if poly.LC() % fac and coeff_zero % (fac**2):
+                    return True
+
+
+        # If dealing with the integers, we can convert into FF.
+        #   From Wikipedia:
+        #   "The irreducibility of a polynomial over the integers Z
+        #   is related to that over the field F_p of `p` elements
+        #   (for a prime `p`). In particular, if a univariate polynomial `f` over Z
+        #   is irreducible over F_p for some prime `p` that does not
+        #   divide the leading coefficient of `f` (the coefficient of the highest power of the variable),
+        #   then f is irreducible over Z."
+
+        # WARNING: This proves a poly over ZZ is irreducible if it's irreducible in F_p.
+        # The converse is NOT true. This may say a poly over ZZ is reducible when it is not.
+        facs = self._ZZ_to_lossless_Fp().factor()
+        return sum(facs.values()) == 1 or all(self % fac.change_ring(ZZ) for fac in facs)
+
+
     def is_irreducible(self) -> bool:
         """
         Determines if a Polynomial is irreducible over its ring.
@@ -840,7 +963,7 @@ class Polynomial(RingElement):
             https://en.wikipedia.org/wiki/Irreducible_polynomial#Over_the_integers_and_finite_field
             https://www.imomath.com/index.php?options=623&lmm=0#:~:text=Table%20of%20contents)-,Irreducibility,nonconstant%20polynomials%20with%20integer%20coefficients.&text=Every%20quadratic%20or%20cubic%20polynomial,3%E2%88%924x%2B1.
         """
-        from samson.math.general import frobenius_map, frobenius_monomial_base, find_coprime, batch_gcd
+        from samson.math.general import frobenius_map, frobenius_monomial_base, batch_gcd
         ZZ = _integer_ring.ZZ
 
         n = self.degree()
@@ -853,8 +976,7 @@ class Polynomial(RingElement):
         if not self.coeffs[0]:
             return False
 
-        one  = self.coeff_ring.one
-        zero = self.coeff_ring.zero
+        one = self.coeff_ring.one
 
         # Divisible by element
         if min(batch_gcd(self.coeffs.values.values())) > one:
@@ -862,91 +984,15 @@ class Polynomial(RingElement):
 
 
         if self.coeff_ring == ZZ:
-            poly = self
-            if self.LC() < one:
-                poly = -self
-
-            coeff_zero = -poly.coeffs[0]
-
-            # Poly's of form x**n - c
-            if poly.coeffs.sparsity == 2:
-                is_neg = coeff_zero < zero
-
-                # There doesn't exist a square root of a negative number
-                # (x**4+16).is_irreducible() == True
-                if not n % 2 and is_neg:
-                    return True
-
-                # Check if a root exists of c0
-                root = kth_root(abs(coeff_zero), n)
-                if is_neg:
-                    root = -root
-
-                if root**n == coeff_zero:
-                    # (x**4-16).is_irreducible() == False
-                    if poly.LC() == one:
-                        return False
-
-                    # If LC is not one, then we have to check if that has a root
-                    # whose exponent divides degree.
-                    else:
-                        for fac in ZZ(n).factor():
-                            fac = int(fac)
-                            # (9*x**4-16).is_irreducible() == False
-                            if kth_root(poly.LC(), fac)**fac == poly.LC():
-                                return False
-
-                        # (3*x**4-16).is_irreducible() == True
-                        return True
+            return self._is_irred_ZZ()
 
 
-                else:
-                    # Coeff zero is not a root of degree
-                    # (x**4-15).is_irreducible() == True
-                    return True
-
-
-            # Eisenstein’s Criterion
-            # NOTE: We use 'batch_gcd' to cut down on the factors we have to consider
-            # and hopefully break apart large factors.
-            p_facs = [g.factor() for g in batch_gcd(poly.coeffs.values.values()[:-1]) if g != ZZ.one]
-            p_facs = sum(p_facs, Factors())
-            for fac in p_facs:
-                # p∣a0,a1,…,ak,p∤ak+1 and p2∤a0, where k = n-1
-                if not sum([c % fac for c in poly.coeffs.values.values()[:-1]]):
-                    if poly.LC() % fac and coeff_zero % (fac**2):
-                        return True
-
-
-            # If dealing with the integers, we can convert into FF.
-            #   From Wikipedia:
-            #   "The irreducibility of a polynomial over the integers Z
-            #   is related to that over the field F_p of `p` elements
-            #   (for a prime `p`). In particular, if a univariate polynomial `f` over Z
-            #   is irreducible over F_p for some prime `p` that does not
-            #   divide the leading coefficient of `f` (the coefficient of the highest power of the variable),
-            #   then f is irreducible over Z."
-
-            # WARNING: This proves a poly over ZZ is irreducible if it's irreducible in F_p.
-            # The converse is NOT true. This may say a poly over ZZ is reducible when it is not.
-            lc = int(poly.LC())
-            p  = 2
-
-            if lc != 1:
-                p = find_coprime(lc, range(2, lc**2))
-
-            field = ZZ/ZZ(p)
-            poly  = poly.change_ring(field)
-        else:
-            poly = self
-
-
-        if not poly.coeff_ring.is_field():
+        if not self.coeff_ring.is_field():
             raise NotImplementedError("Irreducibility tests of polynomials over rings of composite characteristic is not implemented")
 
-        x = poly.symbol
-        f = poly.monic()
-        P = poly.ring
+        x = self.symbol
+        f = self.monic()
+        P = self.ring
 
         subgroups = {n // fac for fac in factor_int(n)}
 
@@ -986,6 +1032,34 @@ class Polynomial(RingElement):
         return content
 
 
+    def _ZZ_to_lossless_Fp(self):
+        """
+        Embeds a polynomial over ZZ into a field F_p such that a lossless factorization can occur.
+        """
+        from samson.math.general import next_prime
+        ZZ = _integer_ring.ZZ
+
+        assert self.coeff_ring == ZZ
+
+        # 'f' must be content-free
+        f = self // self.content()
+
+        # Select a prime such that `p` > 2B
+        # NOTE: Originally, the algorithm calls for a Hensel lift such that `p^a > 2B`.
+        # We're just cheating ;)
+        max_elem = max([abs(val) for val in f.coeffs.values.values()])
+        p = max_elem.val*2
+
+        # Find a `p` such that `g` is square-free
+        while True:
+            p = next_prime(p+1)
+            R = ZZ/ZZ(p)
+            g = f.change_ring(R)
+            if sum(g.sff().values()) == 1:
+                return g
+
+
+
     def _fac_ZZ(self, d: int=1, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False):
         """
         Performs factorization over ZZ. Assumes `self` is square-free.
@@ -1007,25 +1081,13 @@ class Polynomial(RingElement):
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
         """
-        from samson.math.general import next_prime
-        ZZ = _integer_ring.ZZ
+        # from samson.math.general import next_prime
+        # ZZ = _integer_ring.ZZ
 
         # 'f' must be content-free
         f = self // self.content()
-
-        # Select a prime such that `p` > 2B
-        # NOTE: Originally, the algorithm calls for a Hensel lift such that `p^a > 2B`.
-        # We're just cheating ;)
-        max_elem = max([abs(val) for val in f.coeffs.values.values()])
-        p = max_elem.val*2
-
-        # Find a `p` such that `g` is square-free
-        while True:
-            p = next_prime(p+1)
-            R = ZZ/ZZ(p)
-            g = f.change_ring(R)
-            if sum(g.sff().values()) == 1:
-                break
+        g = f._ZZ_to_lossless_Fp()
+        p = g.coeff_ring.characteristic()
 
         # Factor over mod `p`
         facs = g.factor(d=d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
@@ -1280,7 +1342,9 @@ class Polynomial(RingElement):
         is_field  = self.coeff_ring.is_field()
 
         zero, one = self.coeff_ring.zero, self.coeff_ring.one
-        o_lc_inv  = ~other.LC()
+
+        if is_field:
+            o_lc_inv  = ~other.LC()
 
         while r and r.degree() >= n:
             r_start = r
