@@ -11,3 +11,4 @@ man/_build
 notebooks/.ipynb_checkpoints
 msieve.dat
 scripts/sage/*.py
+*.swp

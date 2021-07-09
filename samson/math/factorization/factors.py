@@ -1,5 +1,6 @@
 from samson.utilities.general import add_or_increment
 from samson.analysis.general import count_items
+from samson.math.general import kth_root
 from samson.core.base_object import BaseObject
 from functools import reduce
 from itertools import combinations, chain
@@ -168,9 +169,14 @@ class Factors(BaseObject):
         return {c.recombine() for c in self.all_combinations()}.union({1})
     
 
-    def square_free(self):
-        s = Factors({p: e // 2 for p,e in self.items()})
-        return self // s.recombine()**2
+    def square_free(self) -> 'Factors':
+        """
+        Returns the square-free portion of the factors. Checks to make sure factors
+        aren't squares themselves.
+        """
+        squares = Factors({p: e for p,e in self.items() if p > 0 and kth_root(p, 2)**2 == p})
+        sqrt    = Factors({p: e // 2 for p,e in self.items()})
+        return self // sqrt.recombine()**2 // squares
 
 
     divisors = all_divisors

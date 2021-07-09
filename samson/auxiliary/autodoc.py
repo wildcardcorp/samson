@@ -281,7 +281,7 @@ def autodoc(g):
                 for member in dir(obj):
                     try:
                         mem = getattr(obj, member)
-                        if type(mem) is FunctionType:
+                        if type(mem) is FunctionType and mem.__module__.split('.')[0] == 'samson':
                             richdoc(mem)
                     except AttributeError:
                         pass

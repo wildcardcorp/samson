@@ -101,10 +101,11 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).transpose()
-            <Matrix: rows=
-            [1, 4, 7]
-            [2, 5, 8]
-            [3, 6, 9]>
+            <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
+               0  1  2
+            0 [1, 4, 7]
+            1 [2, 5, 8]
+            2 [3, 6, 9]>
 
         """
         return Matrix([[self.rows[r][c] for r in range(self.num_rows)] for c in range(self.num_cols)], coeff_ring=self.coeff_ring, ring=self.ring)
@@ -159,10 +160,11 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix.fill(ZZ.zero, 3, 4)
-            <Matrix: rows=
-            [0, 0, 0, 0]
-            [0, 0, 0, 0]
-            [0, 0, 0, 0]>
+            <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=4, 
+               0  1  2  3
+            0 [0, 0, 0, 0]
+            1 [0, 0, 0, 0]
+            2 [0, 0, 0, 0]>
 
         """
         return Matrix([[value for c in range(cols or rows)] for r in range(rows)], coeff_ring=coeff_ring, ring=ring)
@@ -181,13 +183,14 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2,3],[4,5,6],[7,8,9]], ZZ).apply_elementwise(lambda elem: elem**2)
-            <Matrix: rows=
-            [ 1,  4,  9]
-            [16, 25, 36]
-            [49, 64, 81]>
+            <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
+                0   1   2
+            0 [ 1,  4,  9]
+            1 [16, 25, 36]
+            2 [49, 64, 81]>
 
         """
-        return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)], coeff_ring=self.coeff_ring, ring=self.ring)
+        return Matrix([[func(self.rows[r][c]) for c in range(self.num_cols)] for r in range(self.num_rows)])
 
 
     def change_ring(self, ring: 'Ring') -> 'Matrix':
@@ -286,11 +289,11 @@ class Matrix(RingElement):
             >>> from samson.math.all import Matrix, ZZ
             >>> A = Matrix([[2,1],[-1,0]], ZZ)
             >>> A.characteristic_polynomial()
-            <Polynomial: x**2 + -2*x + 1, coeff_ring=ZZ>
+            <Polynomial: x^2 + (-2)*x + 1, coeff_ring=ZZ>
 
             >>> B = Matrix([[1, 0, 2, -1],[3, 0, 0, 5],[2, 1, 4, -3],[1, 0, 5, 0]], ZZ)
             >>> B.characteristic_polynomial()
-            <Polynomial: x**4 + -5*x**3 + 16*x**2 + -34*x + 30, coeff_ring=ZZ>
+            <Polynomial: x^4 + (-5)*x^3 + (16)*x^2 + (-34)*x + 30, coeff_ring=ZZ>
 
         References:
             https://en.wikipedia.org/wiki/Characteristic_polynomial#Formal_definition
@@ -318,9 +321,11 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).row_join(Matrix([[5,6], [7,8]], ZZ))
-            <Matrix: rows=
-            [1, 2, 5, 6]
-            [3, 4, 7, 8]>
+            <Matrix: coeff_ring=ZZ, num_rows=2, num_cols=4, 
+               0  1  2  3
+            0 [1, 2, 5, 6]
+            1 [3, 4, 7, 8]>
+
 
         """
         type_o = type(other)
@@ -348,11 +353,12 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import Matrix, ZZ
             >>> Matrix([[1,2], [3,4]], ZZ).col_join(Matrix([[5,6], [7,8]], ZZ))
-            <Matrix: rows=
-            [1, 2]
-            [3, 4]
-            [5, 6]
-            [7, 8]>
+            <Matrix: coeff_ring=ZZ, num_rows=4, num_cols=2, 
+               0  1
+            0 [1, 2]
+            1 [3, 4]
+            2 [5, 6]
+            3 [7, 8]>
 
         """
         type_o = type(other)
@@ -380,9 +386,11 @@ class Matrix(RingElement):
             >>> from samson.math.all import QQ
             >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
             >>> m.LLL()
-            <Matrix: rows=
-            [ 3,  2,  1,  0]
-            [-2,  0,  2,  4]>
+            <Matrix: coeff_ring=Frac(ZZ), num_rows=2, num_cols=4, 
+                0  1  2  3
+            0 [ 3, 2, 1, 0]
+            1 [-2, 0, 2, 4]>
+
     
         """
         return lll(self, delta)
@@ -426,11 +434,12 @@ class Matrix(RingElement):
         Examples:
             >>> from samson.math.all import QQ, Matrix
             >>> Matrix([[4,4,4,4]]*4, QQ).normalize()
-            <Matrix: rows=
-            [1/2, 1/2, 1/2, 1/2]
-            [1/2, 1/2, 1/2, 1/2]
-            [1/2, 1/2, 1/2, 1/2]
-            [1/2, 1/2, 1/2, 1/2]>
+            <Matrix: coeff_ring=Frac(ZZ), num_rows=4, num_cols=4, 
+                 0    1    2    3
+            0 [1/2, 1/2, 1/2, 1/2]
+            1 [1/2, 1/2, 1/2, 1/2]
+            2 [1/2, 1/2, 1/2, 1/2]
+            3 [1/2, 1/2, 1/2, 1/2]>
 
         """
         magnitude = (self.apply_elementwise(lambda elem: elem**2)*Matrix.fill(self.coeff_ring.one, rows=self.num_cols, cols=1))[0,0].sqrt()

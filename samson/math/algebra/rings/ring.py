@@ -213,18 +213,19 @@ class Ring(BaseObject):
                 elem = self.random()
                 o    = elem.order()
 
-                if o % n:
-                    # Merge elements to find elements of successively higher order
-                    if max_order:
-                        merged = max_order.merge(elem)
-                        if not merged.order() % n:
-                            return merged * (o // n)
+                if elem:
+                    if o % n:
+                        # Merge elements to find elements of successively higher order
+                        if max_order:
+                            merged = max_order.merge(elem)
+                            if not merged.order() % n:
+                                return merged * (merged.order() // n)
 
-                        max_order = merged
+                            max_order = merged
+                        else:
+                            max_order = elem
                     else:
-                        max_order = elem
-                else:
-                    return elem * (o // n)
+                        return elem * (o // n)
 
         else:
             if not n_facs:
@@ -620,7 +621,7 @@ class RingElement(BaseObject):
             >>> F = FF(2, 8)
             >>> R = F/F[11]
             >>> R[5].get_ground()
-            <Polynomial: x**2 + 1, coeff_ring=ZZ/ZZ(2)>
+            <Polynomial: x^2 + 1, coeff_ring=ZZ/(ZZ(2))>
 
         """
         from samson.math.algebra.rings.integer_ring import IntegerElement

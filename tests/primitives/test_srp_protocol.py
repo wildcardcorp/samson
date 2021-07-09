@@ -7,7 +7,7 @@ import unittest
 
 class SRPTestCase(unittest.TestCase):
     def setUp(self):
-        self.username = b'daniel.cronce@wildcardcorp.com'
+        self.username = b'dani.cronce@wildcardcorp.com'
         self.password = b'P@ssw0rd'
 
 
@@ -49,7 +49,7 @@ class SRPTestCase(unittest.TestCase):
         server.create_account(self.username, self.password)
 
         # Create client
-        client = SRPClient(b'daniel.cronce@wildcardcorp.com', b'Abracadabra')
+        client = SRPClient(b'dani.cronce@wildcardcorp.com', b'Abracadabra')
 
         identity, A = client.craft_malicious_request()
         salt, _B = server.respond_with_challenge(identity, A)

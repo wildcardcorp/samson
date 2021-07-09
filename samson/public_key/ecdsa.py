@@ -210,10 +210,6 @@ class ECDSA(DSA):
 
         Examples:
             >>> from samson.all import *
-            >>> start = q.bit_length()
-            >>> stop  = start - 64
-            >>> c     = random_int(2**64)
-            >>> #_____________
             >>> def bad_random(size):
             >>>     k = random_int(size)
             >>>     return (k & (((1 << size.bit_length()) - 1) - ((1 << start) - 1) + ((1 << stop) - 1))) + (c << stop)
@@ -223,6 +219,10 @@ class ECDSA(DSA):
             >>> q     = curve.G.order()
             >>> n     = 6
             >>> ecdsa = ECDSA(curve.G, d=d)
+            >>> #_____________
+            >>> start = q.bit_length()
+            >>> stop  = start - 64
+            >>> c     = random_int(2**64)
             >>> #_____________
             >>> ks    = [bad_random(q) for _ in range(n)]
             >>> msgs  = [Bytes.random((q.bit_length() - 1) // 8) for _ in range(n)]

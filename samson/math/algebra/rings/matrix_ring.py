@@ -10,10 +10,12 @@ class MatrixRing(Ring):
         >>> from samson.math.all import *
         >>> M = MatrixRing(ZZ, 3)
         >>> M.one * 5
-        <Matrix: rows=
-        [5, 0, 0]
-        [0, 5, 0]
-        [0, 0, 5]>
+        <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
+           0  1  2
+        0 [5, 0, 0]
+        1 [0, 5, 0]
+        2 [0, 0, 5]>
+
 
     """
 

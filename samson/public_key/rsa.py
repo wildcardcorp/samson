@@ -449,6 +449,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             RSA: Recovered private key.
 
         Examples:
+            >>> from samson.math.general import random_int_between, kth_root, next_prime
+            >>> from samson.utilities.bytes import Bytes
             >>> # Set up Wiener's Attack
             >>> rsa = RSA(256)
             >>> d   = random_int_between(3, kth_root(rsa.n, 4) // 3)
@@ -472,7 +474,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         for denom in cf.denominators():
             if pow(m, int(denom), n) == 2:
-                return RSA.factor_from_d(int(denom), e, n)
+                return RSA.factor_from_d(int(denom), n, e)
 
 
 

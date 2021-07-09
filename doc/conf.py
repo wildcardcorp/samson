@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__name__), '../samson'))
 # -- Project information -----------------------------------------------------
 
 project = u'samson'
-copyright = u'2019, Wildcard Corp'
-author = u'Daniel Cronce'
+copyright = u'2021, Wildcard Corp'
+author = u'Dani Cronce'
 
 # The short X.Y version
 version = u''
@@ -135,7 +135,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'samson.tex', u'samson Documentation',
-     u'Daniel Cronce', 'manual'),
+     u'Dani Cronce', 'manual'),
 ]
 
 

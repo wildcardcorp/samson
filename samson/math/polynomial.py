@@ -440,10 +440,12 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> f = x**3 -2*x**2 -5*x + 6
             >>> f.companion_matrix()
-            <Matrix: rows=
-            [ 0,  1,  0]
-            [ 0,  0,  1]
-            [ 6, -5, -2]>
+            <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
+               0   1   2
+            0 [0,  1,  0]
+            1 [0,  0,  1]
+            2 [6, -5, -2]>
+
 
         References:
             https://en.wikipedia.org/wiki/Companion_matrix
@@ -601,7 +603,7 @@ class Polynomial(RingElement):
             >>> from samson.math.symbols import Symbol
             >>> x = Symbol('x')
             >>> ZZ[x](x**4 + 2*x**2).trunc_kth_root(2)
-            <Polynomial: x**2 + 2*x, coeff_ring=ZZ>
+            <Polynomial: x^2 + (2)*x, coeff_ring=ZZ>
 
         """
         return self._create_poly([(idx // k, coeff) for idx, coeff in self.coeffs if not idx % k])
@@ -623,7 +625,7 @@ class Polynomial(RingElement):
             >>> x = Symbol('x')
             >>> _ = ZZ[x]
             >>> (5*x**5 + 4*x**4 + 3*x**3 + 2*x**2 + x + 1).trunc(3)
-            <Polynomial: 2*x**5 + x**4 + 2*x**2 + x + 1, coeff_ring=ZZ>
+            <Polynomial: (2)*x^5 + x^4 + (2)*x^2 + x + 1, coeff_ring=ZZ>
 
         """
         return self._create_poly([(idx, coeff % mod) for idx, coeff in self.coeffs])
@@ -684,7 +686,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> poly = -1*x**18 + x**7 + 3*x**3
             >>> poly.square_free_decomposition()
-            Factors({<Polynomial: x**15 + -1*x**4 + -3, coeff_ring=ZZ>: 1, <Polynomial: x, coeff_ring=ZZ>: 3})
+            <Factors: factors=SortedDict({<Polynomial: x, coeff_ring=ZZ>: 3, <Polynomial: x^15 + (-1)*x^4 + -3, coeff_ring=ZZ>: 1})>
 
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
@@ -1281,7 +1283,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> p = x**4 + x**2 + 1
             >>> p.change_ring(ZZ/ZZ(2))
-            <Polynomial: x**4 + x**2 + 1, coeff_ring=ZZ/ZZ(2)>
+            <Polynomial: x^4 + x^2 + 1, coeff_ring=ZZ/(ZZ(2))>
 
         """
         return Polynomial({idx: ring(coeff) for idx, coeff in self.coeffs}, coeff_ring=ring)
@@ -1300,7 +1302,7 @@ class Polynomial(RingElement):
             >>> _ = (ZZ/ZZ(2))[x]
             >>> p = x**4 + x**2 + 1
             >>> p.peel_coeffs()
-            <Polynomial: x**4 + x**2 + 1, coeff_ring=ZZ>
+            <Polynomial: x^4 + x^2 + 1, coeff_ring=ZZ>
 
         """
         return Polynomial({idx: coeff.val for idx, coeff in self.coeffs}, coeff_ring=self.coeff_ring.ring)
@@ -1316,14 +1318,14 @@ class Polynomial(RingElement):
             >>> a = 94*y**9 + 115*y**8 + 4*y**7 + 14*y**6 + 14*y**5 + 111*y**4 + 76*y**3 + 47*y**2 + 124*y + 11
             >>> b = 92*y**4 + 93*y**3 + 76*y**2 + 62*y + 101
             >>> divmod(a,b)
-            (<Polynomial: 59*y**5 + 41*y**4 + 41*y**3 + 88*y**2 + 90*y + 110, coeff_ring=ZZ/ZZ(127)>, <Polynomial: 79*y**3 + 79*y**2 + 89*y + 77, coeff_ring=ZZ/ZZ(127)>)
+            (<Polynomial: (59)*y^5 + (41)*y^4 + (41)*y^3 + (88)*y^2 + (90)*y + 110, coeff_ring=ZZ/(ZZ(127))>, <Polynomial: (79)*y^3 + (79)*y^2 + (89)*y + 77, coeff_ring=ZZ/(ZZ(127))>)
 
             >>> x = Symbol('x')
             >>> P = ZZ[x]
             >>> p = 9*x**10 + 24*x**9 - 105*x**8 - 6*x**6 - 16*x**5 + 70*x**4 - 3*x**2 - 8*x + 35
             >>> d = 100*x
             >>> divmod(p,d)
-            (<Polynomial: -2*x**7, coeff_ring=ZZ>, <Polynomial: 9*x**10 + 24*x**9 + 95*x**8 + -6*x**6 + -16*x**5 + 70*x**4 + -3*x**2 + -8*x + 35, coeff_ring=ZZ>)
+            (<Polynomial: (-2)*x^7, coeff_ring=ZZ>, <Polynomial: (9)*x^10 + (24)*x^9 + (95)*x^8 + (-6)*x^6 + (-16)*x^5 + (70)*x^4 + (-3)*x^2 + (-8)*x + 35, coeff_ring=ZZ>)
 
         """
         # Check for zero

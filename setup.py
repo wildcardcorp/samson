@@ -1,5 +1,4 @@
 import os
-import setuptools
 from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -8,7 +7,7 @@ with open(os.path.join(here, 'README.md'), encoding="utf-8") as f:
 
 requires = [
     "pyasn1>=0.4.8",
-    "pyasn1-modules",
+    "pyasn1-modules>=0.2.8",
     'jedi==0.17.2',
     "ipython",
     "tqdm",
@@ -20,6 +19,7 @@ requires = [
 ]
 
 tests_require = [
+    'pytest'
 ]
 
 setup(name='samson-crypto',

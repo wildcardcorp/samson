@@ -1,5 +1,7 @@
 from types import FunctionType
 from samson.core.attack_model import AttackModel
+from samson.utilities.runtime import RUNTIME
+from samson.utilities.bytes import Bytes
 
 class CiphertextOnlyOracle(object):
     """
@@ -23,3 +25,17 @@ class CiphertextOnlyOracle(object):
 
         else:
             raise ValueError(f"{self.ATTACK_MODEL} cannot be downconverted to {attack_model}")
+
+
+    def test_bytewise_malleability(self, ciphertext, test_range: range=None, threads: int=5):
+        ct_len = len(ciphertext)
+        ciphertext = Bytes.wrap(ciphertext)
+
+        if not test_range:
+            test_range = range(ct_len)
+
+        @RUNTIME.threaded(threads=threads)
+        def test_byte(i):
+            return [self.request(ciphertext ^ Bytes(b).zfill(ct_len-i).pad_congruent_right(ct_len)) for b in range(256)]
+
+        return test_byte(test_range)

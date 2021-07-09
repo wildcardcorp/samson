@@ -1,8 +1,15 @@
 import math
+from functools import lru_cache
 
 from samson.auxiliary.lazy_loader import LazyLoader
-_math_gen     = LazyLoader('poly', globals(), 'samson.math.general')
-_factor_gen   = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
+@lru_cache()
+def get_math_gen():
+    return LazyLoader('_math_gen', globals(), 'samson.math.general')
+
+@lru_cache()
+def get_factor_gen():
+    return LazyLoader('_factor_gen', globals(), 'samson.math.factorization.general')
+
 
 class Complexity(object):
     def __init__(self, repr, estimator):
@@ -16,7 +23,7 @@ class Complexity(object):
 class LComplexity(Complexity):
     def __init__(self, a, c):
         self.repr = f'L_n[{a}, {c}]'
-        self.estimate = lambda n: int(_math_gen.estimate_L_complexity(a, c, n))
+        self.estimate = lambda n: int(get_math_gen().estimate_L_complexity(a, c, n))
 
 
 def add_complexity(complexity):
@@ -32,11 +39,11 @@ def _ph_estimator(g: 'RingElement', n: int=None, factors: dict=None):
         n = g.order()
 
     if not factors:
-        factors = _factor_gen.factor(n)
+        factors = get_factor_gen().factor(n)
 
     total = 1
     for p, e in factors.items():
-        total *= _math_gen.kth_root(p, 2)*e
+        total *= get_math_gen().kth_root(p, 2)*e
 
     return total // 2
 

@@ -1,11 +1,9 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException
-from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import random_int
 from samson.math.map import Map
 from types import FunctionType
 
-_all_mod = LazyLoader('all_mod', globals(), 'samson.math.all')
 _NEG_MAP = lambda e: -e
 
 class Endomorphism(RingElement):

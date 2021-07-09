@@ -40,28 +40,6 @@ class ChosenCiphertextOracle(Oracle):
 
 
     def test_io_relation(self) -> int:
-        def get_log_size(reverse=False):
-            iterator = range(12)
-
-            if reverse:
-                iterator = reversed(iterator)
-
-            for size in iterator:
-                try:
-                    self.request(b'a' * 2**size)
-
-                except CiphertextLengthException:
-                    continue
-
-                except DecryptionException:
-                    pass
-
-                break
-
-            return size
-
-
-
         for i in range(512):
             try:
                 self.request(b'a'*i)
@@ -77,11 +55,7 @@ class ChosenCiphertextOracle(Oracle):
 
         min_size = i
         max_size = self.test_max_input()
-        #binary_search(search_func, 2**16384)
-
-        #get_log_size()
-        #max_size = get_log_size(True)
-
+ 
         # Public key crypto is FIXED but will take in anything between zero and `n`
         # It will almost always be 2**0 (1), so we take the max as the block size instead.
         # This still works for stream ciphers because they won't have a max and will iterate back to zero.

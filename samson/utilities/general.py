@@ -4,6 +4,10 @@ import random
 import ssl
 import socket
 
+from samson.auxiliary.lazy_loader import LazyLoader
+_general      = LazyLoader('_general', globals(), 'samson.math.general')
+_integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
+
 
 def rand_bytes(size: int=16) -> bytes:
     """
@@ -11,7 +15,7 @@ def rand_bytes(size: int=16) -> bytes:
 
     Parameters:
         size (int): Number of bytes to read.
-    
+
     Returns:
         bytes: Random bytes.
     """
@@ -20,17 +24,89 @@ def rand_bytes(size: int=16) -> bytes:
 
 
 
-def shuffle(in_list: list) -> list:
+def shuffle(in_list: list):
     """
     Shuffles a list in place using random numbers generated from RUNTIME.random.
 
     Parameters:
         in_list (list): List to be shuffled.
-    
-    Returns:
-        list: in_list shuffled in place.
     """
     random.shuffle(in_list, lambda: int.from_bytes(rand_bytes(32), 'big') / (2 ** 256))
+
+
+class _LazyShuffler(object):
+    def __init__(self, in_list: list) -> None:
+        ZZ = _integer_ring.ZZ
+        next_prime = _general.next_prime
+
+        self.n = len(in_list)
+        self.p = next_prime(self.n+1)
+
+        self.R  = ZZ/ZZ(self.p)
+        self.Rm = self.R.mul_group()
+        self.g  = self.R(self.Rm.find_gen())
+        self.k  = int(self.R.random())
+        self.X  = self.R(self.Rm.random())
+        self.in_list = in_list
+        self.g_cache = self.g.cache_pow(self.p.bit_length())
+
+        self.dlog_cache = []
+
+
+    def __len__(self):
+        return self.n
+
+
+    def __iter__(self):
+        X = self.X
+        for _ in range(self.p-1):
+            X *= self.g
+            x  = int(X)
+            if x < self.n+1:
+                yield self.in_list[(x+self.k) % self.n]
+
+
+    def __getitem__(self, idx):
+        if not self.dlog_cache:
+            inv_x = ~self.X
+
+            for i in range(self.n+1, self.p):
+                d = (self.R(i)*inv_x).log(self.g)
+                if d:
+                    self.dlog_cache.append(d-1)
+
+            self.dlog_cache = sorted(self.dlog_cache)
+
+
+        # TODO: Binary search?
+        for throwout_idx in self.dlog_cache:
+            if throwout_idx < idx:
+                idx += 1
+            else:
+                break
+
+        X = self.X*self.g_cache**idx
+        for _ in range(idx, self.p-1):
+            X *= self.g
+            x  = int(X)
+            if x < self.n+1:
+                return self.in_list[(x+self.k) % self.n]
+
+
+def lazy_shuffle(in_list: list, depth: int=1) -> list:
+    """
+    Creates a generator that returns elements in random order.
+
+    Parameters:
+        in_list (list): List to be shuffled.
+
+    Returns:
+        list: `in_list` shuffled.
+    """
+    for i in range(depth):
+        in_list = _LazyShuffler(in_list)
+    
+    return in_list
 
 
 
@@ -41,7 +117,7 @@ def de_bruijn(k: list, n: int) -> str:
     Parameters:
         k (list): Alphabet.
         n  (int): Subsequence length.
-    
+
     Returns:
         str: de Bruijn sequence.
     """
@@ -80,7 +156,7 @@ def binary_search(func: FunctionType, max_int: int):
     Parameters:
         func   (func): Function to compare the current value against the hidden value.
         max_int (int): Maximum integer to try.
-    
+
     Returns:
         int: Index of hidden value.
     """
@@ -104,7 +180,7 @@ def binary_search_unbounded(func: FunctionType):
 
     Parameters:
         func (func): Function to compare the current value against the hidden value.
-    
+
     Returns:
         int: Index of hidden value.
     """
@@ -125,7 +201,7 @@ def binary_search_list(in_list: list, value: object, key: FunctionType=lambda it
         in_list (list): Sorted list to search.
         value (object): Value to search for.
         key     (func): Function that takes in an item and returns the key to search over.
-    
+
     Returns:
         int: Index of value.
     """
@@ -193,7 +269,7 @@ def crc24(data: bytes) -> int:
 
     Parameters:
         data (bytes): Data to be checksummed.
-    
+
     Returns:
         int: Checksum.
     """

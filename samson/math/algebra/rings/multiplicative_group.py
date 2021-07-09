@@ -94,7 +94,7 @@ class MultiplicativeGroup(Ring):
         >>> mul_ring = ring.mul_group()
         >>> g = mul_ring(2)
         >>> (g*a)*(g*b) # Perform Diffie-Hellman
-        <MultiplicativeGroupElement: val=15, ring=ZZ/ZZ(53)*>
+        <MultiplicativeGroupElement: val=15, ring=ZZ/(ZZ(53))*>
 
     """
 

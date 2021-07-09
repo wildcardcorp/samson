@@ -16,7 +16,7 @@ class PolynomialRing(Ring):
         >>> x = Symbol('x')
         >>> poly_ring = (ZZ/ZZ(53))[x]
         >>> poly_ring(x**3 + 4*x - 3)
-        <Polynomial: x**3 + 4*x + 50, coeff_ring=ZZ/ZZ(53)>
+        <Polynomial: x^3 + (4)*x + 50, coeff_ring=ZZ/(ZZ(53))>
 
     """
 
@@ -243,7 +243,7 @@ class PolynomialRing(Ring):
 
         # Calculate poly
         y      = Matrix([[p[1] for p in points]], R).T
-        result = vand.LUsolve(y).T[0]
+        result = list(vand.LUsolve(y).T[0])
 
         if not_field:
             if not all([c.denominator == self.ring.one for c in result]):

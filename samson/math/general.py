@@ -10,14 +10,20 @@ import math
 
 # Resolve circular dependencies while reducing function-level imports
 from samson.auxiliary.lazy_loader import LazyLoader
-_integer_ring  = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
-_real_field    = LazyLoader('_real_field', globals(), 'samson.math.algebra.fields.real_field')
-_complex_field = LazyLoader('_complex_field', globals(), 'samson.math.algebra.fields.complex_field')
-_poly          = LazyLoader('poly', globals(), 'samson.math.polynomial')
-_mat           = LazyLoader('mat', globals(), 'samson.math.matrix')
-_dense         = LazyLoader('dense', globals(), 'samson.math.dense_vector')
-_factor_gen    = LazyLoader('factor_gen', globals(), 'samson.math.factorization.general')
-_ell_curve     = LazyLoader('_ell_curve', globals(), 'samson.math.algebra.curves.weierstrass_curve')
+
+@RUNTIME.global_cache()
+def lazy_import(local_name, fqn):
+    return LazyLoader(local_name, globals(), fqn)
+
+_integer_ring  = lazy_import('_integer_ring', 'samson.math.algebra.rings.integer_ring')
+_real_field    = lazy_import('_real_field', 'samson.math.algebra.fields.real_field')
+_complex_field = lazy_import('_complex_field', 'samson.math.algebra.fields.complex_field')
+_poly          = lazy_import('_poly', 'samson.math.polynomial')
+_mat           = lazy_import('_mat', 'samson.math.matrix')
+_dense         = lazy_import('_dense', 'samson.math.dense_vector')
+_factor_gen    = lazy_import('_factor_gen', 'samson.math.factorization.general')
+_ell_curve     = lazy_import('_ell_curve', 'samson.math.algebra.curves.weierstrass_curve')
+
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     """
@@ -33,10 +39,10 @@ def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
     Examples:
         >>> from samson.math.general import int_to_poly
         >>> int_to_poly(100)
-        <Polynomial: x**6 + x**5 + x**2, coeff_ring=ZZ/ZZ(2)>
+        <Polynomial: x^6 + x^5 + x^2, coeff_ring=ZZ/(ZZ(2))>
 
         >>> int_to_poly(128, 3)
-        <Polynomial: x**4 + x**3 + 2*x**2 + 2, coeff_ring=ZZ/ZZ(3)>
+        <Polynomial: x^4 + x^3 + (2)*x^2 + 2, coeff_ring=ZZ/(ZZ(3))>
 
     """
     Polynomial = _poly.Polynomial
@@ -63,7 +69,7 @@ def poly_to_int(poly: 'Polynomial') -> int:
         int: Integer representation.
 
     Examples:
-        >>> from samson.math.general import int_to_poly, _poly_to_int
+        >>> from samson.math.general import int_to_poly, poly_to_int
         >>> poly_to_int(int_to_poly(100))
         100
 
@@ -180,7 +186,7 @@ def gcd(*args) -> int:
         >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> gcd(P(x**2), P(x**5))
-        <Polynomial: x**2, coeff_ring=F_(2**8)>
+        <Polynomial: x^2, coeff_ring=F_(2^8)>
 
     """
     total = args[0]
@@ -221,7 +227,7 @@ def xgcd(a: int, b: int) -> (int, int, int):
         >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> xgcd(P(x**2), P(x**5))
-        (<Polynomial: x**2, coeff_ring=F_(2**8)>, <Polynomial: 1, coeff_ring=F_(2**8)>, <Polynomial: F_(2**8)(ZZ(0)), coeff_ring=F_(2**8)>)
+        (<Polynomial: x^2, coeff_ring=F_(2^8)>, <Polynomial: 1, coeff_ring=F_(2^8)>, <Polynomial: F_(2^8)(ZZ(0)), coeff_ring=F_(2^8)>)
 
     References:
         https://anh.cs.luc.edu/331/notes/xgcd.pdf
@@ -283,7 +289,7 @@ def lcm(*args) -> int:
         >>> x = Symbol('x')
         >>> P = FF(2, 8)[x]
         >>> lcm(P(x**2 + 5), P(x-6))
-        <Polynomial: x**3 + x, coeff_ring=F_(2**8)>
+        <Polynomial: x^3 + x, coeff_ring=F_(2^8)>
 
     """
     def _lcm(a, b):
@@ -391,7 +397,7 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
         >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> square_and_mul(P(x+5), 6)
-        <Polynomial: x**6 + 30*x**5 + 121*x**4 + 87*x**3 + 104*x**2 + 81*x + 4, coeff_ring=ZZ/ZZ(127)>
+        <Polynomial: x^6 + (30)*x^5 + (121)*x^4 + (87)*x^3 + (104)*x^2 + (81)*x + 4, coeff_ring=ZZ/(ZZ(127))>
 
     """
     invert = False
@@ -435,7 +441,7 @@ def fast_mul(a: int, b: int, s: int=None) -> int:
         >>> x = Symbol('x')
         >>> P = (ZZ/ZZ(127))[x]
         >>> fast_mul(P(x+5), 5)
-        <Polynomial: 5*x + 25, coeff_ring=ZZ/ZZ(127)>
+        <Polynomial: (5)*x + 25, coeff_ring=ZZ/(ZZ(127))>
 
     """
     s = s if s is not None else a.ring.zero
@@ -561,7 +567,7 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
     Examples:
         >>> from samson.math.general import kth_root_qq
         >>> kth_root_qq(2, 2, 32)
-        <FractionFieldElement: numerator=759250125, denominator=536870912, ring=Frac(ZZ)>
+        <FractionFieldElement: numerator=759250125, denominator=536870912, field=Frac(ZZ)>
 
         >>> diff = abs(float(kth_root_qq(2, 2, 32)) - 2**(0.5))
 
@@ -626,7 +632,7 @@ def crt(residues: list, auto_correct: bool=True) -> (object, object):
         >>> n = P[17]
         >>> residues = [(P/mod)(n) for mod in moduli]
         >>> crt(residues)
-        (<Polynomial: x**4 + 1, coeff_ring=ZZ/ZZ(2)>, <Polynomial: x**6 + x**4 + x + 1, coeff_ring=ZZ/ZZ(2)>)
+        (<Polynomial: x^4 + 1, coeff_ring=ZZ/(ZZ(2))>, <Polynomial: x^6 + x^4 + x + 1, coeff_ring=ZZ/(ZZ(2))>)
 
     """
     ZZ = _integer_ring.ZZ
@@ -707,7 +713,7 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
         >>> x = 684250860
         >>> rings = [ZZ/ZZ(quotient) for quotient in [229, 246, 93, 22, 408]]
         >>> crt_lll([r(x) for r in rings])
-        <QuotientElement: val=684250860, ring=ZZ/ZZ(1306272792)>
+        <QuotientElement: val=684250860, ring=ZZ/(ZZ(1306272792))>
 
     References:
         https://grocid.net/2016/08/11/solving-problems-with-lattice-reduction/
@@ -727,7 +733,6 @@ def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
 
     # Calculate composite modulus
     L = reduce(reduc_func, [r.ring.quotient for r in residues])
-
 
     # Build the problem matrix
     r_len = len(residues)
@@ -1135,9 +1140,10 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
         >>> from samson.math.all import QQ
         >>> m = Matrix([[1, 2, 3, 4], [5, 6, 7, 8]], QQ)
         >>> lll(m)
-        <Matrix: rows=
-        [ 3,  2,  1,  0]
-        [-2,  0,  2,  4]>
+        <Matrix: coeff_ring=Frac(ZZ), num_rows=2, num_cols=4, 
+            0  1  2  3
+        0 [ 3, 2, 1, 0]
+        1 [-2, 0, 2, 4]>
 
     References:
         https://github.com/orisano/olll/blob/master/olll.py
@@ -1154,7 +1160,7 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
 
     R     = in_basis.coeff_ring
     basis = deepcopy(in_basis)
-    n     = min(len(basis), len(basis[0]))
+    n     = len(basis)
 
     ortho, _mu = gram_schmidt(in_basis)
 
@@ -1406,7 +1412,7 @@ def berlekamp_massey(output_list: list) -> 'Polynomial':
         >>> lfsr = FLFSR(3, x**25 + x**20 + x**12 + x**8  + 1)
         >>> outputs = [lfsr.generate() for _ in range(50)]
         >>> berlekamp_massey(outputs)
-        <Polynomial: x**25 + x**17 + x**13 + x**5 + 1, coeff_ring=ZZ/ZZ(2)>
+        <Polynomial: x^25 + x^17 + x^13 + x^5 + 1, coeff_ring=ZZ/(ZZ(2))>
 
     References:
         https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm
@@ -2127,7 +2133,6 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
         if int(res)*g == y:
             return int(res)
         else:
-            print(n, r.order())
             Z  = ZZ/ZZ(n // r.order())
             g *= r.order()
             y *= r.order()

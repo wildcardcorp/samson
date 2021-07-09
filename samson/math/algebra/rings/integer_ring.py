@@ -1,12 +1,9 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.utilities.exceptions import CoercionException, NoSolutionException
-from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import is_prime, kth_root
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from samson.math.symbols import oo
-
-_all_mod = LazyLoader('all_mod', globals(), 'samson.math.all')
 
 class IntegerElement(RingElement):
     """
@@ -61,7 +58,7 @@ class IntegerElement(RingElement):
 
 
     def is_square(self) -> bool:
-        return self.kth_root(2)**2 == self
+        return self.kth_root(2, strict=False)**2 == self
 
 
     def valuation(self, p: int) -> int:
@@ -183,7 +180,7 @@ class IntegerRing(Ring):
         elif type_o is int:
             return IntegerElement(other, self)
 
-        elif other.ring == _all_mod.QQ and other.denominator == ZZ.one:
+        elif other.ring == QQ and other.denominator == ZZ.one:
             return other.numerator
 
         try:
@@ -200,3 +197,4 @@ class IntegerRing(Ring):
 
 
 ZZ = IntegerRing()
+QQ = ZZ.fraction_field()

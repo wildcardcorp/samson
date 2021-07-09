@@ -30,6 +30,9 @@ def _get_possible_traces_for_D(D, N):
     return sols
 
 
+_D_MAP = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
+
+
 class WeierstrassPoint(RingElement):
     """
     Point on a Weierstrass curve.
@@ -995,10 +998,10 @@ class WeierstrassCurve(Ring):
         if self.__cm_discriminant_cache is not None:
             return self.__cm_discriminant_cache
         else:
-            from samson.math.factorization.factors import Factors
+            from samson.math.algebra.rings.integer_ring import ZZ
             t = self.trace()
             p = self.ring.characteristic()
-            D = factor(t**2-4*p).square_free().recombine()
+            D = factor(t**2-4*p, user_stop_func=lambda n, _: ZZ(n).is_square()).square_free().recombine()
 
             if D % 4 != 1:
                 D *= 4
@@ -1122,7 +1125,11 @@ class WeierstrassCurve(Ring):
             raise ValueError(f"Trace {trace} not within Hasse bounds {hasse_range} for bit_size {bit_size}")
 
         if trace % 2:
-            return EllipticCurve._generate_curve_with_odd_trace(bit_size, trace)
+            #if trace % 10861931478090 == 5430965739045  or trace % 4555003523070 == 2277501761535:
+            if gcd(trace, lcm(*_D_MAP)) > 1:
+                return EllipticCurve._generate_curve_with_odd_trace_slow(bit_size, trace)
+            else:
+                return EllipticCurve._generate_curve_with_odd_trace_fast(bit_size, trace)
         elif not trace:
             return EllipticCurve._generate_supersingular_deg_1(bit_size)
         else:
@@ -1241,7 +1248,7 @@ class WeierstrassCurve(Ring):
 
 
     @staticmethod
-    def _generate_curve_with_odd_trace(bit_size: int, trace: int) -> 'WeierstrassCurve':
+    def _generate_curve_with_odd_trace_fast(bit_size: int, trace: int) -> 'WeierstrassCurve':
         """
         References:
             "Generating Anomalous Elliptic Curves" (http://www.monnerat.info/publications/anomalous.pdf)
@@ -1264,9 +1271,7 @@ class WeierstrassCurve(Ring):
         #             D_MAP[D] = roots[0][0]
 
 
-        D_MAP = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
-
-        valid_Ds = [D for D in D_MAP if gcd(D, trace) == 1]
+        valid_Ds = [D for D in _D_MAP if gcd(D, trace) == 1]
 
         # `trace` can't be 5430965739045 mod 10861931478090 or 2277501761535 mod 4555003523070
         # (odd multiples of 3*5*7*17*13 and 3*5*7*17*31, which are the minimum factors to not be coprime to any of our discriminants)
@@ -1300,6 +1305,51 @@ class WeierstrassCurve(Ring):
 
         E.cardinality_cache = p+1-trace
         return E
+
+
+    @staticmethod
+    def _generate_curve_with_odd_trace_slow(bit_size: int, trace: int) -> 'WeierstrassCurve':
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        # These discriminants were selected since they are coprime with
+        # the ones used in the "fast" algorithm like so:
+        # l = lcm(11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427)
+        # possible = [d for d in range(1000) if -d % 4 in [0, 1] and gcd(d, l) == 1 and d % 2 == 1]
+
+        # This shows there's a lot of possible curves even for the smallest value:
+        # congruence_bits = (10861931478090).bit_length()
+        # approx_primes = pnt(2**congruence_bits)-pnt(2**(congruence_bits-1))
+        # num_squares = kth_root(approx_primes // 59, 2)
+
+
+        for D in [59, 71, 79, 83, 103, 107, 127, 131, 139, 151]:
+            start   = 2**(bit_size-1) + 2**(bit_size-2) + 1
+            start  -= trace**2
+            start //= D
+            start  *= 4
+            first_root = kth_root(start, 2)
+
+            i = random_int(2**(bit_size // 4) // D)
+            p = 0
+            while p.bit_length() <= bit_size:
+                r  = first_root + i
+                p  = (r**2*D + trace**2) // 4
+                i += 1
+
+                if p.bit_length() == bit_size and is_prime(p):
+                    try:
+                        R = ZZ/ZZ(p)
+                        E = EllipticCurve.generate_curve_with_D(D, R)
+                        if E.trace() == trace:
+                            return E
+                        elif E.trace() == -trace:
+                            return E.quadratic_twist()
+
+                    except NoSolutionException:
+                        pass
+        
+        raise NoSolutionException("No suitable discriminant/prime found")
+
 
 
     @staticmethod
@@ -1483,8 +1533,8 @@ class WeierstrassCurve(Ring):
         """
         from samson.math.algebra.rings.integer_ring import ZZ
 
-        D_MAP    = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
-        d_fields = [ZZ/ZZ(d) for d in D_MAP]
+        _D_MAP    = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
+        d_fields = [ZZ/ZZ(d) for d in _D_MAP]
 
         while True:
             p = find_prime(size)
