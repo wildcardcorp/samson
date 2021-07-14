@@ -1,11 +1,8 @@
-FROM fedora
-
-RUN dnf -y install pypy3 pypy3-devel
-RUN pypy3 -m ensurepip
+FROM pypy:3
 
 COPY ./ /app
-WORKDIR /app
+WORKDIR /mnt
 ENV PYTHONIOENCODING=utf-8
-RUN pypy3 setup.py install
+RUN pip install -e /app
 
-CMD pypy3 scripts/samson-py
+CMD pypy3 /app/scripts/samson-py

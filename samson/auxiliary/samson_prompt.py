@@ -17,6 +17,7 @@ class SamsonPrompt(Prompts):
         self.last_time_diff = 0
         self.shell.events.register('pre_execute', self.pre_execute)
         self.shell.events.register('post_execute', self.post_execute)
+        self.user_machine_sep = '@'
 
     def in_prompt_tokens(self, cli=None):
         return [
@@ -29,7 +30,7 @@ class SamsonPrompt(Prompts):
             (Token.Prompt, ']─['),
             (Token.PromptNum, f'{self.last_time_diff}'),
             (Token.Prompt, ']─['),
-            (Token.PromptNum, f'{get_username()}@{platform.node()}'),
+            (Token.PromptNum, f'{get_username()}{self.user_machine_sep}{platform.node()}'),
             (Token.Prompt, ']─['),
             (Token.PromptNum, f'{os.getcwd()}'),
             (Token.Prompt, ']\n└─$ '),

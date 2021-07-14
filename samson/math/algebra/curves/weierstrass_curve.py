@@ -231,6 +231,9 @@ class WeierstrassPoint(RingElement):
         if type(other) is int:
             return self*mod_inv(other, self.order())
         
+        elif not other:
+            raise ZeroDivisionError
+        
         elif not self:
             return 0
 
@@ -411,6 +414,21 @@ class WeierstrassPoint(RingElement):
 
         Returns:
             Map: Map function.
+        
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> from samson.math.general import random_int
+            >>> E = EllipticCurve.generate_curve_with_trace(10, 0)
+            >>> E.embedding_degree()
+            2
+
+            >>> g = E.G
+            >>> d = random_int(E.G.order())
+            >>> q = g*d
+            >>> M = g.multiplicative_transfer_map()
+            >>> M(q)/M(g) == d
+            True
+
         """
         from samson.math.algebra.fields.finite_field import FiniteField as GF
         E = self.curve
@@ -499,6 +517,15 @@ class WeierstrassPoint(RingElement):
             r, n = congruence
         else:
             r, n = 0, 1
+        
+        # Our BSGS implementation fails for points of order 2 since the point at infinity and our `x`
+        # are both zero
+        if not g*2:
+            d = int(h == g)
+            if d >= end or d % n != r:
+                raise SearchspaceExhaustedException(f'Discrete log found but does not match parameters: d = {d}')
+            else:
+                return d
 
         table, y_table, m = self._build_bsgs_table(g, end, start, r, n)
 
@@ -776,6 +803,30 @@ class WeierstrassCurve(Ring):
 
         Returns:
             int: Cardinality of the curve.
+
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> # Uses a hybrid of BSGS and Schoofs for medium size curves
+            >>> R = ZZ/ZZ(find_prime(20))
+            >>> E, _ = EllipticCurve.random_curve(R.quotient)
+            >>> E.random()*E.cardinality() == E.zero
+            True
+
+            >>> # Includes checks for supersingular curves
+            >>> E = EllipticCurve.generate_supersingular_over_ring(R)
+            >>> E.is_supersingular()
+            True
+
+            >>> E.random()*E.order() == E.zero
+            True
+
+            >>> # Uses bruteforce for small curves
+            >>> R = ZZ/ZZ(find_prime(10))
+            >>> E, _ = EllipticCurve.random_curve(R.quotient)
+            >>> E.random()*E.cardinality() == E.zero
+            True
+
         """
         if not self.cardinality_cache:
             p = self.ring.order()
@@ -1106,6 +1157,10 @@ class WeierstrassCurve(Ring):
         return phi
 
 
+    def _check_trace(self, trace: int) -> bool:
+        return not bool(self.random()*(self.p+1-trace))
+
+
 
     @staticmethod
     def generate_curve_with_trace(bit_size: int, trace: int) -> 'WeierstrassCurve':
@@ -1118,6 +1173,33 @@ class WeierstrassCurve(Ring):
 
         Returns:
             WeierstrassCurve: Constructed curve.
+
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> # Can generate curves with odd trace
+            >>> EllipticCurve.generate_curve_with_trace(256, 1)._check_trace(1)
+            True
+
+            >>> # Can generate curves with negative odd trace
+            >>> EllipticCurve.generate_curve_with_trace(256, -13)._check_trace(-13)
+            True
+
+            >>> # Can generate curves with even trace
+            >>> EllipticCurve.generate_curve_with_trace(256, 2)._check_trace(2)
+            True
+
+            >>> # Can generate curves with negative even trace and multiples of 8
+            >>> EllipticCurve.generate_curve_with_trace(256, -8)._check_trace(-8)
+            True
+
+            >>> # Can generate curves with zero trace
+            >>> EllipticCurve.generate_curve_with_trace(256, 0)._check_trace(0)
+            True
+
+            >>> # Can generate curves with trace congruent to 5430965739045 % 10861931478090
+            >>> EllipticCurve.generate_curve_with_trace(256, 5430965739045)._check_trace(5430965739045)
+            True
+
         """
         hasse_range = hasse_frobenius_trace_interval(2**bit_size)
 
@@ -1125,8 +1207,7 @@ class WeierstrassCurve(Ring):
             raise ValueError(f"Trace {trace} not within Hasse bounds {hasse_range} for bit_size {bit_size}")
 
         if trace % 2:
-            #if trace % 10861931478090 == 5430965739045  or trace % 4555003523070 == 2277501761535:
-            if gcd(trace, lcm(*_D_MAP)) > 1:
+            if trace % 10861931478090 == 5430965739045  or trace % 4555003523070 == 2277501761535:
                 return EllipticCurve._generate_curve_with_odd_trace_slow(bit_size, trace)
             else:
                 return EllipticCurve._generate_curve_with_odd_trace_fast(bit_size, trace)
@@ -1169,6 +1250,15 @@ class WeierstrassCurve(Ring):
 
         Returns:
             WeierstrassCurve: Constructed curve.
+
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> R = ZZ/ZZ(find_prime(20))
+            >>> E = EllipticCurve.generate_supersingular_over_ring(R)
+            >>> E.is_supersingular()
+            True
+
         """
         from samson.math.algebra.rings.integer_ring import ZZ
 
@@ -1271,7 +1361,8 @@ class WeierstrassCurve(Ring):
         #             D_MAP[D] = roots[0][0]
 
 
-        valid_Ds = [D for D in _D_MAP if gcd(D, trace) == 1]
+        abs_trace = abs(trace)
+        valid_Ds  = [D for D in _D_MAP if gcd(D, abs_trace) == 1]
 
         # `trace` can't be 5430965739045 mod 10861931478090 or 2277501761535 mod 4555003523070
         # (odd multiples of 3*5*7*17*13 and 3*5*7*17*31, which are the minimum factors to not be coprime to any of our discriminants)
@@ -1287,10 +1378,10 @@ class WeierstrassCurve(Ring):
         while True:
             m  = random_int_between(2**(m_size-1)+3, 2**m_size)
             m -= (m % 4)-1
-            p  = D*m*(m+1) + (D + trace**2) // 4
+            p  = D*m*(m+1) + (D + abs_trace**2) // 4
 
-            if p.bit_length() == bit_size and is_prime(p) and not (4*p - trace**2) % D:
-                y2 = (4*p - trace**2) // D
+            if p.bit_length() == bit_size and is_prime(p) and not (4*p - abs_trace**2) % D:
+                y2 = (4*p - abs_trace**2) // D
                 if ZZ(y2).is_square():
                     break
 
@@ -1447,7 +1538,7 @@ class WeierstrassCurve(Ring):
                 E = curve_gen_func(p, a)
 
                 if E:
-                    if E.trace != trace:
+                    if E.trace() != trace:
                         E = E.quadratic_twist()
                     return E
 
@@ -1533,7 +1624,6 @@ class WeierstrassCurve(Ring):
         """
         from samson.math.algebra.rings.integer_ring import ZZ
 
-        _D_MAP    = [11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]
         d_fields = [ZZ/ZZ(d) for d in _D_MAP]
 
         while True:
@@ -1574,8 +1664,24 @@ class WeierstrassCurve(Ring):
 
 
     @RUNTIME.global_cache()
-    def to_montgomery_form(self) -> ('WeierstrassCurve', Map):
+    def to_montgomery_form(self) -> ('MontgomeryCurve', Map):
         """
+        Finds an equivalent Montgomery curve if it exists.
+
+        Returns:
+            (MontgomeryCurve, Map): Formatted as (equivalent MontgomeryCurve, map to convert points).
+
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> # Generate a curve with order divisble by 4
+            >>> E = EllipticCurve.generate_curve_with_trace(80, 6)
+            >>> M, phi = E.to_montgomery_form()
+            >>> P = E.random()
+            >>> d = random_int(P.order())
+            >>> Q = P*d
+            >>> phi(P)*d == phi(Q)
+            True
+
         References:
             https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_Weierstrass_curves
         """
@@ -1736,6 +1842,21 @@ class WeierstrassCurve(Ring):
         Returns:
             (WeierstrassPoint, WeierstrassPoint): Formatted as (Generator of group one, generator of group two).
 
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> R = ZZ/ZZ(828109)
+            >>> a = R(654207)
+            >>> b = R(0)
+            >>> card = 828104
+            >>> E = EllipticCurve(a, b, cardinality=card)
+            >>> G1, G2 = E.abelian_group_generators()
+            >>> G1.order()*G2.order() == E.order()
+            True
+
+            >>> G1.linear_relation(G2)[0] == 0
+            True
+
         References:
             https://github.com/sagemath/sage/blob/ca088c9c9326542accea1f878e791b82cb37a3e1/src/sage/schemes/elliptic_curves/ell_finite_field.py#L843
         """
@@ -1762,14 +1883,13 @@ class WeierstrassCurve(Ring):
             while True:
                 if n1*n2 == N:
                     return P1, P2
-                elif n1*n2 > N:
-                    break
 
                 Q = 0
                 while not Q:
                     Q = self.random()
 
-                # If Q1 != 0, then it has a greater order than P1, so we should merge it into P1.
+
+                # If Q1 != 0, then it has a factor P1 doesn't, so we should merge it into P1.
                 # Additionally, if P2 != 0, we need to update P2 to keep a basis
                 if Q*n1:
                     if n2 > 1:
@@ -1802,10 +1922,11 @@ class WeierstrassCurve(Ring):
                     Q  *= n1a
                     P1a = P1*n1a
 
-                    # In case Q.order() | P.order(), but are linearly dependent (e.g. Z/8 + Z/2)
+                    # In case Q.order() | P.order(), but are linearly independent (e.g. Z/8 + Z/2)
                     if not Q:
-                        if P1.linear_relation(Q)[0] == 0:
-                            P2 = P2.merge(Q_orig)
+                        a, b = P1.linear_relation(Q_orig)
+                        if (not a or n1 % a != 0) and n1*b <= N:
+                            P2 = P2.merge(Q_orig*(n1a // b))
                             n2 = P2.order()
                         continue
 
@@ -1839,6 +1960,16 @@ class WeierstrassCurve(Ring):
 
         Returns:
             Map: Map function.
+
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> E = EllipticCurve.generate_curve_with_trace(256, 1)
+            >>> g = E.G
+            >>> d = random_int(g.order())
+            >>> q = g*d
+            >>> phi = E.additive_transfer_map()
+            >>> int((phi(q)/phi(g))[0]) == d
+            True
 
         References:
             https://www.hpl.hp.com/techreports/97/HPL-97-128.pdf

@@ -9,6 +9,7 @@ from samson.analyzers.english_analyzer import EnglishAnalyzer
 from samson.stream_ciphers.rc4 import RC4
 import base64
 import unittest
+import os
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s [%(levelname)s] %(message)s', level=logging.DEBUG)
@@ -28,13 +29,13 @@ def encrypt_rc4(secret):
 
 class XORTranspositionTestCase(unittest.TestCase):
     def try_encryptor(self, encryptor):
-        with open('tests/attacks/test_ctr_transposition.txt') as f:
+        with open(f'{os.path.dirname(os.path.abspath(__file__))}/test_ctr_transposition.txt') as f:
             secrets = [base64.b64decode(line.strip().encode()) for line in f.readlines()]
 
         ciphertexts = [encryptor(secret) for secret in secrets]
 
         analyzer = EnglishAnalyzer()
-        attack = XORTranspositionAttack(analyzer)
+        attack   = XORTranspositionAttack(analyzer)
         recovered_plaintexts = attack.execute(ciphertexts)
 
         print(recovered_plaintexts)

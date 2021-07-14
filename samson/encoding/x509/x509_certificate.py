@@ -38,13 +38,13 @@ class X509Certificate(PEMEncodable):
         self.serial_number = serial_number
         self.issuer = issuer
         self.subject = subject
+        self.is_ca = is_ca
         self.issuer_unique_id = issuer_unique_id
         self.subject_unique_id = subject_unique_id
         self.not_before = not_before or datetime.now()
         self.not_after = not_after or self.not_before.replace(year=self.not_before.year + 1)
         self.signing_alg = signing_alg
         self.signature_value = signature_value
-        self.is_ca = is_ca
 
 
     @classmethod
