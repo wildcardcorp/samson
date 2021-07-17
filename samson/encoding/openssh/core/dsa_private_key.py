@@ -73,7 +73,7 @@ class DSAPrivateKey(object):
         Parameters:
             encoded_bytes   (bytes): Bytes to be (partially?) decoded.
             already_unpacked (bool): Whether or not to do the initial length-decoding.
-        
+
         Returns:
             (DSAPrivateKey, bytes): The decoded object and unused bytes.
         """

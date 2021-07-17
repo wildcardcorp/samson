@@ -7,9 +7,10 @@ from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
-from samson.hashes.sha1 import SHA1
 from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
+from samson.encoding.x509.x509_extension import INVERSE_IA5_TAGS, X509Extension, X509SubjectKeyIdentifier
 from datetime import datetime, timezone
+from samson.hashes.sha1 import SHA1
 
 
 class X509Certificate(PEMEncodable):
@@ -29,16 +30,16 @@ class X509Certificate(PEMEncodable):
     PK_INFO_KEY = 'subjectPublicKeyInfo'
 
     def __init__(
-        self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca',
+        self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca', extensions: list=None,
         issuer_unique_id: int=None, subject_unique_id: int=None, not_before: datetime=None, not_after: datetime=None,
-        signing_alg: object=None, is_ca: bool=False, signature_value: bytes=None, **kwargs
+        signing_alg: object=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
         self.serial_number = serial_number
         self.issuer = issuer
         self.subject = subject
-        self.is_ca = is_ca
+        self.extensions = extensions
         self.issuer_unique_id = issuer_unique_id
         self.subject_unique_id = subject_unique_id
         self.not_before = not_before or datetime.now()
@@ -121,25 +122,14 @@ class X509Certificate(PEMEncodable):
         # Extensions
         extensions = rfc2459.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
 
-        if self.is_ca:
-            # SKI
-            pkey_bytes = Bytes(int(pub_info['subjectPublicKey']))
+        public_key_hash = SHA1().hash(Bytes(int(pub_info['subjectPublicKey'])))
 
-            ski_ext = rfc2459.Extension()
-            ski_ext['extnID']    = ObjectIdentifier([2, 5, 29, 14])
-            ski_ext['extnValue'] = OctetString(encoder.encode(rfc2459.SubjectKeyIdentifier(SHA1().hash(pkey_bytes))))
+        for extension in self.extensions:
+            if type(extension) == X509SubjectKeyIdentifier and extension.pub_key_hash is None:
+                extension = extension.copy()
+                extension.pub_key_hash = public_key_hash
 
-            # CA basic constraint
-            ca_value = rfc2459.BasicConstraints()
-            ca_value.setComponentByName('cA', True)
-
-            ca_ext = rfc2459.Extension()
-            ca_ext.setComponentByName('extnID', '2.5.29.19')
-            ca_ext.setComponentByName('critical', True)
-            ca_ext.setComponentByName('extnValue', OctetString(encoder.encode(ca_value)))
-
-            extensions.setComponentByPosition(0, ski_ext)
-            extensions.setComponentByPosition(1, ca_ext)
+            extensions.append(extension.build_extension())
 
 
         # Put together the TBSCert
@@ -239,14 +229,14 @@ class X509Certificate(PEMEncodable):
         not_after  = parse_time(validity['notAfter'])
 
 
-        is_ca = False
+        #is_ca = False
+        extensions = []
         if 'extensions' in tbs_cert:
             for ext in tbs_cert['extensions']:
-                if str(ext['extnID']) == '2.5.29.19':
-                    ext_val, _ = decoder.decode(bytes(ext['extnValue']))
-                    if len(ext_val):
-                        is_ca = bool(ext_val[0])
-                    break
+                try:
+                    extensions.append(X509Extension.parse(ext))
+                except ValueError:
+                    pass
 
 
         buffer      = encoder.encode(tbs_cert['subjectPublicKeyInfo'])
@@ -256,5 +246,5 @@ class X509Certificate(PEMEncodable):
         return cls(
             key=key, version=version, serial_number=serial_num, issuer=issuer, subject=subject,
             issuer_unique_id=issuer_unique_id, subject_unique_id=subject_unique_id, not_before=not_before, not_after=not_after,
-            signing_key=None, signing_alg=signing_alg, is_ca=is_ca, signature_value=signature
+            signing_key=None, signing_alg=signing_alg, signature_value=signature, extensions=extensions
         )

@@ -28,7 +28,7 @@ class Literal(object):
 
         Parameters:
             value (bytes): Value to be encoded.
-        
+
         Returns:
             Bytes: Encoded value.
         """
@@ -46,7 +46,7 @@ class Literal(object):
 
         Parameters:
             encoded_bytes (bytes): Bytes to be (partially?) decoded.
-        
+
         Returns:
             (bytes, bytes): The unpacked literal and unused bytes.
         """

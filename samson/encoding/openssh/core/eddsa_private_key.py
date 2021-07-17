@@ -42,7 +42,7 @@ class EdDSAPrivateKey(object):
             value (EdDSAPrivateKey): Value to encode.
             encryptor        (func): (Optional) Function to use as the encryptor.
             padding_size      (int): The block size to pad to. Usually 8 unless you're encrypting.
-        
+
         Returns:
             Bytes: Packed bytes.
         """
@@ -68,7 +68,7 @@ class EdDSAPrivateKey(object):
         Parameters:
             encoded_bytes   (bytes): Bytes to be (partially?) decoded.
             already_unpacked (bool): Whether or not to do the initial length-decoding.
-        
+
         Returns:
             (EdDSAPrivateKey, bytes): The decoded object and unused bytes.
         """

@@ -32,7 +32,7 @@ class ECDSAPublicKey(object):
 
         Parameters:
             value (ECDSAPublicKey): Value to encode.
-        
+
         Returns:
             Bytes: Packed bytes.
         """
@@ -50,7 +50,7 @@ class ECDSAPublicKey(object):
         Parameters:
             encoded_bytes   (bytes): Bytes to be (partially?) decoded.
             already_unpacked (bool): Whether or not to do the initial length-decoding.
-        
+
         Returns:
             (ECDSAPublicKey, bytes): The decoded object and unused bytes.
         """

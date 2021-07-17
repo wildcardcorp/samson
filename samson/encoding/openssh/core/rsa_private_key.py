@@ -49,7 +49,7 @@ class RSAPrivateKey(object):
             value (RSAPrivateKey): Value to encode.
             encryptor      (func): (Optional) Function to use as the encryptor.
             padding_size    (int): The block size to pad to. Usually 8 unless you're encrypting.
-        
+
         Returns:
             Bytes: Packed bytes.
         """
@@ -80,7 +80,7 @@ class RSAPrivateKey(object):
         Parameters:
             encoded_bytes (bytes): Bytes to be (partially?) decoded.
             decryptor      (func): (Optional) Function to use as the decryptor.
-        
+
         Returns:
             (RSAPrivateKey, bytes): The decoded object and unused bytes.
         """

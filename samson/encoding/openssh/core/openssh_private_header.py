@@ -79,7 +79,7 @@ class OpenSSHPrivateHeader(object):
 
         Parameters:
             value (bytes): Value to encode.
-        
+
         Returns:
             Bytes: Packed bytes.
         """
@@ -123,7 +123,7 @@ class OpenSSHPrivateHeader(object):
 
         Parameters:
             passphrase (bytes): Passphrase for key derivation.
-        
+
         Returns:
             (func, int): Encryption function and padding size.
         """
@@ -139,7 +139,7 @@ class OpenSSHPrivateHeader(object):
 
         Parameters:
             passphrase (bytes): Passphrase for key derivation.
-        
+
         Returns:
             func: Encryption function.
         """

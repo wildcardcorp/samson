@@ -61,6 +61,10 @@ def process_field(field):
         return str(field)
 
 
+def default_printer(fields):
+    return f': {", ".join(fields)}'
+
+
 class BaseObject(object):
     def __reprdir__(self):
         return self.__dict__.keys()
@@ -81,7 +85,7 @@ class BaseObject(object):
 
                 fields.append(key + val)
 
-            field_str = f': {", ".join([f for f in fields])}'
+            field_str = default_printer(fields)
 
         return f'<{cls_color(self.__class__.__name__)}{field_str}>'
 

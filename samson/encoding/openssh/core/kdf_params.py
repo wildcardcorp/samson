@@ -33,7 +33,7 @@ class KDFParams(object):
 
         Parameters:
             value (KDFParams): KDFParams to encode.
-        
+
         Returns:
             bytes: OpenSSH's encoding of KDFParams.
         """
@@ -47,7 +47,7 @@ class KDFParams(object):
 
         Parameters:
             encoded_bytes (bytes): Bytes to be (partially?) decoded.
-        
+
         Returns:
             (KDFParams, bytes): The unpacked KDFParams object and unused bytes.
         """

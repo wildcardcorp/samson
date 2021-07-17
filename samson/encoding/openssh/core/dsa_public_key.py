@@ -36,7 +36,7 @@ class DSAPublicKey(object):
 
         Parameters:
             value (DSAPublicKey): Value to encode.
-        
+
         Returns:
             Bytes: Packed bytes.
         """

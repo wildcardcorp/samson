@@ -30,7 +30,7 @@ class PackedBytes(object):
         Parameters:
             value     (bytes): Value to encode.
             force_pack (bool): Whether or not to pack zero-length values.
-        
+
         Returns:
             bytes: Packed bytes.
         """
@@ -53,7 +53,7 @@ class PackedBytes(object):
 
         Parameters:
             encoded_bytes (bytes): Bytes to be (partially?) decoded.
-        
+
         Returns:
             (bytes, bytes): The unpacked bytes and unused bytes.
         """

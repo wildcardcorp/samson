@@ -54,9 +54,9 @@ arguments = parser.parse_args()
 def try_parse(val):
     try:
         val = int(val)
-    except ValueError:
+    except (ValueError, TypeError):
         pass
-    
+
     return val
 
 
@@ -65,22 +65,20 @@ PARSE_METHOD = try_parse
 
 
 import re
-_spec_re = re.compile(r'([%@])')
-_lit_re  = re.compile(r'\'.*\'|".*"')
+_spec_re      = re.compile(r'([%@])')
+_lit_re       = re.compile(r'.*(\^\'.*\'|.*\^".*").*')
+_lit_after_re = re.compile(r'.*(#[0-9]{1,}).*')
 
 def process_literals(arg_str):
     preprocessed_literals = {}
     sanitized = arg_str
 
-    i = 0
-    while _lit_re.search(sanitized):
-        match   = _lit_re.search(sanitized)
-        literal = sanitized[match.start():match.end()]
+    match = _lit_re.search(sanitized) 
+    if match:
+        for idx, group in enumerate(match.groups()):
+            preprocessed_literals[f'#{idx}'] = group[2:-1]
+            sanitized = sanitized.replace(group, f'#{idx}')
 
-        preprocessed_literals[f'#{i}'] = literal[1:-1]
-        sanitized = sanitized.replace(literal, f'#{i}')
-        i += 1
-    
     return sanitized, preprocessed_literals
 
 
@@ -111,8 +109,15 @@ def export_pki(pki_obj, arguments):
         sanitized, preprocessed_literals = process_literals(arguments.encoding_args)
 
         processed_args = [arg.strip().split('=') for arg in sanitized.split(',')]
-        for i, (_, v)in enumerate(processed_args):
-            processed_args[i][1] = preprocessed_literals.get(v) or v
+        for i, (_, v) in enumerate(processed_args):
+            matches    = _lit_after_re.search(v)
+
+            if matches:
+                lit_groups = matches.groups()
+                for group in lit_groups:
+                    v = v.replace(group, preprocessed_literals[group])
+                
+            processed_args[i][1] = v
         
 
         encoding_args = {k: PARSE_METHOD(process_specials(v)) for k,v in processed_args}
