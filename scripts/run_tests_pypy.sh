@@ -7,5 +7,5 @@ then
   PYTEST=$(which pytest-3)
 fi
 
-USE_COLOR=0 pypy3 $PYTEST --doctest-modules --ignore=$DIR/../tests/
+USE_COLOR=0 pypy3 $PYTEST --doctest-modules --ignore=$DIR/../tests/ $DIR/../samson
 pypy3 -m unittest discover $DIR/../tests/

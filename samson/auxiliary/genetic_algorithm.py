@@ -97,6 +97,9 @@ class GeneticAlgorithm(BaseObject):
         self.convergence_granularity = convergence_granularity
 
 
+    def __hash__(self):
+        return object.__hash__(self)
+
 
     @RUNTIME.report
     def run(self, generations: int) -> OptimizationResult:

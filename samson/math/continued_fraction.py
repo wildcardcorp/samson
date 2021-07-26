@@ -34,7 +34,7 @@ class ContinuedFraction(BaseObject):
 
 
     @staticmethod
-    def from_list(cf):
+    def from_list(cf) -> 'ContinuedFraction':
         """
         Derives the fraction form for `cf`.
 
@@ -82,7 +82,7 @@ class ContinuedFraction(BaseObject):
             last, two = h, last
 
 
-    def convergents(self):
+    def convergents(self) -> list:
         """
         Generates the convergents of the continued fraction.
 

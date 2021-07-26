@@ -2,15 +2,20 @@ from samson.encoding.pem import PEMEncodable, pem_decode
 from samson.encoding.asn1 import parse_rdn,rdn_to_str
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
-from pyasn1.type.univ import ObjectIdentifier, Any, OctetString
+from pyasn1.type.univ import ObjectIdentifier, Any
 from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
 from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
-from samson.encoding.x509.x509_extension import INVERSE_IA5_TAGS, X509Extension, X509SubjectKeyIdentifier
+from samson.encoding.x509.x509_extension import X509Extension, X509SubjectKeyIdentifier, X509BasicConstraints, X509SubjectAlternativeName
 from datetime import datetime, timezone
 from samson.hashes.sha1 import SHA1
+
+_ext_shorthand = {
+    'is_ca': lambda is_ca: X509BasicConstraints(is_ca=is_ca),
+    'sans': lambda names: X509SubjectAlternativeName(names=names)
+}
 
 
 class X509Certificate(PEMEncodable):
@@ -39,7 +44,12 @@ class X509Certificate(PEMEncodable):
         self.serial_number = serial_number
         self.issuer = issuer
         self.subject = subject
-        self.extensions = extensions
+        self.extensions = extensions or []
+
+        for k,v in kwargs.items():
+            if k in _ext_shorthand:
+                self.extensions.append(_ext_shorthand[k](v))
+
         self.issuer_unique_id = issuer_unique_id
         self.subject_unique_id = subject_unique_id
         self.not_before = not_before or datetime.now()
@@ -125,9 +135,9 @@ class X509Certificate(PEMEncodable):
         public_key_hash = SHA1().hash(Bytes(int(pub_info['subjectPublicKey'])))
 
         for extension in self.extensions:
-            if type(extension) == X509SubjectKeyIdentifier and extension.pub_key_hash is None:
+            if type(extension) == X509SubjectKeyIdentifier and extension.key_identifier is None:
                 extension = extension.copy()
-                extension.pub_key_hash = public_key_hash
+                extension.key_identifier = public_key_hash
 
             extensions.append(extension.build_extension())
 
@@ -192,7 +202,7 @@ class X509Certificate(PEMEncodable):
     def decode(cls, buffer: bytes, **kwargs) -> object:
         from samson.encoding.general import PKIAutoParser
 
-        cert, _left_over = decoder.decode(buffer, asn1Spec=rfc2459.Certificate())
+        cert, _left_over = decoder.decode(bytes(buffer), asn1Spec=rfc2459.Certificate())
 
         signature    = Bytes(int(cert['signatureValue']))
         cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])]

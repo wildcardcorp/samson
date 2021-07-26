@@ -258,20 +258,20 @@ class X509ExtendedKeyUsage(X509Extension):
 class X509SubjectKeyIdentifier(X509Extension):
     EXT_TYPE = X509ExtensionType.SUBJECT_KEY_IDENTIFER
 
-    def __init__(self, pub_key_hash: bytes=None, critical: bool=False) -> None:
-        self.pub_key_hash = pub_key_hash
+    def __init__(self, key_identifier: bytes=None, critical: bool=False) -> None:
+        self.key_identifier = key_identifier
         super().__init__(critical=critical)
     
 
     def build_extension(self) -> rfc5280.Extension:
-        ski = rfc2459.SubjectKeyIdentifier(self.pub_key_hash)
+        ski = rfc2459.SubjectKeyIdentifier(self.key_identifier)
         return super().build_extension(ski)
 
 
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509SubjectKeyIdentifier':
         ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc2459.SubjectKeyIdentifier())
-        return X509SubjectKeyIdentifier(pub_key_hash=bytes(ext_val), critical=critical)
+        return X509SubjectKeyIdentifier(key_identifier=bytes(ext_val), critical=critical)
 
 
 

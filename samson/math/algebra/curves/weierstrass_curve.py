@@ -517,7 +517,7 @@ class WeierstrassPoint(RingElement):
             r, n = congruence
         else:
             r, n = 0, 1
-        
+
         # Our BSGS implementation fails for points of order 2 since the point at infinity and our `x`
         # are both zero
         if not g*2:
@@ -807,6 +807,7 @@ class WeierstrassCurve(Ring):
         Examples:
             >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
             >>> from samson.math.algebra.rings.integer_ring import ZZ
+            >>> from samson.math.general import find_prime
             >>> # Uses a hybrid of BSGS and Schoofs for medium size curves
             >>> R = ZZ/ZZ(find_prime(20))
             >>> E, _ = EllipticCurve.random_curve(R.quotient)

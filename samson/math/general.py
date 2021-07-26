@@ -3,6 +3,7 @@ from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFai
 from samson.auxiliary.complexity import add_complexity, KnownComplexities
 from samson.utilities.runtime import RUNTIME
 from functools import reduce
+from typing import Tuple, List
 from types import FunctionType
 from copy import deepcopy, copy
 from enum import Enum
@@ -85,7 +86,7 @@ def poly_to_int(poly: 'Polynomial') -> int:
     return value
 
 
-def frobenius_monomial_base(poly: 'Polynomial') -> list:
+def frobenius_monomial_base(poly: 'Polynomial') -> List['Polynomial']:
     """
     Generates a list of monomials of x**(i*p) % g for range(`poly`.degrees()). Used with Frobenius map.
 
@@ -93,7 +94,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
         poly (Polynomial): Polynomial to generate bases for.
 
     Returns:
-        list: List of monomial bases mod g.
+        List[Polynomial]: List of monomial bases mod g.
 
     References:
         https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
@@ -128,14 +129,14 @@ def frobenius_monomial_base(poly: 'Polynomial') -> list:
     return bases
 
 
-def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polynomial':
+def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: List['Polynomial']=None) -> 'Polynomial':
     """
     Computes `f`**p % `g` using the Frobenius map.
 
     Parameters:
-        f (Polynomial): Base.
-        g (Polynomial): Modulus.
-        bases   (list): Frobenius monomial bases. Will generate if not provided.
+        f           (Polynomial): Base.
+        g           (Polynomial): Modulus.
+        bases (List[Polynomial]): Frobenius monomial bases. Will generate if not provided.
 
     Returns:
         Polynomial: `f`**p % `g`
@@ -165,16 +166,16 @@ def frobenius_map(f: 'Polynomial', g: 'Polynomial', bases: list=None) -> 'Polyno
     return sf
 
 
-def gcd(*args) -> int:
+def gcd(*args) -> 'RingElement':
     """
-    Iteratively computes the greatest common denominator.
+    Iteratively computes the greatest common divisor.
 
     Parameters:
-        a (int): First integer.
-        b (int): Second integer.
+        a (RingElement): First element.
+        b (RingElement): Second element.
 
     Returns:
-        int: GCD of `a` and `b`.
+        RingElement: GCD of `a` and `b`.
 
     Examples:
         >>> from samson.math.general import gcd
@@ -205,17 +206,17 @@ def gcd(*args) -> int:
     return total
 
 
-def xgcd(a: int, b: int) -> (int, int, int):
+def xgcd(a: 'RingElement', b: 'RingElement') -> Tuple['RingElement', 'RingElement', 'RingElement']:
     """
     Extended Euclidean algorithm form of GCD.
     `a`x + `b`y = gcd(`a`, `b`)
 
     Parameters:
-        a (int): First integer.
-        b (int): Second integer.
+        a (RingElement): First integer.
+        b (RingElement): Second integer.
 
     Returns:
-        (int, int, int): Formatted as (GCD, x, y).
+        Tuple[RingElement, RingElement, RingElement]: Formatted as (GCD, x, y).
 
     Examples:
         >>> from samson.math.general import xgcd
@@ -268,16 +269,16 @@ def xgcd(a: int, b: int) -> (int, int, int):
     return g, s, t
 
 
-def lcm(*args) -> int:
+def lcm(*args) -> 'RingElement':
     """
     Calculates the least common multiple of `a` and `b`.
 
     Parameters:
-        a (int): First integer.
-        b (int): Second integer.
+        a (RingElement): First integer.
+        b (RingElement): Second integer.
 
     Returns:
-        int: Least common multiple.
+        RingElement: Least common multiple.
 
     Examples:
         >>> from samson.math.general import lcm
@@ -302,7 +303,7 @@ def lcm(*args) -> int:
     return total
 
 
-def xlcm(a: 'RingElement', b: 'RingElement') -> 'RingElement':
+def xlcm(a: 'RingElement', b: 'RingElement') -> Tuple['RingElement', 'RingElement', 'RingElement']:
     """
     Extended least common multiple. Finds the LCM and two integers `n` and `m` such that
     `l` == `n`*`m` and gcd(`n`, `m`) == 1.
@@ -330,16 +331,16 @@ def xlcm(a: 'RingElement', b: 'RingElement') -> 'RingElement':
 
 
 @RUNTIME.global_cache()
-def mod_inv(a: int, n: int) -> int:
+def mod_inv(a: 'RingElement', n: 'RingElement') -> 'RingElement':
     """
     Calculates the modular inverse.
 
     Parameters:
-        a (int): Integer.
-        n (int): Modulus.
+        a (RingElement): Element to invert.
+        n (RingElement): Modulus.
 
     Returns:
-        int: Modular inverse of `a` over `n`.
+        RingElement: Modular inverse of `a` over `n`.
 
     Examples:
         >>> from samson.math.general import mod_inv
@@ -375,17 +376,17 @@ def mod_inv(a: int, n: int) -> int:
 
 
 @add_complexity(KnownComplexities.LOG)
-def square_and_mul(g: int, u: int, s: int=None) -> int:
+def square_and_mul(g: 'RingElement', u: int, s: 'RingElement'=None) -> 'RingElement':
     """
     Computes `s` = `g` ^ `u` over arbitrary rings.
 
     Parameters:
-        g (int): Base.
-        u (int): Exponent.
-        s (int): The 'one' value of the ring.
+        g (RingElement): Base.
+        u         (int): Exponent.
+        s (RingElement): The 'one' value of the ring.
 
     Returns:
-        int: `g` ^ `u` within its ring.
+        RingElement: `g` ^ `u` within its ring.
 
     Examples:
         >>> from samson.math.general import mod_inv
@@ -419,17 +420,17 @@ def square_and_mul(g: int, u: int, s: int=None) -> int:
 
 
 @add_complexity(KnownComplexities.LOG)
-def fast_mul(a: int, b: int, s: int=None) -> int:
+def fast_mul(a: 'RingElement', b: int, s: 'RingElement'=None) -> 'RingElement':
     """
     Computes `s` = `a` * `b` over arbitrary rings.
 
     Parameters:
-        a (int): Element `a`.
-        b (int): Multiplier.
-        s (int): The 'zero' value of the ring.
+        a (RingElement): Element `a`.
+        b         (int): Multiplier.
+        s (RingElement): The 'zero' value of the ring.
 
     Returns:
-        int: `a` * `b` within its ring.
+        RingElement: `a` * `b` within its ring.
 
     Examples:
         >>> from samson.math.general import fast_mul
@@ -600,13 +601,13 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
 
 
 @add_complexity(KnownComplexities.LINEAR)
-def crt(residues: list, auto_correct: bool=True) -> (object, object):
+def crt(residues: List['QuotientElement'], auto_correct: bool=True) -> Tuple['RingElement', 'RingElement']:
     """
     Performs the Chinese Remainder Theorem and returns the computed `x` and modulus.
 
     Parameters:
-        residues     (list): Residues of `x` as QuotientElements or tuples.
-        auto_correct (bool): Whether or not to automatically remove redundancy.
+        residues (List[QuotientElement]): Residues of `x` as QuotientElements or tuples.
+        auto_correct              (bool): Whether or not to automatically remove redundancy.
 
     Returns:
         (RingElement, RingElement): Formatted as (computed `x`, modulus).
@@ -680,7 +681,7 @@ def crt(residues: list, auto_correct: bool=True) -> (object, object):
 
 
 
-def _crt(residues: list) -> (object, object):
+def _crt(residues: List['RingElement']) -> Tuple['RingElement', 'RingElement']:
     x    = residues[0].val
     Nx   = residues[0].ring.quotient
 
@@ -694,15 +695,15 @@ def _crt(residues: list) -> (object, object):
     return x, Nx
 
 
-def crt_lll(residues: list, remove_redundant: bool=True) -> 'QuotientElement':
+def crt_lll(residues: List['QuotientElement'], remove_redundant: bool=True) -> 'QuotientElement':
     """
     Imitates the Chinese Remainder Theorem using LLL and returns the computed `x`.
     Unlike CRT, this does not require the moduli be coprime. However, this method only
     returns a representative since the solution isn't unique.
 
     Parameters:
-        residues         (list): Residues of `x` as QuotientElements.
-        remove_redundant (bool): Whether or not to remove redundant subgroups to minimize the result.
+        residues (List[QuotientElement]): Residues of `x` as QuotientElements.
+        remove_redundant          (bool): Whether or not to remove redundant subgroups to minimize the result.
 
     Returns:
         QuotientElement: Computed `x` over composite modulus.
@@ -1047,7 +1048,7 @@ def gaussian_elimination(system_matrix: 'Matrix', rhs: 'Matrix') -> 'Matrix':
 
 
 @add_complexity(KnownComplexities.GRAM)
-def gram_schmidt(matrix: 'Matrix', full: bool=False, A_star: 'Matrix'=None, mu: 'Matrix'=None) -> 'Matrix':
+def gram_schmidt(matrix: 'Matrix', full: bool=False, A_star: 'Matrix'=None, mu: 'Matrix'=None) -> Tuple['Matrix', 'Matrix']:
     """
     Performs Gram-Schmidt orthonormalization.
 
@@ -1057,7 +1058,7 @@ def gram_schmidt(matrix: 'Matrix', full: bool=False, A_star: 'Matrix'=None, mu: 
         A_star (Matrix): Previous `Q` matrix truncated to required
 
     Returns:
-        Matrix: Orthonormalized row vectors.
+        Tuple[Matrix, Matrix]: Formatted as (orthonormalized row vectors, transform matrix).
 
     Examples:
         >>> from samson.math.all import QQ
@@ -1209,7 +1210,7 @@ def lll(in_basis: 'Matrix', delta: float=0.75) -> 'Matrix':
     return basis
 
 
-def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) -> list:
+def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) -> List[int]:
     """
     Generates a superincreasing sequence.
 
@@ -1219,7 +1220,7 @@ def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) ->
         starting (int): Minimum starting integer.
 
     Returns:
-        list: List of the superincreasing sequence.
+        List[int]: List of the superincreasing sequence.
 
     Examples:
         >>> from samson.math.general import generate_superincreasing_seq
@@ -1239,13 +1240,13 @@ def generate_superincreasing_seq(length: int, max_diff: int, starting: int=0) ->
 
 
 
-def find_coprime(p: int, search_range: list) -> int:
+def find_coprime(p: int, search_range: List[int]) -> int:
     """
     Attempts to find an integer coprime to `p`.
 
     Parameters:
-        p             (int): Integer to find coprime for.
-        search_range (list): Range to look in.
+        p                  (int): Integer to find coprime for.
+        search_range (List[int]): Range to look in.
     
     Returns:
         int: Integer coprime to `p`.
@@ -1392,12 +1393,12 @@ def primes(start: int, stop: int=None) -> list:
         p += 2
 
 
-def berlekamp_massey(output_list: list) -> 'Polynomial':
+def berlekamp_massey(output_list: List[int]) -> 'Polynomial':
     """
     Performs the Berlekamp-Massey algorithm to find the shortest LFSR for a binary output sequence.
 
     Parameters:
-        output_list (list): Output of LFSR.
+        output_list (List[int]): Output of LFSR.
 
     Returns:
         Polynomial: Polyomial that represents the shortest LFSR.
@@ -1582,7 +1583,7 @@ def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterat
 
 
 
-def hasse_frobenius_trace_interval(p: int) -> (int, int):
+def hasse_frobenius_trace_interval(p: int) -> Tuple[int, int]:
     """
     Finds the interval relative to `p` in which the Frobenius trace must reside according to Hasse's theorem.
 
@@ -1711,13 +1712,13 @@ def primes_product(n: int, blacklist: list=None) -> list:
 
 
 
-def find_representative(quotient_element: 'QuotientElement', valid_range: list) -> int:
+def find_representative(quotient_element: 'QuotientElement', valid_range: range) -> int:
     """
     Finds the representative element of `quotient_element` within `valid_range`.
 
     Parameters:
         quotient_element (QuotientElement): Element to search for.
-        valid_range                 (list): Range to search in.
+        valid_range                (range): Range to search in.
 
     Returns:
         int: Representative element.
@@ -1776,13 +1777,13 @@ def __fast_double_elliptic_frobenius(T, curve, point):
 
 
 
-def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
+def frobenius_trace_mod_l(curve: 'EllipticCurve', l: int) -> 'QuotientElement':
     """
     Finds the Frobenius trace modulo `l` for faster computation.
 
     Parameters:
-        curve (object): Elliptic curve.
-        l        (int): Prime modulus.
+        curve (EllipticCurve): Elliptic curve.
+        l               (int): Prime modulus.
 
     Returns:
         QuotientElement: Modular residue of the Frobenius trace.
@@ -1846,12 +1847,12 @@ def frobenius_trace_mod_l(curve: object, l: int) -> 'QuotientElement':
 
 
 
-def frobenius_trace(curve: object) -> int:
+def frobenius_trace(curve: 'EllipticCurve') -> int:
     """
     Calculates the Frobenius trace of the `curve`.
 
     Parameters:
-        curve (object): Elliptic curve.
+        curve (EllipticCurve): Elliptic curve.
 
     Returns:
         int: Frobenius trace.
@@ -1898,12 +1899,12 @@ def frobenius_trace(curve: object) -> int:
     return find_representative((ZZ/ZZ(mod))(n), range(*search_range))
 
 
-def schoofs_algorithm(curve: object) -> int:
+def schoofs_algorithm(curve: 'EllipticCurve') -> int:
     """
     Performs Schoof's algorithm to count the number of points on an elliptic curve.
 
     Parameters:
-        curve (object): Elliptic curve to find cardinality of.
+        curve (EllipticCurve): Elliptic curve to find cardinality of.
 
     Returns:
         int: Curve cardinality.
@@ -1922,7 +1923,7 @@ def schoofs_algorithm(curve: object) -> int:
 
 
 @RUNTIME.global_cache(8)
-def __build_bsgs_table(g: 'RingElement', end: int, e: 'RingElement'=None, start: int=0):
+def __build_bsgs_table(g: 'RingElement', end: int, e: 'RingElement'=None, start: int=0) -> Tuple[int, dict]:
     search_range = end - start
     table        = {}
     m            = kth_root(search_range, 2)
@@ -1972,21 +1973,25 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
 
     """
     if hasattr(h, 'bsgs'):
-        return h.bsgs(g, end=end, start=start, e=e)
-    else:
-        m, table = __build_bsgs_table(g, end, e, start)
+        try:
+            return h.bsgs(g, end=end, start=start, e=e)
+        except (ValueError, SearchspaceExhaustedException):
+            # Implementation specific BSGS may not handle all situations
+            pass
 
-        factor = g * m
-        o = g * start
-        e = h
-        for i in range(m):
-            e = h - o
-            if e in table:
-                return i*m + table[e] + start
+    m, table = __build_bsgs_table(g, end, e, start)
 
-            o += factor
+    factor = g * m
+    o = g * start
+    e = h
+    for i in range(m):
+        e = h - o
+        if e in table:
+            return i*m + table[e] + start
 
-        raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
+        o += factor
+
+    raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
 
 @add_complexity(KnownComplexities.PH)
@@ -2287,7 +2292,7 @@ def jacobi_symbol(n: int, k: int) -> ResidueSymbol:
         return ResidueSymbol(0)
 
 
-def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
+def generate_lucas_selfridge_parameters(n: int) -> Tuple[int, int, int]:
     """
     Generates the Selfridge parameters to use in Lucas strong pseudoprime testing.
 
@@ -2295,7 +2300,7 @@ def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
         n (int): Possible prime.
 
     Returns:
-        (int, int, int): Selfridge parameters.
+        Tuple[int, int, int]: Selfridge parameters.
     """
     D = 5
     while True:
@@ -2314,7 +2319,7 @@ def generate_lucas_selfridge_parameters(n: int) -> (int, int, int):
     return (D, 1, (1-D) // 4)
 
 
-def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> (int, int, int):
+def generate_lucas_sequence(n: int, P: int, Q: int, k: int) -> Tuple[int, int, int]:
     """
     Generates a Lucas sequence. Used internally for the Lucas primality test.
 
@@ -2617,7 +2622,7 @@ def is_primitive_root(a: int, p: int) -> bool:
 
 
 
-def product(elem_list: list, return_tree=False) -> object:
+def product(elem_list: List['RingElement'], return_tree: bool=False) -> 'RingElement':
     """
     Calculates the product of all elements in `elem_list`.
 
@@ -2660,15 +2665,15 @@ def product(elem_list: list, return_tree=False) -> object:
 
 
 
-def batch_gcd(elem_list: list) -> list:
+def batch_gcd(elem_list: List['RingElement']) -> List['RingElement']:
     """
-    Calculates the greatest common denominators of any two elements in `elem_list`.
+    Calculates the greatest common divisors of any two elements in `elem_list`.
 
     Parameters:
-        elem_list (list): List of RingElements.
+        elem_list (List[RingElement]): List of RingElements.
 
     Returns:
-        list: Greatest common denominators of any two elements.
+        List[RingElement]: Greatest common divisors of any two elements.
 
     Examples:
         >>> from samson.math.general import batch_gcd
@@ -3095,7 +3100,7 @@ def find_smooth_close_to(n: int, max_j: int=5, primes: list=None) -> int:
     return n
 
 
-def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -> (int, int):
+def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -> Tuple[int, int]:
     """
     Solves the Diophantine equation `x`^2 + `d`*`y`^2 = `p`.
 
@@ -3105,7 +3110,17 @@ def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -
         all_sols (bool): Whether or not to return all (primitive) solutions.
 
     Returns:
-        (int, int): Formatted as (`x`, `y`).
+        Tuple[int, int]: Formatted as (`x`, `y`).
+
+    Examples:
+        >>> from samson.math.general import cornacchias_algorithm
+        >>> d, p = 3, 52
+        >>> x, y = cornacchias_algorithm(d, p)
+        >>> x, y
+        (5, 3)
+
+        >>> x**2 + d*y**2 == p
+        True
 
     References:
         https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm
@@ -3143,7 +3158,7 @@ def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -
         raise NoSolutionException()
 
 
-def binary_quadratic_forms(D: int) -> list:
+def binary_quadratic_forms(D: int) -> List[Tuple[int]]:
     """
     Returns the list of primitive binary quadratic forms satisfying `a`*`x`^2 + `b`*`x`*`y` + `c`*`y`^2 (i.e. `b`^2 - 4`a``c` = -`D`).
 
@@ -3151,7 +3166,7 @@ def binary_quadratic_forms(D: int) -> list:
         D (int): Discriminant.
 
     Returns:
-        list: List of primitives BQFs satsifying the equation for D.
+        List[Tuple[int]]: List of primitives BQFs satsifying the equation for D.
 
     References:
         https://crypto.stanford.edu/pbc/notes/ep/hilbert.html
@@ -3188,6 +3203,17 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
 
     Returns:
         Polynomial: Hilbert class polynomial.
+
+    Examples:
+        >>> from samson.math.general import hilbert_class_polynomial
+        >>> hilbert_class_polynomial(3)
+        <Polynomial: y, coeff_ring=ZZ>
+
+        >>> hilbert_class_polynomial(7)
+        <Polynomial: y + 3375, coeff_ring=ZZ>
+
+        >>> hilbert_class_polynomial(31)
+        <Polynomial: y^3 + (39491307)*y^2 + (-58682638134)*y + 1566028350940383, coeff_ring=ZZ>
 
     References:
         https://github.com/sagemath/sage/blob/master/src/sage/schemes/elliptic_curves/cm.py
@@ -3236,7 +3262,16 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
 
 
 
-def newton_method_sizes(prec: int) -> list:
+def newton_method_sizes(prec: int) -> List[int]:
+    """
+    Generates a precision ladder for Netwon's method.
+
+    Parameters:
+        prec (int): Desired final precision.
+
+    Returns:
+        List[int]: Optimized precision ladder.
+    """
     output = []
     while prec > 1:
         output.append(prec)
@@ -3249,15 +3284,15 @@ def newton_method_sizes(prec: int) -> list:
 
 
 
-def batch_inv(elements: list) -> list:
+def batch_inv(elements: List['RingElement']) -> List['RingElement']:
     """
     Efficiently inverts a list of elements using a single inversion (cost 3m + I).
 
     Parameters:
-        elements (list): Elements to invert.
+        elements (List[RingElement]): Elements to invert.
 
     Returns:
-        list: List of inverted elements.
+        List[RingElement]: List of inverted elements.
 
     References:
         https://math.mit.edu/classes/18.783/2015/LectureNotes8.pdf

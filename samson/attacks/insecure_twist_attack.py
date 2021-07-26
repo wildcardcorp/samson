@@ -1,3 +1,4 @@
+from math import exp
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.oracle import Oracle
 from samson.math.factorization.general import factor
@@ -8,9 +9,9 @@ import logging
 log = logging.getLogger(__name__)
 
 class InsecureTwistAttack(object):
-    def __init__(self, oracle: Oracle, g: 'WeierstrassPoint', curve: 'WeierstrassCurve', processes: int=1):
-        self.oracle = oracle
-        self.g      = g
+    def __init__(self, oracle: Oracle, g: 'WeierstrassPoint', processes: int=1):
+        self.oracle    = oracle
+        self.g         = g
         self.processes = processes
 
 
@@ -29,7 +30,6 @@ class InsecureTwistAttack(object):
         facs = [(p, e) for p,e in factor(order).items() if p < max_factor_size]
         log.info(f'Found factors: {facs}')
 
-        @RUNTIME.parallel(processes=self.processes, starmap=True, visual=True, visual_args={'desc': 'Prime power residues'})
         def find_residues(p, exponent):
             res = 0
             for e in range(1, exponent+1):
@@ -37,7 +37,7 @@ class InsecureTwistAttack(object):
                 v = u*(u.order() // subgroup)
 
                 def find_sub_res(res):
-                    for i in range(res, subgroup+1, subgroup // p):
+                    for i in range(res, subgroup, subgroup // p):
                         if self.oracle.request(v, v*i):
                             return i
 
@@ -49,10 +49,10 @@ class InsecureTwistAttack(object):
 
                 res  = found
                 res %= subgroup
-            
+
             return res, subgroup
 
-        residues = find_residues(facs)
+        residues = [find_residues(p, e) for p,e in facs]
 
 
         idempotents = []

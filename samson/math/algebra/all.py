@@ -3,7 +3,7 @@ from .fields.finite_field import FiniteField, FiniteFieldElement
 from .fields.fraction_field import FractionField, FractionFieldElement
 from .fields.real_field import RealField, RR, RealElement
 from .rings.endomorphism_ring import Endomorphism, EndomorphismRing, End
-from .rings.integer_ring import IntegerRing, ZZ, IntegerElement, QQ
+from .rings.integer_ring import IntegerRing, ZZ, IntegerElement
 from .rings.matrix_ring import MatrixRing
 from .rings.padic_integers import PAdicIntegerRing, Zp
 from samson.math.algebra.rings.padic_numbers import Qp, PAdicNumberField, PAdicNumberElement
@@ -18,5 +18,6 @@ from .curves.util import *
 
 GF    = FF = FiniteField
 Frac  = FractionField
+QQ    = Frac(ZZ)
 QQ128 = FractionField(ZZ)
 QQ128.set_precision(ZZ(2**128))

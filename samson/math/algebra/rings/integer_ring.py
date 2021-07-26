@@ -4,6 +4,7 @@ from samson.math.general import is_prime, kth_root
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from samson.math.symbols import oo
+from functools import lru_cache
 
 class IntegerElement(RingElement):
     """
@@ -180,7 +181,7 @@ class IntegerRing(Ring):
         elif type_o is int:
             return IntegerElement(other, self)
 
-        elif other.ring == QQ and other.denominator == ZZ.one:
+        elif other.ring == _get_QQ() and other.denominator == ZZ.one:
             return other.numerator
 
         try:
@@ -197,4 +198,7 @@ class IntegerRing(Ring):
 
 
 ZZ = IntegerRing()
-QQ = ZZ.fraction_field()
+
+@lru_cache(1)
+def _get_QQ():
+    return ZZ.fraction_field()

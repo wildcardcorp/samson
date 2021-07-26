@@ -4,9 +4,10 @@ from samson.math.factorization.general import factor
 from samson.math.map import Map
 from samson.utilities.bytes import Bytes
 from samson.utilities.exceptions import CoercionException
+from typing import Tuple
 
 # https://tools.ietf.org/html/rfc7748
-def cswap(swap: int, x_2: int, x_3: int) -> (int, int):
+def cswap(swap: int, x_2: int, x_3: int) -> Tuple[int, int]:
     """
     Conditional constant-time swap.
 
@@ -152,7 +153,7 @@ class MontgomeryCurve(Ring):
         return Bytes(self.oid.encode()).int() if self.oid else hash((self.A, self.B))
 
 
-    def to_weierstrass_form(self) -> 'WeierstrassCurve':
+    def to_weierstrass_form(self) -> Tuple['WeierstrassCurve', Map]:
         """
         References:
             https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_Weierstrass_curves
@@ -188,7 +189,7 @@ class MontgomeryCurve(Ring):
 
 
 
-    def find_gen(self):
+    def find_gen(self) -> 'MontgomeryPoint':
         E, _ = self.to_weierstrass_form()
         G    = E.find_gen()
 
@@ -277,79 +278,60 @@ class MontgomeryPoint(RingElement):
 
     def __eq__(self, other: 'MontgomeryPoint') -> bool:
         return self.x == other.x and self.y == other.y and self.curve == other.curve
+    
+
+    def __double__(self) -> 'MontgomeryPoint':
+        A, B   = self.curve.A, self.curve.B
+        x1, y1 = self.x, self.y
+
+        x12  = x1*x1
+        xA   = (3*x12+2*A*x1+1)
+        xA2  = xA*xA
+        yB   = (2*B*y1)
+        iyB  = ~yB
+        iyB2 = iyB*iyB
+
+        x3   = B*xA2*iyB2-A-x1-x1
+        y3   = (2*x1+x1+A)*xA*iyB-B*xA*xA2*iyB2*iyB-y1
+        return MontgomeryPoint(x3, y3, self.curve)
+
 
 
     def __add__(self, P2: 'MontgomeryPoint') -> 'MontgomeryPoint':
-        if P2 == self:
-            return self*2
-        raise NotImplementedError()
-
-    def __sub__(self, other: 'MontgomeryPoint') -> 'MontgomeryPoint':
-        raise NotImplementedError()
-
-
-    def cache_mul(self, size: int) -> 'BitVectorCache':
-        """
-        Montgomery points can't use the BitVectorCache as they do not support element addition.
-        """
-        return self
-
-
-    def __recover_y(self, xP, yP, xQ, zQ, xR, zR):
-        v1 = xP*zQ
-        v2 = xQ + v1
-        v3 = xQ - v1
-        v3 = v3**2
-        v3 = v3 * xR
-        v1 = self.curve.A*2*zQ
-        v2 = v2 + v1
-        v4 = xP * xQ
-        v4 = v4 + zQ
-        v2 = v2 * v4
-        v1 = v1*zQ
-        v2 = v2 - v1
-        v2 = v2*zR
-        Y = v2 - v3
-        v1 = self.curve.B*2 * yP
-        v1 = v1 * zQ
-        v1 = v1 * zR
-        X = v1 * xQ
-        Z = v1 * zQ
-
-        return X, Y, Z
-
-
-    def __mul__(self, other):
         """
         References:
-            "Montgomery curves and their arithmetic" (https://eprint.iacr.org/2017/212.pdf)
-            https://tools.ietf.org/html/rfc7748#section-5
+            http://hyperelliptic.org/EFD/g1p/auto-montgom.html
         """
-        u = self.x
-        k = other % self.curve.order()
-        u2, w2 = (1, 0)
-        u3, w3 = (u, 1)
-        p = u.ring.characteristic()
-        A = self.curve.A
+        # This throws a ZeroDivisionError otherwise
+        if not self:
+            return P2
 
-        for i in reversed(range(other.bit_length())):
-            b = 1 & (k >> i)
-            u2, u3 = cswap(b, u2, u3)
-            w2, w3 = cswap(b, w2, w3)
-            u3, w3 = ((u2*u3 - w2*w3)**2,
-                        u * (u2*w3 - w2*u3)**2)
-            u2, w2 = ((u2**2 - w2**2)**2,
-                        4*u2*w2 * (u2**2 + A*u2*w2 + w2**2))
-            u2, u3 = cswap(b ,u2, u3)
-            w2, w3 = cswap(b, w2, w3)
+        elif not P2:
+            return self
 
-        X, Y, Z = self.__recover_y(self.x, self.y, u2, w2, u3, w3)
-        Z_inv = Z**(p-2)
-        return MontgomeryPoint(X*Z_inv, Y*Z_inv, self.curve)
+        elif P2 == self:
+            return self.__double__()
+
+        elif -P2 == self:
+            return self.curve.zero
+
+        A, B   = self.curve.A, self.curve.B
+        x1, y1 = self.x, self.y
+        x2, y2 = P2.x, P2.y
+
+        x3 = B*(y2-y1)**2/(x2-x1)**2-A-x1-x2
+        y3 = (2*x1+x2+A)*(y2-y1)/(x2-x1)-B*(y2-y1)**3/(x2-x1)**3-y1
+        return MontgomeryPoint(x3, y3, self.curve)
+
+        
+
+
+    def __neg__(self) -> 'MontgomeryPoint':
+        return MontgomeryPoint(self.x, -self.y, self.curve)
 
 
 
-    def to_weierstrass_coordinate(self) -> 'WeierstrassPoint':
+    def to_weierstrass_coordinate(self) -> Tuple[RingElement, RingElement]:
         A = self.curve.A
         B = self.curve.B
 

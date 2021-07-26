@@ -15,9 +15,9 @@ class InsecureTwistAttackTestCase(unittest.TestCase):
         d = 12660731876859916047701477
         Q = d*g
         def oracle(v, v2):
-            return v*d == v2
+            return (v*d).x == v2.x
 
 
-        attack = InsecureTwistAttack(Oracle(oracle), g, 8)
+        attack = InsecureTwistAttack(Oracle(oracle), g, 1)
         found  = attack.execute(Q, 2**8)
         self.assertEqual(d, found)

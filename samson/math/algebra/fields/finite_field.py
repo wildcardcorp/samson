@@ -182,6 +182,8 @@ class FiniteField(Field):
 
 
     def random(self, size: FiniteFieldElement=None) -> FiniteFieldElement:
+        if size is not None:
+            size = size.val
         return self(self.internal_field.random(size))
 
 
