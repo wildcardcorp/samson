@@ -25,90 +25,115 @@ samson's key focuses are:
 
 ## Examples
 ### **REPL**
+The REPL's prompt provides information about the execution context and is formatted as such:
+```
+┌──(samson)─[EXECUTION NUMBER]─[CURRENT TIME]─[LAST EXECUTION TIME]─[USER@HOSTNAME]─[CWD]
+└─$
+```
+
+Usage of the REPL:
+
 ```python
 ╰─>$ samson
 
 
+                                                                
+  /%%%%%%%  /%%%%%%  /%%%%%%/%%%%   /%%%%%%%  /%%%%%%  /%%%%%%% 
+ /%%_____/ |____  %%| %%_  %%_  %% /%%_____/ /%%__  %%| %%__  %%
+|  %%%%%%   /%%%%%%%| %% \ %% \ %%|  %%%%%% | %%  \ %%| %%  \ %%
+ \____  %% /%%__  %%| %% | %% | %% \____  %%| %%  | %%| %%  | %%
+ /%%%%%%%/|  %%%%%%%| %% | %% | %% /%%%%%%%/|  %%%%%%/| %%  | %%
+|_______/  \_______/|__/ |__/ |__/|_______/  \______/ |__/  |__/                                                                
+                                                                
+                                                                
+    v0.2.5 -- https://github.com/wildcardcorp/samson
 
-  /$$$$$$$  /$$$$$$  /$$$$$$/$$$$   /$$$$$$$  /$$$$$$  /$$$$$$$
- /$$_____/ |____  $$| $$_  $$_  $$ /$$_____/ /$$__  $$| $$__  $$
-|  $$$$$$   /$$$$$$$| $$ \ $$ \ $$|  $$$$$$ | $$  \ $$| $$  \ $$
- \____  $$ /$$__  $$| $$ | $$ | $$ \____  $$| $$  | $$| $$  | $$
- /$$$$$$$/|  $$$$$$$| $$ | $$ | $$ /$$$$$$$/|  $$$$$$/| $$  | $$
-|_______/  \_______/|__/ |__/ |__/|_______/  \______/ |__/  |__/
-
-
-
-    v0.2.4 -- https://github.com/wildcardcorp/samson
-
-Python 3.6.9 (1608da62bfc7, Dec 23 2019, 10:50:04)
-[PyPy 7.3.0 with GCC 7.3.1 20180303 (Red Hat 7.3.1-5)]
-IPython 7.13.0
-
-
-In [1]: logging.getLogger("samson").setLevel(logging.INFO)
+Python 3.6.9 (78d4c48fa091, Apr 30 2020, 07:55:31)
+[PyPy 7.3.1 with GCC 10.0.1 20200328 (Red Hat 10.0.1-0.11)]
+IPython 7.16.1
 
 
-In [2]: RC4(b'what a key!').generate(12) ^ b'Hello world!'
-Out[2]: <Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder='big'>
+┌──(samson)─[1]─[15:48:44]─[0:00:00.001813]─[vixen@localhost]─[/home/vixen]
+└─$ logging.getLogger("samson").setLevel(logging.INFO)
 
 
-In [3]: gcm   = GCM(Rijndael(Bytes.random(32)))
-   ...: data  = b"Auth'd data"
-   ...: nonce = Bytes.random(8)
-   ...: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data)
-   ...: gcm.decrypt(nonce, ciphertext, data)
-Out[3]: <Bytes: b'Hello world!', byteorder='big'>
+┌──(samson)─[2]─[15:48:45]─[0:00:00.000970]─[vixen@localhost]─[/home/vixen]
+└─$ # Using stream ciphers and byte manipulation 
+..: RC4(b'what a key!').generate(12) ^ b'Hello world!'
+<Bytes: b')\x1f\xb8xW}\xfc\xc5,\x0f\xc3,', byteorder='big'>
 
 
-In [4]: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?', data=b'')
-   ...:
-   ...: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:]
-   ...: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:]
-   ...:
-   ...: candidates = GCM.nonce_reuse_attack(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b)
-   ...: gcm.H in [auth_key for auth_key, tag_mask in candidates]
-   ...:
-Out[4]: True
+┌──(samson)─[3]─[15:48:48]─[0:00:00.008846]─[vixen@localhost]─[/home/vixen]
+└─$ # Example of AES-GCM-256 
+..: gcm   = GCM(Rijndael(Bytes.random(32))) 
+..: data  = b"Auth'd data" 
+..: nonce = Bytes.random(8) 
+..: ciphertext = gcm.encrypt(nonce=nonce, plaintext=b'Hello world!', data=data) 
+..: gcm.decrypt(nonce, ciphertext, data)
+<Bytes: b'Hello world!', byteorder='big'>
 
 
-In [5]: bf  = Blowfish(b"world's worst key")
-   ...: cbc = CBC(bf, iv=Bytes.random(8))
-   ...:
-   ...: def oracle_func(attempt):
-   ...:     try:
-   ...:         cbc.decrypt(attempt)
-   ...:         return True
-   ...:     except Exception:
-   ...:         return False
-   ...:
-   ...:
-   ...: ciphertext = cbc.encrypt(b'secret plaintext')
-   ...: attack     = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8, iv=cbc.iv)
-   ...: recovered  = attack.execute(ciphertext)
-   ...:
-Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:01<00:00,  7.78bytes/s]
-Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00,  9.34bytes/s]
-Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00,  8.52bytes/s]
-Blocks cracked: 100%|██████████████████████████████████████████████████████████████| 3/3 [00:02<00:00,  1.02blocks/s]
+┌──(samson)─[4]─[15:48:53]─[0:00:00.027646]─[vixen@localhost]─[/home/vixen]
+└─$ # Forbidden attack on GCM 
+..: ciphertext_b = gcm.encrypt(nonce=nonce, plaintext=b'Wait the same nonce?', data=b'') 
+..:  
+..: ciphertext_a, tag_a = ciphertext[:-16], ciphertext[-16:] 
+..: ciphertext_b, tag_b = ciphertext_b[:-16], ciphertext_b[-16:] 
+..:  
+..: candidates = GCM.nonce_reuse_attack(data, ciphertext_a, tag_a, b'', ciphertext_b, tag_b) 
+..: gcm.H in [auth_key for auth_key, tag_mask in candidates]
+True
 
 
-In [6]: recovered
-Out[6]: <Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder='big'>
+┌──(samson)─[5]─[15:49:09]─[0:00:12.005071]─[vixen@localhost]─[/home/vixen]
+└─$ # CBC padding oracle attacks on arbitrary block ciphers 
+..: bf  = Blowfish(b"world's worst key") 
+..: cbc = CBC(bf, iv=Bytes.random(8)) 
+..:  
+..: def oracle_func(attempt): 
+..:     try: 
+..:         cbc.decrypt(attempt) 
+..:         return True 
+..:     except Exception: 
+..:         return False 
+..:  
+..: ciphertext = cbc.encrypt(b'secret plaintext') 
+..: attack     = CBCPaddingOracleAttack(PaddingOracle(oracle_func), block_size=8) 
+..: recovered  = attack.execute(cbc.iv + ciphertext)
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00,  8.97bytes/s]
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00,  9.61bytes/s]
+Bytes cracked: 100%|████████████████████████████████████████████████████████████████| 8/8 [00:00<00:00,  9.33bytes/s]
+Blocks cracked: 100%|███████████████████████████████████████████████████████████████| 3/3 [00:02<00:00,  1.13blocks/s]
 
 
-In [7]: Z_p = ZZ/ZZ(49339)
-   ...: Z_p[x](x**5 - x**3 + 1).factor()
-Out[7]: <Factors: SortedDict({<Polynomial: x**2 + 34751*x + 20606, coeff_ring=ZZ/ZZ(49339)>: 1, <Polynomial: x**3 + 14588*x**2 + 39369*x + 31211, coeff_ring=ZZ/ZZ(49339)>: 1})>
+┌──(samson)─[6]─[15:49:13]─[0:00:02.809287]─[vixen@localhost]─[/home/vixen]
+└─$ recovered
+<Bytes: b'secret plaintext\x08\x08\x08\x08\x08\x08\x08\x08', byteorder='big'>
 
 
-In [8]: F = FF(2, 8)
-   ...: F[36] / F[3]
-Out[8]: <FiniteFieldElement: val=x**4 + x**3 + x**2, field=F_(2**8)>
+┌──(samson)─[7]─[15:49:15]─[0:00:00.012327]─[vixen@localhost]─[/home/vixen]
+└─$ # Fully-fledged computer algebra system 
+..: Z_p = ZZ/ZZ(49339) 
+..: P   = Z_p[x] 
+..: (x**5 - x**3 + 1).factor()
+<Factors: factors=SortedDict({<Polynomial: x^2 + (34751)*x + 20606, coeff_ring=ZZ/(ZZ(49339))>: 1, <Polynomial: x^3 + (14588)*x^2 + (39369)*x + 31211, coeff_ring=ZZ/(ZZ(49339))>: 1})>
 
 
-In [9]: gcd(F[2], F[10])
-Out[9]: <FiniteFieldElement: val=x, field=F_(2**8)>
+┌──(samson)─[8]─[15:49:19]─[0:00:00.338368]─[vixen@localhost]─[/home/vixen]
+└─$ # Strong support for elliptic curves and constructing curves with specific properties 
+..: E   = EllipticCurve.generate_curve_with_trace(256, 1) 
+..: G   = E.find_gen() 
+..: d   = random_int(G.order()) 
+..: Q   = G*d 
+..: phi = E.additive_transfer_map() 
+..: (phi(Q)/phi(G))[0] == d
+True
+
+
+┌──(samson)─[9]─[15:49:33]─[0:00:07.236282]─[vixen@localhost]─[/home/vixen]
+└─$ # Discrete logarithm functions automatically select fastest algorithms 
+..: Q/G 
+38120689741865273838011422678879489970102804037838036905741887846548120785636
 ```
 
 ### **CLI**
@@ -248,7 +273,7 @@ Activate: 20201029163524
 
 ## Testing Environment
 * **Runtime**: PyPy 7.3.1 (Python 3.6.9)
-* **Architecture**: Linux 5.8.17-100.fc32.x86_64 #1 SMP
+* **Architecture**: Linux 5.11.22-100.fc32.x86_64 #1 SMP
 * **OS**: Fedora Security Lab (Fedora release 32)
 
 

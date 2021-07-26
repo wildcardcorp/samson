@@ -1,8 +1,8 @@
 import os
-from distutils.core import setup
+from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.md'), encoding="utf-8") as f:
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     README = f.read()
 
 requires = [
