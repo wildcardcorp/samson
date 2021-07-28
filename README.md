@@ -46,7 +46,7 @@ Usage of the REPL:
 |_______/  \_______/|__/ |__/ |__/|_______/  \______/ |__/  |__/                                                                
                                                                 
                                                                 
-    v0.2.5 -- https://github.com/wildcardcorp/samson
+    v0.3.0 -- https://github.com/wildcardcorp/samson
 
 Python 3.6.9 (78d4c48fa091, Apr 30 2020, 07:55:31)
 [PyPy 7.3.1 with GCC 10.0.1 20200328 (Red Hat 10.0.1-0.11)]
@@ -294,11 +294,11 @@ pypy3 -m ensurepip
 pypy3 -m pip install samson-crypto
 ```
 
-### Debian derivatives (tested on Kali Linux 2019.2 64-bit)
+### Debian derivatives (tested on Kali Linux 2021.2 64-bit)
 Debian/Ubuntu/Kali don't want you to install pip with `ensurepip`, but they only provide the package for CPython. The following is a workaround that creates a virtualenv to prevent screwing with the system's pip.
 
 ```bash
-apt-get -y install pypy3 pypy3-dev
+apt -y install pypy3
 pypy3 -m venv myvenv --without-pip --system-site-packages
 wget https://bootstrap.pypa.io/get-pip.py
 ./myvenv/bin/pypy3-c ./get-pip.py
