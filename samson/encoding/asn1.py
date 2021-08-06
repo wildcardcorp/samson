@@ -1,3 +1,5 @@
+from pyasn1.error import PyAsn1Error
+from pyasn1.type.char import PrintableString, TeletexString
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 from samson.hashes.md5 import MD5
@@ -32,8 +34,8 @@ RDN_TYPE_LOOKUP = {
     'ST': rfc5280.X520StateOrProvinceName,
     'OU': rfc2459.X520OrganizationalUnitName,
     'emailAddress': rfc5280.EmailAddress,
-    'serialNumber': rfc2459.CertificateSerialNumber,
-    'streetAddress': rfc2459.StreetAddress
+    #'serialNumber': rfc2459.CertificateSerialNumber,
+    #'streetAddress': rfc2459.StreetAddress
 
     # 'businessCategory': pyasn1_modules doesn't have this one
 }
@@ -51,6 +53,7 @@ RDN_OID_LOOKUP = {
     'serialNumber': ObjectIdentifier([2, 5, 4, 5]),
     'streetAddress': ObjectIdentifier([2, 5, 4, 9]),
     'businessCategory': ObjectIdentifier([2, 5, 4, 15]),
+    'jurisdictionC': ObjectIdentifier('1.3.6.1.4.1.311.60.2.1.3')
 }
 
 INVERSE_RDN_OID_LOOKUP = invert_dict(RDN_OID_LOOKUP)
@@ -87,24 +90,21 @@ def parse_rdn(rdn_str: str, byte_encode: bool=False) -> rfc2459.RDNSequence:
     # Here we're careful of commas in RDNs
     # We also use 'key_idx' to keep track of the position
     # of the RDNs
-    rdn_dict = {}
+    rdn_dict = []
     key      = rdn_parts[0]
-    key_idx  = [key]
     next_key = key
 
     for part in rdn_parts[1:-1]:
         parts = part.split(',')
         curr_val, next_key = ','.join(parts[:-1]), parts[-1]
 
-        rdn_dict[key] = curr_val
+        rdn_dict.append((key, curr_val))
         key           = next_key
-        key_idx.append(key)
 
-    rdn_dict[next_key] = rdn_parts[-1]
+    rdn_dict.append((next_key, rdn_parts[-1]))
 
 
-    for i, k in enumerate(key_idx[::-1]):
-        v    = rdn_dict[k]
+    for k,v in rdn_dict[::-1]:
         attr = rfc2459.AttributeTypeAndValue()
 
         try:
@@ -116,11 +116,28 @@ def parse_rdn(rdn_str: str, byte_encode: bool=False) -> rfc2459.RDNSequence:
 
         try:
             rdn_payload = RDN_TYPE_LOOKUP[k](v)
+            encoder.encode(rdn_payload)
 
         # We need this for rfc2459.X520StateOrProvinceName
         except TypeError:
             rdn_payload = RDN_TYPE_LOOKUP[k]()
             rdn_payload.setComponentByPosition(0, v)
+
+
+        # Either we don't have it, or there's some type juggling going on
+        # e.g
+        # 327:d=5  hl=2 l=   3 prim: OBJECT            :serialNumber
+        # 332:d=5  hl=2 l=  11 prim: PRINTABLESTRING   :108 503 199
+        except (KeyError, PyAsn1Error):
+            try:
+                rdn_payload = encoder.encode(PrintableString(v))
+            except PyAsn1Error:
+                try:
+                    rdn_payload = encoder.encode(TeletexString(v))
+                except PyAsn1Error:
+                    rdn_payload = encoder.encode(rfc2459.UTF8String(v))
+            
+
 
         if byte_encode:
             attr['value'] = OctetString(encoder.encode(rdn_payload))
@@ -129,7 +146,7 @@ def parse_rdn(rdn_str: str, byte_encode: bool=False) -> rfc2459.RDNSequence:
 
         rdn = rfc2459.RelativeDistinguishedName()
         rdn.setComponentByPosition(0, attr)
-        rdn_seq.setComponentByPosition(i, rdn)
+        rdn_seq.append(rdn)
 
     return rdn_seq
 

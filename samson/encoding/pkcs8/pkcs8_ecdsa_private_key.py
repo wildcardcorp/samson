@@ -3,10 +3,8 @@ from samson.encoding.pkcs8.pkcs8_base import PKCS8Base
 from samson.encoding.pkcs1.pkcs1_ecdsa_private_key import PublicPoint
 from samson.encoding.x509.x509_ecdsa_params import X509ECDSAParams
 from samson.utilities.bytes import Bytes
-from samson.math.algebra.curves.named import WS_OID_LOOKUP
 from pyasn1.type.univ import Integer, ObjectIdentifier, Sequence, SequenceOf, OctetString
 from pyasn1.codec.der import encoder, decoder
-from pyasn1.codec.ber import decoder as ber_decoder, encoder as ber_encoder
 from pyasn1.error import PyAsn1Error
 import math
 
@@ -48,7 +46,6 @@ class PKCS8ECDSAPrivateKey(PKCS8Base):
 
     @staticmethod
     def decode(buffer: bytes, **kwargs) -> 'ECDSA':
-        from samson.public_key.ecdsa import ECDSA
         items = bytes_to_der_sequence(buffer)
 
         params, _ = decoder.decode(bytes(items[2]))

@@ -296,7 +296,6 @@ class MontgomeryPoint(RingElement):
         return MontgomeryPoint(x3, y3, self.curve)
 
 
-
     def __add__(self, P2: 'MontgomeryPoint') -> 'MontgomeryPoint':
         """
         References:
@@ -319,11 +318,16 @@ class MontgomeryPoint(RingElement):
         x1, y1 = self.x, self.y
         x2, y2 = P2.x, P2.y
 
-        x3 = B*(y2-y1)**2/(x2-x1)**2-A-x1-x2
-        y3 = (2*x1+x2+A)*(y2-y1)/(x2-x1)-B*(y2-y1)**3/(x2-x1)**3-y1
+        x21  = ~(x2-x1)
+        x212 = x21*x21
+        y21  = y2-y1
+        y212 = y21*y21
+        By21 = B*y212
+
+        x3 = By21*x212-A-x1-x2
+        y3 = (2*x1+x2+A)*y21*x21-By21*y21*(x212*x21)-y1
         return MontgomeryPoint(x3, y3, self.curve)
 
-        
 
 
     def __neg__(self) -> 'MontgomeryPoint':

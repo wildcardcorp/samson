@@ -10,6 +10,7 @@ from samson.constructions.all import *
 from samson.core.attack_model import AttackModel
 from samson.core.metadata import *
 from samson.core.prng import PRNG
+from samson.encoding.all import *
 from samson.hashes.all import *
 from samson.kdfs.all import *
 from samson.macs.all import *
@@ -22,8 +23,3 @@ from samson.protocols.jwt.all import *
 from samson.public_key.all import *
 from samson.stream_ciphers.all import *
 from samson.utilities.all import *
-
-from samson.encoding.general import *
-from samson.encoding.pem import pem_decode, pem_encode, RFC1423Algorithms
-from samson.encoding.dns_key.general import DNSKeyAlgorithm, DNSKeyFlags
-from samson.encoding.x509.x509_extension import *

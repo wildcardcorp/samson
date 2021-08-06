@@ -186,15 +186,16 @@ class WeierstrassPoint(RingElement):
             else:
                 return self.curve.POINT_AT_INFINITY
 
-        U  = U1 - U2
-        V  = V1 - V2
-        W  = Z1*Z2
-        VS = V*V
-        VT = VS*V
-        A  = (U*U)*W - VT - VS*V2*2
-        X3 = V*A
-        Y3 = U*(VS*V2 - A) - VT*U2
-        Z3 = VT*W
+        U   = U1 - U2
+        V   = V1 - V2
+        W   = Z1*Z2
+        VS  = V*V
+        VT  = VS*V
+        VS2 = VS*V2
+        A   = (U*U)*W - VT - VS2*2
+        X3  = V*A
+        Y3  = U*(VS2 - A) - VT*U2
+        Z3  = VT*W
 
         return WeierstrassPoint(x=X3, y=Y3, z=Z3, curve=self.curve)
 
