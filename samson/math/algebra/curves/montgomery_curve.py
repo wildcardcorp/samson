@@ -329,6 +329,42 @@ class MontgomeryPoint(RingElement):
         return MontgomeryPoint(x3, y3, self.curve)
 
 
+    # Projective coordinate addition
+    # def add(x1, y1, z1, x2, y2, z2):
+    #     W = z1*z2
+    #     X2 = x2*z1
+    #     X1 = x1*z2
+    #     Y2 = y2*z1
+    #     Y1 = y1*z2
+    #     X12 = x1*x2
+    #     U = (X2 - X1)
+    #     V = (Y2 - Y1)
+    #     U2 = U*U
+    #     U3 = U2*U
+    #     W2 = W*W
+    #     W3 = W2*W
+    #     W5 = W2*W3
+    #     WU3 = W*U3
+    #     W2U3 = WU3*W
+    #     Z = U3*W3
+    #     Z2 = Z*Z
+    #     Z21 = Z2*z1
+
+    #     C = (A*X12-B*y1*y2)*W2U3*2
+    #     D = ((X2 + X1)*(W + X12))*WU3
+    #     x3 = (D+C)*(U*W5)*Z21
+
+    #     F = (2*X1 + X2 + a*W)*W2U3
+    #     G = V*W2U3
+    #     H = U2*WU3
+    #     I = (B*V*V*V)*U3
+    #     J = (y1*U3)*U3
+    #     y3 = ((F*G*H)*z1-(I*z1+J)*Z2)*W5*W
+    #     z3 = Z2*Z21
+    #     return x3, y3, z3
+
+
+
 
     def __neg__(self) -> 'MontgomeryPoint':
         return MontgomeryPoint(self.x, -self.y, self.curve)

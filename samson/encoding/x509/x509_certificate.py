@@ -1,5 +1,5 @@
 from samson.encoding.pem import PEMEncodable, pem_decode
-from samson.encoding.asn1 import parse_rdn,rdn_to_str
+from samson.encoding.asn1 import parse_rdn, rdn_to_str, parse_time
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
 from pyasn1.type.univ import ObjectIdentifier, Any
@@ -9,7 +9,8 @@ from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
 from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
 from samson.encoding.x509.x509_extension import X509Extension, X509SubjectKeyIdentifier, X509BasicConstraints, X509SubjectAlternativeName
-from datetime import datetime, timezone
+from samson.encoding.x509.x509_signature import X509Signature
+from datetime import datetime
 from samson.hashes.sha1 import SHA1
 
 _ext_shorthand = {
@@ -37,7 +38,7 @@ class X509Certificate(PEMEncodable):
     def __init__(
         self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca', extensions: list=None,
         issuer_unique_id: int=None, subject_unique_id: int=None, not_before: datetime=None, not_after: datetime=None,
-        signing_alg: object=None, signature_value: bytes=None, **kwargs
+        signing_alg: X509Signature=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
@@ -179,6 +180,11 @@ class X509Certificate(PEMEncodable):
 
         encoded = encoder.encode(cert)
         return X509Certificate.transport_encode(encoded, **kwargs)
+    
+
+    def compute_ski(self):
+        pub_bytes = self.PUB_KEY_ENCODER.encode(self.key)
+        return SHA1().hash(Bytes(int(pub_bytes)))
 
 
     @classmethod
@@ -225,15 +231,6 @@ class X509Certificate(PEMEncodable):
             sig_params = None
 
         validity = tbs_cert['validity']
-
-        def parse_time(time_val):
-            if 'utcTime' in time_val and time_val['utcTime'].hasValue():
-                result = time_val['utcTime']
-            else:
-                result = time_val['generalTime']
-
-            return result.asDateTime.astimezone(timezone.utc)
-
 
         not_before = parse_time(validity['notBefore'])
         not_after  = parse_time(validity['notAfter'])

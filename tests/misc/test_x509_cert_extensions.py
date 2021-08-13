@@ -388,6 +388,36 @@ Ett9LnZQ/9/XaxvMisxx+rNAVnwzeneUW/ULU/sOX7xo+68q7jA3eRaTJX9NEP9X
 XmnUG623kHdq2FlveasB+lXwiiFm5WVu/XzT3x7rfj8GkPsZC9MGAht4Q5mo
 -----END CERTIFICATE-----"""
 
+# Has a JabberID othername
+PERMAIL_CERT0 = b"""-----BEGIN CERTIFICATE-----
+MIIE1jCCAr6gAwIBAgICH3AwDQYJKoZIhvcNAQEFBQAwVDEUMBIGA1UEChMLQ0Fj
+ZXJ0IEluYy4xHjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UE
+AxMTQ0FjZXJ0IENsYXNzIDMgUm9vdDAeFw0wNzAxMjYwOTQ5MDFaFw0wODAxMjYw
+OTQ5MDFaMHwxGzAZBgNVBAMTEnBlcm1haWwudHA0LnJ1Yi5kZTEfMB0GA1UdERMW
+RE5TOnBlcm1haWwudHA0LnJ1Yi5kZTE8MDoGA1UdERQzb3RoZXJOYW1lOjEuMy42
+LjEuNS41LjcuOC41O1VURjg6cGVybWFpbC50cDQucnViLmRlMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4MI7o1/m9Oz3z4jvSmc/NpzjmVTjTXTuZ0mc
+cW7xUdn4gX04n3n7HBoBdF6WsfR6O0vUUC0rOF3u1dEasxGfi3FpxT66oWxoomGB
+8lLcDtHaVdEDM1KXEd2Y6VQ0IJpNXKqqVpEwB7d4gV1/tdTQqIP15/Higt1xvSDJ
+0uXrepOOvNmhrMH4Nagdo64fiP6F09uFodilPQ9fajntNpttqukjdSnzzeoFanCy
+KdXOwBtArz7JwiFtvqSSvjzuI01MhdAy3MwTNh2GlA8ZEoOmNqvKYgciMf2Nf80a
++IjsgttL6Ury8BkmsFe1kJy/pywSQB5gGLb9Z5sLF4fsioVziQIDAQABo4GJMIGG
+MAwGA1UdEwEB/wQCMAAwNAYDVR0lBC0wKwYIKwYBBQUHAwIGCCsGAQUFBwMBBglg
+hkgBhvhCBAEGCisGAQQBgjcKAwMwCwYDVR0PBAQDAgWgMDMGCCsGAQUFBwEBBCcw
+JTAjBggrBgEFBQcwAYYXaHR0cDovL29jc3AuY2FjZXJ0Lm9yZy8wDQYJKoZIhvcN
+AQEFBQADggIBAKj6oFwZB+35zENfKUKZ/lmOz74XyL+OBEfiHJQ2apLUIOSa1Ekt
+TbLF1zyKmst7d5SUxRehEcPTnDEE+zPYNdIXeXI26/5a42SuBLOGEVsl3/HQ+3oy
+fM9n8Ug2EsxDJp+G/EZuJBSrSsV8gCUwLCEvApV8JDVcP9t5AAeneZT5A2S7jw1M
+Vya5NOCHHchHwywpShxFPlgKN70uI56/E1pEu+k+lkj5Ud6AVHDp/dCKbJev+biC
+LHm+c8LibTE5AWEU1isWeO3aaxxvJS4KexkAxpbuMaPqqRewQtkhJC2RZVPyY9eA
+hDtawYHZSAbuvTR2xXenfNlHVIHmvopewTGryquDE2UBvf+S0uUyoE+KMfpCmElM
+CRz33Lbwq7jYipRMpfYatGaKc5LLpytd8H8bMKfnGipAsQslewZywFCPntUBRMF4
+Zuho6t6nOk7JTysfpk1Wi8rtrKttEPveL9SlJWmz1MsExOMeZHFvsRqNEoUhYMDy
+Hft/XdcI+Bm6OBArzPRJ0wv3Ez76tFjJIIpjBPrGmYj9PCkSvyv8/72eKYvc943C
+B/OdzCO2gxAG0ca5DPHbxZ+HDpyPeUPgxydehFXLIZEnYKQkIqxg/yXscY3EHbZ0
+n/bCKvLQOlDI6+kC3Os+GjBn3FOrvb3rW3ULzJLPXnhUIanarxXlR34W
+-----END CERTIFICATE-----"""
+
 import unittest
 import os
 from samson.all import *
@@ -399,12 +429,12 @@ class X509ExtensionTestCase(unittest.TestCase):
 
     def test_gauntlet(self):
         gaunt_bytes = Bytes.read_file(f'{os.path.dirname(os.path.abspath(__file__))}/x509_gauntlet')
-        certs = gaunt_bytes.split(b'-----END CERTIFICATE-----')[:-1]
+        footer = b'-----END CERTIFICATE-----'
+        certs  = gaunt_bytes.split(footer)[:-1]
 
         for i, cert in enumerate(tqdm(certs)):
-            # wonky otherName
-            if i not in [49, 505, 969]:
-                self._test_cert(cert + b'-----END CERTIFICATE-----')
+            if i not in [505]:
+                self._test_cert(cert + footer)
 
 
     def test_ms_and_sct(self):

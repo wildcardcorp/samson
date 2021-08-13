@@ -7,6 +7,8 @@ from samson.hashes.md2 import MD2
 from pyasn1_modules import rfc2459, rfc5280
 from pyasn1.codec.der import encoder
 from pyasn1.type.univ import ObjectIdentifier, OctetString
+from pyasn1.type.useful import UTCTime
+from datetime import timezone
 
 def invert_dict(dic):
     return {v:k for k,v in dic.items()}
@@ -168,3 +170,18 @@ def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
         rdn_map.append((rtype, rval))
 
     return ','.join(f'{rtype}={rval}' for rtype, rval in rdn_map)
+
+
+def parse_time(time_val):
+    if 'utcTime' in time_val and time_val['utcTime'].hasValue():
+        result = time_val['utcTime']
+    else:
+        result = time_val['generalTime']
+
+    return result.asDateTime.astimezone(timezone.utc)
+
+
+def build_time(dt):
+    rev_time  = rfc5280.Time()
+    rev_time['utcTime'] = UTCTime.fromDateTime(dt)
+    return rev_time

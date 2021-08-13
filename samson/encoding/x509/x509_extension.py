@@ -2,15 +2,17 @@ from datetime import datetime, timezone
 from pyasn1.type.char import IA5String, GeneralString
 from samson.utilities.bytes import Bytes
 from typing import List
-from pyasn1_modules import rfc2459, rfc5280
+from pyasn1_modules import rfc2459, rfc5280, rfc3280
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type.univ import BitString, Integer, Null, ObjectIdentifier, OctetString, Boolean, SequenceOf, Sequence
 from pyasn1.type import namedtype
 from pyasn1.type.useful import UTCTime
+from pyasn1.type import tag
 from enum import Enum, IntFlag
 from samson.core.base_object import BaseObject
 from samson.encoding.tls.tls_crypto import TLSSCTList
 from samson.encoding.asn1 import rdn_to_str, parse_rdn
+
 
 IA5_TAGS = {
     'dns': 'dNSName',
@@ -24,68 +26,271 @@ IA5_TAGS = {
 INVERSE_IA5_TAGS = {v:k for k,v in IA5_TAGS.items()}
 
 
-def build_general_name(name: str):
-    n_type, n_value = name.split(':', 1)
-    ia5_type = IA5_TAGS[n_type.lower()]
-    com  = rfc2459.GeneralName.componentType[ia5_type]
-    name = rfc2459.GeneralName()
-    com_name = com.getName()
-    com_type = com.getType()
+class GeneralName(BaseObject):
+    TAG = None
 
-    if type(com_type) is OctetString:
-        n_value = [int(part) for part in n_value.split('.')]
-        n_value = bytes(n_value)
-        name[com_name] = com_type.clone(n_value)
+    def __init__(self, name: str) -> None:
+        self.name = name
+    
 
-    elif type(com_type) in (rfc5280.Name, rfc2459.Name):
-        n_value = parse_rdn(n_value)
-        name = rfc5280.GeneralName()
-        sub_name = name[ia5_type].clone()
-        sub_name['rdnSequence'] = n_value
-        name[com_name] = sub_name
+    @classmethod
+    def parse_recursive(cls, name: rfc2459.GeneralName):
+        n_type = name.getName()
 
-    else:
-        name[com_name] = com_type.clone(n_value)
+        if n_type == cls.TAG:
+            return cls.parse(name)
 
-    return name
+        for subclass in cls.__subclasses__():
+            name_obj = subclass.parse_recursive(name)
+
+            if name_obj:
+                return name_obj
+    
 
 
-def parse_general_name(name: rfc2459.GeneralName) -> str:
-    n_type = name.getName()
-    value  = name[n_type]
+class RDNName(GeneralName):
 
-    # Parse IP
-    if type(value) is OctetString:
-        value = '.'.join([str(part) for part in bytes(value)])
+    @classmethod
+    def parse(cls, name: rfc2459.GeneralName) -> 'StringName':
+        n_type = name.getName()
+        value  = name[n_type]
 
-    elif type(value) in (rfc5280.Name, rfc2459.Name):
         for key in ['rdnSequence', '']:
             if key in value:
                 break
 
-        value = rdn_to_str(value[key])
-    
-    elif type(value) is rfc2459.AnotherName:
-        value = value['value']
-
-    return f'{INVERSE_IA5_TAGS[n_type]}:{str(value)}'
+        return cls(rdn_to_str(value[key]))
 
 
+    def build(self) -> rfc5280.GeneralName:
+        n_value = parse_rdn(self.name)
+        name = rfc5280.GeneralName()
 
-def build_crl_dist_point(names: list) -> 'rfc5280.DistributionPoint':
-    points = rfc5280.CRLDistributionPoints()
-    point  = points[0].clone()
-    point_name = point['distributionPoint'].clone()
+        com  = name.componentType[self.TAG]
+        com_name = com.getName()
 
-    gen_names = point_name['fullName'].clone()
+        sub_name = name[self.TAG].clone()
+        sub_name['rdnSequence'] = n_value
+        name[com_name] = sub_name
 
-    for name in names:
-        gen_names.append(build_general_name(name))
+        return name
 
-    point_name['fullName']     = gen_names
-    point['distributionPoint'] = point_name
 
-    return point
+
+class StringName(GeneralName):
+
+    @classmethod
+    def parse(cls, name: rfc2459.GeneralName) -> 'StringName':
+        n_type = name.getName()
+        value  = name[n_type]
+        return cls(str(value))
+
+
+    def build(self) -> rfc5280.GeneralName:
+        name = rfc5280.GeneralName()
+
+        com  = name.componentType[self.TAG]
+        com_type = com.getType()
+        com_name = com.getName()
+
+        name[com_name] = com_type.clone(self.name)
+
+        return name
+
+
+
+class OctetName(GeneralName):
+
+    @classmethod
+    def parse(cls, name: rfc2459.GeneralName) -> 'OctetName':
+        n_type = name.getName()
+        value  = name[n_type]
+        value = '.'.join([str(part) for part in bytes(value)])
+        return cls(value)
+
+
+    def build(self) -> rfc5280.GeneralName:
+        name = rfc5280.GeneralName()
+
+        com  = name.componentType[self.TAG]
+        com_type = com.getType()
+        com_name = com.getName()
+
+        n_value = [int(part) for part in self.data.split('.')]
+        n_value = bytes(n_value)
+        name[com_name] = com_type.clone(n_value)
+
+        return name
+
+
+
+# https://datatracker.ietf.org/doc/html/rfc4120
+# https://datatracker.ietf.org/doc/html/rfc4556#appendix-A
+class KRB5Names(SequenceOf):
+    pass
+
+KRB5Names.componentType = GeneralString()
+
+
+class PrincipalName(Sequence):
+    pass
+
+
+PrincipalName.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('name-type', Integer().subtype(
+        explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+    namedtype.NamedType('name-string', KRB5Names().subtype(
+        explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+)
+
+class KRB5PrincipalName(Sequence):
+    pass
+
+
+KRB5PrincipalName.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('realm', GeneralString().subtype(
+        explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+    namedtype.NamedType('principalName', PrincipalName().subtype(
+        explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+)
+
+
+class OtherNameOID(Enum):
+    KISA_IDENTIFYDATA = '1.2.410.200004.10.1.1'
+    USER_PRINCIPAL_NAME = '1.3.6.1.4.1.311.20.2.3'
+    KERBEROS_PRINCIPAL_NAME = '1.3.6.1.5.2.2'
+    JABBER_ID = '1.3.6.1.5.5.7.8.5'
+
+
+class OtherName(GeneralName):
+    TAG = 'otherName'
+
+    def __init__(self, oid: str, data: bytes) -> None:
+        self.oid  = oid
+        self.data = data
+
+
+    def _build(self, value: object, oid: str=None) -> rfc5280.GeneralName:
+        gen_name = rfc5280.GeneralName()
+
+        if hasattr(self, 'oid') and not oid:
+            oid = self.oid
+        
+        if type(value) is not bytes:
+            value = encoder.encode(value)
+
+        if oid:
+            if type(oid) is OtherNameOID:
+                oid = oid.value
+
+        name = gen_name['otherName']
+        name['type-id'] = ObjectIdentifier(oid or self.NAME_OID.value)
+        name['value']   = name['value'].clone(value)
+        return gen_name
+
+
+    def build(self) -> rfc5280.GeneralName:
+        return self._build(self.data)
+
+
+    @staticmethod
+    def parse(other_name: rfc5280.GeneralName) -> 'OtherName':
+        other_name = other_name['otherName']
+        name_oid   = str(other_name['type-id'])
+
+        try:
+            name_oid = OtherNameOID(name_oid)
+        except ValueError:
+            pass
+
+        value = bytes(other_name['value'])
+
+        for subclass in OtherName.__subclasses__():
+            if subclass.NAME_OID == name_oid:
+                return subclass.parse(value)
+
+        return OtherName(name_oid, value)
+
+
+
+class UserPrincipalName(OtherName):
+    NAME_OID   = OtherNameOID.USER_PRINCIPAL_NAME
+    SHORT_NAME = "upn"
+
+    def __init__(self, upn: bytes) -> None:
+        self.upn = upn
+
+
+    def build(self) -> bytes:
+        return super()._build(rfc2459.UTF8String(self.upn))
+
+
+    @staticmethod
+    def parse(data: bytes) -> 'UserPrincipalName':
+        upn, _ = decoder.decode(data)
+        return UserPrincipalName(str(upn))
+
+
+
+class KerberosPrincipalName(OtherName):
+    NAME_OID   = OtherNameOID.KERBEROS_PRINCIPAL_NAME
+    SHORT_NAME = "kpn"
+
+    def __init__(self, realm: str, name_type: int, name_str: str) -> None:
+        self.realm     = realm
+        self.name_type = name_type
+        self.name_str  = name_str
+
+
+    def build(self) -> bytes:
+        kpn = KRB5PrincipalName()
+        kpn['realm'] = kpn['realm'].clone(self.realm)
+
+        pn = kpn['principalName'].clone()
+        pn['name-type'] = pn['name-type'].clone(self.name_type)
+
+        name_str = pn['name-string'].clone()
+        for s in self.name_str.split('/'):
+            name_str.append(s)
+        
+        pn['name-string'] = name_str
+        kpn['principalName'] = pn
+
+        return super()._build(kpn)
+
+
+    @staticmethod
+    def parse(data: bytes) -> 'KerberosPrincipalName':
+        kpn, _ = decoder.decode(data, asn1Spec=KRB5PrincipalName())
+        realm  = str(kpn['realm'])
+
+        name_type = int(kpn['principalName']['name-type'])
+        name_str  = '/'.join([str(s) for s in kpn['principalName']['name-string']])
+
+        return KerberosPrincipalName(realm=realm, name_type=name_type, name_str=name_str)
+
+
+
+class DirectoryName(RDNName):
+    SHORT_NAME = 'dir'
+    TAG        = 'directoryName'
+
+class DNSName(StringName):
+    SHORT_NAME = 'dns'
+    TAG        = 'dNSName'
+
+class URIName(StringName):
+    SHORT_NAME = 'uri'
+    TAG        = 'uniformResourceIdentifier'
+
+class EmailName(StringName):
+    SHORT_NAME = 'email'
+    TAG        = 'rfc822Name'
+
+class IPAddressName(OctetName):
+    SHORT_NAME = 'ip'
+    TAG        = 'iPAddress'
+
 
 
 def merge_enums(name: str, sub_enums: list):
@@ -217,9 +422,34 @@ class X509ExtKeyUsageType(Enum):
     NETSCAPE_SERVER_GATED_CRYPTO  = '2.16.840.1.113730.4.1'
     VERISIGN_SERVER_GATED_CRYPTO  = '2.16.840.1.113733.1.8.1' 
     MICROSOFT_SERVER_GATED_CRYPTO = '1.3.6.1.4.1.311.10.3.3'
+    MICROSOFT_SMARTCARD_LOGON = '1.3.6.1.4.1.311.20.2.2'
 
 
-class X509KeyUsageFlag(IntFlag):
+class X509IntFlag(IntFlag):
+    def build(self):
+        binary = bin(int(self))[2:].strip('0')
+        return self.get_asn1_obj()(binary)
+    
+
+    @classmethod
+    def get_size(cls):
+        return len(cls)
+    
+
+    @staticmethod
+    def get_asn1_obj():
+        return None
+
+
+    @classmethod
+    def parse(cls, val):
+        val = int(val)
+        val = int(bin(val)[2:][::-1].zfill(cls.get_size())[::-1], 2)
+        return cls(val)
+
+
+
+class X509KeyUsageFlag(X509IntFlag):
     DIGITAL_SIGNATURE = 2**8
     NON_REPUDIATION   = 2**7
     KEY_ENCIPHERMENT  = 2**6
@@ -229,6 +459,10 @@ class X509KeyUsageFlag(IntFlag):
     CRL_SIGN          = 2**2
     ENCIPHER_ONLY     = 2**1
     DECIPHER_ONLY     = 2**0
+
+    @staticmethod
+    def get_asn1_obj():
+        return rfc5280.KeyUsage
 
 
 
@@ -295,7 +529,7 @@ class _AlternateName(object):
         san = self.NAME_SPEC()
 
         for name in self.names:
-            san.append(build_general_name(name))
+            san.append(name.build())
 
         if not san.isValue:
             if self.allow_empty:
@@ -312,7 +546,7 @@ class _AlternateName(object):
         san, _ = decoder.decode(value_bytes, asn1Spec=cls.NAME_SPEC())
         sans   = []
         for name in san:
-            sans.append(parse_general_name(name))
+            sans.append(GeneralName.parse_recursive(name))
 
         return cls(names=sans, critical=critical)
 
@@ -361,16 +595,6 @@ class X509BasicConstraints(X509Extension):
         return X509BasicConstraints(is_ca=bool(ext_val['cA']), path_len=path_len, critical=critical)
 
 
-def _build_from_int_flag(val):
-    return bin(int(val))[2:].strip('0')
-
-
-def _parse_int_flag_from_asn1(val, size):
-    val = int(val)
-    val = int(bin(val)[2:][::-1].zfill(size)[::-1], 2)
-    return val
-
-
 
 class X509KeyUsage(X509Extension):
     EXT_TYPE = X509ExtensionType.KEY_USAGE
@@ -381,16 +605,14 @@ class X509KeyUsage(X509Extension):
     
 
     def build_extension(self) -> rfc5280.Extension:
-        usage = rfc5280.KeyUsage(_build_from_int_flag(self.key_usage))
-        return super()._build(usage)
+        return super()._build(self.key_usage.build())
 
 
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509KeyUsage':
         ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc5280.KeyUsage())
-        ext_val = _parse_int_flag_from_asn1(ext_val, 9)
 
-        return X509KeyUsage(key_usage=X509KeyUsageFlag(ext_val), critical=critical)
+        return X509KeyUsage(key_usage=X509KeyUsageFlag.parse(ext_val), critical=critical)
 
 
 
@@ -453,18 +675,191 @@ class X509SubjectKeyIdentifier(X509Extension):
 
 
 
+# https://datatracker.ietf.org/doc/html/rfc3280#section-5.2.5
+class X509ReasonCodeFlag(X509IntFlag):
+    UNSPECIFIED            = 2**10
+    KEY_COMPROMISE         = 2**9
+    CA_COMPROMISE          = 2**8
+    AFFILIATION_CHANGED    = 2**7
+    SUPERSEDED             = 2**6
+    CESSATION_OF_OPERATION = 2**5
+    CERTIFICATE_HOLD       = 2**4
+    REMOVE_FROM_CRL        = 2**2
+    PRIVILEGE_WITHDRAWN    = 2**1
+    AA_COMPROMISE          = 2**0
+
+    @staticmethod
+    def get_size():
+        return 11
+
+    @staticmethod
+    def get_asn1_obj():
+        return rfc3280.ReasonFlags
+
+
+class X509ReasonCode(X509Extension):
+    EXT_TYPE  = X509ExtensionType.REASON_CODE
+
+    def __init__(self, reason_code: X509ReasonCodeFlag, critical: bool=False) -> None:
+        self.reason_code = reason_code
+        super().__init__(critical=critical)
+
+
+    def build_extension(self) -> rfc5280.Extension:
+        return super()._build(self.reason_code.build())
+
+
+    @staticmethod
+    def parse(value_bytes: bytes, critical: bool) -> 'X509ReasonCode':
+        ext_val, _  = decoder.decode(value_bytes)
+        return X509ReasonCode(reason_code=X509ReasonCodeFlag.parse(ext_val), critical= critical)
+
+
+
+class X509CRLDistributionPoint(BaseObject):
+    def __init__(self, names: List[GeneralName]=None, reasons: X509ReasonCodeFlag=None, crl_issuer: List[GeneralName]=None) -> None:
+        self.names      = names
+        self.reasons    = reasons
+        self.crl_issuer = crl_issuer
+
+
+    def build(self) -> rfc5280.DistributionPoint:
+        points = rfc5280.CRLDistributionPoints()
+        point  = points[0].clone()
+
+        if self.names:
+            point_name = point['distributionPoint'].clone()
+
+            gen_names = point_name['fullName'].clone()
+
+            for name in self.names:
+                gen_names.append(name.build())
+
+            point_name['fullName'] = gen_names
+            point['distributionPoint'] = point_name
+
+
+        if self.reasons is not None:
+            point['reasons'] = self.reasons.build()
+
+
+        if self.crl_issuer:
+            gen_names = point['cRLIssuer'].clone()
+
+            for name in self.crl_issuer:
+                gen_names.append(name.build())
+
+            point['cRLIssuer'] = gen_names
+
+        return point
+    
+
+    @staticmethod
+    def parse(crl_dist_point: rfc5280.DistributionPoint) -> 'X509CRLDistributionPoint':
+        point_name = None
+        if crl_dist_point['distributionPoint'].isValue:
+            point_name = [GeneralName.parse_recursive(name) for name in crl_dist_point['distributionPoint']['fullName']]
+
+
+        reasons = None
+        if crl_dist_point['reasons'].isValue:
+            reasons = X509ReasonCodeFlag.parse(crl_dist_point['reasons'])
+
+
+        crl_issuer = None
+        if crl_dist_point['cRLIssuer'].isValue:
+            crl_issuer = [GeneralName.parse_recursive(name) for name in crl_dist_point['cRLIssuer']]
+        
+
+        return X509CRLDistributionPoint(names=point_name, reasons=reasons, crl_issuer=crl_issuer)
+
+
+
+class X509IssuingDistributionPoint(X509Extension):
+    EXT_TYPE  = X509ExtensionType.ISSUING_DISTRIBUTION_POINT
+
+    def __init__(
+            self,
+            distribution_point: List[GeneralName],
+            only_contains_user_certs: bool=False,
+            only_contains_ca_certs: bool=False,
+            only_some_reasons: X509ReasonCodeFlag=None,
+            indirect_crl: bool=False,
+            only_contains_attr_certs: bool=False, 
+            critical: bool=False
+        ) -> None:
+
+        self.distribution_point = distribution_point
+        self.only_contains_user_certs = only_contains_user_certs
+        self.only_contains_ca_certs = only_contains_ca_certs
+        self.only_some_reasons = only_some_reasons
+        self.indirect_crl = indirect_crl
+        self.only_contains_attr_certs = only_contains_attr_certs
+        super().__init__(critical=critical)
+
+
+    def build_extension(self) -> rfc5280.Extension:
+        idp = rfc3280.IssuingDistributionPoint()
+
+        if self.distribution_point:
+            gen_names = idp['distributionPoint']['fullName'].clone()
+
+            for name in self.distribution_point:
+                gen_names.append(name.build())
+            
+            idp['distributionPoint']['fullName'] = gen_names
+
+        idp['onlyContainsUserCerts'] = self.only_contains_user_certs
+        idp['onlyContainsCACerts'] = self.only_contains_ca_certs
+        idp['indirectCRL'] = self.indirect_crl
+        idp['onlyContainsAttributeCerts'] = self.only_contains_attr_certs
+
+        if self.only_some_reasons is not None:
+            idp['onlySomeReasons'] = rfc3280.ReasonFlags(self.only_some_reasons.build())
+
+        return super()._build(idp)
+
+
+    @staticmethod
+    def parse(value_bytes: bytes, critical: bool) -> 'X509IssuingDistributionPoint':
+        ext_val, _  = decoder.decode(value_bytes, asn1Spec=rfc3280.IssuingDistributionPoint())
+        dp_name = ext_val['distributionPoint']
+        names   = [GeneralName.parse_recursive(name) for name in dp_name['fullName']]
+
+        only_contains_user_certs = bool(ext_val['onlyContainsUserCerts'])
+        only_contains_ca_certs   = bool(ext_val['onlyContainsCACerts'])
+        indirect_crl             = bool(ext_val['indirectCRL'])
+        only_contains_attr_certs = bool(ext_val['onlyContainsAttributeCerts'])
+
+        only_some_reasons = None
+        if ext_val['onlySomeReasons'].isValue:
+            only_some_reasons = X509ReasonCodeFlag.parse(ext_val['onlySomeReasons'])
+
+
+        return X509IssuingDistributionPoint(
+            distribution_point=names,
+            only_contains_user_certs=only_contains_user_certs,
+            only_contains_ca_certs=only_contains_ca_certs,
+            only_some_reasons=only_some_reasons,
+            indirect_crl=indirect_crl,
+            only_contains_attr_certs=only_contains_attr_certs,
+            critical= critical
+        )
+
+
 class X509CRLDistributionPoints(X509Extension):
     EXT_TYPE = X509ExtensionType.CRL_DISTRIBUTION_POINTS
 
-    def __init__(self, names: List[str], critical: bool=False) -> None:
-        self.names = names
+    def __init__(self, distribution_points: List[X509CRLDistributionPoint], critical: bool=False) -> None:
+        self.distribution_points = distribution_points
         super().__init__(critical=critical)
     
 
     def build_extension(self) -> rfc5280.Extension:
         points = rfc5280.CRLDistributionPoints()
-        for name in self.names:
-            points.append(build_crl_dist_point([name]))
+
+        for distribution_point in self.distribution_points:
+            points.append(distribution_point.build())
         
         return super()._build(points)
 
@@ -472,13 +867,7 @@ class X509CRLDistributionPoints(X509Extension):
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509CRLDistributionPoints':
         ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc5280.CRLDistributionPoints())
-
-        dist_points = []
-        for point in ext_val:
-            for name in point['distributionPoint']['fullName']:
-                dist_points.append(parse_general_name(name))
-
-        return X509CRLDistributionPoints(names=dist_points, critical=critical)
+        return X509CRLDistributionPoints(distribution_points=[X509CRLDistributionPoint.parse(point) for point in ext_val], critical=critical)
 
 
 
@@ -502,7 +891,7 @@ class X509AuthorityKeyIdentifier(X509Extension):
             gen_names = aki['authorityCertIssuer'].clone()
 
             for name in self.authority_cert_issuer:
-                gen_names.append(build_general_name(name))
+                gen_names.append(name.build())
 
             aki['authorityCertIssuer'] = gen_names
 
@@ -517,7 +906,7 @@ class X509AuthorityKeyIdentifier(X509Extension):
         ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc5280.AuthorityKeyIdentifier())
 
         key_identifier = bytes(ext_val['keyIdentifier']) if ext_val['keyIdentifier'].isValue else None
-        authority_cert_issuer = [parse_general_name(name) for name in ext_val['authorityCertIssuer']]
+        authority_cert_issuer = [GeneralName.parse_recursive(name) for name in ext_val['authorityCertIssuer']]
         authority_cert_serial_number = int(ext_val['authorityCertSerialNumber']) if ext_val['authorityCertSerialNumber'].isValue else None
 
         return X509AuthorityKeyIdentifier(key_identifier=key_identifier, authority_cert_issuer=authority_cert_issuer, authority_cert_serial_number=authority_cert_serial_number, critical=critical)
@@ -551,7 +940,7 @@ class X509AuthorityInfoAccess(X509Extension):
         for access_desc in self.access_descriptions:
             acc_desc = rfc5280.AccessDescription()
             acc_desc['accessMethod']   = ObjectIdentifier(access_desc.access_method.value)
-            acc_desc['accessLocation'] = build_general_name(access_desc.access_location)
+            acc_desc['accessLocation'] = access_desc.access_location.build()
             aia.append(acc_desc)
 
         return super()._build(aia)
@@ -564,7 +953,7 @@ class X509AuthorityInfoAccess(X509Extension):
         access_descriptions = []
         for access_desc in ext_val:
             access_method   = X509AccessDescriptorType(str(access_desc['accessMethod']))
-            access_location = parse_general_name(access_desc['accessLocation'])
+            access_location = GeneralName.parse_recursive(access_desc['accessLocation'])
             access_descriptions.append(X509AccessDescription(access_method, access_location))
 
         return X509AuthorityInfoAccess(access_descriptions=access_descriptions, critical=critical)
@@ -1004,7 +1393,7 @@ class X509MicrosoftCertificateTemplate(X509Extension):
 
 
 
-class X509NetscapeCertTypeFlag(IntFlag):
+class X509NetscapeCertTypeFlag(X509IntFlag):
     SSL_CLIENT        = 2**7
     SSL_SERVER        = 2**6
     SMIME             = 2**5
@@ -1013,6 +1402,10 @@ class X509NetscapeCertTypeFlag(IntFlag):
     SSL_CA            = 2**2
     SMIME_CA          = 2**1
     OBJECT_SIGNING_CA = 2**0
+
+    @staticmethod
+    def get_asn1_obj():
+        return BitString
 
 
 class X509NetscapeCertificateType(X509Extension):
@@ -1024,25 +1417,32 @@ class X509NetscapeCertificateType(X509Extension):
     
 
     def build_extension(self) -> rfc5280.Extension:
-        usage = BitString(_build_from_int_flag(self.cert_type))
-        return super()._build(usage)
+        return super()._build(self.cert_type.build())
 
 
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509NetscapeCertificateType':
         ext_val, _ = decoder.decode(value_bytes)
-        ext_val    = _parse_int_flag_from_asn1(ext_val, 8)
 
-        return X509NetscapeCertificateType(cert_type=X509NetscapeCertTypeFlag(ext_val), critical=critical)
+        return X509NetscapeCertificateType(cert_type=X509NetscapeCertTypeFlag.parse(ext_val), critical=critical)
+
 
 # I honestly cannot find the last two bits
-class X509EntrustInfoFlag(IntFlag):
+class X509EntrustInfoFlag(X509IntFlag):
     KEY_UPDATE_ALLOWED  = 2**7
     NEW_EXTENSIONS      = 2**6
     PKIX_CERTIFICATE    = 2**5
     ENTERPRISE_CATEGORY = 2**4
     WEB_CATEGORY        = 2**3
     SET_CATEGORY        = 2**2
+
+    @staticmethod
+    def get_size():
+        return 8
+
+    @staticmethod
+    def get_asn1_obj():
+        return BitString
 
 
 # https://github.com/wireshark/wireshark/blob/eb5f4eea99593b92298bacecc5c9d885cc13a9ad/epan/dissectors/asn1/x509ce/CertificateExtensions.asn
@@ -1070,7 +1470,7 @@ class X509EntrustVersionInfo(X509Extension):
         entrust_info['entrustVers'] = GeneralString(self.entrust_version)
 
         if self.entrust_info_flags is not None:
-            entrust_info['entrustInfoFlags'] = BitString(_build_from_int_flag(self.entrust_info_flags))
+            entrust_info['entrustInfoFlags'] = self.entrust_info_flags.build()
 
         return super()._build(entrust_info)
 
@@ -1082,6 +1482,28 @@ class X509EntrustVersionInfo(X509Extension):
 
         eif = None
         if ext_val['entrustInfoFlags'].isValue:
-            eif = X509EntrustInfoFlag(_parse_int_flag_from_asn1(ext_val['entrustInfoFlags'], 8))
+            eif = X509EntrustInfoFlag.parse(ext_val['entrustInfoFlags'])
 
         return X509EntrustVersionInfo(entrust_version=ver, entrust_info_flags=eif, critical=critical)
+
+
+
+class IntExtension(X509Extension):
+    def build_extension(self) -> rfc5280.Extension:
+        return super()._build(Integer(getattr(self, self.DATA_ATTR)))
+
+
+    @classmethod
+    def parse(cls, value_bytes: bytes, critical: bool) -> 'IntExtension':
+        ext_val, _ = decoder.decode(value_bytes)
+        return cls(**{cls.DATA_ATTR: int(ext_val), 'critical': critical})
+
+
+
+class X509CRLNumber(IntExtension, X509Extension):
+    EXT_TYPE  = X509ExtensionType.CRL_NUMBER
+    DATA_ATTR = 'crl_number'
+
+    def __init__(self, crl_number: int, critical: bool=False) -> None:
+        self.crl_number = crl_number
+        super().__init__(critical=critical)

@@ -104,6 +104,6 @@ EXAMPLES
 
 ``samson pki parse auto x509_cert.pem --pub --encoding=X509`` - same as above, but output it as a X509 public key
 
-``samson pki generate rsa --args=bits=2048 --pub --encoding=x509_cert --encoding-args=ca=1,serial_number=#666#,issuer=#'CN=hiya,O=hiya-corp,L=Rack City'# | openssl x509 -text`` - generate CA cert with RDN 'CN=hiya,O=hiya-corp,L=Rack City'. To prevent argument parsing of the RDN string, use the preprocessor macro '#' to signify a literal.
+``samson pki generate rsa --args=bits=2048 --pub --encoding=x509_cert --encoding-args=ca=1,serial_number=666,issuer="'CN=hiya,O=hiya-corp,L=Rack City'" | openssl x509 -text`` - generate CA cert with RDN 'CN=hiya,O=hiya-corp,L=Rack City'.
 
 ``samson pki generate dh --pub --encoding x509_cert --encoding-args=signing_key=/tmp/myrsa.pem`` - generate a DiffieHellman X509 cert and sign it with the key loaded from the file '/tmp/myrsa.pem'

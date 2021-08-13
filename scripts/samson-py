@@ -5,7 +5,6 @@ logging.getLogger('asyncio').setLevel(logging.WARNING)
 
 from samson.encoding.general import PKIAutoParser
 from samson.utilities.cli import start_repl, start_exec, HASHES, EC_CURVES, ED_CURVES, PKI, ENCODING_MAPPING
-from samson.utilities.bytes import Bytes
 from samson.utilities.runtime import RUNTIME
 import argparse
 import sys
