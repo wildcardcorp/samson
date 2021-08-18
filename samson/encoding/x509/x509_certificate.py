@@ -1,5 +1,6 @@
+from samson.core.primitives import Hash
 from samson.encoding.pem import PEMEncodable, pem_decode
-from samson.encoding.asn1 import parse_rdn, rdn_to_str, parse_time
+from samson.encoding.asn1 import parse_time, resolve_alg, verify_signature, build_signature_alg
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import tag
 from pyasn1.type.univ import ObjectIdentifier, Any
@@ -7,16 +8,18 @@ from pyasn1_modules import rfc2459
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.useful import UTCTime
 from samson.utilities.bytes import Bytes
-from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
 from samson.encoding.x509.x509_extension import X509Extension, X509SubjectKeyIdentifier, X509BasicConstraints, X509SubjectAlternativeName
 from samson.encoding.x509.x509_signature import X509Signature
 from datetime import datetime
 from samson.hashes.sha1 import SHA1
+from samson.encoding.x509.x509_rdn import RDNSequence, CommonName
 
 _ext_shorthand = {
     'is_ca': lambda is_ca: X509BasicConstraints(is_ca=is_ca),
     'sans': lambda names: X509SubjectAlternativeName(names=names)
 }
+
+_default_rdn = RDNSequence([CommonName(b'CA')])
 
 
 class X509Certificate(PEMEncodable):
@@ -36,15 +39,15 @@ class X509Certificate(PEMEncodable):
     PK_INFO_KEY = 'subjectPublicKeyInfo'
 
     def __init__(
-        self, key: object, version: int=2, serial_number: int=0, issuer: str='CN=ca', subject: str='CN=ca', extensions: list=None,
+        self, key: object, version: int=2, serial_number: int=0, issuer: RDNSequence=None, subject: RDNSequence=None, extensions: list=None,
         issuer_unique_id: int=None, subject_unique_id: int=None, not_before: datetime=None, not_after: datetime=None,
         signing_alg: X509Signature=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
         self.serial_number = serial_number
-        self.issuer = issuer
-        self.subject = subject
+        self.issuer = RDNSequence.wrap(issuer or _default_rdn)
+        self.subject = RDNSequence.wrap(subject or _default_rdn)
         self.extensions = extensions or []
 
         for k,v in kwargs.items():
@@ -108,11 +111,11 @@ class X509Certificate(PEMEncodable):
 
         # Issuer RDN
         issuer = rfc2459.Name()
-        issuer.setComponentByPosition(0, parse_rdn(self.issuer))
+        issuer.setComponentByPosition(0, self.issuer.build())
 
         # Subject RDN
         subject = rfc2459.Name()
-        subject.setComponentByPosition(0, parse_rdn(self.subject))
+        subject.setComponentByPosition(0, self.subject.build())
 
         signing_key = signing_key or self.key
 
@@ -120,15 +123,8 @@ class X509Certificate(PEMEncodable):
         if not self.signing_alg and not hasattr(signing_key, "X509_SIGNING_DEFAULT"):
             raise ValueError("'signing_alg' not specified and 'signing_key' has no default algorithm")
 
-        signing_alg = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
-
-
-        signature_alg = rfc2459.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
-
-        if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
-            signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
-
+        signing_alg   = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
+        signature_alg = build_signature_alg(signing_alg, signing_key)
 
         # Extensions
         extensions = rfc2459.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
@@ -182,9 +178,12 @@ class X509Certificate(PEMEncodable):
         return X509Certificate.transport_encode(encoded, **kwargs)
     
 
-    def compute_ski(self):
+    def compute_ski(self, hash_obj: Hash=None):
+        if not hash_obj:
+            hash_obj = SHA1()
+
         pub_bytes = self.PUB_KEY_ENCODER.encode(self.key)
-        return SHA1().hash(Bytes(int(pub_bytes)))
+        return hash_obj.hash(Bytes(int(pub_bytes)))
 
 
     @classmethod
@@ -194,35 +193,24 @@ class X509Certificate(PEMEncodable):
 
         # Decode the full cert and get the encoded TBSCertificate
         cert, _left_over = decoder.decode(buffer, asn1Spec=cls.SPEC)
-
-        sig_value     = cert[cls.SIG_KEY]
-        signature_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])].replace('-', '_')
-        tbs_cert      = cert[cls.SIGNED_PART]
-        encoded_tbs   = encoder.encode(tbs_cert)
-
-        alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
-        return alg.verify(verification_key, encoded_tbs, sig_value)
+        return verify_signature(verification_key, cert['signatureAlgorithm'], cert[cls.SIGNED_PART], cert[cls.SIG_KEY])
 
 
     @classmethod
     def decode(cls, buffer: bytes, **kwargs) -> object:
-        from samson.encoding.general import PKIAutoParser
-
         cert, _left_over = decoder.decode(bytes(buffer), asn1Spec=rfc2459.Certificate())
 
-        signature    = Bytes(int(cert['signatureValue']))
-        cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(cert['signatureAlgorithm']['algorithm'])]
-
-        tbs_cert = cert['tbsCertificate']
-        version  = int(tbs_cert['version'])
+        signature = Bytes(int(cert['signatureValue']))
+        tbs_cert  = cert['tbsCertificate']
+        version   = int(tbs_cert['version'])
 
         serial_num        = int(tbs_cert['serialNumber'])
         issuer_unique_id  = int(tbs_cert['issuerUniqueID']) if tbs_cert['issuerUniqueID'].hasValue() else None
         subject_unique_id = int(tbs_cert['subjectUniqueID']) if tbs_cert['subjectUniqueID'].hasValue() else None
 
         # Decode RDNs
-        issuer  = rdn_to_str(tbs_cert['issuer'][0])
-        subject = rdn_to_str(tbs_cert['subject'][0])
+        issuer  = RDNSequence.parse(tbs_cert['issuer'][0])
+        subject = RDNSequence.parse(tbs_cert['subject'][0])
 
         # TODO: What to do with 'sig_params'? Is it needed?
         if tbs_cert['signature']['parameters'].hasValue():
@@ -248,7 +236,7 @@ class X509Certificate(PEMEncodable):
 
         buffer      = encoder.encode(tbs_cert['subjectPublicKeyInfo'])
         key         = cls.PUB_KEY_DECODER.decode(buffer).key
-        signing_alg = PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg.replace('-', '_')).value
+        signing_alg = resolve_alg(cert['signatureAlgorithm'])
 
         return cls(
             key=key, version=version, serial_number=serial_num, issuer=issuer, subject=subject,

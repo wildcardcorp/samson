@@ -1,17 +1,16 @@
 from datetime import datetime
 from pyasn1.type import tag
-from samson.encoding.general import PKIAutoParser
 from samson.utilities.bytes import Bytes
 from typing import List
 from pyasn1.type.univ import Any, Sequence, SequenceOf
 from samson.encoding.x509.x509_extension import X509Extension
-from samson.encoding.asn1 import parse_time, build_time
+from samson.encoding.asn1 import parse_time, build_time, resolve_alg, verify_signature, build_signature_alg
 from samson.core.base_object import BaseObject
 from pyasn1_modules import rfc5280
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import namedtype
-from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS, parse_rdn, rdn_to_str
 from samson.encoding.x509.x509_signature import X509Signature
+from samson.encoding.x509.x509_rdn import RDNSequence
 
 
 class CRLEntry(Sequence):
@@ -64,7 +63,7 @@ class X509CRLEntry(BaseObject):
 
 
 class X509CertificateRevocationList(BaseObject):
-    def __init__(self, issuer: str, this_update: datetime, next_update: datetime=None, crl_entries: List[X509CRLEntry]=None, extensions: List[X509Extension]=None, version: int=2, signing_alg: X509Signature=None, signature_value: bytes=None) -> None:
+    def __init__(self, issuer: RDNSequence, this_update: datetime, next_update: datetime=None, crl_entries: List[X509CRLEntry]=None, extensions: List[X509Extension]=None, version: int=2, signing_alg: X509Signature=None, signature_value: bytes=None) -> None:
         self.version         = version
         self.issuer          = issuer
         self.this_update     = this_update
@@ -80,7 +79,7 @@ class X509CertificateRevocationList(BaseObject):
 
         # Issuer RDN
         issuer = rfc5280.Name()
-        issuer.setComponentByPosition(0, parse_rdn(self.issuer))
+        issuer.setComponentByPosition(0, self.issuer.build())
         tbs_certlist['issuer'] = issuer
 
         # Update times
@@ -113,14 +112,8 @@ class X509CertificateRevocationList(BaseObject):
     
 
         # Ripped this from X509Cert
-        signing_alg = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
-
-        signature_alg = rfc5280.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
-
-        if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
-            signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
-        
+        signing_alg   = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
+        signature_alg = build_signature_alg(signing_alg, signing_key)
 
         tbs_certlist['signature'] = signature_alg
 
@@ -147,13 +140,13 @@ class X509CertificateRevocationList(BaseObject):
 
         tbs_certlist = crl['tbsCertList']
         version = int(tbs_certlist['version'])
-        issuer  = rdn_to_str(tbs_certlist['issuer'][0])
+        issuer  = RDNSequence.parse(tbs_certlist['issuer'][0])
         this_update = parse_time(tbs_certlist['thisUpdate'])
 
         next_update = None
         if tbs_certlist['nextUpdate'].isValue:
             next_update = parse_time(tbs_certlist['nextUpdate'])
-        
+
         crl_entries = None
         if tbs_certlist['revokedCertificates'].isValue:
             crl_entries = [X509CRLEntry.parse(crl_entry) for crl_entry in tbs_certlist['revokedCertificates']]
@@ -164,8 +157,7 @@ class X509CertificateRevocationList(BaseObject):
             extensions = [X509Extension.parse(ext) for ext in tbs_certlist['crlExtensions']]
         
 
-        signature_alg   = INVERSE_SIGNING_ALG_OIDS[str(tbs_certlist['signature']['algorithm'])]
-        signature_alg   = PKIAutoParser.resolve_x509_signature_alg(signature_alg.replace('-', '_')).value
+        signature_alg   = resolve_alg(tbs_certlist['signature'])
         signature_value = Bytes(int(crl['signature']))
 
 
@@ -185,11 +177,4 @@ class X509CertificateRevocationList(BaseObject):
     def verify(buffer: bytes, verification_key: object) -> bool:
         # Decode the full CRL and get the encoded TBSCertList
         crl, _left_over = decoder.decode(buffer, asn1Spec=rfc5280.CertificateList())
-
-        signature_value = crl['signature']
-        signature_alg   = INVERSE_SIGNING_ALG_OIDS[str(crl['tbsCertList']['signature']['algorithm'])].replace('-', '_')
-        tbs_certlist    = crl['tbsCertList']
-        encoded_tbs     = encoder.encode(tbs_certlist)
-
-        alg = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
-        return alg.verify(verification_key, encoded_tbs, signature_value)
+        return verify_signature(verification_key, crl['tbsCertList']['signature'], crl['tbsCertList'], crl['signature'])

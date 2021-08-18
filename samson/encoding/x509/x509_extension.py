@@ -1,18 +1,20 @@
 from datetime import datetime, timezone
+from pyasn1.error import PyAsn1Error
 from pyasn1.type.char import IA5String, GeneralString
 from samson.utilities.bytes import Bytes
-from typing import List
+from typing import List, Union
 from pyasn1_modules import rfc2459, rfc5280, rfc3280
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type.univ import BitString, Integer, Null, ObjectIdentifier, OctetString, Boolean, SequenceOf, Sequence
-from pyasn1.type import namedtype
+from pyasn1.type import namedtype, constraint
 from pyasn1.type.useful import UTCTime
 from pyasn1.type import tag
 from enum import Enum, IntFlag
 from samson.core.base_object import BaseObject
 from samson.encoding.tls.tls_crypto import TLSSCTList
-from samson.encoding.asn1 import rdn_to_str, parse_rdn
+from samson.encoding.x509.x509_rdn import RDNSequence
 
+MAX = float('inf')
 
 IA5_TAGS = {
     'dns': 'dNSName',
@@ -31,7 +33,7 @@ class GeneralName(BaseObject):
 
     def __init__(self, name: str) -> None:
         self.name = name
-    
+
 
     @classmethod
     def parse_recursive(cls, name: rfc2459.GeneralName):
@@ -51,7 +53,7 @@ class GeneralName(BaseObject):
 class RDNName(GeneralName):
 
     @classmethod
-    def parse(cls, name: rfc2459.GeneralName) -> 'StringName':
+    def parse(cls, name: rfc2459.GeneralName) -> 'RDNName':
         n_type = name.getName()
         value  = name[n_type]
 
@@ -59,11 +61,11 @@ class RDNName(GeneralName):
             if key in value:
                 break
 
-        return cls(rdn_to_str(value[key]))
+        return cls(RDNSequence.parse(value[key]))
 
 
     def build(self) -> rfc5280.GeneralName:
-        n_value = parse_rdn(self.name)
+        n_value = self.name.build()
         name = rfc5280.GeneralName()
 
         com  = name.componentType[self.TAG]
@@ -116,7 +118,7 @@ class OctetName(GeneralName):
         com_type = com.getType()
         com_name = com.getName()
 
-        n_value = [int(part) for part in self.data.split('.')]
+        n_value = [int(part) for part in self.name.split('.')]
         n_value = bytes(n_value)
         name[com_name] = com_type.clone(n_value)
 
@@ -377,7 +379,8 @@ class StandardExtensionType(Enum):
     INHIBIT_ANY_POLICY           = '2.5.29.54'
     AUTHORITY_INFO_ACCESS        = '1.3.6.1.5.5.7.1.1'
     SUBJECT_INFORMATION_ACCESS   = '1.3.6.1.5.5.7.1.11'
-    TLS_FEATURE                  = '1.3.6.1.5.5.7.1.24'
+    LOGO_TYPE                    = '1.3.6.1.5.5.7.1.12'
+    TLS_FEATURES                 = '1.3.6.1.5.5.7.1.24'
     OCSP_NO_CHECK                = '1.3.6.1.5.5.7.48.1.5'
     CERTIFICATE_TRANSPARENCY     = '1.3.6.1.4.1.11129.2.4.2'
     CT_PRECERTIFICATE_POISON     = '1.3.6.1.4.1.11129.2.4.3'
@@ -427,7 +430,7 @@ class X509ExtKeyUsageType(Enum):
 
 class X509IntFlag(IntFlag):
     def build(self):
-        binary = bin(int(self))[2:].strip('0')
+        binary = bin(int(self))[2:].strip('0').zfill(self.get_size())
         return self.get_asn1_obj()(binary)
     
 
@@ -442,10 +445,14 @@ class X509IntFlag(IntFlag):
 
 
     @classmethod
-    def parse(cls, val):
-        val = int(val)
+    def parse(cls, val_obj):
+        val = int(val_obj)
         val = int(bin(val)[2:][::-1].zfill(cls.get_size())[::-1], 2)
-        return cls(val)
+
+        val = cls(val)
+        size = len(val_obj.asBinary())
+        val.get_size = lambda: size
+        return val
 
 
 
@@ -503,11 +510,14 @@ class X509Extension(BaseObject):
         ext_type = str(extension['extnID'])
         critical = bool(extension['critical'])
 
-        ext_type = X509ExtensionType(ext_type)
+        try:
+            ext_type = X509ExtensionType(ext_type)
 
-        for subclass in X509Extension.__subclasses__():
-            if subclass.EXT_TYPE == ext_type:
-                return subclass.parse(bytes(extension['extnValue']), critical)
+            for subclass in X509Extension.__subclasses__():
+                if subclass.EXT_TYPE == ext_type:
+                    return subclass.parse(bytes(extension['extnValue']), critical)
+        except ValueError:
+            pass
 
         ext = X509Extension(critical=critical)
         ext.oid = ext_type
@@ -562,28 +572,48 @@ class X509IssuerAlternativeName(_AlternateName, X509Extension):
 
 
 
+# This is wrong, but some certs use this!
+class BasicConstraintsExplicit(Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('cA', Boolean()),
+        namedtype.OptionalNamedType('pathLenConstraint',
+                                    Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, MAX)))
+    )
+
+
 class X509BasicConstraints(X509Extension):
     EXT_TYPE = X509ExtensionType.BASIC_CONSTRAINTS
+    BC_TYPE  = rfc2459.BasicConstraints
 
     def __init__(self, is_ca: bool=True, path_len: int=None, critical: bool=True) -> None:
         self.is_ca    = is_ca
         self.path_len = path_len
         super().__init__(critical=critical)
     
+    
+    def __reprdir__(self):
+        return ['is_ca', 'path_len']
+    
 
     def build_extension(self) -> rfc5280.Extension:
-        ca_value = rfc2459.BasicConstraints()
+        ca_value = self.BC_TYPE()
         ca_value['cA'] = self.is_ca
 
         if self.path_len is not None:
             ca_value['pathLenConstraint'] = self.path_len
 
         return super()._build(ca_value)
-    
+
 
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509BasicConstraints':
-        ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc2459.BasicConstraints())
+        try:
+            ext_val, _ = decoder.decode(value_bytes, asn1Spec=BasicConstraintsExplicit())
+            bc_type    = BasicConstraintsExplicit
+        except PyAsn1Error:
+            ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc2459.BasicConstraints())
+            bc_type    = rfc2459.BasicConstraints
+
 
         path_len = ext_val['pathLenConstraint']
 
@@ -592,7 +622,9 @@ class X509BasicConstraints(X509Extension):
         else:
             path_len = None
 
-        return X509BasicConstraints(is_ca=bool(ext_val['cA']), path_len=path_len, critical=critical)
+        parsed = X509BasicConstraints(is_ca=bool(ext_val['cA']), path_len=path_len, critical=critical)
+        parsed.BC_TYPE = bc_type
+        return parsed
 
 
 
@@ -697,22 +729,35 @@ class X509ReasonCodeFlag(X509IntFlag):
         return rfc3280.ReasonFlags
 
 
+class X509CRLReason(Enum):
+    UNSPECIFIED            = 0
+    KEY_COMPROMISE         = 1
+    CA_COMPROMISE          = 2
+    AFFILIATION_CHANGED    = 3
+    SUPERSEDED             = 4
+    CESSATION_OF_OPERATION = 5
+    CERTIFICATE_HOLD       = 6
+    REMOVE_FROM_CRL        = 8
+    PRIVILEGE_WITHDRAWN    = 9
+    AA_COMPROMISE          = 10
+
+
 class X509ReasonCode(X509Extension):
     EXT_TYPE  = X509ExtensionType.REASON_CODE
 
-    def __init__(self, reason_code: X509ReasonCodeFlag, critical: bool=False) -> None:
+    def __init__(self, reason_code: X509CRLReason, critical: bool=False) -> None:
         self.reason_code = reason_code
         super().__init__(critical=critical)
 
 
     def build_extension(self) -> rfc5280.Extension:
-        return super()._build(self.reason_code.build())
+        return super()._build(Integer(self.reason_code.value))
 
 
     @staticmethod
     def parse(value_bytes: bytes, critical: bool) -> 'X509ReasonCode':
         ext_val, _  = decoder.decode(value_bytes)
-        return X509ReasonCode(reason_code=X509ReasonCodeFlag.parse(ext_val), critical= critical)
+        return X509ReasonCode(reason_code=X509CRLReason(ext_val), critical= critical)
 
 
 
@@ -922,7 +967,7 @@ class X509AccessDescriptorType(Enum):
 
 class X509AccessDescription(BaseObject):
     def __init__(self, access_method: X509AccessDescriptorType, access_location: 'str') -> None:
-        self.access_method = access_method
+        self.access_method   = access_method
         self.access_location = access_location
 
 
@@ -1029,11 +1074,56 @@ class X509CertificatePracticeStatement(X509PolicyQualifier):
 
 
 
+class DisplayText(BaseObject):
+
+    def __init__(self, value: bytes, text_type: str='utf8String') -> None:
+        self.value = value
+        self.text_type = text_type
+
+    def __repr__(self):
+        return self.value.decode()
+
+    def __str__(self):
+        return repr(self)
+    
+
+    @staticmethod
+    def wrap(data: Union[str, bytes, 'DisplayText']) -> 'DisplayText':
+        if type(data) in [str, bytes]:
+            if type(data) is str:
+                data = data.encode()
+
+            data = DisplayText(data)
+        
+        return data
+
+
+
+    @staticmethod
+    def parse(display: rfc5280.DisplayText) -> 'DisplayText':
+        text_type = display.getName()
+        value     = bytes(display[text_type])
+        return DisplayText(value, text_type)
+
+
+    def build(self) -> rfc5280.DisplayText:
+        display = rfc5280.DisplayText()
+        display[self.text_type] = self.value
+        return display
+
+
+
 class X509UserNotice(X509PolicyQualifier):
     QUALIFIER_TYPE = X509CertificatePolicyQualifierType.USER_NOTICE
     DATA_SPEC      = rfc5280.UserNotice
 
-    def __init__(self, explicit_text: str=None, org_name: str=None, notice_nums: List[int]=None) -> None:
+    def __init__(self, explicit_text: Union[bytes, str, DisplayText]=None, org_name: Union[bytes, str, DisplayText]=None, notice_nums: List[int]=None) -> None:
+        if explicit_text is not None:
+            explicit_text = DisplayText.wrap(explicit_text)
+
+        if org_name is not None:
+            org_name = DisplayText.wrap(org_name)
+
         self.explicit_text = explicit_text
         self.org_name      = org_name
         self.notice_nums   = notice_nums
@@ -1043,11 +1133,11 @@ class X509UserNotice(X509PolicyQualifier):
         data = rfc5280.UserNotice()
 
         if self.explicit_text is not None:
-            data['explicitText']['utf8String'] = data['explicitText']['utf8String'] .clone(self.explicit_text)
+            data['explicitText'] = self.explicit_text.build()
         
         notice_ref = data['noticeRef']
         if self.org_name is not None:
-            notice_ref['organization']['utf8String'] = notice_ref['organization']['utf8String'].clone(self.org_name)
+            notice_ref['organization'] = self.org_name.build()
         
         if self.notice_nums is not None:
             notice_ref['noticeNumbers'].extend(self.notice_nums)
@@ -1060,7 +1150,7 @@ class X509UserNotice(X509PolicyQualifier):
         ex_text = data['explicitText']
 
         if ex_text.isValue:
-            ex_text = str(ex_text[ex_text.getName()])
+            ex_text = DisplayText.parse(ex_text)
         else:
             ex_text = None
 
@@ -1068,7 +1158,7 @@ class X509UserNotice(X509PolicyQualifier):
         org_name   = notice_ref['organization']
 
         if org_name.isValue:
-            org_name = str(org_name[org_name.getName()])
+            org_name = DisplayText.parse(org_name)
         else:
             org_name = None
 
@@ -1507,3 +1597,106 @@ class X509CRLNumber(IntExtension, X509Extension):
     def __init__(self, crl_number: int, critical: bool=False) -> None:
         self.crl_number = crl_number
         super().__init__(critical=critical)
+
+
+
+# https://www.rfc-editor.org/rfc/rfc6066.html#section-1.1
+# https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
+class X509TLSFeature(Enum):
+    SERVER_NAME = 0
+    MAX_FRAGMENT_LENGTH = 1
+    CLIENT_CERTIFICATE_URL = 2
+    TRUSTED_CA_KEYS = 3
+    TRUNCATED_HMAC = 4
+    STATUS_REQUEST = 5
+    USER_MAPPING = 6
+    CLIENT_AUTHZ = 7
+    SERVER_AUTHZ = 8
+    CERT_TYPE = 9
+    SUPPORTED_GROUPS = 10
+    EC_POINT_FORMATS = 11
+    SRP = 12
+    SIGNATURE_ALGORITHMS = 13
+    USE_SRTP = 14
+    HEARTBEAT = 15
+    APPLICATION_LAYER_PROTOCOL_NEGOTIATION = 16
+    STATUS_REQUEST_V2 = 17
+    SIGNED_CERTIFICATE_TIMESTAMP = 18
+    CLIENT_CERTIFICATE_TYPE = 19
+    SERVER_CERTIFICATE_TYPE = 20
+    PADDING = 21
+    ENCRYPT_THEN_MAC = 22
+    EXTENDED_MASTER_SECRET = 23
+    TOKEN_BINDING = 24
+    CACHED_INFO = 25
+    TLS_LTS = 26
+    COMPRESS_CERTIFICATE = 27
+    RECORD_SIZE_LIMIT = 28
+    PWD_PROTECT = 29
+    PWD_CLEAR = 30
+    PASSWORD_SALT = 31
+    TICKET_PINNING = 32
+    TLS_CERT_WITH_EXTERN_PSK = 33
+    DELEGATED_CREDENTIALS = 34
+    SESSION_TICKET = 35
+    TLMSP = 36
+    TLMSP_PROXYING = 37
+    TLMSP_DELEGATE = 38
+    SUPPORTED_EKT_CIPHERS = 39
+    PRE_SHARED_KEY = 41
+    EARLY_DATA = 42
+    SUPPORTED_VERSIONS = 43
+    COOKIE = 44
+    PSK_KEY_EXCHANGE_MODES = 45
+    CERTIFICATE_AUTHORITIES = 47
+    OID_FILTERS = 48
+    POST_HANDSHAKE_AUTH = 49
+    SIGNATURE_ALGORITHMS_CERT = 50
+    KEY_SHARE = 51
+    TRANSPARENCY_INFO = 52
+    CONNECTION_ID_DEPRECATED = 53
+    CONNECTION_ID = 54
+    EXTERNAL_ID_HASH = 55
+    EXTERNAL_SESSION_ID = 56
+    QUIC_TRANSPORT_PARAMETERS = 57
+    TICKET_REQUEST = 58
+    DNSSEC_CHAIN = 59
+    RENEGOTIATION_INFO = 65281
+
+
+
+class X509TLSFeatures(X509Extension):
+    EXT_TYPE = X509ExtensionType.TLS_FEATURES
+
+    def __init__(self, features: List[X509TLSFeature], critical: bool=False) -> None:
+        self.features = features
+        super().__init__(critical=critical)
+    
+
+    def build_extension(self) -> rfc5280.Extension:
+        seqof = SequenceOf()
+
+        for feature in self.features:
+            if type(feature) is X509TLSFeature:
+                feature = feature.value
+
+            seqof.append(Integer(feature))
+
+        return super()._build(seqof)
+
+
+    @staticmethod
+    def parse(value_bytes: bytes, critical: bool) -> 'X509TLSFeatures':
+        ext_val, _ = decoder.decode(value_bytes)
+        features   = []
+
+        for num in ext_val:
+            val = int(num)
+            try:
+                val = X509TLSFeature(val)
+            except ValueError:
+                pass
+
+            features.append(val)
+
+        return X509TLSFeatures(features=features, critical=critical)

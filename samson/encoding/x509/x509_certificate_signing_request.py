@@ -1,11 +1,12 @@
 from samson.encoding.x509.x509_certificate import X509Certificate
-from samson.encoding.asn1 import parse_rdn,rdn_to_str
+from samson.encoding.asn1 import resolve_alg, build_signature_alg
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type.univ import ObjectIdentifier, Any
 from pyasn1_modules import rfc2986, rfc5280
 from samson.utilities.bytes import Bytes
-from samson.encoding.asn1 import SIGNING_ALG_OIDS, INVERSE_SIGNING_ALG_OIDS
+from samson.encoding.x509.x509_rdn import RDNSequence, CommonName
 
+_default_rdn = RDNSequence([CommonName(b'CA')])
 
 class X509CertificateSigningRequest(X509Certificate):
     DEFAULT_MARKER = 'CERTIFICATE REQUEST'
@@ -17,12 +18,12 @@ class X509CertificateSigningRequest(X509Certificate):
 
 
     def __init__(
-        self, key: object, version: int=0, subject: str='CN=ca',
+        self, key: object, version: int=0, subject: RDNSequence=None,
         signing_alg: object=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
-        self.subject = subject
+        self.subject = RDNSequence.wrap(subject or _default_rdn)
         self.signing_alg = signing_alg
         self.signature_value = signature_value
 
@@ -34,7 +35,7 @@ class X509CertificateSigningRequest(X509Certificate):
 
         # Subject RDN
         subject = rfc5280.Name()
-        subject.setComponentByPosition(0, parse_rdn(self.subject, byte_encode=True))
+        subject.setComponentByPosition(0, self.subject.build())
 
         info['subject'] = subject
 
@@ -63,15 +64,8 @@ class X509CertificateSigningRequest(X509Certificate):
         if not self.signing_alg and not hasattr(signing_key, "X509_SIGNING_DEFAULT"):
             raise ValueError("'signing_alg' not specified and 'signing_key' has no default algorithm")
 
-        signing_alg = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
-
-
-        signature_alg = rfc5280.AlgorithmIdentifier()
-        signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
-
-        if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
-            signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
-
+        signing_alg   = self.signing_alg or signing_key.X509_SIGNING_DEFAULT.value
+        signature_alg = build_signature_alg(signing_alg, signing_key)
 
         # Inject or compute the CRI signature
         if self.signature_value is not None:
@@ -92,7 +86,6 @@ class X509CertificateSigningRequest(X509Certificate):
 
     @classmethod
     def decode(cls, buffer: bytes, **kwargs) -> object:
-        from samson.encoding.general import PKIAutoParser
 
         csr, _left_over = decoder.decode(buffer, asn1Spec=rfc2986.CertificationRequest())
         signature       = Bytes(int(csr['signature']))
@@ -101,12 +94,10 @@ class X509CertificateSigningRequest(X509Certificate):
         version = int(info['version'])
 
         # Decode RDNs
-        subject = rdn_to_str(info['subject'][0])
-
-        cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(csr['signatureAlgorithm']['algorithm'])]
+        subject = RDNSequence.parse((info['subject'][0]))
 
         buffer      = encoder.encode(info['subjectPKInfo'])
         key         = cls.PUB_KEY_DECODER.decode(buffer).key
-        signing_alg = PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg.replace('-', '_')).value
+        signing_alg = resolve_alg(csr['signatureAlgorithm'])
 
         return cls(key=key, version=version, subject=subject, signing_alg=signing_alg, signature_value=signature)

@@ -1,3 +1,4 @@
+from samson.encoding.general import PKIAutoParser
 from pyasn1.error import PyAsn1Error
 from pyasn1.type.char import PrintableString, TeletexString
 from samson.hashes.sha1 import SHA1
@@ -6,7 +7,7 @@ from samson.hashes.md5 import MD5
 from samson.hashes.md2 import MD2
 from pyasn1_modules import rfc2459, rfc5280
 from pyasn1.codec.der import encoder
-from pyasn1.type.univ import ObjectIdentifier, OctetString
+from pyasn1.type.univ import Any, BitString, ObjectIdentifier, OctetString
 from pyasn1.type.useful import UTCTime
 from datetime import timezone
 
@@ -27,38 +28,6 @@ HASH_OID_LOOKUP = {
 
 INVERSE_HASH_OID_LOOKUP = invert_dict(HASH_OID_LOOKUP)
 
-
-RDN_TYPE_LOOKUP = {
-    'CN': rfc2459.CommonName,
-    'O': rfc2459.OrganizationName,
-    'C': rfc2459.X520countryName,
-    'L': rfc2459.UTF8String,
-    'ST': rfc5280.X520StateOrProvinceName,
-    'OU': rfc2459.X520OrganizationalUnitName,
-    'emailAddress': rfc5280.EmailAddress,
-    #'serialNumber': rfc2459.CertificateSerialNumber,
-    #'streetAddress': rfc2459.StreetAddress
-
-    # 'businessCategory': pyasn1_modules doesn't have this one
-}
-
-INVERSE_RDN_TYPE_LOOKUP = invert_dict(RDN_TYPE_LOOKUP)
-
-RDN_OID_LOOKUP = {
-    'CN': ObjectIdentifier([2, 5, 4, 3]),
-    'O': ObjectIdentifier([2, 5, 4, 10]),
-    'OU': ObjectIdentifier([2, 5, 4, 11]),
-    'C': ObjectIdentifier([2, 5, 4, 6]),
-    'L': ObjectIdentifier([2, 5, 4, 7]),
-    'ST': ObjectIdentifier([2, 5, 4, 8]),
-    'emailAddress': ObjectIdentifier('1.2.840.113549.1.9.1'),
-    'serialNumber': ObjectIdentifier([2, 5, 4, 5]),
-    'streetAddress': ObjectIdentifier([2, 5, 4, 9]),
-    'businessCategory': ObjectIdentifier([2, 5, 4, 15]),
-    'jurisdictionC': ObjectIdentifier('1.3.6.1.4.1.311.60.2.1.3')
-}
-
-INVERSE_RDN_OID_LOOKUP = invert_dict(RDN_OID_LOOKUP)
 
 # https://tools.ietf.org/html/rfc8017#appendix-A.2.4
 SIGNING_ALG_OIDS = {
@@ -85,93 +54,6 @@ SIGNING_ALG_OIDS = {
 INVERSE_SIGNING_ALG_OIDS = {v:k for k,v in SIGNING_ALG_OIDS.items()}
 
 
-def parse_rdn(rdn_str: str, byte_encode: bool=False) -> rfc2459.RDNSequence:
-    rdn_parts = rdn_str.split('=')
-    rdn_seq   = rfc2459.RDNSequence()
-
-    # Here we're careful of commas in RDNs
-    # We also use 'key_idx' to keep track of the position
-    # of the RDNs
-    rdn_dict = []
-    key      = rdn_parts[0]
-    next_key = key
-
-    for part in rdn_parts[1:-1]:
-        parts = part.split(',')
-        curr_val, next_key = ','.join(parts[:-1]), parts[-1]
-
-        rdn_dict.append((key, curr_val))
-        key           = next_key
-
-    rdn_dict.append((next_key, rdn_parts[-1]))
-
-
-    for k,v in rdn_dict[::-1]:
-        attr = rfc2459.AttributeTypeAndValue()
-
-        try:
-            attr['type'] = RDN_OID_LOOKUP[k]
-
-        # If the human-readable lookup fails, assume it's an OID
-        except KeyError:
-            attr['type'] = ObjectIdentifier(k)
-
-        try:
-            rdn_payload = RDN_TYPE_LOOKUP[k](v)
-            encoder.encode(rdn_payload)
-
-        # We need this for rfc2459.X520StateOrProvinceName
-        except TypeError:
-            rdn_payload = RDN_TYPE_LOOKUP[k]()
-            rdn_payload.setComponentByPosition(0, v)
-
-
-        # Either we don't have it, or there's some type juggling going on
-        # e.g
-        # 327:d=5  hl=2 l=   3 prim: OBJECT            :serialNumber
-        # 332:d=5  hl=2 l=  11 prim: PRINTABLESTRING   :108 503 199
-        except (KeyError, PyAsn1Error):
-            try:
-                rdn_payload = encoder.encode(PrintableString(v))
-            except PyAsn1Error:
-                try:
-                    rdn_payload = encoder.encode(TeletexString(v))
-                except PyAsn1Error:
-                    rdn_payload = encoder.encode(rfc2459.UTF8String(v))
-            
-
-
-        if byte_encode:
-            attr['value'] = OctetString(encoder.encode(rdn_payload))
-        else:
-            attr['value'] = rdn_payload
-
-        rdn = rfc2459.RelativeDistinguishedName()
-        rdn.setComponentByPosition(0, attr)
-        rdn_seq.append(rdn)
-
-    return rdn_seq
-
-
-def rdn_to_str(rdns: rfc2459.RDNSequence) -> str:
-    from pyasn1.codec.der import decoder
-
-    rdn_map = []
-    for rdn in rdns[::-1]:
-        oid_tuple = rdn[0]['type'].asTuple()
-        try:
-            rtype = INVERSE_RDN_OID_LOOKUP[ObjectIdentifier(oid_tuple)]
-
-        # If we fail to convert it to a human readable, just convert to OID form
-        except KeyError:
-            rtype = '.'.join([str(i) for i in oid_tuple])
-
-        rval  = str(decoder.decode(bytes(rdn[0]['value']))[0])
-        rdn_map.append((rtype, rval))
-
-    return ','.join(f'{rtype}={rval}' for rtype, rval in rdn_map)
-
-
 def parse_time(time_val):
     if 'utcTime' in time_val and time_val['utcTime'].hasValue():
         result = time_val['utcTime']
@@ -185,3 +67,26 @@ def build_time(dt):
     rev_time  = rfc5280.Time()
     rev_time['utcTime'] = UTCTime.fromDateTime(dt)
     return rev_time
+
+
+def verify_signature(verification_key: 'EncodablePKI', algorithm_id: rfc2459.AlgorithmIdentifier, data: object, signature: BitString) -> bool:
+    signature_alg = INVERSE_SIGNING_ALG_OIDS[str(algorithm_id['algorithm'])].replace('-', '_')
+    alg           = verification_key.X509_SIGNING_ALGORITHMS[signature_alg].value
+    signed_data   = encoder.encode(data)
+
+    return alg.verify(verification_key, signed_data, signature)
+
+
+def resolve_alg(algorithm_id: rfc2459.AlgorithmIdentifier) -> 'X509Signature':
+    cert_sig_alg = INVERSE_SIGNING_ALG_OIDS[str(algorithm_id['algorithm'])].replace('-', '_')
+    return PKIAutoParser.resolve_x509_signature_alg(cert_sig_alg).value
+
+
+def build_signature_alg(signing_alg: 'X509Signature', signing_key: 'EncodablePKI') -> rfc2459.AlgorithmIdentifier:
+    signature_alg = rfc2459.AlgorithmIdentifier()
+    signature_alg['algorithm'] = SIGNING_ALG_OIDS[signing_alg.name]
+
+    if hasattr(signing_key, 'X509_SIGNING_PARAMS'):
+        signature_alg['parameters'] = Any(encoder.encode(signing_key.X509_SIGNING_PARAMS.encode(signing_key)))
+
+    return signature_alg

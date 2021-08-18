@@ -25,6 +25,7 @@ class SCTVersion(TLSEnum):
 
 LogID = FixLenByteArray(32)
 
+# https://datatracker.ietf.org/doc/html/rfc6962#section-3.2
 class TLSSignedCertificateTimestamp(BaseObject):
     def __init__(self, version: int, log_id: Bytes, timestamp: int, ct_exts: list, hash_alg: TLSHashAlgorithm, sig_alg: TLSSignatureAlgorithm, signature: Bytes) -> None:
         self.version   = version

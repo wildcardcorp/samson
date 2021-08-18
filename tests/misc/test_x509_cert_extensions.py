@@ -432,9 +432,8 @@ class X509ExtensionTestCase(unittest.TestCase):
         footer = b'-----END CERTIFICATE-----'
         certs  = gaunt_bytes.split(footer)[:-1]
 
-        for i, cert in enumerate(tqdm(certs)):
-            if i not in [505]:
-                self._test_cert(cert + footer)
+        for cert in tqdm(certs):
+            self._test_cert(cert + footer)
 
 
     def test_ms_and_sct(self):
