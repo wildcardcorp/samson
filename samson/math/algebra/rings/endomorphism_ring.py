@@ -85,7 +85,7 @@ class EndomorphismRing(Ring):
         self.ring = ring
         self.isomorphisms = ring.isomorphisms(ring)
         self.zero = self(lambda e: ring.zero)
-        self.one  = self( [phi for phi in self.isomorphisms if phi.is_identity()][0])
+        self.one  = self([phi for phi in self.isomorphisms if phi.is_identity()][0])
 
 
     def __reprdir__(self):

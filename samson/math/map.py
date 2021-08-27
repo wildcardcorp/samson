@@ -7,7 +7,7 @@ class Map(BaseObject):
         self.domain   = domain
         self.codomain = codomain
         self.map_func = map_func
-        self.inv_map = inv_map
+        self.inv_map  = inv_map
         self.pre_isomorphism = pre_isomorphism
     
 
@@ -31,7 +31,7 @@ class Map(BaseObject):
     def __call__(self, element):
         if self.pre_isomorphism:
             element = self.pre_isomorphism(element)
-        
+
         return self.map_func(element)
 
 

@@ -1,8 +1,6 @@
 from samson.math.algebra.curves.weierstrass_curve import EllipticCurve, WeierstrassPoint
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException
-from samson.utilities.runtime import RUNTIME
-from samson.core.base_object import BaseObject
 
 class EllipticCurveIsogeny(Map):
     def __init__(self, curve: EllipticCurve, kernel: WeierstrassPoint, pre_isomorphism: 'EllipticCurveIsogeny'=None):
@@ -18,6 +16,14 @@ class EllipticCurveIsogeny(Map):
         return ['curve', 'kernel']
 
 
+    def __eq__(self, other):
+        return self.curve == other.curve and self.kernel == other.kernel
+
+
+    def __hash__(self):
+        return hash((self.curve, self.kernel))
+
+
     @property
     def domain(self):
         return self.curve
@@ -26,7 +32,8 @@ class EllipticCurveIsogeny(Map):
 
     def _get_codomain(self) -> EllipticCurve:
         a, b = self.curve.a, self.curve.b
-        w, v = 0, 0
+        R    = self.curve.ring
+        w, v = R(0), R(0)
 
         for Q in self.points:
             x, y = Q.x, Q.y
@@ -46,9 +53,23 @@ class EllipticCurveIsogeny(Map):
 
     def _rat_map(self, P: WeierstrassPoint) -> WeierstrassPoint:
         E = self.codomain
-        x = P.x + sum((P+Q).x - Q.x for Q in self.points)
-        y = P.y + sum((P+Q).y - Q.y for Q in self.points)
-        if x or y:
+        R = E.ring
+        X, Y, Z = R.zero, R.zero, R.zero
+
+        for Q in self.points:
+            r  = P+Q
+            X += r.x - Q.x
+            Y += r.y - Q.y
+            Z += r.z - Q.z
+
+
+        x = P.x + X
+        y = P.y + Y
+        z = P.z + Z
+
+        if not z:
+            return E.zero
+        elif x or y:
             return E(x, y)
 
         # This might be in the kernel. (0, 0) != PAF, so we need to check

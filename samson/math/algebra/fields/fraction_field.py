@@ -34,8 +34,8 @@ class FractionFieldElement(FieldElement):
         if denominator == field.ring.zero:
             raise ZeroDivisionError
 
-        self.numerator   = numerator
-        self.denominator = denominator
+        self.numerator   = field.ring(numerator)
+        self.denominator = field.ring(denominator)
         super().__init__(field)
 
         if self.ring.precision:

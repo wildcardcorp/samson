@@ -65,6 +65,9 @@ class DenseVector(BaseObject):
     
 
     def __setitem__(self, idx, value):
+        if idx >= len(self):
+            self.values.extend([self.coeff_ring.zero] * (idx-len(self)+1))
+
         self.values[idx] = value
 
 

@@ -24,7 +24,7 @@ class LaurentSeriesElement(NegativeDegreeElement):
 
 
     def __reprdir__(self):
-        return ['__raw__', 'val', 'shift', 'ring']
+        return ['__raw__', 'shift', 'ring']
 
 
     def __call__(self, val):

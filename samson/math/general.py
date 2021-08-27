@@ -1,3 +1,4 @@
+from samson.core.base_object import BaseObject
 from samson.utilities.general import rand_bytes
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException, SearchspaceExhaustedException, NoSolutionException
 from samson.auxiliary.complexity import add_complexity, KnownComplexities
@@ -1793,57 +1794,61 @@ def frobenius_trace_mod_l(curve: 'EllipticCurve', l: int) -> 'QuotientElement':
     """
     EllipticCurve = _ell_curve.EllipticCurve
     from samson.math.algebra.fields.fraction_field import FractionField as Frac
-    ZZ = _integer_ring.ZZ
+    from samson.math.algebra.curves.sea import elkies_trace_mod_l
+    try:
+        if not is_prime(l):
+            raise NoSolutionException
 
-    torsion_quotient_ring = ZZ/ZZ(l)
-    psi = curve.division_poly(l)
-    psi.x_poly.cache_div(psi.x_poly.degree()*2)
+        return elkies_trace_mod_l(curve, l)
 
-    # Build symbolic torsion group
-    R = curve.curve_poly_ring
-    S = R/psi
-    T = Frac(S, simplify=False)
-    sym_curve = EllipticCurve(a=T([curve.a]), b=T([curve.b]), ring=T, check_singularity=False)
+    except NoSolutionException:
+        ZZ = _integer_ring.ZZ
 
-    x = R.poly_ring.symbol
+        torsion_quotient_ring = ZZ/ZZ(l)
+        psi = curve.division_poly(l)
+        psi.x_poly.cache_div(psi.x_poly.degree()*2)
 
-    p_x = T(R((x, 0)))
-    p_y = T(R((0, 1)))
+        # Build symbolic torsion group
+        R = psi.ring
+        S = R/psi
+        T = Frac(S, simplify=False)
+        sym_curve = EllipticCurve(a=T([curve.a]), b=T([curve.b]), ring=T, check_singularity=False)
 
-    point = sym_curve(p_x, p_y, verify=False)
+        x = R.poly_ring.symbol
 
-    # Generate symbolic points
-    if l < 40:
-        p1, p2 = __fast_double_elliptic_frobenius(T, curve, point)
-    else:
-        F  = sym_curve.frobenius_endomorphism()
-        p1 = F(point)
-        p2 = F(p1)
+        p_x = T(R((x, 0)))
+        p_y = T(R((0, 1)))
 
-    determinant = (curve.p % l) * point
+        point = sym_curve(p_x, p_y, verify=False)
 
-    point_sum = determinant + p2
-
-    # Find trace residue
-    if point_sum == sym_curve.POINT_AT_INFINITY:
-        return torsion_quotient_ring(0)
-
-
-    # TODO: Can we speed this up? The problem with using BSGS is hashing these points. Since they're over a
-    # fraction field, we can have equivalent fractions that have different numerators and denominators.
-    # This is true even if they're simplified. Until I can come up with a better way to hash fractions,
-    # this will be a linear search.
-    trace_point = p1
-    for candidate in range(1, (l + 1) // 2):
-        if point_sum.x == trace_point.x:
-            if point_sum.y == trace_point.y:
-                return torsion_quotient_ring(candidate)
-            else:
-                return torsion_quotient_ring(-candidate)
+        # Generate symbolic points
+        if l < 40:
+            p1, p2 = __fast_double_elliptic_frobenius(T, curve, point)
         else:
-            trace_point += p1
+            F  = sym_curve.frobenius_endomorphism()
+            p1 = F(point)
+            p2 = F(p1)
 
-    raise ArithmeticError("No trace candidate satisfied the Frobenius equation")
+        determinant = (curve.p % l) * point
+
+        point_sum = determinant + p2
+
+        # Find trace residue
+        if point_sum == sym_curve.POINT_AT_INFINITY:
+            return torsion_quotient_ring(0)
+
+
+        trace_point = p1
+        for candidate in range(1, (l + 1) // 2):
+            if point_sum.x == trace_point.x:
+                if point_sum.y == trace_point.y:
+                    return torsion_quotient_ring(candidate)
+                else:
+                    return torsion_quotient_ring(-candidate)
+            else:
+                trace_point += p1
+
+        raise ArithmeticError("No trace candidate satisfied the Frobenius equation")
 
 
 
@@ -2145,6 +2150,26 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
 
 
 
+class ProofMethod(Enum):
+    EXHAUSTIVE     = 0
+    ECPP           = 1
+    LUCAS_LEHMER   = 2
+    MILLER_RABIN   = 3
+    LUCAS_SEQUENCE = 4
+
+
+class PrimalityCertficate(BaseObject):
+    def __init__(self, n: int, is_prime: bool, method: ProofMethod, proof: dict=None) -> None:
+        self.n        = n
+        self.is_prime = is_prime
+        self.method   = method
+        self.proof    = proof
+
+
+    def __bool__(self):
+        return self.is_prime
+
+
 def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     """
     Probabilistic primality test. Each iteration has a 1/4 false positive rate.
@@ -2170,6 +2195,7 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
     n_1 = n - 1
     d   = n_1
     r   = 0
+
     while not d % 2 and d:
         r += 1
         d //= 2
@@ -2180,6 +2206,9 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
                 yield random_int_between(2, n_1)
 
         bases = generator()
+
+
+    certificate = PrimalityCertficate(n=n, is_prime=False, method=ProofMethod.MILLER_RABIN)
 
     for a in bases:
         x = pow(a, d, n)
@@ -2194,7 +2223,8 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
                 break
 
         if not found:
-            return False
+            certificate.proof = {'witness': a}
+            return certificate
 
     return True
 
@@ -2306,7 +2336,7 @@ def generate_lucas_selfridge_parameters(n: int) -> Tuple[int, int, int]:
     while True:
         g = gcd(abs(D), n)
         if g > 1 and g != n:
-            return (0, 0, 0)
+            return (0, 0, g)
 
         if jacobi_symbol(D, n) == ResidueSymbol.DOES_NOT_EXIST:
             break
@@ -2383,6 +2413,8 @@ def is_strong_lucas_pseudoprime(n: int) -> bool:
         False
 
     """
+    certificate = PrimalityCertficate(n=n, is_prime=False, method=ProofMethod.LUCAS_SEQUENCE)
+
     if n == 2:
         return True
 
@@ -2391,7 +2423,8 @@ def is_strong_lucas_pseudoprime(n: int) -> bool:
 
     D, P, Q = generate_lucas_selfridge_parameters(n)
     if D == 0:
-        return False
+        certificate.proof = {'divisor': Q}
+        return certificate
 
     s    = 0
     q, r = divmod(n+1, 2)
@@ -2413,7 +2446,8 @@ def is_strong_lucas_pseudoprime(n: int) -> bool:
 
         Qk = pow(Qk, 2, n)
 
-    return False
+    certificate.proof = {'witness': (P, Q)}
+    return certificate
 
 
 PRIMES_UNDER_1000 = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997}
@@ -2429,14 +2463,18 @@ def exhaustive_primality_proof(N: int) -> bool:
     Returns:
         bool: Whether or not `N` is prime.
     """
+    certificate = PrimalityCertficate(n=N, is_prime=True, method=ProofMethod.EXHAUSTIVE)
+
     if N in PRIMES_UNDER_1000:
-        return True
+        return certificate
 
-    for p in sieve_of_eratosthenes(kth_root(N, 2)):
+    for p in sieve_of_eratosthenes(kth_root(N+1, 2)):
         if not N % p:
-            return False
+            certificate.is_prime = False
+            certificate.proof    = {'divisor': p}
+            return certificate
 
-    return True
+    return certificate
 
 
 def ecpp(N: int, recursive: bool=True) -> bool:
@@ -2459,6 +2497,8 @@ def ecpp(N: int, recursive: bool=True) -> bool:
 
     class_one_Ds = [-3, -4, -7, -8, -11, -12, -16, -19, -27, -28, -43, -67, -163]
     R = ZZ/ZZ(N)
+
+    certificate = PrimalityCertficate(n=N, is_prime=False, method=ProofMethod.ECPP)
 
     for d in class_one_Ds:
         if gcd(N, -d) == 1 and R(d).is_square():
@@ -2485,18 +2525,30 @@ def ecpp(N: int, recursive: bool=True) -> bool:
                 if P.order() < d:
                     continue
 
+                proof = {'P': P, 'd': d, 'p_proofs': []}
+
                 for p, e in d_facs.items():
-                    if recursive and not is_prime(p, True):
+                    p_proof = is_prime(p, True)
+                    proof['p_proofs'].append(p_proof)
+
+                    if recursive and not p_proof:
                         raise RuntimeError(f'Unexpected ECPP error. {p} is not a prime, so factorization has failed')
 
                     if not P*p**e:
-                        return False
+                        certificate.proof = proof
+                        return certificate
 
-                return True
+
+                certificate.proof    = proof
+                certificate.is_prime = True
+                return certificate
+
             except NoSolutionException:
                 pass
             except NotInvertibleException as e:
-                return False
+                res = gcd(e.parameters['a'], N)
+                certificate.proof = {'divisor': res}
+                return certificate
 
     raise RuntimeError(f'No suitable discriminant found for ECPP over {N}')
 
@@ -2515,18 +2567,39 @@ def lucas_lehmer_test(n: int) -> bool:
         https://en.wikipedia.org/wiki/Lucas%E2%80%93Lehmer_primality_test
     """
     assert is_power_of_two(n+1)
-    if n == 3:
-        return True
+
+    certificate = PrimalityCertficate(n=n, is_prime=False, method=ProofMethod.LUCAS_LEHMER)
 
     k = n.bit_length()
-    if not is_prime(k, prove=True):
-        return False
+    k_proof = is_prime(k, prove=True)
+
+    certificate.proof = {'k_proof': k_proof}
+    if not k_proof:
+        return certificate
+
+    if n == 3:
+        return certificate
 
     s = 4
     for _ in range(k-2):
         s = ((s*s)-2) % n
-    
-    return s == 0
+
+    certificate.is_prime = s == 0
+    return certificate
+
+
+
+def __find_small_divisor(n: int) -> int:
+    certificate = PrimalityCertficate(n=n, is_prime=False, method=ProofMethod.EXHAUSTIVE)
+
+    if n in PRIMES_UNDER_1000:
+        certificate.is_prime = True
+        return certificate
+
+    for prime in PRIMES_UNDER_1000:
+        if (n % prime) == 0:
+            certificate.proof = {'divisor': prime}
+            return certificate
 
 
 def is_prime(n: int, prove: bool=False) -> bool:
@@ -2567,20 +2640,22 @@ def is_prime(n: int, prove: bool=False) -> bool:
 
         else:
             # Attempt to prove composite (fast)
-            if not is_prime(n, prove=False):
-                return False
+            proof = is_prime(n, prove=False)
+            if not proof:
+                return proof
 
             return ecpp(n)
 
     else:
-        if n in PRIMES_UNDER_1000:
-            return True
+        proof = __find_small_divisor(n)
+        if proof is not None:
+            return proof
 
-        for prime in PRIMES_UNDER_1000:
-            if (n % prime) == 0:
-                return False
+        mill = miller_rabin(n, bases=[2])
+        if not mill:
+            return mill
 
-        return miller_rabin(n, bases=[2]) and is_strong_lucas_pseudoprime(n)
+        return is_strong_lucas_pseudoprime(n)
 
 
 def is_primitive_root(a: int, p: int) -> bool:
@@ -3128,8 +3203,8 @@ def cornacchias_algorithm(d: int, p: int, all_sols: bool=False, **root_kwargs) -
     ZZ = _integer_ring.ZZ
     d  = int(d)
 
-    R = ZZ/ZZ(p)
-    D = R(-d)
+    R    = ZZ/ZZ(p)
+    D    = R(-d)
     sols = []
 
     if D.is_square():

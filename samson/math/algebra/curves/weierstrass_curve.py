@@ -1,3 +1,4 @@
+from samson.math.symbols import Symbol
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
@@ -103,6 +104,10 @@ class WeierstrassPoint(RingElement):
     def __int__(self) -> int:
         return int(self.x)
     
+
+    def __elemmul__(self, other: 'RingElement') -> 'RingElement':
+        raise ValueError('Elliptic curves do not have element multiplication')
+
 
     def fast_compare_x(self, P2: 'WeierstrassPoint') -> bool:
         return P2._x*self._z == self._x*P2._z
@@ -231,10 +236,10 @@ class WeierstrassPoint(RingElement):
     def __truediv__(self, other: 'WeierstrassPoint') -> 'WeierstrassPoint':
         if type(other) is int:
             return self*mod_inv(other, self.order())
-        
+
         elif not other:
             raise ZeroDivisionError
-        
+
         elif not self:
             return 0
 
@@ -874,7 +879,7 @@ class WeierstrassCurve(Ring):
                             points.append(self(g*i))
                         except NoSolutionException:
                             pass
-                    
+
                     order = len(set(points + [-point for point in points]))+1
 
                 self.cardinality_cache = order
@@ -893,17 +898,28 @@ class WeierstrassCurve(Ring):
                 largest_elem = self.zero
 
                 if p.bit_length() > 64:
+                    from samson.math.algebra.curves.sea import elkies_trace_mod_l
                     parity = int(self.defining_polynomial().is_irreducible())
 
                     # Here we attempt to balance the exponential time BSGS and poly time Schoof
                     trace_mods = [t_mod for t_mod in [3, 5, 7, 11, 13][:round(math.log(p.bit_length(), 3.5))] if t_mod % n or n < 2]
+                    elkies_con = []
+            
+                    for l in primes(3, p.bit_length() // 2):
+                        try:
+                            elkies_con.append(elkies_trace_mod_l(self, l))
+                            if p in trace_mods:
+                                trace_mods.remove(l)
+                        except NoSolutionException:
+                            pass
+
 
                     # If we're going to 11, we might as well use 3^2, too
                     if 11 in trace_mods:
                         trace_mods[0] = 9
 
-                    if trace_mods:
-                        o_con = crt([frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
+                    if trace_mods or elkies_con:
+                        o_con = crt(elkies_con + [frobenius_trace_mod_l(self, t_mod) for t_mod in trace_mods])
                         r     = p+1-o_con[0] % o_con[1]
                         order_congruence = (int(r), int(o_con[1]))
                     else:
@@ -1785,7 +1801,7 @@ class WeierstrassCurve(Ring):
 
         Parameters:
             n (int): Index of division polynomial.
-        
+
         Returns:
             Polynomial: Division polynomial of the curve.
         """
@@ -1816,6 +1832,7 @@ class WeierstrassCurve(Ring):
             y   = self.curve_poly_ring((0, 1))
             two = self.curve_poly_ring.poly_ring([2])
             psi = self.division_poly
+
             for j in range(5, n+1):
                 k, m = divmod(j, 2)
 
@@ -1833,6 +1850,58 @@ class WeierstrassCurve(Ring):
         self.dpoly_cache[n] = d_poly
 
         return d_poly
+
+
+    def _division_polynomials_mod(self, n: int, mod: Polynomial):
+        a, b = self.a, self.b
+        x    = Symbol('x')
+        R    = self.ring
+        P    = R[x]
+        P    = P/mod
+        x    = P(x)
+
+        div   = {}
+        div2  = {}
+        div02 = {}
+
+        div[-1] = 4*x**3 + 4*a*x + 4*b
+        div[0]  = R(0)
+        div[1]  = R(1)
+        div[2]  = R(1)
+        div[3]  = 3*x**4 + 6*a*x**2 + 12*b*x - a**2
+        div[4]  = 2*(x**6 + 5*a*x**4 + 20*b*x**3 - 5*a**2*x**2 - 4*a*b*x - a**3 - 8*b**2)
+
+        f = P(self.defining_polynomial())
+
+        # Initialize caches
+        if not div2:
+            for i in range(5):
+                div2[i] = div[i]*div[i]
+
+            for i in range(3):
+                div02[i] = div[i]*div[i+2]
+
+
+        ff16 = 16*f*f
+        for i in range(5, n+1):
+            k, m = divmod(i, 2)
+            dkk = div02[k]*div2[k]
+            dk1 = div02[k-1]*div2[k+1]
+
+            if m:
+                if k % 2 == 0:
+                    pol = ff16*dkk-dk1
+                else:
+                    pol = dkk-ff16*dk1
+            else:
+                pol = (div02[k]*div2[k-1]-div02[k-2]*div2[k+1])
+        
+            div[i]     = pol
+            div2[i]    = pol*pol
+            div02[i-2] = div[i-2]*div[i]
+
+        return div, div2, div02
+
 
 
     def abelian_group_generators(self) -> (WeierstrassPoint, WeierstrassPoint):
@@ -1862,96 +1931,34 @@ class WeierstrassCurve(Ring):
         References:
             https://github.com/sagemath/sage/blob/ca088c9c9326542accea1f878e791b82cb37a3e1/src/sage/schemes/elliptic_curves/ell_finite_field.py#L843
         """
+        P = self.zero
+        N = self.order()
+
         while True:
-            N  = self.order()
-            P1 = self.zero
-            P2 = self.zero
+            Q = 0
+            while not Q:
+                Q = self.random()
 
-            n1 = 1
-            n2 = 1
+            if Q*P.order():
+                P = P.merge(Q)
+            else:
+                n1  = P.order()
+                n1a = n1 // gcd(n1, N // n1)
+                n1b = n1 // n1a
 
-            # Preload P1 by merging in a bunch of points
-            # Hopefully, this brings us close enough to a generator
-            for _ in range(10):
-                Q = 0
-                while not Q:
-                    Q = self.random()
+                if n1 == N:
+                    return P, self.zero
 
-                if Q*n1:
-                    P1 = P1.merge(Q)
-                    n1 = P1.order()
+                if self.order() // n1 == n1b:
+                    Z = P*n1a
 
+                    while True:
+                        Q = self.random()
+                        if not Q.order() % n1b:
+                            W = Q*(Q.order() // n1b)
 
-            while True:
-                if n1*n2 == N:
-                    return P1, P2
-
-                Q = 0
-                while not Q:
-                    Q = self.random()
-
-
-                # If Q1 != 0, then it has a factor P1 doesn't, so we should merge it into P1.
-                # Additionally, if P2 != 0, we need to update P2 to keep a basis
-                if Q*n1:
-                    if n2 > 1:
-                        P3 = P1 * (n1 // n2)
-
-                    P1 = P1.merge(Q)
-                    n1 = P1.order()
-
-                    if n2 > 1:
-                        a, m = P1.linear_relation(P3)
-                        P3  -= P1 * (a // m)
-
-                        if m == n2:
-                            P2 = P3
-
-                        else:
-                            a, m = P1.linear_relation(P2)
-                            P2 -= P1 * (a // m)
-
-                            P2 = P2.merge(P3)
-                            n2 = P2.order()
-
-
-                # Q's order divides P1's order
-                else:
-                    n1a = n1 // gcd(n1, N // n1)
-                    n1b = n1 // n1a
-
-                    Q_orig = Q
-                    Q  *= n1a
-                    P1a = P1*n1a
-
-                    # In case Q.order() | P.order(), but are linearly independent (e.g. Z/8 + Z/2)
-                    if not Q:
-                        a, b = P1.linear_relation(Q_orig)
-                        if (not a or n1 % a != 0) and n1*b <= N:
-                            P2 = P2.merge(Q_orig*(n1a // b))
-                            n2 = P2.order()
-                        continue
-
-                    for m in sorted(factor(n1b).divisors()):
-                        try:
-                            a = bsgs(P1a*m, Q*m, end=(n1b // m))
-                            break
-                        except SearchspaceExhaustedException:
-                            pass
-
-                    a *= m*n1a
-
-                    # If `m` > 1, then P1 and Q are linearly independent,
-                    # so let's bring that into our basis
-                    if m > 1:
-                        Q -= P1 * (a // m)
-
-                        if n2 == 1:
-                            P2 = Q
-                            n2 = P2.order()
-                        else:
-                            P2 = P2.merge(Q)
-                            n2 = P2.order()
+                            if W != Z:
+                                return P, W
 
 
 

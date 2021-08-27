@@ -585,6 +585,7 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
 
 _POLLARD_QUICK_ITERATIONS = 25
 
+@RUNTIME.global_cache()
 def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_msieve: bool=True, use_siqs: bool=True, use_smooth_p: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> Factors:
     """
     Factors an integer `n` into its prime factors.

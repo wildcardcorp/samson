@@ -18,6 +18,15 @@ class PAdicNumberElement(NegativeDegreeElement):
         return self.shorthand()
 
 
+    @property
+    def __raw__(self):
+        return self.tinyhand()
+
+
+    def __reprdir__(self):
+        return ['__raw__', 'shift', 'ring']
+
+
     def __int__(self) -> int:
         """
         The ordinality of this element within the set.
@@ -55,7 +64,7 @@ class PAdicNumberField(NegativeDegreeField):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            PAdicNumberElement: The `x`-th element.
         """

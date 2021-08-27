@@ -144,7 +144,7 @@ class CurvePolynomialRing(Ring):
 
         Parameters:
             size (int): The ring-specific 'size' of the element.
-    
+
         Returns:
             CurvePolynomialElement: Random element of the algebra.
         """
@@ -172,7 +172,7 @@ class CurvePolynomialRing(Ring):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             CurvePolynomialElement: Coerced element.
         """

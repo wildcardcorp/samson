@@ -88,7 +88,7 @@ class Polynomial(RingElement):
         poly_repr = []
 
         if self.LC():
-            idx_color = POLY_COLOR_WHEEL[self.coeff_ring.structure_depth()-1 % len(POLY_COLOR_WHEEL)]
+            idx_color = POLY_COLOR_WHEEL[(self.coeff_ring.structure_depth()-1) % len(POLY_COLOR_WHEEL)]
 
             for idx, coeff in self.coeffs.values.items():
                 idx += idx_mod
@@ -349,6 +349,7 @@ class Polynomial(RingElement):
         ZZ = _integer_ring.ZZ
         from samson.math.algebra.rings.padic_integers import Zp
         from samson.math.algebra.rings.padic_numbers import PAdicNumberField
+        from samson.math.general import frobenius_map
         from samson.math.symbols import oo
 
         R = self.coeff_ring
@@ -364,7 +365,9 @@ class Polynomial(RingElement):
             if is_field and self.degree() == 1:
                 return [-self.monic()[0]]
 
-            facs = self.factor(**factor_kwargs)
+            x    = self.symbol
+            frob = frobenius_map(self.symbol, self)
+            facs = gcd(frob - x, self).factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
 
@@ -409,7 +412,7 @@ class Polynomial(RingElement):
                             candidate += P
 
             return results
-        
+
         else:
             raise NotImplementedError(f"Polynomial factorization not implemented over {R}")
 
@@ -556,20 +559,24 @@ class Polynomial(RingElement):
         return self.LC() == self.coeff_ring.one
 
 
-    def derivative(self, n: int=1) -> 'Polynomial':
+    def derivative(self, n: int=1, var: 'Symbol'=None) -> 'Polynomial':
         """
         Returns the derivative of the Polynomial.
 
         Parameter:
-            n (int): Number of times to take derivative.
+            n      (int): Number of times to take derivative.
+            var (Symbol): Variable to take derivative in.
 
         Returns:
             Polynomial: Derivative of self.
         """
-        if n <= 0:
-            return self
+        if not var or var == self.symbol:
+            if n <= 0:
+                return self
+            else:
+                return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0]).derivative(n-1)
         else:
-            return self._create_poly([(idx-1, coeff * idx) for idx, coeff in self.coeffs if idx != 0]).derivative(n-1)
+            return self._create_poly([c.derivative(n=n, var=var) for c in self])
 
 
     def integral(self, n: int=1) -> 'Polynomial':
@@ -885,7 +892,7 @@ class Polynomial(RingElement):
         if self.LC() < one:
             poly = -self
 
-        coeff_zero = -poly.coeffs[0]
+        coeff_zero = int(-poly.coeffs[0])
 
         # Poly's of form x**n - c
         if poly.coeffs.sparsity == 2:

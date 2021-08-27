@@ -95,8 +95,8 @@ class PowerSeriesElement(RingElement):
 
 
     def __invert__(self) -> 'PowerSeriesElement':
-        p       = self.val
-        const   = p[0]
+        p     = self.val
+        const = p[0]
 
         if const:
             P       = p.ring

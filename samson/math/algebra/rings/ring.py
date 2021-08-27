@@ -381,7 +381,7 @@ class RingElement(BaseObject):
 
             elif other.ring.is_superstructure_of(self.ring):
                 return other.ring(self) * other
-        
+
         return self.__elemmul__(self.ring.coerce(other))
 
 
