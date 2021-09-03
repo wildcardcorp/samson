@@ -1,3 +1,5 @@
+from samson.encoding.x509.x509_attribute import X509Attribute
+from typing import List
 from samson.encoding.x509.x509_certificate import X509Certificate
 from samson.encoding.asn1 import resolve_alg, build_signature_alg
 from pyasn1.codec.der import decoder, encoder
@@ -18,12 +20,13 @@ class X509CertificateSigningRequest(X509Certificate):
 
 
     def __init__(
-        self, key: object, version: int=0, subject: RDNSequence=None,
+        self, key: object, version: int=0, subject: RDNSequence=None, attributes: List[X509Attribute]=None,
         signing_alg: object=None, signature_value: bytes=None, **kwargs
     ):
         self.key = key
         self.version = version
         self.subject = RDNSequence.wrap(subject or _default_rdn)
+        self.attributes = attributes or []
         self.signing_alg = signing_alg
         self.signature_value = signature_value
 
@@ -56,6 +59,14 @@ class X509CertificateSigningRequest(X509Certificate):
         pub_info['subjectPublicKey'] = self.PUB_KEY_ENCODER.encode(self.key)
 
         info['subjectPKInfo'] = pub_info
+
+
+        # Attributes
+        attrs = info['attributes'].clone()
+        for attribute in self.attributes:
+            attrs.append(attribute.build())
+        
+        info['attributes'] = attrs
 
 
         # Signature algorithm
@@ -96,8 +107,12 @@ class X509CertificateSigningRequest(X509Certificate):
         # Decode RDNs
         subject = RDNSequence.parse((info['subject'][0]))
 
+        attrs = []
+        for attribute in info['attributes']:
+            attrs.append(X509Attribute.parse(attribute))
+
         buffer      = encoder.encode(info['subjectPKInfo'])
         key         = cls.PUB_KEY_DECODER.decode(buffer).key
         signing_alg = resolve_alg(csr['signatureAlgorithm'])
 
-        return cls(key=key, version=version, subject=subject, signing_alg=signing_alg, signature_value=signature)
+        return cls(key=key, version=version, subject=subject, attributes=attrs, signing_alg=signing_alg, signature_value=signature)

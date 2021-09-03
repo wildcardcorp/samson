@@ -4,14 +4,15 @@ from samson.encoding.x509.x509_certificate_signing_request import X509Certificat
 from samson.encoding.x509.x509_ecdsa_params import X509ECDSAParams
 from samson.encoding.x509.x509_ecdsa_subject_public_key import X509ECDSASubjectPublicKey
 from samson.encoding.x509.x509_dsa_certificate import X509DSASignature
+from samson.encoding.x509.oids import SigningAlgOID
 from samson.hashes.sha2 import SHA224, SHA256, SHA384, SHA512
 from enum import Enum
 
 class X509ECDSASigningAlgorithms(Enum):
-    ecdsa_with_SHA224 = X509DSASignature('ecdsa-with-SHA224',SHA224())
-    ecdsa_with_SHA256 = X509DSASignature('ecdsa-with-SHA256', SHA256())
-    ecdsa_with_SHA384 = X509DSASignature('ecdsa-with-SHA384', SHA384())
-    ecdsa_with_SHA512 = X509DSASignature('ecdsa-with-SHA512', SHA512())
+    ecdsa_with_SHA224 = X509DSASignature(SigningAlgOID.ECDSA_WITH_SHA224,SHA224())
+    ecdsa_with_SHA256 = X509DSASignature(SigningAlgOID.ECDSA_WITH_SHA256, SHA256())
+    ecdsa_with_SHA384 = X509DSASignature(SigningAlgOID.ECDSA_WITH_SHA384, SHA384())
+    ecdsa_with_SHA512 = X509DSASignature(SigningAlgOID.ECDSA_WITH_SHA512, SHA512())
 
 
 class X509ECDSACertificate(X509Certificate):

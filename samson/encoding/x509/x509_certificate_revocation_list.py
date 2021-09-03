@@ -2,7 +2,7 @@ from datetime import datetime
 from pyasn1.type import tag
 from samson.utilities.bytes import Bytes
 from typing import List
-from pyasn1.type.univ import Any, Sequence, SequenceOf
+from pyasn1.type.univ import Sequence, SequenceOf
 from samson.encoding.x509.x509_extension import X509Extension
 from samson.encoding.asn1 import parse_time, build_time, resolve_alg, verify_signature, build_signature_alg
 from samson.core.base_object import BaseObject
@@ -54,7 +54,7 @@ class X509CRLEntry(BaseObject):
             extensions = rfc5280.Extensions()
             
             for extension in self.extensions:
-                extensions.append(extension.build_extension())
+                extensions.append(extension.build())
 
             entry['crlEntryExtensions'] = extensions
 
@@ -106,7 +106,7 @@ class X509CertificateRevocationList(BaseObject):
             extensions = rfc5280.Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
             
             for extension in self.extensions:
-                extensions.append(extension.build_extension())
+                extensions.append(extension.build())
 
             tbs_certlist['crlExtensions'] = extensions
     

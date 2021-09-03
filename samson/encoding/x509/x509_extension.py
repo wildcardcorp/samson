@@ -13,6 +13,7 @@ from enum import Enum, IntFlag
 from samson.core.base_object import BaseObject
 from samson.encoding.tls.tls_crypto import TLSSCTList
 from samson.encoding.x509.x509_rdn import RDNSequence
+from samson.encoding.x509.oids import *
 
 MAX = float('inf')
 
@@ -157,13 +158,6 @@ KRB5PrincipalName.componentType = namedtype.NamedTypes(
 )
 
 
-class OtherNameOID(Enum):
-    KISA_IDENTIFYDATA = '1.2.410.200004.10.1.1'
-    USER_PRINCIPAL_NAME = '1.3.6.1.4.1.311.20.2.3'
-    KERBEROS_PRINCIPAL_NAME = '1.3.6.1.5.2.2'
-    JABBER_ID = '1.3.6.1.5.5.7.8.5'
-
-
 class OtherName(GeneralName):
     TAG = 'otherName'
 
@@ -306,128 +300,6 @@ def merge_enums(name: str, sub_enums: list):
     return Enum(name, merged)
 
 
-class MicrosoftCertificateServicesOID(Enum):
-    CERTIFICATE_SERVICES_CA_VERSION = '1.3.6.1.4.1.311.21.1'
-    szOID_CERTSRV_PREVIOUS_CERT_HASH = '1.3.6.1.4.1.311.21.2'
-    szOID_CRL_VIRTUAL_BASE = '1.3.6.1.4.1.311.21.3'
-    szOID_CRL_NEXT_PUBLISH = '1.3.6.1.4.1.311.21.4'
-    szOID_KP_CA_EXCHANGE = '1.3.6.1.4.1.311.21.5'
-    szOID_KP_KEY_RECOVERY_AGENT = '1.3.6.1.4.1.311.21.6'
-    szOID_CERTIFICATE_TEMPLATE = '1.3.6.1.4.1.311.21.7'
-    szOID_ENTERPRISE_OID_ROOT = '1.3.6.1.4.1.311.21.8'
-    szOID_RDN_DUMMY_SIGNER = '1.3.6.1.4.1.311.21.9'
-    szOID_APPLICATION_CERT_POLICIES = '1.3.6.1.4.1.311.21.10'
-    szOID_APPLICATION_POLICY_MAPPINGS = '1.3.6.1.4.1.311.21.11'
-    szOID_APPLICATION_POLICY_CONSTRAINTS = '1.3.6.1.4.1.311.21.12'
-    szOID_ARCHIVED_KEY_ATTR = '1.3.6.1.4.1.311.21.13'
-    szOID_CRL_SELF_CDP = '1.3.6.1.4.1.311.21.14'
-    szOID_REQUIRE_CERT_CHAIN_POLICY = '1.3.6.1.4.1.311.21.15'
-    szOID_ARCHIVED_KEY_CERT_HASH = '1.3.6.1.4.1.311.21.16'
-    szOID_ISSUED_CERT_HASH = '1.3.6.1.4.1.311.21.17'
-    szOID_DS_EMAIL_REPLICATION = '1.3.6.1.4.1.311.21.19'
-    szOID_REQUEST_CLIENT_INFO = '1.3.6.1.4.1.311.21.20'
-    szOID_ENCRYPTED_KEY_HASH = '1.3.6.1.4.1.311.21.21'
-    szOID_CERTSRV_CROSSCA_VERSION = '1.3.6.1.4.1.311.21.22'
-
-
-class NetscapeCertificateOID(Enum):
-    CERTIFICATE_TYPE = '2.16.840.1.113730.1.1'
-    BASE_URL = '2.16.840.1.113730.1.2'
-    REVOCATION_URL = '2.16.840.1.113730.1.3'
-    CA_REVOCATION_URL = '2.16.840.1.113730.1.4'
-    CA_CRL_URL = '2.16.840.1.113730.1.5'
-    CA_CERT = '2.16.840.1.113730.1.6'
-    RENEWAL_URL = '2.16.840.1.113730.1.7'
-    CA_POLICY_URL = '2.16.840.1.113730.1.8'
-    HOMEPAGE_URL = '2.16.840.1.113730.1.9'
-    ENTITY_LOGO = '2.16.840.1.113730.1.10'
-    USER_PICTURE = '2.16.840.1.113730.1.11'
-    SSL_SERVER_NAME = '2.16.840.1.113730.1.12'
-    COMMENT = '2.16.840.1.113730.1.13'
-    LOST_PASSWORD_URL = '2.16.840.1.113730.1.14'
-    CERT_RENEWAL_TIME = '2.16.840.1.113730.1.15'
-
-
-class StandardExtensionType(Enum):
-    SUBJECT_DIRECTORY_ATTRIBUTES = '2.5.29.9'
-    SUBJECT_KEY_IDENTIFER        = '2.5.29.14'
-    KEY_USAGE                    = '2.5.29.15'
-    PRIVATE_KEY_USAGE_PERIOD     = '2.5.29.16'
-    SUBJECT_ALTERNATIVE_NAME     = '2.5.29.17'
-    ISSUER_ALTERNATIVE_NAME      = '2.5.29.18'
-    BASIC_CONSTRAINTS            = '2.5.29.19'
-    CRL_NUMBER                   = '2.5.29.20'
-    REASON_CODE                  = '2.5.29.21'
-    EXPIRATION_DATE              = '2.5.29.22'
-    HOLD_INSTRUCTION_CODE        = '2.5.29.23'
-    INVALIDITY_DATE              = '2.5.29.24'
-    DELTA_CRL_INDICATOR          = '2.5.29.27'
-    ISSUING_DISTRIBUTION_POINT   = '2.5.29.28'
-    CRL_DISTRIBUTION_POINTS      = '2.5.29.31'
-    CERTIFICATE_POLICIES         = '2.5.29.32'
-    AUTHORITY_KEY_IDENTIFIER     = '2.5.29.35'
-    POLICY_CONSTRAINTS           = '2.5.29.36'
-    EXTENDED_KEY_USAGE           = '2.5.29.37'
-    AUTHORITY_ATTR_IDENTIFIER    = '2.5.29.38'
-    ROLE_SPEC_CERT_ID            = '2.5.29.39'
-    CRL_STREAM_IDENTIFIER        = '2.5.29.40'
-    DELEGATED_NAME_CONSTRAINTS   = '2.5.29.42'
-    TIME_SPECIFICATION           = '2.5.29.43'
-    CRL_SCOPE                    = '2.5.29.44'
-    STATUS_REFERRALS             = '2.5.29.45'
-    FRESHEST_CRL                 = '2.5.29.46'
-    INHIBIT_ANY_POLICY           = '2.5.29.54'
-    AUTHORITY_INFO_ACCESS        = '1.3.6.1.5.5.7.1.1'
-    SUBJECT_INFORMATION_ACCESS   = '1.3.6.1.5.5.7.1.11'
-    LOGO_TYPE                    = '1.3.6.1.5.5.7.1.12'
-    TLS_FEATURES                 = '1.3.6.1.5.5.7.1.24'
-    OCSP_NO_CHECK                = '1.3.6.1.5.5.7.48.1.5'
-    CERTIFICATE_TRANSPARENCY     = '1.3.6.1.4.1.11129.2.4.2'
-    CT_PRECERTIFICATE_POISON     = '1.3.6.1.4.1.11129.2.4.3'
-    ENTRUST_VERSION              = '1.2.840.113533.7.65.0'
-
-
-X509ExtensionType = merge_enums('X509ExtensionType',
-    [
-        ('', StandardExtensionType),
-        ('MICROSOFT_', MicrosoftCertificateServicesOID),
-        ('NETSCAPE_', NetscapeCertificateOID)
-    ]
-)
-
-
-
-class X509ExtKeyUsageType(Enum):
-    TLS_WEB_SERVER_AUTHENTICATION = '1.3.6.1.5.5.7.3.1'
-    TLS_WEB_CLIENT_AUTHENTICATION = '1.3.6.1.5.5.7.3.2'
-    CODE_SIGNING = '1.3.6.1.5.5.7.3.3'
-    EMAIL_PROTECTION = '1.3.6.1.5.5.7.3.4'
-    IPSEC_END_SYSTEM = '1.3.6.1.5.5.7.3.5'
-    IPSEC_TUNNEL = '1.3.6.1.5.5.7.3.6'
-    IPSEC_USER = '1.3.6.1.5.5.7.3.7'
-    TIMESTAMPING = '1.3.6.1.5.5.7.3.8'
-    OCSP_SIGNING = '1.3.6.1.5.5.7.3.9'
-    DVCS_SERVER = '1.3.6.1.5.5.7.3.10'
-    SBGP_CERT_AA_SERVER_AUTH = '1.3.6.1.5.5.7.3.11'
-    SCVP_RESPONDER = '1.3.6.1.5.5.7.3.12'
-    EAP_OVER_PPP = '1.3.6.1.5.5.7.3.13'
-    EAP_OVER_LAN = '1.3.6.1.5.5.7.3.14'
-    SCVP_SERVER = '1.3.6.1.5.5.7.3.15'
-    SCVP_CLIENT = '1.3.6.1.5.5.7.3.16'
-    IPSEC_IKE = '1.3.6.1.5.5.7.3.17'
-    CAP_WAP_AC = '1.3.6.1.5.5.7.3.18'
-    CAP_WAP_WTP = '1.3.6.1.5.5.7.3.19'
-    SIP_DOMAIN = '1.3.6.1.5.5.7.3.20'
-    SECURE_SHELL_CLIENT = '1.3.6.1.5.5.7.3.21'
-    SECURE_SHELL_SERVER = '1.3.6.1.5.5.7.3.22'
-    RPC_TLS_CLIENT = '1.3.6.1.5.5.7.3.33'
-    RPC_TLS_SERVER = '1.3.6.1.5.5.7.3.34'
-    NETSCAPE_SERVER_GATED_CRYPTO  = '2.16.840.1.113730.4.1'
-    VERISIGN_SERVER_GATED_CRYPTO  = '2.16.840.1.113733.1.8.1' 
-    MICROSOFT_SERVER_GATED_CRYPTO = '1.3.6.1.4.1.311.10.3.3'
-    MICROSOFT_SMARTCARD_LOGON = '1.3.6.1.4.1.311.20.2.2'
-
-
 class X509IntFlag(IntFlag):
     def build(self):
         binary = bin(int(self))[2:].strip('0').zfill(self.get_size())
@@ -489,12 +361,12 @@ class X509Extension(BaseObject):
         return ext
 
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         """
         For arbitrary extensions.
         """
         oid = self.oid
-        if type(oid) is X509ExtensionType:
+        if hasattr(oid, 'value'):
             oid = self.oid.value
 
         ext = rfc2459.Extension()
@@ -511,7 +383,7 @@ class X509Extension(BaseObject):
         critical = bool(extension['critical'])
 
         try:
-            ext_type = X509ExtensionType(ext_type)
+            ext_type = OID(ext_type)
 
             for subclass in X509Extension.__subclasses__():
                 if subclass.EXT_TYPE == ext_type:
@@ -529,13 +401,13 @@ class X509Extension(BaseObject):
 class _AlternateName(object):
     EXT_TYPE = None
 
-    def __init__(self, names: list, critical: bool=False, allow_empty: bool=True) -> None:
+    def __init__(self, names: List[GeneralName], critical: bool=False, allow_empty: bool=True) -> None:
         self.names = names
         self.allow_empty = allow_empty
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         san = self.NAME_SPEC()
 
         for name in self.names:
@@ -562,12 +434,12 @@ class _AlternateName(object):
 
 
 class X509SubjectAlternativeName(_AlternateName, X509Extension):
-    EXT_TYPE  = X509ExtensionType.SUBJECT_ALTERNATIVE_NAME
+    EXT_TYPE  = OID.SUBJECT_ALTERNATIVE_NAME
     NAME_SPEC = rfc2459.SubjectAltName
 
 
 class X509IssuerAlternativeName(_AlternateName, X509Extension):
-    EXT_TYPE  = X509ExtensionType.ISSUER_ALTERNATIVE_NAME
+    EXT_TYPE  = OID.ISSUER_ALTERNATIVE_NAME
     NAME_SPEC = rfc2459.IssuerAltName
 
 
@@ -582,7 +454,7 @@ class BasicConstraintsExplicit(Sequence):
 
 
 class X509BasicConstraints(X509Extension):
-    EXT_TYPE = X509ExtensionType.BASIC_CONSTRAINTS
+    EXT_TYPE = OID.BASIC_CONSTRAINTS
     BC_TYPE  = rfc2459.BasicConstraints
 
     def __init__(self, is_ca: bool=True, path_len: int=None, critical: bool=True) -> None:
@@ -595,7 +467,7 @@ class X509BasicConstraints(X509Extension):
         return ['is_ca', 'path_len']
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         ca_value = self.BC_TYPE()
         ca_value['cA'] = self.is_ca
 
@@ -629,14 +501,14 @@ class X509BasicConstraints(X509Extension):
 
 
 class X509KeyUsage(X509Extension):
-    EXT_TYPE = X509ExtensionType.KEY_USAGE
+    EXT_TYPE = OID.KEY_USAGE
 
     def __init__(self, key_usage: X509KeyUsageFlag, critical: bool=True) -> None:
         self.key_usage = key_usage
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(self.key_usage.build())
 
 
@@ -649,18 +521,18 @@ class X509KeyUsage(X509Extension):
 
 
 class X509ExtendedKeyUsage(X509Extension):
-    EXT_TYPE = X509ExtensionType.EXTENDED_KEY_USAGE
+    EXT_TYPE = OID.EXTENDED_KEY_USAGE
 
     def __init__(self, oids: List[X509ExtKeyUsageType], critical: bool=False) -> None:
         self.oids = oids
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         ext_ku = rfc5280.ExtKeyUsageSyntax()
 
         for oid in self.oids:
-            if type(oid) is X509ExtKeyUsageType:
+            if hasattr(oid, 'value'):
                 oid = oid.value
 
             key_purpose = rfc5280.KeyPurposeId(oid)
@@ -677,7 +549,7 @@ class X509ExtendedKeyUsage(X509Extension):
         for key_purpose in ext_val:
             oid = str(key_purpose)
             try:
-                oid = X509ExtKeyUsageType(oid)
+                oid = OID(oid)
             except ValueError:
                 pass
 
@@ -688,14 +560,14 @@ class X509ExtendedKeyUsage(X509Extension):
 
 
 class X509SubjectKeyIdentifier(X509Extension):
-    EXT_TYPE = X509ExtensionType.SUBJECT_KEY_IDENTIFER
+    EXT_TYPE = OID.SUBJECT_KEY_IDENTIFER
 
     def __init__(self, key_identifier: bytes=None, critical: bool=False) -> None:
         self.key_identifier = key_identifier
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         ski = rfc2459.SubjectKeyIdentifier(self.key_identifier)
         return super()._build(ski)
 
@@ -743,14 +615,14 @@ class X509CRLReason(Enum):
 
 
 class X509ReasonCode(X509Extension):
-    EXT_TYPE  = X509ExtensionType.REASON_CODE
+    EXT_TYPE  = OID.REASON_CODE
 
     def __init__(self, reason_code: X509CRLReason, critical: bool=False) -> None:
         self.reason_code = reason_code
         super().__init__(critical=critical)
 
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(Integer(self.reason_code.value))
 
 
@@ -821,7 +693,7 @@ class X509CRLDistributionPoint(BaseObject):
 
 
 class X509IssuingDistributionPoint(X509Extension):
-    EXT_TYPE  = X509ExtensionType.ISSUING_DISTRIBUTION_POINT
+    EXT_TYPE  = OID.ISSUING_DISTRIBUTION_POINT
 
     def __init__(
             self,
@@ -843,7 +715,7 @@ class X509IssuingDistributionPoint(X509Extension):
         super().__init__(critical=critical)
 
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         idp = rfc3280.IssuingDistributionPoint()
 
         if self.distribution_point:
@@ -893,14 +765,14 @@ class X509IssuingDistributionPoint(X509Extension):
 
 
 class X509CRLDistributionPoints(X509Extension):
-    EXT_TYPE = X509ExtensionType.CRL_DISTRIBUTION_POINTS
+    EXT_TYPE = OID.CRL_DISTRIBUTION_POINTS
 
     def __init__(self, distribution_points: List[X509CRLDistributionPoint], critical: bool=False) -> None:
         self.distribution_points = distribution_points
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         points = rfc5280.CRLDistributionPoints()
 
         for distribution_point in self.distribution_points:
@@ -917,7 +789,7 @@ class X509CRLDistributionPoints(X509Extension):
 
 
 class X509AuthorityKeyIdentifier(X509Extension):
-    EXT_TYPE = X509ExtensionType.AUTHORITY_KEY_IDENTIFIER
+    EXT_TYPE = OID.AUTHORITY_KEY_IDENTIFIER
 
     def __init__(self, key_identifier: bytes, authority_cert_issuer: List[str], authority_cert_serial_number: int, critical: bool=False) -> None:
         self.key_identifier = key_identifier
@@ -926,7 +798,7 @@ class X509AuthorityKeyIdentifier(X509Extension):
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         aki = rfc5280.AuthorityKeyIdentifier()
 
         if self.key_identifier is not None:
@@ -957,13 +829,6 @@ class X509AuthorityKeyIdentifier(X509Extension):
         return X509AuthorityKeyIdentifier(key_identifier=key_identifier, authority_cert_issuer=authority_cert_issuer, authority_cert_serial_number=authority_cert_serial_number, critical=critical)
 
 
-class X509AccessDescriptorType(Enum):
-    OSCP          = '1.3.6.1.5.5.7.48.1'
-    CA_ISSUER     = '1.3.6.1.5.5.7.48.2'
-    TIMESTAMPING  = '1.3.6.1.5.5.7.48.3'
-    CA_REPOSITORY = '1.3.6.1.5.5.7.48.5'
-
-
 
 class X509AccessDescription(BaseObject):
     def __init__(self, access_method: X509AccessDescriptorType, access_location: 'str') -> None:
@@ -972,14 +837,14 @@ class X509AccessDescription(BaseObject):
 
 
 class X509AuthorityInfoAccess(X509Extension):
-    EXT_TYPE = X509ExtensionType.AUTHORITY_INFO_ACCESS
+    EXT_TYPE = OID.AUTHORITY_INFO_ACCESS
 
     def __init__(self, access_descriptions: List[X509AccessDescription], critical: bool=False) -> None:
         self.access_descriptions = access_descriptions
         super().__init__(critical=critical)
 
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         aia   = rfc5280.AuthorityInfoAccessSyntax()
 
         for access_desc in self.access_descriptions:
@@ -1002,26 +867,6 @@ class X509AuthorityInfoAccess(X509Extension):
             access_descriptions.append(X509AccessDescription(access_method, access_location))
 
         return X509AuthorityInfoAccess(access_descriptions=access_descriptions, critical=critical)
-
-
-class X509CertificatePolicyType(Enum):
-    EXTENDED_VALIDATION    = '2.23.140.1.1'
-    DOMAIN_VALIDATED       = '2.23.140.1.2.1'
-    ORGANIZATION_VALIDATED = '2.23.140.1.2.2'
-    INDIVIDUAL_VALIDATED   = '2.23.140.1.2.3'
-    EXTENDED_VALIDATION_CODE_SIGNING = '2.23.140.1.3'
-    CODE_SIGNING_REQUIREMENTS = '2.23.140.1.4'
-    SMIME = '2.23.140.1.5'
-    GOOGLE_TRUST_SERVICES = '1.3.6.1.4.1.11129.2.5.3'
-    VERISIGN_EXTENDED_VALIDATION = '2.16.840.1.113733.1.7.23.6'
-    ANY = '2.5.29.32.0'
-    FRENCH_GOV_CA = '1.2.250.1.121.1.1.1'
-    ISRG_DOMAIN_VALIDATED = '1.3.6.1.4.1.44947.1.1.1'
-
-
-class X509CertificatePolicyQualifierType(Enum):
-    CERTIFICATE_PRACTICE_STATEMENT = '1.3.6.1.5.5.7.2.1'
-    USER_NOTICE = '1.3.6.1.5.5.7.2.2'
 
 
 class X509PolicyQualifier(BaseObject):
@@ -1214,14 +1059,14 @@ class X509CertificatePolicy(BaseObject):
 
 
 class X509CertificatePolicies(X509Extension):
-    EXT_TYPE = X509ExtensionType.CERTIFICATE_POLICIES
+    EXT_TYPE = OID.CERTIFICATE_POLICIES
 
     def __init__(self, policies: List[X509CertificatePolicy], critical: bool=False) -> None:
         self.policies = policies
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         cert_policy = rfc5280.CertificatePolicies()
 
         for policy in self.policies:
@@ -1242,18 +1087,18 @@ class X509CertificatePolicies(X509Extension):
 
 
 class X509MicrosoftApplicationCertPolicies(X509CertificatePolicies, X509Extension):
-    EXT_TYPE = X509ExtensionType.MICROSOFT_szOID_APPLICATION_CERT_POLICIES
+    EXT_TYPE = OID.MICROSOFT_szOID_APPLICATION_CERT_POLICIES
 
 
 class X509CertificateTransparency(X509Extension):
-    EXT_TYPE = X509ExtensionType.CERTIFICATE_TRANSPARENCY
+    EXT_TYPE = OID.CERTIFICATE_TRANSPARENCY
 
     def __init__(self, scts: TLSSCTList, critical: bool=False) -> None:
         self.scts = scts
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         sct_packed = bytes(self.scts.pack())
         return super()._build(OctetString(sct_packed))
 
@@ -1267,13 +1112,13 @@ class X509CertificateTransparency(X509Extension):
 
 
 class X509CertificateTransparencyPoison(X509Extension):
-    EXT_TYPE = X509ExtensionType.CT_PRECERTIFICATE_POISON
+    EXT_TYPE = OID.CT_PRECERTIFICATE_POISON
 
     def __init__(self, critical: bool=True) -> None:
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(Null)
 
 
@@ -1284,7 +1129,7 @@ class X509CertificateTransparencyPoison(X509Extension):
 
 
 class X509PrivateKeyUsagePeriod(X509Extension):
-    EXT_TYPE = X509ExtensionType.PRIVATE_KEY_USAGE_PERIOD
+    EXT_TYPE = OID.PRIVATE_KEY_USAGE_PERIOD
 
     def __init__(self, not_before: datetime=None, not_after: datetime=None, critical: bool=False) -> None:
         self.not_before = not_before
@@ -1292,7 +1137,7 @@ class X509PrivateKeyUsagePeriod(X509Extension):
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         pkup = rfc5280.PrivateKeyUsagePeriod()
 
         if self.not_before:
@@ -1314,7 +1159,7 @@ class X509PrivateKeyUsagePeriod(X509Extension):
 
 
 class X509PolicyConstraints(X509Extension):
-    EXT_TYPE = X509ExtensionType.POLICY_CONSTRAINTS
+    EXT_TYPE = OID.POLICY_CONSTRAINTS
 
     def __init__(self, require_explicit_policy: int=None, inhibit_policy_mapping: int=None, critical: bool=True) -> None:
         self.require_explicit_policy = require_explicit_policy
@@ -1322,7 +1167,7 @@ class X509PolicyConstraints(X509Extension):
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         pc = rfc5280.PolicyConstraints()
 
         if self.require_explicit_policy is not None:
@@ -1354,7 +1199,7 @@ class X509PolicyConstraints(X509Extension):
 
 
 class _NetscapeStringExtension(object):
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(IA5String(getattr(self, self.DATA_ATTR)))
 
 
@@ -1373,7 +1218,7 @@ class _NetscapeURLExtension(_NetscapeStringExtension):
 
 
 class X509NetscapeComment(_NetscapeStringExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_COMMENT
+    EXT_TYPE  = OID.NETSCAPE_COMMENT
     DATA_ATTR = 'comment'
 
     def __init__(self, comment: str, critical: bool=False) -> None:
@@ -1382,33 +1227,33 @@ class X509NetscapeComment(_NetscapeStringExtension, X509Extension):
 
 
 class X509NetscapeBaseURL(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_BASE_URL
+    EXT_TYPE  = OID.NETSCAPE_BASE_URL
 
 class X509NetscapeRevocationURL(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_REVOCATION_URL
+    EXT_TYPE  = OID.NETSCAPE_REVOCATION_URL
 
 class X509NetscapeCARevocationURL(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_CA_REVOCATION_URL
+    EXT_TYPE  = OID.NETSCAPE_CA_REVOCATION_URL
 
 class X509NetscapeRenewalURL(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_RENEWAL_URL
+    EXT_TYPE  = OID.NETSCAPE_RENEWAL_URL
 
 class X509NetscapeCAPolicyURL(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_CA_POLICY_URL
+    EXT_TYPE  = OID.NETSCAPE_CA_POLICY_URL
 
 class X509NetscapeSSLServerName(_NetscapeURLExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.NETSCAPE_SSL_SERVER_NAME
+    EXT_TYPE  = OID.NETSCAPE_SSL_SERVER_NAME
 
 
 class X509MicrosoftCSCAVersion(X509Extension):
-    EXT_TYPE  = X509ExtensionType.MICROSOFT_CERTIFICATE_SERVICES_CA_VERSION
+    EXT_TYPE  = OID.MICROSOFT_CERTIFICATE_SERVICES_CA_VERSION
 
     def __init__(self, version: int, critical: bool=False) -> None:
         self.version = version
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(Integer(self.version))
 
 
@@ -1419,14 +1264,14 @@ class X509MicrosoftCSCAVersion(X509Extension):
 
 
 class X509MicrosoftCSPreviousHash(X509Extension):
-    EXT_TYPE  = X509ExtensionType.MICROSOFT_szOID_CERTSRV_PREVIOUS_CERT_HASH
+    EXT_TYPE  = OID.MICROSOFT_szOID_CERTSRV_PREVIOUS_CERT_HASH
 
     def __init__(self, hash: bytes, critical: bool=False) -> None:
         self.hash = hash
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(OctetString(self.hash))
 
 
@@ -1450,7 +1295,7 @@ CertificateTemplateOID.componentType = namedtype.NamedTypes(
 )
 
 class X509MicrosoftCertificateTemplate(X509Extension):
-    EXT_TYPE  = X509ExtensionType.MICROSOFT_szOID_CERTIFICATE_TEMPLATE
+    EXT_TYPE  = OID.MICROSOFT_szOID_CERTIFICATE_TEMPLATE
 
     def __init__(self, template_id: str, major_version: int, minor_version: int, critical: bool=False) -> None:
         self.template_id   = template_id
@@ -1459,7 +1304,7 @@ class X509MicrosoftCertificateTemplate(X509Extension):
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         cert_template = CertificateTemplateOID()
         cert_template['templateID'] = ObjectIdentifier(self.template_id)
         cert_template['templateMajorVersion'] = Integer(self.major_version)
@@ -1499,14 +1344,14 @@ class X509NetscapeCertTypeFlag(X509IntFlag):
 
 
 class X509NetscapeCertificateType(X509Extension):
-    EXT_TYPE = X509ExtensionType.NETSCAPE_CERTIFICATE_TYPE
+    EXT_TYPE = OID.NETSCAPE_CERTIFICATE_TYPE
 
     def __init__(self, cert_type: X509NetscapeCertTypeFlag, critical: bool=False) -> None:
         self.cert_type = cert_type
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(self.cert_type.build())
 
 
@@ -1547,7 +1392,7 @@ EntrustVersionInfo.componentType = namedtype.NamedTypes(
 
 
 class X509EntrustVersionInfo(X509Extension):
-    EXT_TYPE = X509ExtensionType.ENTRUST_VERSION
+    EXT_TYPE = OID.ENTRUST_VERSION
 
     def __init__(self, entrust_version: str, entrust_info_flags: X509EntrustInfoFlag=None, critical: bool=False) -> None:
         self.entrust_version    = entrust_version
@@ -1555,7 +1400,7 @@ class X509EntrustVersionInfo(X509Extension):
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         entrust_info = EntrustVersionInfo()
         entrust_info['entrustVers'] = GeneralString(self.entrust_version)
 
@@ -1579,7 +1424,7 @@ class X509EntrustVersionInfo(X509Extension):
 
 
 class IntExtension(X509Extension):
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         return super()._build(Integer(getattr(self, self.DATA_ATTR)))
 
 
@@ -1591,7 +1436,7 @@ class IntExtension(X509Extension):
 
 
 class X509CRLNumber(IntExtension, X509Extension):
-    EXT_TYPE  = X509ExtensionType.CRL_NUMBER
+    EXT_TYPE  = OID.CRL_NUMBER
     DATA_ATTR = 'crl_number'
 
     def __init__(self, crl_number: int, critical: bool=False) -> None:
@@ -1666,14 +1511,14 @@ class X509TLSFeature(Enum):
 
 
 class X509TLSFeatures(X509Extension):
-    EXT_TYPE = X509ExtensionType.TLS_FEATURES
+    EXT_TYPE = OID.TLS_FEATURES
 
     def __init__(self, features: List[X509TLSFeature], critical: bool=False) -> None:
         self.features = features
         super().__init__(critical=critical)
     
 
-    def build_extension(self) -> rfc5280.Extension:
+    def build(self) -> rfc5280.Extension:
         seqof = SequenceOf()
 
         for feature in self.features:

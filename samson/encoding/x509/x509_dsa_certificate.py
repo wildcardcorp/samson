@@ -8,6 +8,7 @@ from samson.utilities.bytes import Bytes
 from samson.hashes.sha1 import SHA1
 from samson.hashes.sha2 import SHA224, SHA256
 from samson.encoding.x509.x509_signature import X509Signature
+from samson.encoding.x509.oids import SigningAlgOID
 from pyasn1.codec.der import encoder, decoder
 from enum import Enum
 from copy import deepcopy
@@ -34,9 +35,9 @@ class X509DSASignature(X509Signature):
 
 
 class X509DSASigningAlgorithms(Enum):
-    id_dsa_with_sha1   = X509DSASignature('id-dsa-with-sha1', SHA1())
-    id_dsa_with_sha224 = X509DSASignature('id-dsa-with-sha224', SHA224())
-    id_dsa_with_sha256 = X509DSASignature('id-dsa-with-sha256', SHA256())
+    id_dsa_with_sha1   = X509DSASignature(SigningAlgOID.ID_DSA_WITH_SHA1, SHA1())
+    id_dsa_with_sha224 = X509DSASignature(SigningAlgOID.ID_DSA_WITH_SHA224, SHA224())
+    id_dsa_with_sha256 = X509DSASignature(SigningAlgOID.ID_DSA_WITH_SHA256, SHA256())
 
 
 class X509DSACertificate(X509Certificate):

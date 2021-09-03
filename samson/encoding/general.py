@@ -312,7 +312,7 @@ class PKIAutoParser(object):
 
 
     @staticmethod
-    def resolve_x509_signature_alg(name: str):
+    def resolve_x509_signature_alg(oid: 'SigningAlgOID'):
         from samson.core.encodable_pki import EncodablePKI
         subclasses = [EncodablePKI]
 
@@ -321,11 +321,9 @@ class PKIAutoParser(object):
 
         for subclass in subclasses:
             if hasattr(subclass, 'X509_SIGNING_ALGORITHMS'):
-                try:
-                    return subclass.X509_SIGNING_ALGORITHMS[name]
-                except KeyError:
-                    pass
-
+                for alg in subclass.X509_SIGNING_ALGORITHMS:
+                    if alg.value.oid == oid:
+                        return alg
 
 
 from samson.auxiliary.lazy_loader import LazyLoader

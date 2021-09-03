@@ -136,7 +136,7 @@ class X509Certificate(PEMEncodable):
                 extension = extension.copy()
                 extension.key_identifier = public_key_hash
 
-            extensions.append(extension.build_extension())
+            extensions.append(extension.build())
 
 
         # Put together the TBSCert
