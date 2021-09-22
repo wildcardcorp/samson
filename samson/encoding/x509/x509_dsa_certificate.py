@@ -31,7 +31,7 @@ class X509DSASignature(X509Signature):
 
         new_pki = deepcopy(pki_obj)
         new_pki.hash_obj = self.hash_obj
-        return pki_obj.verify(data, sig)
+        return new_pki.verify(data, sig)
 
 
 class X509DSASigningAlgorithms(Enum):

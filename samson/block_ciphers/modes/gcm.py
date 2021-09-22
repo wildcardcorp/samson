@@ -70,7 +70,7 @@ class GCM(StreamingBlockCipherMode, AuthenticatedCipher):
             nonce     (bytes): Bytes-like nonce.
             plaintext (bytes): Bytes-like object to be encrypted.
             data      (bytes): Bytes-like additional data to be authenticated but not encrypted.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """
@@ -92,7 +92,7 @@ class GCM(StreamingBlockCipherMode, AuthenticatedCipher):
             nonce             (bytes): Bytes-like nonce.
             authed_ciphertext (bytes): Bytes-like object to be decrypted.
             data              (bytes): Bytes-like additional data to be authenticated.
-        
+
         Returns:
             Bytes: Resulting plaintext.
         """

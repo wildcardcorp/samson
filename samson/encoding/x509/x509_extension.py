@@ -17,17 +17,6 @@ from samson.encoding.x509.oids import *
 
 MAX = float('inf')
 
-IA5_TAGS = {
-    'dns': 'dNSName',
-    'ip':  'iPAddress',
-    'email': 'rfc822Name',
-    'uri': 'uniformResourceIdentifier',
-    'dir': 'directoryName',
-    'othername': 'otherName'
-}
-
-INVERSE_IA5_TAGS = {v:k for k,v in IA5_TAGS.items()}
-
 
 class GeneralName(BaseObject):
     TAG = None
@@ -791,7 +780,7 @@ class X509CRLDistributionPoints(X509Extension):
 class X509AuthorityKeyIdentifier(X509Extension):
     EXT_TYPE = OID.AUTHORITY_KEY_IDENTIFIER
 
-    def __init__(self, key_identifier: bytes, authority_cert_issuer: List[str], authority_cert_serial_number: int, critical: bool=False) -> None:
+    def __init__(self, key_identifier: bytes, authority_cert_issuer: List[str]=None, authority_cert_serial_number: int=None, critical: bool=False) -> None:
         self.key_identifier = key_identifier
         self.authority_cert_issuer = authority_cert_issuer
         self.authority_cert_serial_number = authority_cert_serial_number

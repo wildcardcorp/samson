@@ -16,6 +16,8 @@ class ConsoleColors(Enum):
     AMARANTH_PINK = "38;2;247;168;184"
     BRIGHT_WHITE  = "38;2;255;255;255"
     ORANGE        = "38;2;252;123;3"
+    ITALICS       = 3
+    BOLD          = 1
 
 PREFIX = '\033['
 SUFFIX = '\033[0m'

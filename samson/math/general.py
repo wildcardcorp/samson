@@ -25,6 +25,7 @@ _mat           = lazy_import('_mat', 'samson.math.matrix')
 _dense         = lazy_import('_dense', 'samson.math.dense_vector')
 _factor_gen    = lazy_import('_factor_gen', 'samson.math.factorization.general')
 _ell_curve     = lazy_import('_ell_curve', 'samson.math.algebra.curves.weierstrass_curve')
+_symbols       = lazy_import('_symbols', 'samson.math.symbols')
 
 
 def int_to_poly(integer: int, modulus: int=2) -> 'Polynomial':
@@ -100,7 +101,7 @@ def frobenius_monomial_base(poly: 'Polynomial') -> List['Polynomial']:
     References:
         https://github.com/sympy/sympy/blob/d1301c58be7ee4cd12fd28f1c5cd0b26322ed277/sympy/polys/galoistools.py
     """
-    from samson.math.symbols import oo
+    oo = _symbols.oo
 
     n = poly.degree()
     if n == 0:
@@ -813,12 +814,15 @@ def generalized_eulers_criterion(a: int, k: int, p: int, factors: dict=None) -> 
     References:
         "A Generalization of Euler’s Criterion to Composite Moduli" (https://arxiv.org/pdf/1507.00098.pdf)
     """
-    t = totient(p, factors=factors)
-    result = pow(a, t // gcd(k, t), p)
-    if result > 1:
-        result = -1
+    if p in [2, 4] or is_prime(p) or _factor_gen.is_perfect_power(p)[0] or (not p % 2 and _factor_gen.is_perfect_power(p // 2)[0]):
+        t = totient(p, factors=factors)
+        result = pow(a, t // gcd(k, t), p)
+        if result > 1:
+            result = -1
 
-    return ResidueSymbol(result)
+        return ResidueSymbol(result)
+    else:
+        raise ValueError(f"Unacceptable modulus {p} for Euler's criterion")
 
 
 
@@ -1872,7 +1876,7 @@ def frobenius_trace(curve: 'EllipticCurve') -> int:
         -3
 
     """
-    from samson.math.symbols import Symbol
+    Symbol = _symbols.Symbol
     ZZ = _integer_ring.ZZ
 
     search_range      = hasse_frobenius_trace_interval(curve.p)
@@ -3295,6 +3299,7 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
     """
     ZZ = _integer_ring.ZZ
     RR = _complex_field.CC(0).real().ring
+    Symbol = _symbols.Symbol
 
     if D < 0:
         D = -D
@@ -3313,9 +3318,6 @@ def hilbert_class_polynomial(D: int) -> 'Polynomial':
     prec  = prec.ceil()
 
     C2 = _complex_field.ComplexField(int(prec))
-
-
-    from samson.math.symbols import Symbol
 
     def j_func(tau):
         return C2(C2.ctx.kleinj(tau.val)*1728)
@@ -3388,3 +3390,52 @@ def batch_inv(elements: List['RingElement']) -> List['RingElement']:
         gamma *= elements[i-1]
 
     return invs[::-1]
+
+
+@RUNTIME.global_cache()
+def cyclomotic_polynomial(d: int) -> 'Polynomial':
+    """
+    Generates the `d`-th cyclotomic polynomial
+
+    Parameters:
+        d (int): Which polynomial to generate.
+
+    Returns:
+        Polynomial: `d`-th cyclotomic polynomial.
+    
+    References:
+        https://en.wikipedia.org/wiki/Cyclotomic_polynomial
+        https://planetmath.org/examplesofcyclotomicpolynomials
+    """
+    x    = _symbols.Symbol('x')
+    facs = _factor_gen.factor(d)
+
+    P = _integer_ring.ZZ[x]
+    C = x**d - 1
+
+    # Shortcuts
+    if d == 1:
+        return C
+
+    elif is_prime(d):
+        return P([1 for i in range(d)])
+
+    # Prime power
+    elif len(facs) == 1:
+        p, k = list(facs.items())[0]
+        C = cyclomotic_polynomial(p)
+        return C.map_coeffs(lambda i, c: (i*p**(k-1), c))
+    
+    # 2*p (this is faster than `cyclomotic_polynomial(d // 2)(-x)`)
+    elif not d % 2 and is_prime(d // 2) and d != 4:
+        C = cyclomotic_polynomial(d // 2)
+        return C.map_coeffs(lambda i, c: (i, ((i % 2)*-2+1)*c))
+    
+
+    for div in facs.divisors():
+        if div == d:
+            continue
+
+        C //= cyclomotic_polynomial(div)
+
+    return C

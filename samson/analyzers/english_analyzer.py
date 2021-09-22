@@ -39,7 +39,7 @@ class EnglishAnalyzer(Analyzer):
 
         Parameters:
             in_bytes (bytes): The bytes-like object to be "scored".
-        
+
         Returns:
             float: The relative score of the object.
         """
@@ -68,7 +68,7 @@ class EnglishAnalyzer(Analyzer):
         Parameters:
             in_bytes   (bytes): The bytes-like object to be "scored".
             in_ciphers (bytes): (Optional) If set, will check if `in_bytes` is a subset of `in_ciphers`. Used for supervised machine learning.
-        
+
         Returns:
             dictionary: Dictionary containing the processed features.
         """

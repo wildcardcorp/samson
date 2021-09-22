@@ -32,7 +32,7 @@ class CTR(StreamingBlockCipherMode):
 
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """
@@ -41,7 +41,7 @@ class CTR(StreamingBlockCipherMode):
 
         num_blocks = ceil(len(plaintext) / self.cipher.block_size)
         for _ in range(num_blocks):
-            keystream += self.cipher.encrypt(self.nonce + self.counter.to_bytes(self.cipher.block_size - len(self.nonce), self.byteorder))
+            keystream    += self.cipher.encrypt(self.nonce + self.counter.to_bytes(self.cipher.block_size - len(self.nonce), self.byteorder))
             self.counter += 1
 
         return keystream[:len(plaintext)] ^ plaintext
@@ -54,7 +54,7 @@ class CTR(StreamingBlockCipherMode):
 
         Parameters:
             ciphertext (bytes): Bytes-like object to be decrypted.
-        
+
         Returns:
             Bytes: Resulting plaintext.
         """

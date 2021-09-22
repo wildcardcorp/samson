@@ -4,7 +4,7 @@ from pyasn1.type.char import UTF8String
 from samson.core.base_object import BaseObject
 from pyasn1_modules import rfc2459, rfc5280
 from pyasn1.codec.der import encoder, decoder
-from pyasn1.type.univ import Any, BitString, ObjectIdentifier, OctetString
+from pyasn1.type.univ import ObjectIdentifier
 
 class RDN(BaseObject):
     OID        = None
@@ -155,6 +155,11 @@ class JurisdictionCountryName(ChoiceRDN, RDN):
     OID  = ObjectIdentifier('1.3.6.1.4.1.311.60.2.1.3')
     SHORT_NAME = "jurisdictionC"
 
+
+class DomainComponent(SimpleRDN, RDN):
+    OID  = ObjectIdentifier('0.9.2342.19200300.100.1.25')
+    TYPE = rfc5280.DomainComponent
+    SHORT_NAME = "DC"
 
 
 class RDNSequence(BaseObject):

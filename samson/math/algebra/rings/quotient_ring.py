@@ -98,7 +98,10 @@ class QuotientElement(RingElement):
         ZZ = _integer_ring.ZZ
 
         if self.ring.ring == ZZ:
-            return generalized_eulers_criterion(int(self), 2, int(self.ring.quotient)) != ResidueSymbol.DOES_NOT_EXIST
+            try:
+                return generalized_eulers_criterion(int(self), 2, int(self.ring.quotient)) != ResidueSymbol.DOES_NOT_EXIST
+            except ValueError:
+                return super().is_square()
 
         else:
             return super().is_square()

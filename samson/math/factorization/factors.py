@@ -174,7 +174,12 @@ class Factors(BaseObject):
         Returns the square-free portion of the factors. Checks to make sure factors
         aren't squares themselves.
         """
-        squares = Factors({p: e for p,e in self.items() if p > 0 and kth_root(p, 2)**2 == p})
+        if hasattr(list(self)[0], 'ring'):
+            is_square = lambda n: n.is_square()
+        else:
+            is_square = lambda n: kth_root(n, 2)**2 == n
+
+        squares = Factors({p: e for p,e in self.items() if p > 0 and is_square(p)})
         sqrt    = Factors({p: e // 2 for p,e in self.items()})
         return self // sqrt.recombine()**2 // squares
 

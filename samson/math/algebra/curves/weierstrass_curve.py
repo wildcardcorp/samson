@@ -3,10 +3,11 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l, legendre, cornacchias_algorithm, hilbert_class_polynomial, random_int, random_int_between, find_prime, primes
+from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l, legendre, cornacchias_algorithm, hilbert_class_polynomial, random_int, random_int_between, find_prime, primes, cyclomotic_polynomial
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
+from typing import Tuple
 import math
 
 from samson.auxiliary.lazy_loader import LazyLoader
@@ -560,6 +561,17 @@ class WeierstrassPoint(RingElement):
 
         raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
 
+
+
+    @RUNTIME.global_cache()
+    def embedding_degree(self) -> int:
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        Fo = self.ring.ring.order()
+        Eo = self.order()
+
+        Zem = (ZZ/ZZ(Eo)).mul_group()
+        return Zem(Fo).order()
 
 
 
@@ -1678,6 +1690,114 @@ class WeierstrassCurve(Ring):
 
                     except NoSolutionException:
                         pass
+
+
+    @staticmethod
+    def generate_with_k_embedding_subgroup(bits: int, k: int) -> Tuple['WeierstrassCurve', WeierstrassPoint]:
+        """
+        Generates a curve with a *subgroup* whose embedding degree is `k`.
+
+        Parameters:
+            bits (int): Size of the underlying finite field.
+            k    (int): Desired embedding degree.
+
+        Returns:
+            Tuple[WeierstrassCurve, WeierstrassPoint]: The constructed curve and a generator of the subgroup.
+    
+        Examples:
+            >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
+            >>> E, g = EllipticCurve.generate_with_k_embedding_subgroup(80, 12)
+            >>> (E.ring.characteristic().bit_length(), g.embedding_degree())
+            (80, 12)
+
+        References:
+            "Constructing Elliptic Curves with Prescribed Embedding Degrees" (https://eprint.iacr.org/2002/088.pdf)
+        """
+        from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.symbols import oo
+    
+        # First we need to estimate the starting point
+        # Since `r` will be ~l^(c.degree()), m~r, and q = m*r
+        # we get the following `start`
+        c     = cyclomotic_polynomial(k)
+        start = 2**((bits // c.degree() // 2)-3)
+
+        # This is just to add some randomness
+        l = start - random_int(bits*2)
+
+        # There's not a super good way to estimate when increasing evaluations of the poly
+        # will no longer be within our range.
+        last_attempts  = []
+        attempt_memory = 20
+
+        while True:
+            l += 1
+            r  = c(l)
+            if not r.is_prime():
+                continue
+
+            t = l+1
+            A = 4*r
+            B = (l-1)**2
+            attempt_min = oo
+
+            for D in [3, 7, 11, 19, 43, 67, 163, 27, 35, 51, 91, 115, 123, 187, 235, 267, 403, 427]:
+                MD  = ZZ/ZZ(D)
+                mdA = MD(A)
+
+                if not mdA.is_invertible():
+                    continue
+
+                m0  = ZZ(MD(B)/mdA)
+                z0  = (A*m0-B) // D
+                MR  = ZZ/r
+                mrZ = MR(z0)
+
+                if not mrZ.is_square():
+                    continue
+
+                V  = ZZ(mrZ.sqrt())
+                if (V**2 - z0) % 4:
+                    continue
+
+                i0 = (V**2 - z0) // A
+                mi = m0 + i0.val*D
+
+                n = mi*r
+                q = n+t-1
+
+                attempt_min = min(q.val.bit_length(), attempt_min)
+
+                if q.val.bit_length() == bits and q.is_prime():
+                    if all(pow(int(q), i, int(r)) != 1 for i in range(1,k)) and pow(int(q), k, int(r)) == 1:
+                        E = EllipticCurve.generate_curve_with_D(D, ZZ/q)
+
+                        # Did we get a good curve?
+                        if E.trace() in [t, -t]:
+                            if E.trace() != t:
+                                E = E.quadratic_twist()
+                            
+                            g = E.find_gen()
+                            return E, g*int((g.order() // r))
+
+
+            last_attempts.append(attempt_min)
+            last_attempts = last_attempts[-attempt_memory:]
+
+            if len(last_attempts) == attempt_memory:
+                # Here we predict whether it's feasible `r` will ever be the right size
+                # based on past attempts
+                if all([attempt_bits > bits for attempt_bits in last_attempts]):
+                    raise SearchspaceExhaustedException
+
+                # If we're always too low, let's use the past attempts to predict
+                # how big of jump we can make. Note, we clear `last_attempts` to prevent
+                # making multiple jumps without sampling a new `error_ratio`.
+                elif all([attempt_bits < bits for attempt_bits in last_attempts]):
+                    avg = sum(last_attempts) / attempt_memory
+                    error_ratio = bits / avg
+                    l += int(l * error_ratio * 0.1)
+                    last_attempts = []
 
 
 
