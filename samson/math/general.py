@@ -488,6 +488,14 @@ def kth_root(n: int, k: int) -> int:
         https://github.com/sympy/sympy/blob/c0bfc81f3ffee97c6d6732ac5e5ccf399e5ab3e2/sympy/core/power.py#L84
         https://en.wikipedia.org/wiki/Newton%27s_method
     """
+    negate = False
+    if n < 0:
+        if k % 2:
+            negate = True
+            n = -n
+        else:
+            raise NoSolutionException("Even degree roots do not exist for negative integers")
+
     # Estimate the root using floating point exponentiation
     # This typically is within 1e-10 of the actual root for large integers
     try:
@@ -521,7 +529,7 @@ def kth_root(n: int, k: int) -> int:
 
     t = root**k
     if t == n:
-        return root
+        return root * (negate*-2+1)
 
     # If we're very close, then try incrementing/decrementing
     diff = n-t
@@ -536,7 +544,7 @@ def kth_root(n: int, k: int) -> int:
                     root -= 1
                     t     = root**k
 
-            return root + (t < n)
+            return (root + (t < n)) * (negate*-2+1)
     except OverflowError:
         pass
 
@@ -552,7 +560,7 @@ def kth_root(n: int, k: int) -> int:
         else:
             ub = guess
 
-    return lb + (lb**k < n)
+    return (lb + (lb**k < n)) * (negate*-2+1)
 
 
 def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
@@ -2190,7 +2198,7 @@ def miller_rabin(n: int, k: int=64, bases: list=None) -> bool:
         >>> miller_rabin(127)
         True
 
-        >>> miller_rabin(6)
+        >>> bool(miller_rabin(6))
         False
 
     References:
@@ -2621,12 +2629,12 @@ def is_prime(n: int, prove: bool=False) -> bool:
     Examples:
         >>> from samson.math.general import is_prime, find_prime
         >>> is_prime(7)
-        True
+        <PrimalityCertficate: n=7, is_prime=True, method=ProofMethod.EXHAUSTIVE, proof=None>
 
-        >>> is_prime(15)
+        >>> bool(is_prime(15))
         False
 
-        >>> is_prime(find_prime(32))
+        >>> bool(is_prime(find_prime(32)))
         True
 
     References:
@@ -3392,50 +3400,71 @@ def batch_inv(elements: List['RingElement']) -> List['RingElement']:
     return invs[::-1]
 
 
-@RUNTIME.global_cache()
-def cyclomotic_polynomial(d: int) -> 'Polynomial':
+def cyclomotic_polynomial(n: int) -> 'Polynomial':
     """
-    Generates the `d`-th cyclotomic polynomial
+    Generates the `n`-th cyclotomic polynomial
 
     Parameters:
-        d (int): Which polynomial to generate.
+        n (int): Which polynomial to generate.
 
     Returns:
-        Polynomial: `d`-th cyclotomic polynomial.
-    
+        Polynomial: `n`-th cyclotomic polynomial.
+
     References:
         https://en.wikipedia.org/wiki/Cyclotomic_polynomial
         https://planetmath.org/examplesofcyclotomicpolynomials
+        "Algorithms for computing cyclotomic polynomials" (http://www.cecm.sfu.ca/CAG/abstracts/AndrewSlides.pdf)
     """
-    x    = _symbols.Symbol('x')
-    facs = _factor_gen.factor(d)
+    x      = _symbols.Symbol('x')
+    facs   = _factor_gen.factor(n)
+    t      = totient(n, facs)
+    P      = _integer_ring.ZZ[[x]]
+    P.prec = t+1
 
-    P = _integer_ring.ZZ[x]
-    C = x**d - 1
+    square_free = _factor_gen.factor(product(facs))
 
     # Shortcuts
-    if d == 1:
-        return C
+    if n == 1:
+        return x - 1
 
-    elif is_prime(d):
-        return P([1 for i in range(d)])
+    elif is_prime(n):
+        return P([1 for _ in range(n)]).val
 
-    # Prime power
-    elif len(facs) == 1:
-        p, k = list(facs.items())[0]
+    # Perfect power
+    elif facs.is_perfect_power():
+        k = facs.largest_root()
+        p = facs.kth_root(k).recombine()
         C = cyclomotic_polynomial(p)
         return C.map_coeffs(lambda i, c: (i*p**(k-1), c))
-    
+
     # 2*p (this is faster than `cyclomotic_polynomial(d // 2)(-x)`)
-    elif not d % 2 and is_prime(d // 2) and d != 4:
-        C = cyclomotic_polynomial(d // 2)
+    elif not n % 2 and (facs // 2).is_perfect_power() and n != 4:
+        C = cyclomotic_polynomial(n // 2)
         return C.map_coeffs(lambda i, c: (i, ((i % 2)*-2+1)*c))
-    
 
-    for div in facs.divisors():
-        if div == d:
-            continue
+    # This algorithm only works if it has NO repeated factors
+    elif square_free == facs:
+        D = t // 2
 
-        C //= cyclomotic_polynomial(div)
+        a = [1] + [0]*D
+        for comb in {_factor_gen.factor(1)}.union(set(square_free.all_combinations())):
+            d = comb.recombine()
+            if (square_free // comb).mobius() == 1:
+                for i in range(D, d-1, -1):
+                    a[i] -= a[i-d]
+            else:
+                for i in range(d, D+1):
+                    a[i] += a[i-d]
 
-    return C
+
+        # Cyclotomic polys are palindromic!
+        c = P(a)
+        c = c.val
+        x = c.symbol
+        x.top_ring = None
+        return ((c[::-1] << D) + c) - (c[D]*x**D)
+
+    else:
+        C = cyclomotic_polynomial(square_free.recombine())
+        squares = (facs/square_free).recombine()
+        return C.map_coeffs(lambda i, c: (i*squares, c))

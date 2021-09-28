@@ -457,7 +457,9 @@ class WeierstrassPoint(RingElement):
                 def mul_trans(Q):
                     return Km(E_(Q).weil_pairing(R, o))
 
-                return Map(E, Km, mul_trans)
+                phi   = Map(E, Km, mul_trans)
+                phi.R = R
+                return phi
 
 
     def __batch_invert_zs(self, points):
@@ -688,7 +690,7 @@ class WeierstrassCurve(Ring):
 
 
     def __eq__(self, other: 'WeierstrassCurve') -> bool:
-        return type(other) == type(self) and self.a == other.a and self.b == other.b
+        return type(other) == type(self) and self.a == other.a and self.b == other.b and self.ring == other.ring
 
 
     def __hash__(self):
@@ -811,6 +813,7 @@ class WeierstrassCurve(Ring):
 
 
 
+    @RUNTIME.global_cache()
     def cardinality(self, algorithm: EllipticCurveCardAlg=EllipticCurveCardAlg.AUTO, check_supersingular: bool=True) -> int:
         """
         Calculates the cardinality (number of points) of the curve and caches the result.
@@ -848,14 +851,32 @@ class WeierstrassCurve(Ring):
 
         """
         if not self.cardinality_cache:
-            p = self.ring.order()
+            q = self.ring.order()
+            p = self.ring.characteristic()
+
+            _ipp, pk, k = is_perfect_power(q)
+
+            # Finite field extension
+            if pk != q:
+                from samson.math.algebra.rings.integer_ring import ZZ
+                R = ZZ/ZZ(p)
+                E = EllipticCurve(R(self.a), R(self.b))
+                t = E.trace()
+                s = [2, t]
+
+                for n in range(1, k):
+                    sn1 = t*s[n] - p*s[n-1]
+                    s.append(sn1)
+
+                self.cardinality_cache = p**k + 1 - s[-1]
+                return self.cardinality_cache
+
 
             if check_supersingular and self.is_supersingular():
-                _ipp, p, n = is_perfect_power(p)
                 if not is_prime(p):
                     raise RuntimeError('Supersingular curve over ring with non-prime power order')
 
-                self.cardinality_cache = (p+1)**n
+                self.cardinality_cache = (p+1)**k
                 return self.cardinality_cache
 
 
@@ -875,7 +896,6 @@ class WeierstrassCurve(Ring):
 
                 # Finite field
                 if self.ring.is_field() and self.ring.characteristic() == self.ring.order():
-                    p     = self.ring.characteristic()
                     poly  = self.defining_polynomial()
                     total = 1
                     for i in range(g.order()):
@@ -909,7 +929,7 @@ class WeierstrassCurve(Ring):
                 n, m = 1, 1
                 largest_elem = self.zero
 
-                if p.bit_length() > 64:
+                if p.bit_length() > 64 and self.a:
                     from samson.math.algebra.curves.sea import elkies_trace_mod_l
                     parity = int(self.defining_polynomial().is_irreducible())
 
@@ -1798,6 +1818,60 @@ class WeierstrassCurve(Ring):
                     error_ratio = bits / avg
                     l += int(l * error_ratio * 0.1)
                     last_attempts = []
+
+
+    @staticmethod
+    def generate_curve_with_k12_prime_order(bits: int) -> 'WeierstrassCurve':
+        """
+        Generates a curve with prime order and embedding degree 12.
+
+        Parameters:
+            bits (int): Desired size of underlying field.
+
+        Returns:
+            WeierstrassCurve: Prime-order curve with an embedding degree of 12.
+
+        References:
+            "Pairing-Friendly Elliptic Curves of Prime Order" (https://eprint.iacr.org/2005/133.pdf)
+        """
+        from samson.utilities.general import binary_search_unbounded, lazy_shuffle
+        from samson.math.symbols import Symbol
+        from samson.math.algebra.rings.integer_ring import ZZ
+
+        def gen_curve_params():
+            x = Symbol('x')
+            _ = ZZ[x]
+            P = 36*x**4 + 36*x**3 + 24*x**2 + 6*x + 1
+            T = 6*x**2 + 1
+
+            start = binary_search_unbounded(lambda n: P(-n).val.bit_length() < bits)
+            end   = binary_search_unbounded(lambda n: P(-n).val.bit_length() < (bits+1))
+
+            for l in lazy_shuffle(range(start, end)):
+                t = int(T(l))
+                for val in (-l, l):
+                    p = int(P(val))
+                    n = p + 1 - t
+                    if is_prime(p) and is_prime(n):
+                        return p, n
+
+
+        p, n = gen_curve_params()
+        R = ZZ/ZZ(p)
+        b = R(0)
+
+        while True:
+            b += 1
+            while not (b+1).is_square():
+                b += 1
+
+            y = (b+1).sqrt()
+            E = EllipticCurve(R(0), b)
+            G = E(1, y)
+
+            if not G*n:
+                E.cardinality_cache = n
+                return E
 
 
 

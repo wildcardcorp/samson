@@ -124,7 +124,7 @@ class FiniteField(Field):
 
 
     def __hash__(self) -> int:
-        return hash((self.internal_field, self.reducing_poly, self.__class__))
+        return hash((self.internal_field, self.__class__))
 
 
     def shorthand(self) -> str:
@@ -137,6 +137,10 @@ class FiniteField(Field):
 
     def order(self) -> int:
         return self.p**self.n
+
+
+    def degree(self) -> int:
+        return self.reducing_poly.degree()
 
 
     def is_superstructure_of(self, R: 'Ring') -> bool:

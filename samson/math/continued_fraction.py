@@ -6,7 +6,7 @@ def _calc_continued_fraction(frac: 'FractionFieldElement') -> list:
 
     Parameters:
         frac (FractionFieldElement): Fraction.
-    
+
     Returns:
         list: Continued fraction.
     """

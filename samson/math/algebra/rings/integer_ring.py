@@ -59,7 +59,11 @@ class IntegerElement(RingElement):
 
 
     def is_square(self) -> bool:
-        return self.kth_root(2, strict=False)**2 == self
+        try:
+            self.kth_root(2)
+            return True
+        except NoSolutionException:
+            return False
 
 
     def valuation(self, p: int) -> int:

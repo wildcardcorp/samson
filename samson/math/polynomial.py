@@ -1,3 +1,4 @@
+from samson.utilities.exceptions import NoSolutionException
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.general import square_and_mul, gcd, kth_root, coppersmiths, product
 from samson.math.factorization.general import factor as factor_int, pk_1_smallest_divisor
@@ -799,7 +800,6 @@ class Polynomial(RingElement):
         Returns:
             list: Equal-degree factors of self.
         """
-        from samson.math.general import frobenius_map, frobenius_monomial_base
         from samson.math.symbols import oo
 
         f = self.monic()
@@ -828,11 +828,9 @@ class Polynomial(RingElement):
             if not subgroup_divisor:
                 subgroup_divisor = pk_1_smallest_divisor(q)
 
-            exponent = (q - 1) // subgroup_divisor
+            exponent = (q**d -1) // subgroup_divisor
 
         one   = self.ring.one
-        bases = frobenius_monomial_base(f)
-
         irreducibility_cache = {}
 
         if n < d or self.is_irreducible():
@@ -842,6 +840,8 @@ class Polynomial(RingElement):
         if self.coeff_ring.order() == oo:
             raise NotImplementedError('Currently can\'t factor polynomials in rings of infinite order')
 
+        attempts = 0
+        found = False
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])) and not user_stop_func(S):
                 h = f.ring.random(f)
@@ -849,11 +849,6 @@ class Polynomial(RingElement):
 
                 if g == one:
                     h = f_quot(h)
-                    j = h
-                    for _ in range(d-1):
-                        j  = frobenius_map(j, f, bases=bases)
-                        h *= j
-
                     g = (h**exponent).val - one
 
                 for u in S:
@@ -862,6 +857,7 @@ class Polynomial(RingElement):
 
                     gcd_g_u = gcd(g, u).monic()
                     if gcd_g_u != one and gcd_g_u != u:
+                        found = True
                         S.remove(u)
                         if u in irreducibility_cache:
                             del irreducibility_cache[u]
@@ -872,16 +868,24 @@ class Polynomial(RingElement):
                         # Cache irreducibility results
                         irreducibility_cache[gcd_g_u]   = gcd_g_u.is_irreducible()
                         irreducibility_cache[u_gcd_g_u] = u_gcd_g_u.is_irreducible()
+                
+                if found == False:
+                    attempts += 1
+
+                    if subgroup_divisor**attempts > (2**128-1):
+                        raise NoSolutionException(f"Polynomial {f} has no {d} degree factors with 1 - 1/2^128 probability")
+
         except KeyboardInterrupt:
             pass
 
         return S
 
+
     edf = equal_degree_factorization
 
 
     def _is_irred_ZZ(self):
-        from samson.math.general import find_coprime, batch_gcd
+        from samson.math.general import batch_gcd
     
         ZZ   = _integer_ring.ZZ
         one  = self.coeff_ring.one
@@ -955,8 +959,9 @@ class Polynomial(RingElement):
 
         # WARNING: This proves a poly over ZZ is irreducible if it's irreducible in F_p.
         # The converse is NOT true. This may say a poly over ZZ is reducible when it is not.
-        facs = self._ZZ_to_lossless_Fp().factor()
-        return sum(facs.values()) == 1 or all(self % fac.change_ring(ZZ) for fac in facs)
+        # facs = self._ZZ_to_lossless_Fp().factor()
+        # return sum(facs.values()) == 1 or all(self % fac.change_ring(ZZ) for fac in facs)
+        return self._fac_ZZ() == [self]
 
 
     def is_irreducible(self) -> bool:
@@ -1069,7 +1074,8 @@ class Polynomial(RingElement):
 
 
 
-    def _fac_ZZ(self, d: int=1, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False):
+    @RUNTIME.global_cache()
+    def _fac_ZZ(self, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False):
         """
         Performs factorization over ZZ. Assumes `self` is square-free.
 
@@ -1090,8 +1096,7 @@ class Polynomial(RingElement):
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials#Factoring_univariate_polynomials_over_the_integers
         """
-        # from samson.math.general import next_prime
-        # ZZ = _integer_ring.ZZ
+        import math
 
         # 'f' must be content-free
         f = self // self.content()
@@ -1099,62 +1104,40 @@ class Polynomial(RingElement):
         p = g.coeff_ring.characteristic()
 
         # Factor over mod `p`
-        facs = g.factor(d=d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
+        facs = g.factor(subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
 
         # Here we "reattach" coefficients that were stripped due to monicity constraints of Cantor-Zassenhaus.
         # EXAMPLE: 1296*x**3 + 3654*x**2 + 3195*x + 812
         # The correct factorization is (6*x + 7) * (9*x + 4) * (24*x + 29)
         # However, it actually factors to (x + 2133) * (x + 6092) * (x + 4061) over ZZ/ZZ(7309)
         # Note that 24*(x + 2133) == (24*x + 29)
-        d1_cands = []
         lc_facs  = f.LC().factor()
+        factors  = []
+
         for d in lc_facs.all_divisors():
             coeff = int(d)
 
-            for poly in facs:
-                cand = poly * coeff
-                d1_cands.extend([cand, -cand])
+            for deg in range(1, math.ceil(f.degree() / 2)+1):
+                for cands in itertools.permutations(facs, deg):
+                    if f.degree() <= deg:
+                        break
 
-        d1_cands = set(d1_cands)
-        factors  = []
+                    poss = (product(cands).monic()*coeff).peel_coeffs()
+                    for cand in [poss, -poss, poss-p, -poss+p]:
+                        while not f % cand:
+                            f //= cand
+                            factors.append(cand)
 
-        # Test direct candidacy
-        for fac in d1_cands:
-            poss = fac.peel_coeffs()
-
-            for cand in [poss, poss-p]:
-                cand //= cand.content()
-
-                while not f % cand:
-                    f //= cand
-                    factors.append(cand)
-
-                    if f.is_irreducible():
-                        factors.append(f)
-                        return factors
-
-
-        # Reassemble and reduce
-        for canda, candb in itertools.permutations(d1_cands, 2):
-            poss = (canda * candb).peel_coeffs()
-            while not f % poss:
-                f //= poss
-                factors.append(poss)
-
-                if f.is_irreducible():
-                    break
-
-        factors.append(f)
-        return factors
+        return factors + [f]
 
 
 
-    def factor(self, d: int=1, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False) -> list:
+    @RUNTIME.global_cache()
+    def factor(self, subgroup_divisor: int=None, user_stop_func: FunctionType=lambda S: False) -> list:
         """
         Factors the Polynomial into its constituent, irreducible factors.
 
         Parameters:
-            d                (int): Degree to factor into.
             subgroup_divisor (int): Smallest divisor of `order - 1`.
             user_stop_func  (func): A function that takes in (facs) and returns True if the user wants to stop factoring.
 
@@ -1170,14 +1153,15 @@ class Polynomial(RingElement):
             >>> P  = Z7[x]
             >>> #___________________
             >>> # Generate random factors
-            >>> factors = [fac for fac in [P.random(P(x**3)) for _ in range(4)] if fac]
-            >>> p = reduce(Polynomial.__mul__, factors, P[1]) # Build the Polynomial
-            >>> reduce(Polynomial.__mul__, [fac**exp for fac, exp in p.factor().items()], P[1]) == p.monic() # Check the factorization is right
+            >>> facs    = [fac for fac in [P.random(P(x**3)) for _ in range(4)] if fac]
+            >>> p       = product(facs) # Build the Polynomial
+            >>> factors = p.factor()
+            >>> factors.recombine() == p.monic() # Check the factorization is right
             True
 
         """
         ZZ = _integer_ring.ZZ
-        from samson.math.all import QQ, Symbol
+        from samson.math.all import QQ, Symbol, factor
         from samson.math.factorization.factors import Factors
 
         p = self
@@ -1215,10 +1199,10 @@ class Polynomial(RingElement):
             facs = [(poly._fac_ZZ(user_stop_func=user_stop_func), num) for poly, num in f.sff().items() if poly.degree()]
 
             for partial_factors, num in facs:
-                for factor in partial_factors:
-                    if factor != p.ring.one:
-                        factor.symbol = p.symbol
-                        add_or_increment(factors, factor, num)
+                for fac in partial_factors:
+                    if fac != p.ring.one:
+                        fac.symbol = p.symbol
+                        add_or_increment(factors, fac, num)
 
 
         elif self.coeff_ring == QQ:
@@ -1229,7 +1213,7 @@ class Polynomial(RingElement):
             # Factor `p` over ZZ
             P    = ZZ[Symbol(q.symbol.repr)]
             z    = P(q.coeffs.map(lambda idx, val: (idx, val.numerator)))
-            facs = z.factor(d=d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
+            facs = z.factor(subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
 
             # Coerce the factors back into QQ
             for fac, e in facs.items():
@@ -1240,13 +1224,24 @@ class Polynomial(RingElement):
         else:
             # Cantor-Zassenhaus (SFF -> DDF -> EDF)
             distinct_degrees = [(factor, num) for poly, num in p.sff().items() for factor in poly.ddf()]
-            for (poly, _), num in distinct_degrees:
-                for factor in poly.edf(d, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func):
-                    if factor != p.ring.one:
-                        add_or_increment(factors, factor, num)
 
-                        if user_stop_func(factors.keys()):
-                            return factors
+            for (poly, _), num in distinct_degrees:
+                for deg in sorted(factor(poly.degree()).divisors()):
+                    try:
+                        for fac in poly.edf(deg, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func):
+                            if not p:
+                                return factors
+
+                            q, r = divmod(p, fac)
+                            if fac != p.ring.one and not r and fac.is_irreducible():
+                                p = q
+                                add_or_increment(factors, fac, num)
+
+                                if user_stop_func(factors.keys()):
+                                    return factors
+
+                    except NoSolutionException:
+                        pass
 
         return factors
 
@@ -1262,6 +1257,40 @@ class Polynomial(RingElement):
             return self.coeffs.last()
         except IndexError:
             return 0
+
+
+    def discriminant(self) -> int:
+        """
+        Return the discriminant of the Polynomial.
+
+        Returns:
+            int: Discriminant.
+
+        References:
+            https://en.wikipedia.org/wiki/Discriminant#Low_degrees
+        """
+        d = self.degree()
+
+        if d == 2:
+            a, b, c = self
+            return b**2 - 4*a*c
+
+        elif d == 3:
+            a, b, c, d = self
+            return b**2*c**2 - 4*a*c**3 - 4*b**3*d - 27*a**2*d**2 + 18*a*b*c*d
+        
+        elif d == 4:
+            a, b, c, d, e = self
+            f = 256*a**3*e**3 - 192*a**2*b*d*e**2 - 128*a**2*c**2*e**2 + 144*a**2*c*d**2*e
+            g = -27*a**2*d**4 + 144*a*b**2*c*e**2 - 6*a*b**2*d**2*e - 80*a*b*c**2*d*e
+            h = 18*a*b*c*d**3 + 16*a*c**4*e - 4*a*c**3*d**2 - 27*b**4*e**2 + 18*b**3*c*d*e
+            i = -4*b**3*d**3 - 4*b**2*c**3*e + b**2*c**2*d**2
+
+            return f + g + h + i
+
+        else:
+            raise ValueError(f"Discriminant is not defined for polynomials of degree {d}")
+
 
 
     def ordinality(self) -> int:

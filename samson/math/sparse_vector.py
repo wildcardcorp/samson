@@ -129,7 +129,7 @@ class SparseVector(BaseObject):
 
                 elif step < 0:
                     step = -step
-                    selected_items = [(req_stop - idx, val) for idx, val in selected_items]
+                    selected_items = [(req_stop - idx-1, val) for idx, val in selected_items]
 
                 selected_items = [(idx, val) for idx, val in selected_items if not idx % step]
 

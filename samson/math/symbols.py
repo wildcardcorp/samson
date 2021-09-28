@@ -116,6 +116,10 @@ class Symbol(Polynomial):
         return self.__top_coerce(self.var) * other
 
 
+    def __invert__(self):
+        return ~self.__top_coerce(self.var)
+
+
     def __truediv__(self, other):
         return self.__top_coerce(self.var) / other
 

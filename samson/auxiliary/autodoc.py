@@ -10,16 +10,19 @@ import re
 _GENERIC_TEXT_RE = r'[A-Za-z0-9() _+-]+'
 
 UNDEFINED_PARAM_RE = re.compile(rf'`{_GENERIC_TEXT_RE}`')
-ITALICS_RE         = re.compile(rf'_{_GENERIC_TEXT_RE}_')
+ITALICS_RE         = re.compile(rf' _{_GENERIC_TEXT_RE}_')
 BOLD_RE            = re.compile(rf'\*{_GENERIC_TEXT_RE}\*')
 
 class Styler(object):
-    def __init__(self, regex, color) -> None:
+    def __init__(self, regex, color, trim_start=1, trim_end=None) -> None:
         self.regex = regex
         self.color = color
-    
+        self.trim_start = trim_start
+        self.trim_end = trim_start if trim_end is None else trim_end
+
+
     def style(self, text: str):
-        return self.regex.sub(lambda match: color_format(self.color, match.group()[1:-1]), text)
+        return self.regex.sub(lambda match: color_format(self.color, match.group()[self.trim_start:-self.trim_end]), text)
 
 
 STYLERS = [
@@ -172,16 +175,9 @@ def gen_doc(description: str=None, parameters: list=None, returns: DocReturns=No
             return d_str
 
 
-        def undefined_parameterize(d_str):
-            return UNDEFINED_PARAM_RE.sub(lambda match: undefined_param_format(match.group()[1:-1]), d_str)
-
-
-        # parameterized_desc = undefined_parameterize(parameterize(description))
         parameterized_desc = style_text(parameterize(description))
         parameterized_ret  = style_text(parameterize(returns_str))
         param_params       = style_text(parameterize(parameters_str))
-        # parameterized_ret  = undefined_parameterize(parameterize(returns_str))
-        # param_params       = undefined_parameterize(parameterize(parameters_str))
 
         func.__doc__ = f"{parameterized_desc}{param_params}{parameterized_ret}{examples_str}{references_str}"
         func.examples = examples

@@ -1,6 +1,6 @@
 from samson.utilities.general import add_or_increment
 from samson.analysis.general import count_items
-from samson.math.general import kth_root
+from samson.math.general import kth_root, gcd
 from samson.core.base_object import BaseObject
 from functools import reduce
 from itertools import combinations, chain
@@ -186,10 +186,18 @@ class Factors(BaseObject):
 
     divisors = all_divisors
 
+    def _get_one(self):
+        n = list(self)[0]
+        if hasattr(n, 'ring'):
+            return n.ring.one
+        else:
+            return 1
+
+
 
     def mobius(self) -> int:
         n = self.recombine()
-        if (hasattr(n, 'ring') and n == n.ring.one) or n == 1:
+        if n == self._get_one():
             return 1
 
         elif max(self.factors.values()) > 1:
@@ -210,3 +218,24 @@ class Factors(BaseObject):
         mul   = type(elem0).__mul__
         one   = elem0.ring.one if hasattr(elem0, 'ring') else 1
         return reduce(mul, [p**e for p,e in self.factors.items()], one)
+
+
+    def is_prime_power(self):
+        n = self.recombine()
+        return len(self) == 1 and n != self._get_one()
+    
+
+    def largest_root(self):
+        return gcd(*self.factors.values())
+
+
+    def is_perfect_power(self):
+        return self.largest_root() > 1
+
+
+    def kth_root(self, k: int):
+        max_root = self.largest_root()
+        if k > max_root:
+            raise ValueError(f"Factorization is not {k}-th power")
+        
+        return Factors({fac: exp // k for fac, exp in self.factors.items()})
