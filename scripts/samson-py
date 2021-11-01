@@ -21,6 +21,19 @@ factor_parser = subparsers.add_parser('factor')
 factor_parser.add_argument('int_to_fac')
 factor_parser.add_argument('--args', nargs="?")
 
+
+worker_parser = subparsers.add_parser('worker')
+worker_sub    = worker_parser.add_subparsers(dest='worker_command')
+
+worker_start = worker_sub.add_parser('start')
+worker_start.add_argument('-E', action='store_true')
+worker_start.add_argument('broker_url')
+worker_start.add_argument('backend_url', default=None, nargs="?")
+
+worker_monitor = worker_sub.add_parser('monitor')
+worker_monitor.add_argument('broker_url')
+worker_monitor.add_argument('backend_url', default=None, nargs="?")
+
 hash_parser = subparsers.add_parser('hash')
 hash_parser.description = f"Available hash types: {', '.join([k for k,v in HASHES.items()])}"
 
@@ -154,6 +167,25 @@ if __name__ == '__main__':
         with open(arguments.loadfile) as f:
             exec(start_exec + "\n" + f.read())
 
+
+    elif arguments.command == 'worker':
+        from samson.auxiliary.rpc import RPCClient
+        import logging
+        logging.getLogger().setLevel(logging.WARNING)
+        logging.getLogger("samson").setLevel(logging.INFO)
+
+        backend_url = arguments.backend_url
+        if not backend_url:
+            backend_url = "rpc://" + arguments.broker_url.split('://')[1]
+
+        client = RPCClient(arguments.broker_url, backend_url)
+        client.app.Task.resultrepr_maxsize = 1024*1024
+
+        if arguments.worker_command == 'monitor':
+            client.evtop()
+        elif arguments.worker_command == 'start':
+            client.start_worker(task_events=arguments.E)
+
     else:
         RUNTIME.minimize_output = False
 
@@ -227,7 +259,7 @@ if __name__ == '__main__':
                 if arguments.encoding:
                     export_pki(pki_obj.key, arguments)
                 else:
-                    print(pki_obj)
+                    print(repr(pki_obj))
 
             elif arguments.action == 'info':
                 print(f'Class: {pki_cls}\n')

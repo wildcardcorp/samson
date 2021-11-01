@@ -39,7 +39,7 @@ class X509Certificate(PEMEncodable):
     PK_INFO_KEY = 'subjectPublicKeyInfo'
 
     def __init__(
-        self, key: object, version: int=2, serial_number: int=0, issuer: RDNSequence=None, subject: RDNSequence=None, extensions: list=None,
+        self, key: object, version: int=3, serial_number: int=0, issuer: RDNSequence=None, subject: RDNSequence=None, extensions: list=None,
         issuer_unique_id: int=None, subject_unique_id: int=None, not_before: datetime=None, not_after: datetime=None,
         signing_alg: X509Signature=None, signature_value: bytes=None, **kwargs
     ):
@@ -141,7 +141,7 @@ class X509Certificate(PEMEncodable):
 
         # Put together the TBSCert
         tbs_cert = rfc2459.TBSCertificate()
-        tbs_cert['version']              = self.version
+        tbs_cert['version']              = self.version-1
         tbs_cert['serialNumber']         = serial_num
         tbs_cert['signature']            = signature_alg
         tbs_cert['issuer']               = issuer
@@ -239,7 +239,7 @@ class X509Certificate(PEMEncodable):
         signing_alg = resolve_alg(cert['signatureAlgorithm'])
 
         return cls(
-            key=key, version=version, serial_number=serial_num, issuer=issuer, subject=subject,
+            key=key, version=version+1, serial_number=serial_num, issuer=issuer, subject=subject,
             issuer_unique_id=issuer_unique_id, subject_unique_id=subject_unique_id, not_before=not_before, not_after=not_after,
             signing_key=None, signing_alg=signing_alg, signature_value=signature, extensions=extensions
         )

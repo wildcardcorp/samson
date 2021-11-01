@@ -1,6 +1,7 @@
 from samson.math.general import is_primitive_root, find_prime, is_safe_prime, is_sophie_germain_prime, next_prime, is_prime
 from samson.math.factorization.factors import Factors
 from samson.utilities.exceptions import SearchspaceExhaustedException
+from samson.utilities.general import lazy_shuffle
 from samson.auxiliary.roca import gen_roca_prime
 import math
 
@@ -97,6 +98,40 @@ class SmoothGen(PGen):
                     p = next_prime(p+1)
 
 
+class SmoothMultiBaseGen(PGen):
+    def __init__(self, size: int, bases: list=None, include_factor: int=1, distance: int=1):
+        self.size = size
+        self.bases = bases or [2, 3, 7]
+        self.include_factor = include_factor
+        self.distance = distance
+
+
+    def _gen(self, constraints: list):
+        def try_base(k, bases):
+            b     = bases[0]
+            bits  = math.log(b, 2)
+            max_e = int(k/bits)
+
+            if len(bases) > 1:
+                for e in lazy_shuffle(range(max_e+1)):
+                    curr = b**e
+                    for rest in try_base(k-e*bits, bases[1:]):
+                        yield curr*rest
+
+            else:
+                yield b**max_e
+
+
+        k = self.size-(math.log(self.include_factor, 2))
+        f = self.include_factor
+
+        for n in try_base(k, self.bases):
+            p = f*n+self.distance
+
+            if p.bit_length() == self.size and is_prime(p):
+                yield p
+
+
 
 class CongruentGen(PGen):
     def __init__(self, size: int, res: int, mod: int):
@@ -168,10 +203,11 @@ class PrimRootConstraint(object):
 
 
 class PGGenType(object):
-    RANDOM    = RandGen
-    SMOOTH    = SmoothGen
-    ROCA      = ROCAGen
-    CONGRUENT = CongruentGen
+    RANDOM       = RandGen
+    SMOOTH       = SmoothGen
+    SMOOTH_MULTI = SmoothMultiBaseGen
+    ROCA         = ROCAGen
+    CONGRUENT    = CongruentGen
 
 
 class PGConstraints(object):

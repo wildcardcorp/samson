@@ -16,13 +16,20 @@ from enum import Enum
 
 class X509RSASignature(X509Signature):
     def sign(self, pki_obj, data):
-        from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
-        signed = PKCS1v15RSASigner(pki_obj, self.hash_obj).sign(data)
+        signed = self._build_signer(pki_obj).sign(data)
         return BitString(bin(signed.int())[2:].zfill(pki_obj.n.bit_length()))
+    
+    def _build_signer(self, pki_obj):
+        from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
+        return PKCS1v15RSASigner(pki_obj, self.hash_obj)
+
+
+    def parse_signature(self, pki_obj, sig):
+        return self._build_signer(pki_obj).parse_signature(sig)
+
 
     def verify(self, pki_obj, data, sig):
-        from samson.protocols.pkcs1v15_rsa_signer import PKCS1v15RSASigner
-        return PKCS1v15RSASigner(pki_obj, self.hash_obj).verify(data, Bytes(int(sig)))
+        return self._build_signer(pki_obj).verify(data, Bytes(int(sig)))
 
 
 class X509RSASigningAlgorithms(Enum):

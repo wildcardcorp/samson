@@ -101,9 +101,21 @@ def lazy_shuffle(in_list: list, depth: int=1) -> list:
         in_list (list): List to be shuffled.
 
     Returns:
-        list: `in_list` shuffled.
+        _LazyShuffler: `in_list` shuffled.
     """
-    for i in range(depth):
+    if len(in_list) < 3:
+        n = len(in_list)
+
+        if not n:
+            return (_ for _ in range(0))
+        elif n == 1:
+            return (e for e in in_list)
+        else:
+            offset = int(_integer_ring.ZZ.random(2))
+            return (a for a in (in_list[0 ^ offset], in_list[1 ^ offset]))
+
+
+    for _ in range(depth):
         in_list = _LazyShuffler(in_list)
     
     return in_list

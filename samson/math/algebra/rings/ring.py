@@ -763,13 +763,23 @@ class RingElement(BaseObject):
         """
         Symbol = _symb.Symbol
 
-        x = Symbol('x')
-        _ = self.ring[x]
+        if k == 2:
+            rep = f'√({self.tinyhand()})'
+        elif k == 3:
+            rep = f'∛({self.tinyhand()})'
+        elif k == 4:
+            rep = f'∜({self.tinyhand()})'
+        else:
+            rep = f'({self.tinyhand()})^(1/{k})'
+
+        x = Symbol(rep)
+        P = self.ring[x]
 
         if not return_all:
             root_kwargs['user_stop_func'] = lambda S: any(f.degree() == 1 for f in S)
 
-        roots = (x**k - self).roots(**root_kwargs)
+        poly  = (x**k - self)
+        roots = poly.roots(**root_kwargs)
 
         if not roots:
             raise NoSolutionException()

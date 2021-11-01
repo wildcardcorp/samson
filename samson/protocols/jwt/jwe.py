@@ -188,10 +188,9 @@ class JWESet(BaseObject):
             recipients                   (list): List of recipients to initialize with.
             additional_protected_headers (dict): Additional values to put in the protected header.
             unprotected_header           (dict): Unprotected header to include with the JWE.
-        
+
         Returns:
             JWESet: JWESet representation.
-            
         """
         cek, iv          = JWE.generate_cek(alg=None, enc=enc, key=None, header=None, cek=cek, iv=iv)
         protected_header = {'enc': enc.value}
@@ -211,7 +210,7 @@ class JWESet(BaseObject):
 
         Parameters:
             flatten (bool): Whether or not to flatten the structure if there's only one recipient.
-        
+
         Returns:
             bytes: JSON encoding as bytes.
         """
@@ -281,7 +280,7 @@ class JWESet(BaseObject):
 
         Parameters:
             token (bytes): The JWESet token to parse.
-        
+
         Returns:
             JWESet: JWESet representation.
         """

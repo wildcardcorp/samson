@@ -1,14 +1,16 @@
+from samson.math.polynomial import Polynomial
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import hilbert_class_polynomial
+from samson.math.general import cyclomotic_polynomial, hilbert_class_polynomial
 from samson.math.symbols import Symbol, oo
 from samson.math.factorization.general import factor
+from samson.math.matrix import Matrix
 
 class NumberFieldElement(FieldElement):
     def __init__(self, val: 'FieldElement', field: Field):
         super().__init__(field)
         self.val = val
-    
+
     def __reprdir__(self):
         return ['val', 'field']
 
@@ -19,6 +21,42 @@ class NumberFieldElement(FieldElement):
 
     def __neg__(self) -> 'NumberFieldElement':
         return NumberFieldElement(-self.val, self.field)
+
+
+    def __iter__(self):
+        z = ZZ.fraction_field().zero
+        d = self.field.degree()
+        n = self.val.val.degree()+1
+
+        for c in (list(self.val.val) + [z]*(d-n)):
+            yield c
+
+
+    def matrix(self) -> Matrix:
+        cur = Matrix([list(self)])
+        X   = self.field.generator_matrix()
+        v   = [list(cur)[0]]
+
+        for _ in range(self.field.degree()-1):
+            cur *= X
+            v   += [list(cur)[0]]
+
+        return Matrix(v)
+    
+
+    def is_rational(self) -> bool:
+        return not self.val.val.degree()
+
+
+    def minimum_polynomial(self) -> Polynomial:
+        if self.is_rational():
+            x = Symbol('x')
+            _ = ZZ.fraction_field()[x]
+            return x - list(self)[0]
+        
+        else:
+            return self.matrix().characteristic_polynomial()
+
 
 
 class NumberField(Field):
@@ -104,11 +142,11 @@ class NumberField(Field):
         return type(self) == type(other) and self.internal_field == other.internal_field
 
 
-    def degree(self):
+    def degree(self) -> int:
         return self.defining_polynomial.degree()
     
 
-    def discriminant(self):
+    def discriminant(self) -> int:
         D = ZZ(self.defining_polynomial.discriminant())
         d = factor(int(D)).square_free().recombine()
 
@@ -118,13 +156,26 @@ class NumberField(Field):
         return d
 
 
-    def hilbert_class_polynomial(self):
+    def hilbert_class_polynomial(self) -> 'Polynomial':
         disc = self.discriminant()
 
         if disc > 0:
             raise ValueError('Discriminant cannot be positive')
 
         return hilbert_class_polynomial(int(disc))
+
+
+    def generator_matrix(self) -> Matrix:
+        x = self.symbol
+        a = x
+        d = self.degree()
+        v = [list((x*1))]
+
+        for _ in range(d-1):
+            a *= x
+            v += [list(a)]
+        
+        return Matrix(v)
 
 
 
@@ -139,3 +190,7 @@ def QuadraticField(D: int, symbol_name: str=None) -> 'NumberField':
     ZZ.fraction_field()[x]
 
     return NumberField(x**2 - D)
+
+
+def CyclotomicField(n: int) -> 'NumberField':
+    return NumberField(cyclomotic_polynomial(n).change_ring(ZZ.fraction_field()))

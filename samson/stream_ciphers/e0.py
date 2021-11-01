@@ -77,11 +77,11 @@ class E0(StreamCipher):
             FLFSR(0, x**39 + x**36 + x**28 + x**4  + 1)
         ]
 
-        self.kc = kc
+        self.kc   = kc
         self.addr = addr
         self.master_clk = master_clk
         self.state = 0
-        self.key = 0
+        self.key   = 0
 
         self.key_schedule()
 
@@ -94,13 +94,13 @@ class E0(StreamCipher):
         """
         Prepares the internal state for encryption.
         """
-        ks_input = [None] * 4
+        ks_input    = [None] * 4
         ks_input[0] = ((self.master_clk[3] &  1) | (self.kc[0] << 1) | (self.kc[4] << 9) | (self.kc[8] << 17) | (self.kc[12] << 25) | (self.master_clk[1] << 33) | (self.addr[2] << 41)) & 0xFFFFFFFFFFFFFFFF
         ks_input[1] = (0x1 | (self.master_clk[0] << 3) | (self.kc[1] << 7) | (self.kc[5] << 15) | (self.kc[9] << 23) | (self.kc[13] << 31) | (self.addr[0] << 39) | (self.addr[3] << 47)) & 0xFFFFFFFFFFFFFFFF
         ks_input[2] = ((self.master_clk[3] >> 1) | (self.kc[2] << 1) | (self.kc[6] << 9) | (self.kc[10] << 17) | (self.kc[14] << 25) | (self.master_clk[2] << 33) | (self.addr[4] << 41)) & 0xFFFFFFFFFFFFFFFF
         ks_input[3] = (0x7 | ((self.master_clk[0] >> 4) << 3) | (self.kc[3] << 7) | (self.kc[7] << 15) | (self.kc[11] << 23) | (self.kc[15] << 31) | (self.addr[1] << 39) | (self.addr[5] << 47)) & 0xFFFFFFFFFFFFFFFF
 
-        z = [0] * 16
+        z   = [0] * 16
         z_i = 0
         sv_state = 0
 
@@ -137,7 +137,7 @@ class E0(StreamCipher):
         self.lfsrs[3].state = z[3] | (z[7] << 8) | (z[11] << 16) | (z[14] << 24) | ((z[15] >> 1) << 32)
 
         reg_output = self.get_output_bit()
-        self.key = OUTPUT_MATRIX[self.state][reg_output] & 1
+        self.key   = OUTPUT_MATRIX[self.state][reg_output] & 1
         self.state = FSM_MATRIX[sv_state][reg_output]
 
 
@@ -159,9 +159,9 @@ class E0(StreamCipher):
 
         reg_output = self.get_output_bit()
 
-        old_state = self.state
+        old_state  = self.state
         self.state = FSM_MATRIX[old_state][reg_output]
-        self.key = OUTPUT_MATRIX[old_state][reg_output] & 1
+        self.key   = OUTPUT_MATRIX[old_state][reg_output] & 1
 
 
 
@@ -171,7 +171,7 @@ class E0(StreamCipher):
 
         Parameters:
             length (int): Desired length of keystream in bytes.
-        
+
         Returns:
             Bytes: Keystream.
         """
