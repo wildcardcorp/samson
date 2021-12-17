@@ -35,7 +35,7 @@ class Bytes(bytearray):
         Parameters:
             bytes_like (bytes): Any bytes-like interface or integer. Integers will be converted using the byteorder.
             byteorder    (str): Byte order of the input. Will be used when converting between integer and byte representations.
-        
+
         Returns:
             Bytes: A Bytes representation of the object.
         """
@@ -53,7 +53,7 @@ class Bytes(bytearray):
         Parameters:
             size      (int): Number of bytes to generate.
             byteorder (int): Byteorder.
-        
+
         Returns:
             Bytes: Random Bytes.
         """

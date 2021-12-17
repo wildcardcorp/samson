@@ -1,7 +1,8 @@
 from samson.math.general import mod_inv
 from samson.math.algebra.fields.field import Field, FieldElement
-from samson.math.algebra.rings.ring import Ring
+from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.general import mod_inv
 from fractions import Fraction
 
 
@@ -78,8 +79,12 @@ class FractionFieldElement(FieldElement):
         return self.numerator.valuation(p) - self.denominator.valuation(p)
 
 
+    def kth_root(self, k: int, **kwargs) -> 'FractionFieldElement':
+        return self.__class__(self.numerator.kth_root(k, **kwargs), self.denominator.kth_root(k, **kwargs), self.ring)
+
+
     def sqrt(self) -> 'FractionFieldElement':
-        return FractionFieldElement(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
+        return self.__class__(self.numerator.sqrt(), self.denominator.sqrt(), self.ring)
 
 
     def trim_to_precision(self) -> 'FractionFieldElement':
@@ -127,14 +132,61 @@ class FractionFieldElement(FieldElement):
         return self.ring((self.numerator.gcd(other.numerator), lcm(self.denominator, other.denominator)))
 
 
+    def is_integral(self) -> bool:
+        return self.denominator == self.ring.ring.one
+
+
     def __elemadd__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        return FractionFieldElement(self.numerator * other.denominator + self.denominator * other.numerator, self.denominator * other.denominator, self.ring)
+        return self.__class__(self.numerator * other.denominator + self.denominator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
     def __elemmul__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        return FractionFieldElement(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
+        return self.__class__(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
+    # def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+    #     return RingElement.__floordiv__(self, other)
+
+    # def __elemdivmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+    #     if not other:
+    #         raise ZeroDivisionError
+        
+    #     if not self:
+    #         return self.ring.zero
+
+    #     other = self.ring.ring(other)
+
+    #     n = self.numerator % other
+    #     d = self.denominator % other
+    #     d = mod_inv(d, other)
+
+    #     return self.ring((n*d) % other)
+
+
+    # def __elemfloordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+    #     if other.is_integral():
+    #         mod = self % other
+    #         return (self - mod) / other
+    #     else:
+    #         return self / other
+
+
+    def __elemmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+        if not other:
+            raise ZeroDivisionError
+        
+        if not self:
+            return self.ring.zero
+
+        other = self.ring.ring(other)
+
+        n = self.numerator % other
+        d = self.denominator % other
+        d = mod_inv(d, other)
+
+<<<<<<< HEAD
+        return self.ring((n*d) % other)
+=======
     def __elemmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         if not other:
             raise ZeroDivisionError
@@ -151,17 +203,18 @@ class FractionFieldElement(FieldElement):
 
     def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         return self.__truediv__(other)
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
 
     def __neg__(self) -> 'FractionFieldElement':
-        return FractionFieldElement(-self.numerator, self.denominator, self.ring)
+        return self.__class__(-self.numerator, self.denominator, self.ring)
 
 
     def __invert__(self) -> 'FractionFieldElement':
         if not self:
             raise ZeroDivisionError
 
-        return FractionFieldElement(self.denominator, self.numerator, self.ring)
+        return self.__class__(self.denominator, self.numerator, self.ring)
 
 
     def __float__(self):

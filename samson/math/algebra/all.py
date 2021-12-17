@@ -1,7 +1,13 @@
 from .fields.complex_field import ComplexField, CC, ComplexElement
 from .fields.finite_field import FiniteField, FiniteFieldElement
 from .fields.fraction_field import FractionField, FractionFieldElement
+<<<<<<< HEAD
+# from samson.math.algebra.fields.number_field import NumberField, NumberFieldElement, QuadraticField
+from .rings.order import Order, OrderElement, QuadraticField, CyclotomicField
+from .fields.number_field import NumberField, NumberFieldElement
+=======
 from samson.math.algebra.fields.number_field import NumberField, NumberFieldElement, QuadraticField, CyclotomicField
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 from .fields.real_field import RealField, RR, RealElement
 from .rings.endomorphism_ring import Endomorphism, EndomorphismRing, End
 from .rings.integer_ring import IntegerRing, ZZ, IntegerElement

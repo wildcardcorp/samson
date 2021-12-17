@@ -1,5 +1,16 @@
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.fields.field import Field, FieldElement
+<<<<<<< HEAD
+from samson.math.algebra.fields.fraction_field import FractionFieldElement
+from samson.math.symbols import  oo
+
+
+class NumberFieldElement(FractionFieldElement):
+    def __init__(self, numerator: 'FieldElement', denominator: 'FieldElement', field: Field):
+        FieldElement.__init__(self, field)
+        self.numerator   = numerator
+        self.denominator = denominator
+=======
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.math.general import cyclomotic_polynomial, hilbert_class_polynomial
 from samson.math.symbols import Symbol, oo
@@ -10,17 +21,22 @@ class NumberFieldElement(FieldElement):
     def __init__(self, val: 'FieldElement', field: Field):
         super().__init__(field)
         self.val = val
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
     def __reprdir__(self):
-        return ['val', 'field']
+        return ['numerator', 'denominator', 'field']
 
 
-    def __invert__(self) -> 'NumberFieldElement':
-        return NumberFieldElement(~self.val, self.field)
+    # def __invert__(self) -> 'NumberFieldElement':
+    #     return NumberFieldElement(self.denominator, self.numerator, self.field)
 
 
-    def __neg__(self) -> 'NumberFieldElement':
-        return NumberFieldElement(-self.val, self.field)
+    # def __neg__(self) -> 'NumberFieldElement':
+    #     return NumberFieldElement(-self.numerator, self.denominator, self.field)
+
+
+    def is_integral(self) -> bool:
+        return self.denominator == self.field.ring.one
 
 
     def __iter__(self):
@@ -60,14 +76,19 @@ class NumberFieldElement(FieldElement):
 
 
 class NumberField(Field):
-    def __init__(self, defining_polynomial: 'Polynomial'):
-        self.defining_polynomial = defining_polynomial
-        self.symbol = defining_polynomial.symbol
-        self.internal_field = ZZ.fraction_field()[self.symbol]/self.defining_polynomial
-        self.symbol.top_ring = self
+    def __init__(self, ring: 'Order'):
+        self.ring = ring
+        self.one  = NumberFieldElement(self.ring.one, self.ring.one, self)
+        self.zero = NumberFieldElement(self.ring.zero, self.ring.one, self)
 
-        self.one  = NumberFieldElement(self.internal_field.one, self)
-        self.zero = NumberFieldElement(self.internal_field.zero, self)
+
+    def __getattribute__(self, name):
+        try:
+            attr = object.__getattribute__(self, name)
+        except AttributeError:
+            attr = object.__getattribute__(self.ring, name)
+
+        return attr
 
 
     def __reprdir__(self):
@@ -75,11 +96,11 @@ class NumberField(Field):
 
 
     def __hash__(self) -> int:
-        return hash((self.internal_field, self.__class__))
+        return hash((self.ring, self.__class__))
 
 
     def shorthand(self) -> str:
-        return f'QQ[{self.symbol}]'
+        return f'QQ[{self.ring.symbol}]'
 
 
     def characteristic(self) -> int:
@@ -100,7 +121,7 @@ class NumberField(Field):
         Returns:
             bool: Whether `self` is a superstructure of `R`.
         """
-        return self.internal_field.is_superstructure_of(R)
+        return R == self.ring or self.ring.is_superstructure_of(R)
 
 
     def coerce(self, other: object) -> NumberFieldElement:
@@ -114,7 +135,7 @@ class NumberField(Field):
             NumberFieldElement: Coerced element.
         """
         if not type(other) is NumberFieldElement:
-            other = NumberFieldElement(self.internal_field(other), self)
+            other = NumberFieldElement(self.ring(other), self.ring.one, self)
 
         return other
 
@@ -139,6 +160,10 @@ class NumberField(Field):
 
 
     def __eq__(self, other: 'NumberField') -> bool:
+<<<<<<< HEAD
+        return type(self) == type(other) and self.ring == other.ring
+
+=======
         return type(self) == type(other) and self.internal_field == other.internal_field
 
 
@@ -154,17 +179,33 @@ class NumberField(Field):
             d *= 4
         
         return d
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
+    # def degree(self):
+    #     return self.defining_polynomial.degree()
 
+<<<<<<< HEAD
+=======
     def hilbert_class_polynomial(self) -> 'Polynomial':
         disc = self.discriminant()
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
-        if disc > 0:
-            raise ValueError('Discriminant cannot be positive')
+    # def discriminant(self):
+    #     return self.ring.discriminant()
+    #     D = ZZ(self.defining_polynomial.discriminant())
+    #     d = factor(int(D)).square_free().recombine()
 
-        return hilbert_class_polynomial(int(disc))
+    #     if d % 4 != 1:
+    #         d *= 4
+        
+    #     return d
 
 
+<<<<<<< HEAD
+    # def hilbert_class_polynomial(self):
+    #     return self.ring.discriminant()
+    #     disc = self.discriminant()
+=======
     def generator_matrix(self) -> Matrix:
         x = self.symbol
         a = x
@@ -178,19 +219,17 @@ class NumberField(Field):
         return Matrix(v)
 
 
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
-def QuadraticField(D: int, symbol_name: str=None) -> 'NumberField':
-    if ZZ(D).is_square():
-        raise ValueError(f'"D" ({D}) cannot be square')
-    
-    if not symbol_name:
-        symbol_name = f'√{D}'
-    
-    x = Symbol(symbol_name)
-    ZZ.fraction_field()[x]
+    #     if disc > 0:
+    #         raise ValueError('Discriminant cannot be positive')
 
+<<<<<<< HEAD
+    #     return hilbert_class_polynomial(int(disc))
+=======
     return NumberField(x**2 - D)
 
 
 def CyclotomicField(n: int) -> 'NumberField':
     return NumberField(cyclomotic_polynomial(n).change_ring(ZZ.fraction_field()))
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32

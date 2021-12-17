@@ -317,7 +317,7 @@ class Polynomial(RingElement):
             if not a_b:
                 break
 
-            x0 -= a_b
+            x0    -= a_b
             tries += 1
 
         return self.coeff_ring(x0)
@@ -358,8 +358,11 @@ class Polynomial(RingElement):
                 return [-self.monic()[0]]
 
             x    = self.symbol
-            frob = frobenius_map(self.symbol, self)
-            facs = gcd(frob - x, self).factor(**factor_kwargs)
+            if R.characteristic():
+                frob = frobenius_map(self.symbol, self)
+                facs = gcd(frob - x, self).factor(**factor_kwargs)
+            else:
+                facs = self.factor(**factor_kwargs)
             return [-fac.monic().coeffs[0] for fac in facs.keys() if fac.degree() == 1]
 
 
@@ -437,14 +440,13 @@ class Polynomial(RingElement):
             >>> f.companion_matrix()
             <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
                0   1   2
-            0 [0,  1,  0]
-            1 [0,  0,  1]
-            2 [6, -5, -2]>
+            0 [ 0, 1, 0]
+            1 [ 0, 0, 1]
+            2 [-6, 5, 2]>
 
 
         References:
             https://en.wikipedia.org/wiki/Companion_matrix
-
         """
         from samson.math.matrix import Matrix
 
@@ -455,12 +457,12 @@ class Polynomial(RingElement):
         c = Matrix.fill(R.zero, d, 1)
         M = c.row_join(M)
 
-        return M.col_join(Matrix([list(self)[:-1]]))
+        coeffs = list(-self.monic())[:-1]
+        return M.col_join(Matrix([coeffs]))
 
 
     def valuation(self):
         return self.coeffs.values.keys()[0] if self else 0
-
 
 
     def hensel_lift(self, p: int, k: int, last_roots: list=None, use_padic: bool=False, use_number_field: bool=False) -> list:
@@ -859,7 +861,7 @@ class Polynomial(RingElement):
                         # Cache irreducibility results
                         irreducibility_cache[gcd_g_u]   = gcd_g_u.is_irreducible()
                         irreducibility_cache[u_gcd_g_u] = u_gcd_g_u.is_irreducible()
-                
+
                 if found == False:
                     attempts += 1
 
@@ -982,6 +984,10 @@ class Polynomial(RingElement):
             return False
 
         one = self.coeff_ring.one
+
+        if self.coeff_ring == ZZ.fraction_field():
+            return self.factor().expand() == [self]
+
 
         # Divisible by element
         if min(batch_gcd(self.coeffs.values.values())) > one:
@@ -1112,17 +1118,33 @@ class Polynomial(RingElement):
             coeff = int(d)
 
             for deg in range(1, math.ceil(f.degree() / 2)+1):
-                for cands in itertools.permutations(facs, deg):
+                for cands in itertools.combinations(facs, deg):
                     if f.degree() <= deg:
                         break
 
+                    # Reattach the leading coefficient
                     poss = (product(cands).monic()*coeff).peel_coeffs()
-                    for cand in [poss, -poss, poss-p, -poss+p]:
-                        while not f % cand:
-                            f //= cand
-                            factors.append(cand)
 
-        return factors + [f]
+                    # Now we have the problem of negative coefficients
+                    # For example, -5 (mod 7) = 2
+                    # We have to check for 2 AND -5, and every combination of negatives at every degree
+                    for i in range(poss.degree()+1):
+                        for sign_flips in itertools.combinations(range(poss.degree()), i):
+                            flipped = poss.deepcopy()
+
+                            for flip in sign_flips:
+                                flipped[flip] -= p
+
+
+                            while f != f.ring.one and not f % flipped:
+                                f //= flipped
+                                factors.append(flipped)
+
+
+        if f != f.ring.one:
+            factors += [f]
+
+        return factors
 
 
 
@@ -1155,7 +1177,7 @@ class Polynomial(RingElement):
 
         """
         ZZ = _integer_ring.ZZ
-        from samson.math.all import QQ, Symbol, factor
+        from samson.math.all import QQ, Symbol, factor, RealField, ComplexField
         from samson.math.factorization.factors import Factors
 
         p = self
@@ -1215,27 +1237,98 @@ class Polynomial(RingElement):
                 fac.symbol = q.symbol
                 factors[fac] = e
 
+        elif type(self.coeff_ring) in [RealField, ComplexField]:
+            # This algorithm is simple:
+            # 1) If the polynomial is degree 2 or 3, there is an explicit formula to find the roots
+            # 2) If the degree > 3, use the derivative to find monotonic sections
+            # 3) Use netwon's algorithm at those local extrama in hopes of converging to zero
+            # 4) Upon finding a root, factor it out and recurse
+            def complex_fac(p):
+                if p.degree() == 2:
+                    a,b,c = list(p)[::-1]
+                    d     = p.discriminant()
+                    roots = [(-b + d.sqrt())/(a*2), (-b - d.sqrt())/(a*2)]
+
+                elif p.degree() == 3:
+                    R = p.coeff_ring
+                    a,b,c,d = list(p)[::-1]
+                    d0 = b**2 - 3*a*c
+                    d1 = 2*b**3 - 9*a*b*c + 27*a**2*d
+
+                    C = ((d1 + (d1**2 - 4*d0**3).sqrt()) / 2).kth_root(3)
+
+                    k = R(1).kth_root(3, True)[1]
+                    roots = []
+                    for i in range(3):
+                        Ck = C*k**i
+                        roots.append((R(-1)/3/a)*(b + Ck + d0/Ck))
+
+                elif p.degree() > 3:
+                    x = p.symbol
+                    q = p.derivative()
+                    q_facs = fac(q)
+
+                    for q_root in q_facs:
+                        r = p.newton(q_root)
+                        if p(r).is_effectively_zero():
+                            roots = [r] + complex_fac(p // (x - r))
+                            break
+                
+                return roots
+
+
+            # If in RR, we'll factor over CC and reconstruct the complex roots later
+            is_real = False
+            if type(self.coeff_ring) == RealField:
+                is_real = True
+                C = ComplexField(ctx=self.coeff_ring.ctx)
+                p = p.change_ring(C)
+
+            roots = complex_fac(p)
+            x     = p.symbol
+
+            if is_real:
+                real_roots = [r for r in roots if r.imag().is_effectively_zero()]
+
+                for r in real_roots:
+                    factors.add((x-r).change_ring(self.coeff_ring))
+
+                left_over = product([x-r for r in set(roots) - set(real_roots)])
+                if left_over != 1:
+                    factors.add(left_over.change_ring(self.coeff_ring))
+            else:
+                for r in roots:
+                    factors.add(x-r)
+            
+            return factors
+
+
         else:
             # Cantor-Zassenhaus (SFF -> DDF -> EDF)
-            distinct_degrees = [(factor, num) for poly, num in p.sff().items() for factor in poly.ddf()]
+            distinct_degrees = [factor for poly in p.sff() for factor in poly.ddf()]
 
-            for (poly, _), num in distinct_degrees:
-                for deg in sorted(factor(poly.degree()).divisors()):
-                    try:
+            for poly, _ in distinct_degrees:
+                if poly.is_irreducible():
+                    while p != p.ring.one and not p % poly:
+                        p //= poly
+                        add_or_increment(factors, poly, 1)
+
+                else:
+                    for deg in sorted(factor(poly.degree()).divisors()):
                         for fac in poly.edf(deg, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func):
                             if not p:
                                 return factors
 
-                            q, r = divmod(p, fac)
-                            if fac != p.ring.one and not r and fac.is_irreducible():
-                                p = q
-                                add_or_increment(factors, fac, num)
+                            while p != p.ring.one and not p % fac:
+                                q, r = divmod(p, fac)
+                                if fac != p.ring.one and not r and fac.is_irreducible():
+                                    p = q
+                                    add_or_increment(factors, fac, 1)
 
-                                if user_stop_func(factors.keys()):
-                                    return factors
-
-                    except NoSolutionException:
-                        pass
+                                    if user_stop_func(factors.keys()):
+                                        return factors
+                                else:
+                                    break
 
         return factors
 
@@ -1265,16 +1358,19 @@ class Polynomial(RingElement):
         """
         d = self.degree()
 
-        if d == 2:
-            a, b, c = self
+        if d == 1:
+            return self.coeff_ring.one
+
+        elif d == 2:
+            a, b, c = list(self)[::-1]
             return b**2 - 4*a*c
 
         elif d == 3:
-            a, b, c, d = self
+            a, b, c, d = list(self)[::-1]
             return b**2*c**2 - 4*a*c**3 - 4*b**3*d - 27*a**2*d**2 + 18*a*b*c*d
         
         elif d == 4:
-            a, b, c, d, e = self
+            a, b, c, d, e = list(self)[::-1]
             f = 256*a**3*e**3 - 192*a**2*b*d*e**2 - 128*a**2*c**2*e**2 + 144*a**2*c*d**2*e
             g = -27*a**2*d**4 + 144*a*b**2*c*e**2 - 6*a*b**2*d**2*e - 80*a*b*c**2*d*e
             h = 18*a*b*c*d**3 + 16*a*c**4*e - 4*a*c**3*d**2 - 27*b**4*e**2 + 18*b**3*c*d*e
@@ -1557,7 +1653,7 @@ class Polynomial(RingElement):
         return type(self) == type(other) and self.coeff_ring == other.coeff_ring and self.coeffs == other.coeffs
 
 
-    def __lt__(self, other: 'Polynomial') -> bool:
+    def __elemlt__(self, other: 'Polynomial') -> bool:
         if self.degree() < other.degree():
             return True
 

@@ -877,6 +877,38 @@ def generalized_eulers_criterion(a: int, k: int, p: int, factors: dict=None) -> 
 
 
 
+def kronecker_symbol(a: int, n: int, factors: 'Factors'=None) -> ResidueSymbol:
+    """
+    
+    References:
+        https://en.wikipedia.org/wiki/Kronecker_symbol
+    """
+    if n < 0:
+        u = -1
+    else:
+        u = 1
+
+    if not factors:
+        factors = _factor_gen.factor(n // u)
+
+    symbol = u
+    for p, e in factors.items():
+        if p == 2:
+            if not a % 2:
+                s = 0
+            elif a % 8 in [1, 7]:
+                s = 1
+            else:
+                s = -1
+
+            symbol *= s
+        else:
+            symbol *= legendre(a, p).value**e
+
+    return ResidueSymbol(symbol)
+
+
+
 def tonelli(n: int, p: int) -> int:
     """
     Performs the Tonelli-Shanks algorithm for calculating the square root of `n` mod `p`.
@@ -2727,6 +2759,9 @@ def find_carmichael_number(min_bits: int=None, k: int=None) -> int:
         https://en.wikipedia.org/wiki/Carmichael_number#Discovery
     """
     if min_bits:
+        if min_bits < 11:
+            min_bits = 11
+
         # Take into account `k` three times and 6*12*18 is 11 bits
         k = 2**((min_bits-11)//3)
 
@@ -2735,7 +2770,7 @@ def find_carmichael_number(min_bits: int=None, k: int=None) -> int:
         b = 12*k+1
         c = 18*k+1
 
-        if all(is_prime(elem) for elem in [a, b, c]):
+        if (a*b*c).bit_length() >= min_bits and all(is_prime(elem) for elem in [a, b, c]):
             return a*b*c, (a, b, c)
 
         k += 1
@@ -2891,6 +2926,13 @@ def approxmiate_nth_prime(n: int) -> int:
 def estimate_L_complexity(a, c, n):
     return math.e**(c*math.log(n)**a * (math.log(math.log(n)))**(1-a))
 
+<<<<<<< HEAD
+=======
+@add_complexity(KnownComplexities.IC)
+def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
+    """
+    Computes the discrete logarithm of `y` to base `g`.
+>>>>>>> f2cf20606623dcc5f095e8cac5fea5c2a8019292
 
 def __base_math_func(name, *args):
     y = args[0]

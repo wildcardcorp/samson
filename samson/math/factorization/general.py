@@ -315,7 +315,7 @@ def is_perfect_power(n: int) -> (bool, int, int):
 
     Returns:
         (bool, int, int): Formatted as (is_perfect_power, root, exponent).
-    
+
     Examples:
         >>> from samson.math.factorization.general import is_perfect_power
         >>> p = 322061084716023110461357635858544836091
@@ -506,7 +506,7 @@ def ecm(n: int, B1: int=10, B2: int=100, attempts: int=1000) -> int:
             return g
 
 
-        curr  = curve.G
+        curr = curve.G
         for p_idx, p in enumerate(primes):
             if p >= B1:
                 break

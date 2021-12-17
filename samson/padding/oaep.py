@@ -12,7 +12,7 @@ def MGF1(seed: bytes, length: int, hash_obj: object=SHA1()) -> Bytes:
     Parameters:
         seed (bytes): Initial value.
         length (int): Length of mask to produce.
-    
+
     Returns:
         Bytes: Mask.
     """
@@ -55,7 +55,7 @@ class OAEP(BaseObject):
         Parameters:
             plaintext (bytes): Plaintext to pad.
             seed      (bytes): (Optional) Random seed for the MGF.
-        
+
         Returns:
             Bytes: Padded plaintext.
         """
@@ -97,7 +97,7 @@ class OAEP(BaseObject):
             plaintext       (bytes): Plaintext to pad.
             allow_mangers    (bool): Whether or not to explicitly help Manger's attack.
             skip_label_check (bool): Whether or not to skip checking the label.
-        
+
         Returns:
             Bytes: Unpadded plaintext.
         """
