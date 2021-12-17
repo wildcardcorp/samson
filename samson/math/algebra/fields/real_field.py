@@ -1,3 +1,5 @@
+
+from samson.math.algebra.rings.integer_ring import ZZ, IntegerRing
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.utilities.exceptions import CoercionException, NoSolutionException
 from samson.utilities.runtime import RUNTIME
@@ -120,20 +122,24 @@ class RealElement(FieldElement):
         return self.field(self.field.ctx.floor(self.val))
 
 
-    def li(self, offset: bool=False):
+    def li(self, offset: bool=False) -> 'RealElement':
         return self.field(self.field.ctx.li(self.val, offset=offset))
 
 
-    def sin(self):
+    def sin(self) -> 'RealElement':
         return self.field(self.field.ctx.sin(self.val))
 
 
-    def cos(self):
+    def cos(self) -> 'RealElement':
         return self.field(self.field.ctx.sin(self.val))
     
 
     def is_effectively_zero(self) -> bool:
         return abs(self) < self.field(1)/2**self.field.prec
+    
+
+    def gcd(self, other: 'RealElement') -> 'RealElement':
+        return self.field.one
 
 
 class RealField(Field):
@@ -179,6 +185,11 @@ class RealField(Field):
     @property
     def pi(self):
         return self(self.ctx.pi)
+    
+
+    @property
+    def phi(self):
+        return self(self.ctx.phi)
 
 
     @property
@@ -225,15 +236,34 @@ class RealField(Field):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             RealElement: Coerced element.
         """
         if hasattr(other, 'ring'):
+            from samson.math.algebra.fields.complex_field import ComplexField
+
+            type_o = type(other.ring)
+
             if other.ring == self:
                 return other
-            elif type(other.ring) == RealField:
+
+            elif type_o == RealField:
                 return self(other.val)
+            
+
+            elif type_o == ComplexField:
+                if other.imag().is_effectively_zero():
+                    return self(other.real())
+            
+            elif type_o == IntegerRing:
+                other = int(other)
+            
+            elif other.ring == ZZ.fraction_field():
+                return self(int(other.numerator))/int(other.denominator)
+            
+            raise CoercionException(other)
+
 
         else:
             try:
@@ -249,7 +279,7 @@ class RealField(Field):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            RealElement: The `x`-th element.
         """

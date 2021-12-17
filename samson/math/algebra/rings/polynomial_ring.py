@@ -209,7 +209,7 @@ class PolynomialRing(Ring):
 
         Returns:
             Polynomial: Interpolated polynomial.
-        
+
         Examples:
             >>> from samson.math.all import ZZ, Symbol
             >>> x = Symbol('x')

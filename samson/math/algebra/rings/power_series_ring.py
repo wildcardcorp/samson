@@ -188,7 +188,7 @@ class PowerSeriesRing(Ring):
 
         Parameters:
             other (int): Object to coerce.
-        
+
         Returns:
             PowerSeriesElement: Coerced element.
         """
@@ -197,8 +197,6 @@ class PowerSeriesRing(Ring):
 
         else:
             return PowerSeriesElement(self._polyring(other), self)
-
-        raise CoercionException(self, other)
 
 
 

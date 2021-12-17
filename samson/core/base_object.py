@@ -68,9 +68,17 @@ def default_printer(fields):
 class BaseObject(object):
     def __reprdir__(self):
         return self.__dict__.keys()
+    
+
+    def __internal_repr(self,  use_color: bool):
+        if use_color:
+            field_formatter = lambda k: color_format(FIELD_COLOR, k)
+            class_formatter = cls_color
+        else:
+            field_formatter = lambda k: k
+            class_formatter = lambda c: c
 
 
-    def __repr__(self) -> str:
         field_str = ""
         if self.__reprdir__():
             fields = []
@@ -80,14 +88,22 @@ class BaseObject(object):
                 val = getattr(self, k)
 
                 if k != '__raw__':
-                    key = color_format(FIELD_COLOR, k) + "="
+                    key = field_formatter(k) + "="
                     val = process_field(val)
 
                 fields.append(key + val)
 
             field_str = default_printer(fields)
 
-        return f'<{cls_color(self.__class__.__name__)}{field_str}>'
+        return f'<{class_formatter(self.__class__.__name__)}{field_str}>'
+
+
+    def _repr_pretty_(self, p, cycle) -> str:
+        return p.text(self.__internal_repr(True))
+
+
+    def __repr__(self) -> str:
+        return self.__internal_repr(False)
 
 
     def __str__(self):

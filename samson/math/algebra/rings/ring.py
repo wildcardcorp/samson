@@ -488,7 +488,13 @@ class RingElement(BaseObject):
 
 
     def __lt__(self, other: 'RingElement') -> bool:
-        other = self.ring.coerce(other)
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) < other
+        else:
+            return self.__elemlt__(self.ring.coerce(other))
+
+
+    def __elemlt__(self, other: 'RingElement') -> bool:
         if self.ring != other.ring:
             raise ValueError("Cannot compare elements with different underlying rings.")
 
@@ -500,7 +506,13 @@ class RingElement(BaseObject):
 
 
     def __gt__(self, other: 'RingElement') -> bool:
-        other = self.ring.coerce(other)
+        if hasattr(other, 'ring') and other.ring.is_superstructure_of(self.ring):
+            return other.ring(self) > other
+        else:
+            return self.__elemgt__(self.ring.coerce(other))
+
+
+    def __elemgt__(self, other: 'RingElement') -> bool:
         if self.ring != other.ring:
             raise ValueError("Cannot compare elements with different underlying rings.")
 

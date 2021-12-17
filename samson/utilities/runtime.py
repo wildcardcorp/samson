@@ -297,7 +297,7 @@ class RuntimeConfiguration(object):
 
 
 
-    def threaded(self, threads: int, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
+    def threaded(self, threads: int, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None, terminate_filter: FunctionType=None):
         """
         Runs the function with `threads` threads. The returned function should take an iterable.
 
@@ -320,10 +320,10 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
-        return self.__build_concurrent_pool(threads, ThreadPool, starmap, visual, visual_args, chunk_size)
+        return self.__build_concurrent_pool(threads, ThreadPool, starmap, visual, visual_args, chunk_size, terminate_filter=terminate_filter)
 
 
-    def parallel(self, processes: int=None, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None):
+    def parallel(self, processes: int=None, starmap: bool=False, visual: bool=False, visual_args: dict=None, chunk_size: int=None, terminate_filter: FunctionType=None):
         """
         Runs the function with `processes` processes. The returned function should take an iterable.
 
@@ -346,7 +346,7 @@ class RuntimeConfiguration(object):
             [0, 1, 2, 3, 4]
 
         """
-        return self.__build_concurrent_pool(processes or cpu_count(), ProcessPool, starmap, visual, visual_args, chunk_size)
+        return self.__build_concurrent_pool(processes or cpu_count(), ProcessPool, starmap, visual, visual_args, chunk_size, terminate_filter=terminate_filter)
 
 
 
@@ -361,8 +361,18 @@ class RuntimeConfiguration(object):
                 local_term_filt = terminate_filter
 
                 with pool_type(workers) as pool:
-                    if visual:
+                    run_func = local_func
+
+                    if visual or local_term_filt:
                         pool_runner = pool.imap_unordered
+
+                        # Manually create a starmapper since we can't have unordered and starmap normally
+                        if starmap:
+                            def star_wrapper(arg):
+                                return local_func(*arg)
+
+                            run_func = star_wrapper
+
                     elif starmap:
                         pool_runner = pool.starmap
                     else:
@@ -373,36 +383,28 @@ class RuntimeConfiguration(object):
                     if visual:
                         from tqdm import tqdm
                         num_items = len(iterable)
-                        if starmap:
-                            def star_wrapper(arg):
-                                return local_func(*arg)
-
-                            run_func = star_wrapper
-                        else:
-                            run_func = local_func
-
 
                         if not local_chunk:
                             local_chunk = max(num_items // (workers*2), 1)
 
-
-                        visual_runner = tqdm(pool_runner(run_func, iterable, chunksize=local_chunk), total=num_items, **visual_args)
-
-                        if local_term_filt:
-                            results = []
-                            for result in visual_runner:
-                                results.append(result)
-
-                                if local_term_filt(results):
-                                    pool.terminate()
-                                    break
-                            
-                            return results
-                        else:
-                            return list(visual_runner)
+                        final_runner = tqdm(pool_runner(run_func, iterable, chunksize=local_chunk), total=num_items, **visual_args)
 
                     else:
-                        return pool_runner(local_func, iterable)
+                        final_runner = pool_runner(run_func, iterable)
+
+
+                    if local_term_filt:
+                        results = []
+                        for result in final_runner:
+                            results.append(result)
+
+                            if local_term_filt(results):
+                                pool.terminate()
+                                break
+                        
+                        return results
+                    else:
+                        return list(final_runner)
 
             return _runner
 

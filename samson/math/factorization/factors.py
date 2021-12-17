@@ -91,6 +91,10 @@ class Factors(BaseObject):
         return new_facs
 
 
+    def __pow__(self, exp: int) -> 'Factors':
+        return Factors({p: e*exp for p,e in self.factors.items()})
+
+
     def __truediv__(self, other: 'RingElement') -> 'Factors':
         t = type(other)
         if t is int:
@@ -239,3 +243,12 @@ class Factors(BaseObject):
             raise ValueError(f"Factorization is not {k}-th power")
         
         return Factors({fac: exp // k for fac, exp in self.factors.items()})
+
+
+    def gcd(self, other: 'Factors') -> 'Factors':
+        result = Factors()
+        for k,v in self.factors.items():
+            if k in other:
+                result[k] = min(other.factors[k], v)
+        
+        return result

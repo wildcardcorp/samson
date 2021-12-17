@@ -31,6 +31,19 @@ class ComplexElement(RealElement):
         return RealField(ctx=self.field.ctx)(self.val.imag)
 
 
+    def is_effectively_zero(self) -> bool:
+        return self.real().is_effectively_zero() and self.imag().is_effectively_zero()
+
+
+    # We need an ordering, even if it's not correct
+    # This is required for polynomial factorization
+    def __lt__(self, other: 'RingElement') -> bool:
+        return self.real() < other.real()
+
+
+    def __gt__(self, other: 'RingElement') -> bool:
+        return self.real() > other.real()
+
 
 class ComplexField(RealField):
 
@@ -44,7 +57,7 @@ class ComplexField(RealField):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             ComplexElement: Coerced element.
         """
@@ -59,6 +72,18 @@ class ComplexField(RealField):
 
             elif type_o == RealElement:
                 other = other.val
+            
+            elif type_o == ComplexElement:
+                other, imag = other.real().val, other.imag().val
+            
+            elif type_o == self.ctx.mpc:
+                pass
+
+            elif type_o == complex:
+                other, imag = other.real, other.imag
+
+            else:
+                other = RealField(ctx=self.ctx)(other).val
 
             try:
                 return ComplexElement(self.ctx.mpc(other, imag), self)
@@ -72,7 +97,7 @@ class ComplexField(RealField):
 
         Parameters:
             size (int/ComplexElement): The maximum ordinality/element (non-inclusive).
-    
+
         Returns:
             ComplexElement: Random element of the algebra.
         """

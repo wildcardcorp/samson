@@ -275,6 +275,13 @@ class Matrix(RingElement):
 
 
 
+    def trace(self) -> 'RingElement':
+        if not self.is_square():
+            raise ValueError('Cannot calculate trace of a nonsquare matrix')
+        return sum(self[i][i] for i in range(self.num_cols))
+
+
+
     def characteristic_polynomial(self, symbol: 'Symbol'=None) -> 'Polynomial':
         """
         Finds the characteristic polynomial `p_a` such that the roots of `p_a` are eigenvalues of `self`.
