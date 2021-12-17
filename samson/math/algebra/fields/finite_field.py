@@ -16,6 +16,10 @@ class FiniteFieldElement(FieldElement):
         """
         self.val = field.internal_field.coerce(val)
         super().__init__(field)
+    
+
+    def __reprdir__(self):
+        return ['val', 'field']
 
 
     def shorthand(self) -> str:
@@ -54,6 +58,10 @@ class FiniteFieldElement(FieldElement):
 
     def __elemfloordiv__(self, other: 'FiniteFieldElement') -> 'FiniteFieldElement':
         return self.__truediv__(other)
+    
+
+    def degree(self) -> int:
+        return self.val.val.degree()
 
 
 class FiniteField(Field):

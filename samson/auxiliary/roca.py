@@ -1,4 +1,5 @@
-from samson.math.general import next_prime, pohlig_hellman, is_prime, random_int_between
+from samson.math.general import next_prime, is_prime, random_int_between
+from samson.math.discrete_logarithm import pohlig_hellman
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.exceptions import SearchspaceExhaustedException
 

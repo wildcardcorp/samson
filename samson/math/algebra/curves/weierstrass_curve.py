@@ -3,7 +3,8 @@ from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.polynomial import Polynomial
 from samson.math.factorization.general import factor, is_perfect_power
 from samson.math.algebra.curves.util import EllipticCurveCardAlg
-from samson.math.general import pohlig_hellman, mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, bsgs, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l, legendre, cornacchias_algorithm, hilbert_class_polynomial, random_int, random_int_between, find_prime, primes, cyclomotic_polynomial
+from samson.math.general import mod_inv, schoofs_algorithm, gcd, hasse_frobenius_trace_interval, sieve_of_eratosthenes, product, crt, is_prime, kth_root, batch_inv, lcm, frobenius_trace_mod_l, legendre, cornacchias_algorithm, hilbert_class_polynomial, random_int, random_int_between, find_prime, primes, cyclomotic_polynomial
+from samson.math.discrete_logarithm import pohlig_hellman
 from samson.math.map import Map
 from samson.utilities.exceptions import NoSolutionException, SearchspaceExhaustedException, CoercionException
 from samson.utilities.runtime import RUNTIME
@@ -857,10 +858,8 @@ class WeierstrassCurve(Ring):
             _ipp, pk, k = is_perfect_power(q)
 
             # Finite field extension
-            if pk != q:
-                from samson.math.algebra.rings.integer_ring import ZZ
-                R = ZZ/ZZ(p)
-                E = EllipticCurve(R(self.a), R(self.b))
+            if pk != q and not self.a.degree() and not self.b.degree():
+                E = EllipticCurve(self.a[0], self.b[0])
                 t = E.trace()
                 s = [2, t]
 
@@ -892,16 +891,20 @@ class WeierstrassCurve(Ring):
 
 
             if algorithm == EllipticCurveCardAlg.BRUTE_FORCE:
-                g = self.ring.find_gen()
+                if self.ring.characteristic() == self.ring.order():
+                    P = self.random()
+                    start, end = hasse_frobenius_trace_interval(p)
 
-                # Finite field
-                if self.ring.is_field() and self.ring.characteristic() == self.ring.order():
-                    poly  = self.defining_polynomial()
-                    total = 1
-                    for i in range(g.order()):
-                        total += 1+legendre(int(poly(g*i)), p).value
+                    PC = P.cache_mul(p.bit_length())
 
-                    order = total
+                    while not all(PC*i for i in sieve_of_eratosthenes(end)):
+                        P  = self.random()
+                        PC = P.cache_mul(p.bit_length())
+
+                    for i in range(start, end):
+                        if not PC*(p+i):
+                            return p+i
+
 
                 else:
                     points = []
@@ -1355,7 +1358,12 @@ class WeierstrassCurve(Ring):
 
         order  = 0
         Hd     = hilbert_class_polynomial(-D)
-        j_invs = Hd.change_ring(R).roots()
+
+        if Hd.degree() == 1:
+            j_invs = [R(Hd.roots()[0])]
+        else:
+            j_invs = Hd.change_ring(R).roots()
+
 
         if j_invs:
             E = EllipticCurve.from_j(j_invs[0])
@@ -1713,7 +1721,7 @@ class WeierstrassCurve(Ring):
 
 
     @staticmethod
-    def generate_with_k_embedding_subgroup(bits: int, k: int) -> Tuple['WeierstrassCurve', WeierstrassPoint]:
+    def generate_curve_with_k_embedding_subgroup(bits: int, k: int) -> Tuple['WeierstrassCurve', WeierstrassPoint]:
         """
         Generates a curve with a *subgroup* whose embedding degree is `k`.
 
@@ -1726,7 +1734,7 @@ class WeierstrassCurve(Ring):
     
         Examples:
             >>> from samson.math.algebra.curves.weierstrass_curve import EllipticCurve
-            >>> E, g = EllipticCurve.generate_with_k_embedding_subgroup(80, 12)
+            >>> E, g = EllipticCurve.generate_curve_with_k_embedding_subgroup(80, 12)
             >>> (E.ring.characteristic().bit_length(), g.embedding_degree())
             (80, 12)
 

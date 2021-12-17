@@ -1,4 +1,5 @@
 from .general import *
+from .discrete_logarithm import *
 from .algebra.all import *
 from .continued_fraction import ContinuedFraction
 from .dense_vector import DenseVector

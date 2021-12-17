@@ -1,4 +1,6 @@
 from samson.math.factorization.factors import Factors
+from samson.math.general import find_prime, is_prime
+from samson.utilities.general import binary_search_list
 from samson.utilities.runtime import RUNTIME
 from samson.utilities.exceptions import NotInvertibleException, ProbabilisticFailureException
 from types import FunctionType
@@ -586,7 +588,7 @@ def is_composite_power(n: int, precision: float=0.6) -> (bool, int, int):
 _POLLARD_QUICK_ITERATIONS = 25
 
 @RUNTIME.global_cache()
-def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_msieve: bool=True, use_siqs: bool=True, use_smooth_p: bool=True, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> Factors:
+def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rho_max_bits: int=90, use_msieve: bool=True, use_cado_nfs: bool=True, use_siqs: bool=True, use_smooth_p: bool=False, use_ecm: bool=False, ecm_attempts: int=100000, perfect_power_checks: bool=True, mersenne_check: bool=True, visual: bool=False, reraise_interrupt: bool=False, user_stop_func: FunctionType=None) -> Factors:
     """
     Factors an integer `n` into its prime factors.
 
@@ -619,7 +621,8 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
     is_prime = _samson_math.is_prime
     is_power_of_two = _samson_math.is_power_of_two
 
-    use_msieve &= bool(RUNTIME.msieve_loc)
+    use_msieve   &= bool(RUNTIME.msieve_loc)
+    use_cado_nfs &= bool(RUNTIME.cado_nfs_loc)
 
     original = n
 
@@ -765,6 +768,15 @@ def factor(n: int, use_trial: bool=True, limit: int=1000, use_rho: bool=True, rh
                 raise KeyboardInterrupt
 
 
+        if use_cado_nfs and (not use_msieve or n.bit_length() >= 256):
+            # Full factorization with 'cado-nfs'
+            while not is_factored(n):
+                n_fac = cado_nfs_factor(n)
+
+                # cado-nfs will always fully factor
+                factors += n_fac
+                n //= n_fac.recombine()
+
 
         if use_msieve:
             # Full factorization with 'msieve'
@@ -836,3 +848,29 @@ def msieve(n: int, *args) -> Factors:
 
     results = subprocess.check_output([RUNTIME.msieve_loc, "-q", *args, str(n)])
     return Factors(count_items([int(res.split(b' ')[1]) for res in results.splitlines()[2:-1]]))
+
+
+
+_CADO_NFS_FAC_SIZES = [30, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 210, 220, 230, 240, 270, 310, 320]
+
+def cado_nfs_factor(n: int) -> Factors:
+    from samson.analysis.general import count_items
+    import subprocess
+
+    if not RUNTIME.cado_nfs_loc:
+        raise RuntimeError("cado-nfs not in PATH; you must manually set 'RUNTIME.cado_nfs_loc'")
+
+    n_digs = math.ceil(math.log10(n))
+    k = 1
+
+    # Cado-NFS only has parameter for specific sizes (in digits)
+    # We "pad" the integer to the next highest size
+    if n_digs not in _CADO_NFS_FAC_SIZES:
+        idx    = binary_search_list(_CADO_NFS_FAC_SIZES, n_digs, fuzzy=True)
+        k_size = _CADO_NFS_FAC_SIZES[idx] - n_digs
+        k      = find_prime(math.ceil(k_size*math.log2(10)))
+    
+    n *= k
+
+    results = subprocess.check_output([RUNTIME.cado_nfs_loc, str(n)], stderr=subprocess.DEVNULL)
+    return Factors(count_items([int(res) for res in results.strip().split(b' ')])) // k

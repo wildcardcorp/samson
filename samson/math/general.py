@@ -451,14 +451,17 @@ def fast_mul(a: 'RingElement', b: int, s: 'RingElement'=None) -> 'RingElement':
         b = -b
         a = -a
 
+    c = b
+    d = a
     while b != 0:
         if b & 1:
             s = (a + s)
         b >>= 1
-        a = (a + a)
+        if b:
+            a = (a + a)
 
-    if b and a.order_cache and not a.order_cache % b:
-        s.order_cache = a.order_cache // b
+    if c and d.order_cache and not d.order_cache % c:
+        s.order_cache = d.order_cache // c
     return s
 
 
@@ -607,6 +610,47 @@ def kth_root_qq(n: int, k: int, precision: int=32) -> 'FractionFieldElement':
             lb = mid
         else:
             ub = mid
+
+
+def brent_cycle_detection(f: FunctionType, x0: object) -> Tuple[int, int]:
+    """
+    Brent's cycle detection algorithm.
+
+    Parameters:
+        f    (func): Function to find cycles in.
+        x0 (object): Initial argument
+
+    Returns:
+        Tuple[int, int]: Formatted as (loop length, `x0` offset).
+
+    References:
+        https://en.wikipedia.org/wiki/Cycle_detection
+    """
+    power    = lam = 1
+    tortoise = x0
+    hare     = f(x0)
+
+    while tortoise != hare:
+        if power == lam:
+            tortoise = hare
+            power   *= 2
+            lam      = 0
+
+        hare = f(hare)
+        lam += 1
+
+
+    tortoise = hare = x0
+    for _ in range(lam):
+        hare = f(hare)
+
+    mu = 0
+    while tortoise != hare:
+        tortoise = f(tortoise)
+        hare     = f(hare)
+        mu      += 1
+ 
+    return lam, mu
 
 
 @add_complexity(KnownComplexities.LINEAR)
@@ -1340,7 +1384,7 @@ def find_prime(bits: int, ensure_halfway: bool=True) -> int:
         True
 
     """
-    rand_num = random_int(2**bits)
+    rand_num  = random_int(2**bits)
     rand_num |= 2**(bits - 1)
 
     if ensure_halfway:
@@ -1938,228 +1982,6 @@ def schoofs_algorithm(curve: 'EllipticCurve') -> int:
     return curve.p + 1 - frobenius_trace(curve)
 
 
-@RUNTIME.global_cache(8)
-def __build_bsgs_table(g: 'RingElement', end: int, e: 'RingElement'=None, start: int=0) -> Tuple[int, dict]:
-    search_range = end - start
-    table        = {}
-    m            = kth_root(search_range, 2)
-
-    if not e:
-        e = g.ring.zero
-
-    for i in range(m):
-        table[e] = i
-        e += g
-    
-    return m, table
-
-
-
-def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, start: int=0) -> int:
-    """
-    Performs Baby-step Giant-step with an arbitrary finite cyclic group.
-
-    Parameters:
-        g  (RingElement): Generator/base.
-        h  (RingElement): The result to find the discrete logarithm of.
-        end        (int): End of the search range.
-        e  (RingElement): Starting point of the aggregator.
-        start      (int): Start of the search range.
-
-    Returns:
-        int: The discrete logarithm of `h` given `g`.
-
-    Examples:
-        >>> from samson.math.general import hasse_frobenius_trace_interval, bsgs, mod_inv
-        >>> from samson.math.algebra.all import *
-
-        >>> ring = ZZ/ZZ(53)
-        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
-        >>> start, end = hasse_frobenius_trace_interval(curve.p)
-        >>> bsgs(curve.G, curve.POINT_AT_INFINITY, e=curve.POINT_AT_INFINITY, start=start + curve.p, end=end + curve.p)
-        57
-
-        >>> ring = ZZ/ZZ(53)
-        >>> mul = ring.mul_group()
-        >>> base = mul(7)
-        >>> exponent = 24
-        >>> h = base * exponent
-        >>> bsgs(base, h, int(ring.quotient))
-        24
-
-    """
-    if hasattr(h, 'bsgs'):
-        try:
-            return h.bsgs(g, end=end, start=start, e=e)
-        except (ValueError, SearchspaceExhaustedException):
-            # Implementation specific BSGS may not handle all situations
-            pass
-
-    m, table = __build_bsgs_table(g, end, e, start)
-
-    factor = g * m
-    o = g * start
-    e = h
-    for i in range(m):
-        e = h - o
-        if e in table:
-            return i*m + table[e] + start
-
-        o += factor
-
-    raise SearchspaceExhaustedException("This shouldn't happen; check your arguments")
-
-
-@add_complexity(KnownComplexities.PH)
-def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dict=None) -> int:
-    """
-    Computes the discrete logarithm for finite abelian groups with a smooth order.
-
-    Parameters:
-        g (RingElement): Generator element.
-        h (RingElement): Result to find discrete logarithm of.
-        n         (int): Order of the group.
-        factors  (dict): `n`'s factorization.
-
-    Returns:
-        int: The discrete logarithm of `h` given `g`.
-
-    Examples:
-        >>> from samson.math.general import pohlig_hellman
-        >>> from samson.math.algebra.all import *
-
-        >>> p    = 7
-        >>> ring = (ZZ/ZZ(p)).mul_group()
-        >>> g    = ring(3)
-        >>> exp  = 2
-        >>> h    = g * exp
-        >>> pohlig_hellman(g, h, p-1)
-        2
-
-        >>> p    = 2**127-1
-        >>> ring = (ZZ/ZZ(p)).mul_group()
-        >>> g    = ring(5)
-        >>> exp  = 25347992192497823499464681366516589049
-        >>> h    = g * exp
-        >>> exp2 = pohlig_hellman(g, h, p-1)
-        >>> g * exp2 == h
-        True
-
-        >>> ring  = ZZ/ZZ(53)
-        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
-        >>> g     = curve.G
-        >>> exp   = 28
-        >>> h     = g * exp
-        >>> pohlig_hellman(curve.G, h, curve.G.order())
-        28
-
-    References:
-        https://en.wikipedia.org/wiki/Pohlig%E2%80%93Hellman_algorithm
-    """
-    if not n:
-        n = g.order()
-
-    if not factors:
-        factors = _factor_gen.factor(n)
-
-    def pp_bsgs(g, h, p, e):
-        x = [0]*(e+1)
-
-        gamma = g*(p**(e-1))
-        for k in range(e):
-            h_k = (g * -x[k] + h) * (p**(e-1-k))
-            d_k = h_k._plog(gamma, p)
-            x[k+1] = x[k] + d_k * p**k
-
-        return x[-1]
-
-    x = []
-    for p, e in factors.items():
-        ex_i = (n // p**e)
-        g_i  = g * ex_i
-        h_i  = h * ex_i
-        x_i  = pp_bsgs(g_i, h_i, p, e)
-        x.append(x_i)
-
-    return crt(list(zip(x, [p**e for p, e in  factors.items()])))[0]
-
-
-@add_complexity(KnownComplexities.PH)
-def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int:
-    """
-    Computes the discrete logarithm using Pollard's Rho.
-
-    Parameters:
-        g (RingElement): Generator element.
-        y (RingElement): Result to find discrete logarithm of.
-        order     (int): Order of the group.
-
-    Returns:
-        int: The discrete logarithm of `y` given `g`.
-
-    References:
-        http://koclab.cs.ucsb.edu/teaching/ecc/project/2015Projects/Blumenfeld-Presentation.pdf
-        https://math.mit.edu/classes/18.783/2017/LectureNotes10.pdf
-    """
-    ZZ = _integer_ring.ZZ
-
-    def xab(x, a, b, g, y):
-        sub = hash(x) % 3
-
-        if sub == 0:
-            x = x + x
-            a = a * 2
-            b = b * 2
-        elif sub == 1:
-            x = x + g
-            a = a + 1
-        else:
-            x = x + y
-            b = b + 1
-
-        return x, a, b
-
-
-    residues = []
-    n        = order or g.order()
-    Z        = ZZ/ZZ(n)
-
-    # Main loop
-    while True:
-        a       = Z.random()
-        x, b    = g*int(a), Z.zero
-        X, A, B = x, a, b
-
-
-        for _ in range(n):
-            x, a, b = xab(x, a, b, g, y)
-
-            X, A, B = xab(X, A, B, g, y)
-            X, A, B = xab(X, A, B, g, y)
-
-            if x == X:
-                break
-
-        r = B-b
-        if not r:
-            continue
-
-        # Note we might've found just a factor of the order
-        P   = ZZ/ZZ(r.order())
-        res = P(a-A)/P(r)
-
-        residues.append(P(res))
-        res, _ = crt(residues)
-
-        if int(res)*g == y:
-            return int(res)
-        else:
-            Z  = ZZ/ZZ(n // r.order())
-            g *= r.order()
-            y *= r.order()
-
-
-
 
 class ProofMethod(Enum):
     EXHAUSTIVE     = 0
@@ -2516,8 +2338,17 @@ def ecpp(N: int, recursive: bool=True) -> bool:
             try:
                 E = EllipticCurve.generate_curve_with_D(d, R)
 
+                try:
+                    Eo = E.order()
+                except SearchspaceExhaustedException:
+                    from samson.math.algebra.curves.util import EllipticCurveCardAlg
+                    if N.bit_length() > 64:
+                        raise RuntimeError(f'ECPP point counting fell back to bruteforce, but {N} ({N.bit_length()}) is too large')
+
+                    Eo = E.cardinality(EllipticCurveCardAlg.BRUTE_FORCE)
+
                 # Find a divisor above the bound
-                m_facs   = factor(E.order())
+                m_facs   = factor(Eo)
                 divisors = list(m_facs.divisors())
                 divisors.sort()
 
@@ -2527,7 +2358,7 @@ def ecpp(N: int, recursive: bool=True) -> bool:
                         break
 
 
-                if d == E.order() and is_prime(d):
+                if d == Eo and is_prime(d):
                     continue
 
                 # We do this because it only uses trial division internally
@@ -2589,6 +2420,7 @@ def lucas_lehmer_test(n: int) -> bool:
         return certificate
 
     if n == 3:
+        certificate.is_prime = True
         return certificate
 
     s = 4
@@ -2639,14 +2471,14 @@ def is_prime(n: int, prove: bool=False) -> bool:
     References:
         https://en.wikipedia.org/wiki/Baillie%E2%80%93PSW_primality_test
     """
-    if n < 0:
+    if n < 2:
         return False
 
-    if prove:
-        if is_power_of_two(n+1):
-            return lucas_lehmer_test(n)
+    if is_power_of_two(n+1):
+        return lucas_lehmer_test(n)
 
-        elif n.bit_length() < 35:
+    if prove:
+        if n.bit_length() < 35:
             return exhaustive_primality_proof(n)
 
         else:
@@ -3056,96 +2888,17 @@ def approxmiate_nth_prime(n: int) -> int:
     return int(round(n*b))
 
 
-
-@add_complexity(KnownComplexities.IC)
-def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
-    """
-    Computes the discrete logarithm of `y` to base `g`
-
-    Parameters:
-        g (MultiplicativeGroupElement): Generator.
-        y (MultiplicativeGroupElement): Target of form `g`^`x`.
-        order                    (int): Order of `g`.
-
-    Returns:
-        int: The discrete logarithm of `y`.
-
-    Examples:
-        >>> from samson.all import ZZ, index_calculus
-        >>> p, q, g, d, y = 3272514023, 1636257011, 2, 1390585808, 1244484161
-        >>> R = (ZZ/ZZ(p)).mul_group()
-        >>> index_calculus(R(g), R(y))
-        1390585808
-
-    References:
-        https://github.com/Gr1zz/dlog/blob/master/index_calculus.sage
-        http://moais.imag.fr/membres/jean-louis.roch/perso_html/transfert/2009-06-19-IntensiveProjects-M1-SCCI-Reports/AlnuaimiKhuloud.pdf
-    """
-    from math import exp, sqrt, log, ceil
-    ZZ = _integer_ring.ZZ
-    Matrix = _mat.Matrix
-    trial_division = _factor_gen.trial_division
-
-    def is_smooth_trial(n, B):
-        facs = trial_division(n, prime_base=B)
-        return facs.recombine() == n, facs
-
-
-    Fq = ZZ/ZZ(order or g.order())
-    q  = Fq.order()
-    p  = g.ring.characteristic()
-
-    g = g.cache_mul(q.bit_length())
-    y = y.cache_mul(q.bit_length())
-
-    if not is_prime(q):
-        raise ValueError('Index calculus requires a prime group')
-
-    B    = ceil(exp(0.5*sqrt(2*log(p)*log(log(p)))))
-    base = list(sieve_of_eratosthenes(B+1))
-
-    # Precompute indices
-    indices   = {p:i for i,p in enumerate(base)}
-    S         = len(base)
-    relations = Matrix.fill(Fq.zero, S+1, S)
-
-
-    # Find smooth relations
-    row = []
-    k   = 0
-    while (k < S+1):
-        while True:
-            a = Fq.random()
-            b = Fq.random()
-            if not (a,b) in row:
-                break
-
-
-        z = g*int(a)+y*int(b)
-
-        is_smooth, facs = is_smooth_trial(int(z), base)
-        if is_smooth:
-            row.append((a,b))
-
-            for p_i, e_i in facs.items():
-                i = indices[p_i]
-                relations[k, i] = Fq(e_i)
-
-            k += 1
-
-    # Solve
-    ker  = relations.left_kernel()[0]
-    A, B = 0, 0
-
-    for ker_i, row_i in zip(ker, row):
-        A += ker_i*row_i[0]
-        B += ker_i*row_i[1]
-
-    return int(-A * ~Fq(B))
-
-
 def estimate_L_complexity(a, c, n):
     return math.e**(c*math.log(n)**a * (math.log(math.log(n)))**(1-a))
+
+
+def __base_math_func(name, *args):
+    y = args[0]
+    if type(y) in (int, float):
+        return getattr(math, name)(*args)
+    else:
+        return getattr(y, name)(*args[1:])
+    
 
 
 
@@ -3159,10 +2912,32 @@ def log(y: 'RingElement', base: 'RingElement') -> int:
     Returns:
         int: `x` such that `base`^`x` == `y`.
     """
-    if type(y) in [int, float]:
-        return math.log(y, base)
-    else:
-        return y.log(base)
+    return __base_math_func('log', y, base)
+
+
+def ceil(x):
+    return __base_math_func('ceil', x)
+
+def log1p(x):
+    return __base_math_func('log1p', x)
+
+def sin(x):
+    return __base_math_func('sin', x)
+
+def cos(x):
+    return __base_math_func('cos', x)
+
+def tan(x):
+    return __base_math_func('tan', x)
+
+def floor(x):
+    return __base_math_func('floor', x)
+
+def exp(x):
+    return __base_math_func('exp', x)
+
+def log10(x):
+    return __base_math_func('log10', x)
 
 
 def find_smooth_close_to(n: int, max_j: int=5, primes: list=None) -> int:
@@ -3388,7 +3163,7 @@ def batch_inv(elements: List['RingElement']) -> List['RingElement']:
     B = [R.one]
     for a in elements:
         B.append(B[-1]*a)
-    
+
     gamma = ~B[-1]
 
     invs = []
@@ -3397,6 +3172,39 @@ def batch_inv(elements: List['RingElement']) -> List['RingElement']:
         gamma *= elements[i-1]
 
     return invs[::-1]
+
+
+
+def batch_neg(elements: List['RingElement']) -> List['RingElement']:
+    """
+    Efficiently inverts a list of elements using a single negation.
+
+    Parameters:
+        elements (List[RingElement]): Elements to negate.
+
+    Returns:
+        List[RingElement]: List of negated elements.
+
+    References:
+        https://math.mit.edu/classes/18.783/2015/LectureNotes8.pdf
+    """
+    if not elements:
+        return []
+
+    R = elements[0].ring
+    B = [R.zero]
+    for a in elements:
+        B.append(B[-1]+a)
+
+    gamma = -B[-1]
+
+    negs = []
+    for i in reversed(range(1, len(elements)+1)):
+        negs.append(B[i-1]+gamma)
+        gamma += elements[i-1]
+
+    return negs[::-1]
+
 
 
 def cyclomotic_polynomial(n: int) -> 'Polynomial':

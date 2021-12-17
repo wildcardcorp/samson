@@ -22,6 +22,10 @@ tests_require = [
     'pytest'
 ]
 
+distributed_requires = [
+    "celery"
+]
+
 setup(name='samson-crypto',
       version=__import__('samson').VERSION,
       description='Cryptanalysis and attack library',

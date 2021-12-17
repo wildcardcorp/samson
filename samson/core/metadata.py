@@ -176,7 +176,7 @@ class SizeSpec(object):
 
 
     def __eq__(self, other):
-        return type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes
+        return (type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes) or self.sizes == other
 
 
     def __lt__(self, other):

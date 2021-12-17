@@ -1,6 +1,7 @@
 from samson.math.algebra.curves.weierstrass_curve import WeierstrassCurve, WeierstrassPoint
 from samson.math.algebra.curves.named import _PRECOMPUTED_ICA_PLANS, _PRECOMPUTED_ICA_ORDERS
-from samson.math.general import crt, product, lcm, bsgs, kth_root
+from samson.math.general import crt, product, lcm, kth_root
+from samson.math.discrete_logarithm import bsgs
 from samson.math.factorization.general import factor
 from samson.protocols.ecdhe import ECDHE
 from samson.utilities.runtime import RUNTIME

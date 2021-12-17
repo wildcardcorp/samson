@@ -17,7 +17,7 @@ class LM(BaseObject):
 
         Parameters:
             message (bytes): Message to be hashed.
-        
+
         Returns:
             Bytes: LM hash.
         """

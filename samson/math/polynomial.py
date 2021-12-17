@@ -31,7 +31,7 @@ def _should_kronecker(n):
         return 80
     else:
         return _symbol.oo
-    
+
 
 class Polynomial(RingElement):
 
@@ -275,15 +275,6 @@ class Polynomial(RingElement):
 
 
     def modular_composition(self, h, mod):
-        """
-        Evaluates the `Polynomial` at `val` using Horner's method.
-
-        Parameters:
-            val (RingElement): Point to evaluate at.
-
-        Returns:
-            RingElement: Evaluation at `val`.
-        """
         x = h % mod
         if not self.degree():
             return self[0]
@@ -730,8 +721,8 @@ class Polynomial(RingElement):
                 c = c.trunc_kth_root(self.coeff_ring.characteristic())
 
             new_facs = c.square_free_decomposition()
-            for new_fac in new_facs:
-                factors.add(new_fac, self.coeff_ring.characteristic() or 1)
+            for new_fac, num in new_facs.items():
+                factors.add(new_fac, num*self.coeff_ring.characteristic() or 1)
 
         return factors
 
@@ -1039,6 +1030,9 @@ class Polynomial(RingElement):
             RingElement: The content (i.e. GCD of the coefficients).
         """
         vals = list(self.coeffs.values.values())
+        if not vals:
+            return self.coeff_ring.one
+
         content = vals[0]
         for val in vals[1:]:
             content = content.gcd(val)
@@ -1663,6 +1657,6 @@ class Polynomial(RingElement):
 
 
     def cache_div(self, prec: int):
-        from samson.math.poly_division_cache import PolyDivisionCache
+        from samson.math.optimization.poly_division_cache import PolyDivisionCache
         self.__div_cache = PolyDivisionCache(self, prec)
         self.__relemdivmod__ = self.__div_cache.__relemdivmod__

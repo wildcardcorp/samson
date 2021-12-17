@@ -93,7 +93,7 @@ class Michael(MAC):
 
 
     @staticmethod
-    def crack(message: bytes, mic: bytes, pad: bool=True) -> Bytes:
+    def crack(message: bytes, mic: bytes, pad: bool=True) -> 'Michael':
         """
         Inverts the Michael function and cracks the key.
 

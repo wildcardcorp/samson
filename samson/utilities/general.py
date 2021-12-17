@@ -93,6 +93,7 @@ class _LazyShuffler(object):
                 return self.in_list[(x+self.k) % self.n]
 
 
+
 def lazy_shuffle(in_list: list, depth: int=1) -> list:
     """
     Creates a generator that returns elements in random order.
@@ -256,6 +257,26 @@ def binary_search_list(in_list: list, value: object, key: FunctionType=lambda it
         return curr + fuzz_mod
     else:
         raise IndexError("Item not in list")
+
+
+def lazy_binary_operation(op: FunctionType, generator: list):
+    from samson.analysis.general import hamming_weight
+
+    results = []
+
+    for i, a in enumerate(generator):
+        results.append(a)
+
+        h = hamming_weight(i+1)
+        n = len(results)
+
+        while n > h:
+            res = op(results[-2], results[-1])
+            results = results[:-2]
+            results.append(res)
+            n -= 1
+    
+    return results[0]
 
 
 

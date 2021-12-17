@@ -44,7 +44,7 @@ class ComplexField(RealField):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             ComplexElement: Coerced element.
         """
@@ -72,7 +72,7 @@ class ComplexField(RealField):
 
         Parameters:
             size (int/ComplexElement): The maximum ordinality/element (non-inclusive).
-    
+
         Returns:
             ComplexElement: Random element of the algebra.
         """

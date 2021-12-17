@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import pohlig_hellman, random_int_between
+from samson.math.general import random_int_between
+from samson.math.discrete_logarithm import pohlig_hellman
 from samson.encoding.general import PKIEncoding
 from samson.encoding.pkcs1.pkcs1_diffie_hellman_parameters import PKCS1DiffieHellmanParameters
 from samson.encoding.pkcs8.pkcs8_diffie_hellman_private_key import PKCS8DiffieHellmanPrivateKey

@@ -85,11 +85,13 @@ class RuntimeConfiguration(object):
         self.last_tb = None
 
         self.global_cache_size = 1024
-
+        self.global_cache_enabled = True
 
         # Find mseive
         import distutils.spawn
         self.msieve_loc = distutils.spawn.find_executable("msieve")
+        self.cado_nfs_loc = distutils.spawn.find_executable('cado-nfs.py') or distutils.spawn.find_executable('cado-nfs')
+        self.cado_nfs_supremacy = 70
 
 
         # Initialize exploit mappings
@@ -200,7 +202,9 @@ class RuntimeConfiguration(object):
 
     def show_primitives(self, filter_func: FunctionType=lambda primitive: True, sort_key: FunctionType=lambda primitive: str(primitive).split('.')[-1][:-2], reverse: bool=False):
         filtered_prims = sorted(self.search_primitives(filter_func), key=sort_key, reverse=reverse)
-        columns        = ['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType']
+        columns        = ['Primitive', 'PrimitiveType', 'CipherType', 'SymmetryType', 'SecurityProofType', 'ConstructionType', 'UsageFrequency']
+
+        filtered_prims = sorted(filtered_prims, key=lambda prim: prim.USAGE_FREQUENCY.value, reverse=True)
 
         if self.use_color and self.use_rich:
             self.__build_prims_rich_table(columns, filtered_prims)
@@ -215,7 +219,7 @@ class RuntimeConfiguration(object):
         max_column_sizes = [len(col) for col in all_columns[0]]
 
         for primitive in primitives:
-            columns = [str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES])]
+            columns = [str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES]), primitive.USAGE_FREQUENCY.name]
             max_column_sizes = [max(len(col), curr_max) for col, curr_max in zip(columns, max_column_sizes)]
             all_columns.append(columns)
 
@@ -233,13 +237,13 @@ class RuntimeConfiguration(object):
 
         table = Table(title="Matching Cryptographic Primitives", show_lines=True)
 
-        styles = ["dim white", "green", "magenta", "yellow", "cyan", "dim white"]
+        styles = ["dim white", "green", "magenta", "yellow", "cyan", "dim white", "green"]
 
         for name, style in zip(col_names, styles):
             table.add_column(name, style="bold " + style, no_wrap=True)
 
         for primitive in primitives:
-            table.add_row(*[str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES])])
+            table.add_row(*[str(primitive).split('.')[-1][:-2], primitive.PRIMITIVE_TYPE.name, primitive.CIPHER_TYPE.name, primitive.SYMMETRY_TYPE.name, primitive.SECURITY_PROOF.name, ', '.join([ctype.name for ctype in primitive.CONSTRUCTION_TYPES]), primitive.USAGE_FREQUENCY.name])
 
         print()
         print(table)
@@ -415,7 +419,17 @@ class RuntimeConfiguration(object):
         Wraps a function with a LRU cache of size `size`.
         """
         def _outer_wrap(func):
-            return lru_cache(size or self.global_cache_size)(func)
+            cache = lru_cache(size or self.global_cache_size)(func)
+
+            @wraps(func)
+            def _inner_wrap(*args, **kwargs):
+                if self.global_cache_enabled:
+                    return cache(*args, **kwargs)
+                else:
+                    return func(*args, **kwargs)
+            
+            return _inner_wrap
+
         return _outer_wrap
 
 

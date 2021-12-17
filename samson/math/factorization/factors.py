@@ -21,6 +21,15 @@ class Factors(BaseObject):
         return ' * '.join([f"{fac_format.format(fac=fac)}{'**' + str(exponent) if exponent > 1 else ''}" for fac, exponent in facs])
 
 
+    @property
+    def __raw__(self):
+        return str(self.factors)[11:-1]
+
+
+    def __reprdir__(self):
+        return ['__raw__']
+
+
     def __getitem__(self, idx: int):
         return self.factors[idx]
 

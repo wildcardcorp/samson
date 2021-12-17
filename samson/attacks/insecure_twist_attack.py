@@ -1,8 +1,8 @@
-from math import exp
 from samson.utilities.runtime import RUNTIME
 from samson.oracles.oracle import Oracle
 from samson.math.factorization.general import factor
-from samson.math.general import crt, bsgs
+from samson.math.general import crt
+from samson.math.discrete_logarithm import bsgs
 from samson.utilities.exceptions import SearchspaceExhaustedException
 
 import logging

@@ -1,5 +1,5 @@
-from math import log, sqrt, pi, ceil, log1p
-from samson.math.general import random_int, lcm
+from math import sqrt, pi
+from samson.math.general import random_int, lcm, ceil, log1p, log, _integer_ring
 from tqdm import tqdm
 import operator as _operator
 import json
@@ -98,6 +98,9 @@ def levenshtein_distance(seq_a: list, seq_b: list) -> int:
 
     return previous_row[-1]
 
+
+def hamming_weight(n: int):
+    return bin(n).count('1')
 
 
 def count_items(items: list) -> dict:
@@ -314,9 +317,7 @@ def number_of_attempts_to_reach_probability(p: float, desired_prob: float) -> in
 
 
 def __float_to_discrete_probability(p: float):
-    from samson.math.algebra.rings.integer_ring import ZZ
-    QQ     = ZZ.fraction_field()
-    p_frac = QQ(p)
+    p_frac = _integer_ring.ZZ.fraction_field()(p)
     space  = int(lcm(p_frac.numerator, p_frac.denominator))
     cutoff = int(p_frac*space)
     return space, cutoff

@@ -5,6 +5,7 @@ from samson.math.symbols import Symbol
 from samson.utilities.bytes import Bytes
 import linecache
 from enum import Enum
+import itertools
 import inspect
 
 
@@ -51,11 +52,7 @@ def parse_poly(poly, OP_MAP):
         coeffs += [0]
 
 
-    print('Poly', poly)
-
     c0, c1 = coeffs
-    print('c0', c0, type(c0))
-    print('c1', c1, type(c1))
     if not c1 and not c0:
         return ''
 
@@ -118,10 +115,12 @@ class SymBit(BaseObject):
 
 
     def __and__(self, other):
+        other = self._coerce(other)
         return SymBit(self.value * other.value)
 
 
     def __xor__(self, other):
+        other = self._coerce(other)
         return SymBit(self.value + other.value)
 
 
@@ -130,14 +129,17 @@ class SymBit(BaseObject):
 
 
     def __or__(self, other):
+        other = self._coerce(other)
         return (self ^ other) ^ (self & other)
 
 
     def __eq__(self, other):
+        other = self._coerce(other)
         return self ^ ~other
 
 
     def __matmul__(self, other):
+        other = self._coerce(other)
         return ~self | other
     
 
@@ -151,42 +153,45 @@ class SymBit(BaseObject):
 
     def __hash__(self):
         return hash(self.value)
-
-
-class SymFunc(SymBit):
-    def __init__(self, func) -> None:
-        self.func = func
-        self.sig  = inspect.signature(func)
-        symbols   = tuple([Symbol(param) for param in self.sig.parameters])
-        R = ZZ/ZZ(2)
-        P = R[symbols]
-
-        self.symbols  = [SymBit(sym) for sym in symbols]
-        self.symbolic = func(*self.symbols)
-
-        self.one  = SymBit(P.one)
-        self.zero = SymBit(P.zero)
-
-
-    def __call__(self, *args, **kwargs):
-        bound = self.sig.bind(*args, **kwargs)
-        return self.symbolic(**bound.arguments)
     
 
-    @property
-    def value(self):
-        return self.symbolic.value
+    def _coerce(self, other):
+        if type(other) is int:
+            return SymBit(self.value.ring([other]))
+        else:
+            return other
+
+
+    def get_parameters(self):
+        curr   = self.value
+        params = []
+        while type(curr) is Polynomial:
+            params.append(curr.symbol.repr)
+            curr = curr[0]
+        
+        return params[::-1]
 
 
     def reconstruct(self):
-        body     = parse_poly(self.symbolic.value, _OP_MAP_SYM)
-        params   = ', '.join(list(self.sig.parameters))
+        params   = self.get_parameters()
+        body     = parse_poly(self.value, _OP_MAP_SYM)
+        params   = ', '.join(params)
         filename = f'<dynamic-{Bytes.random(8).hex().decode()}>'
 
+        # Clean up function
         if body[0] == '(' and body[-1] == ')':
             body = body[1:-1]
+        
+        body = body.replace('& 1', '')
+        body = body.replace('~~', '')
 
-        source = f'def {self.func.__name__}({params}):\n    return {body}'
+
+        if hasattr(self, 'func'):
+            func_name = self.func.__name__
+        else:
+            func_name = f'dynamic_{Bytes.random(8).hex().decode()}'
+
+        source = f'def {func_name}({params}):\n    return {body}'
         code   = compile(source, filename, 'exec')
 
         l = {}
@@ -195,11 +200,112 @@ class SymFunc(SymBit):
         lines = [line + '\n' for line in source.splitlines()]
 
         linecache.cache[filename] = (len(source), None, lines, filename)
-        return l[self.func.__name__]
+        return l[func_name]
+
+
+    def build_output_table(self) -> 'IOTable':
+        params = self.get_parameters()
+        table  = {}
+        for args in itertools.product(*[list(range(2)) for _ in range(len(params))]):
+            table[args] = self(**dict(zip(params, args)))
+        
+        return IOTable(table, self.get_parameters())
 
 
 
-import itertools
+def build_symbols(parameters: list) -> tuple:
+    symbols = tuple([Symbol(param) for param in parameters])
+    R = ZZ/ZZ(2)
+    P = R[symbols]
+
+    return [SymBit(P(sym)) for sym in symbols], SymBit(P.zero), SymBit(P.one)
+
+
+
+class IOTable(BaseObject):
+    def __init__(self, table: dict, symbols: list) -> None:
+        self.table   = table
+        self.symbols = symbols
+    
+
+    def pretty(self):
+        from rich.table import Table
+        from rich import print
+
+        table = Table(title="Output Table", show_lines=True)
+
+        styles  = itertools.cycle(["dim white", "green", "magenta", "yellow", "cyan", "dim white"])
+        columns = self.symbols + ['Output']
+
+        for name, style in zip(columns, styles):
+            table.add_column(name, style="bold " + style, no_wrap=True)
+
+        for args, output in self.table.items():
+            table.add_row(*[str(a) for a in args], str(int(output)))
+
+        print()
+        print(table)
+
+
+
+    def build_symbit(self) -> 'Symbits':
+        symbols, zero, one = build_symbols(self.symbols)
+        func = zero
+
+        for k,v in self.table.items():
+            curr = one
+            if v:
+                for sym, val in zip(symbols, k):
+                    if not val:
+                        sym = ~sym
+                    
+                    curr &= sym
+                
+                func ^= curr
+        
+        return func
+
+
+    def serialize(self) -> Bytes:
+        out_string = [None] * len(self.table)
+
+        for in_args, output in self.table.items():
+            pos = int(''.join([str(a) for a in in_args]), 2)
+            out_string[pos] = int(output)
+
+        return Bytes(len(self.symbols)) + Bytes(int(''.join([str(b) for b in out_string]), 2))
+
+
+    @staticmethod
+    def deserialize(in_bytes: bytes) -> 'IOTable':
+        import string
+        num_args = in_bytes[0]
+        symbols  = string.ascii_letters[:num_args]
+        outputs  = [int(b) for b in bin(Bytes.wrap(in_bytes[1:]).int())[2:].zfill(len(symbols))]
+
+        return IOTable({tuple([int(b) for b in bin(i)[2:].zfill(len(symbols))]): o for i,o in enumerate(outputs)}, list(symbols))
+
+
+
+class SymFunc(SymBit):
+    def __init__(self, func) -> None:
+        self.func = func
+        self.sig  = inspect.signature(func)
+        self.symbols, self.zero, self.one  = build_symbols(self.sig.parameters) 
+        self.symbolic = func(*self.symbols)
+
+
+    def __call__(self, *args, **kwargs):
+        bound = self.sig.bind(*args, **kwargs)
+        return self.symbolic(**bound.arguments)
+
+
+    @property
+    def value(self):
+        return self.symbolic.value
+
+
+
 def check_equiv(func1, func2, num_args):
     for args in itertools.product(*[list(range(2)) for _ in range(num_args)]):
         if (func1(*args) & 1) != (func2(*args) & 1):

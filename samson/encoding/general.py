@@ -3,6 +3,7 @@ from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import Sequence as _Sequence, Integer as _Integer, SequenceOf as _SequenceOf
 from samson.classical.affine import AffineCipher
 from samson.analyzers.analyzer import Analyzer
+from typing import Tuple
 import urllib.parse
 import codecs
 import re
@@ -128,6 +129,24 @@ def from_NAF(naf: list) -> int:
 
     return total
 
+
+def fast_naf(x: int) -> Tuple[int, int]:
+    """
+    Converts `x` to Non-adjacent form (NAF).
+
+    Parameters:
+        x (int): Integer.
+    
+    Returns:
+        Tuple[int, int]: Formatted as positive NAF, negative NAF.
+    """
+    xh = x >> 1
+    x3 = x + xh
+    c = xh ^ x3
+    np = x3 & c
+    nm = xh & c
+
+    return np, nm
 
 
 

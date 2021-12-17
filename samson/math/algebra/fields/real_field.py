@@ -66,24 +66,13 @@ class RealElement(FieldElement):
         return self.field(self.val / other.val)
 
 
-
-    def is_invertible(self) -> bool:
-        """
-        Determines if the element is invertible.
-
-        Returns:
-            bool: Whether the element is invertible.
-        """
-        return True
-
-
     def sqrt(self) -> 'RealElement':
         return self.field(self.field.ctx.sqrt(self.val))
 
 
     def kth_root(self, k: int, return_all: bool=False) -> 'RealElement':
         if self < 0 and not k % 2:
-            raise NoSolutionException(f'No even roots for negative number')
+            raise NoSolutionException('No even roots for negative number')
 
         base = self**(self.field(1)/self.field(k))
         if return_all:
@@ -130,7 +119,11 @@ class RealElement(FieldElement):
 
     def cos(self):
         return self.field(self.field.ctx.sin(self.val))
-    
+
+
+    def log1p(self):
+        return self.field(self.field.ctx.log1p(self.val))
+
 
     def is_effectively_zero(self) -> bool:
         return abs(self) < self.field(1)/2**self.field.prec
@@ -225,7 +218,7 @@ class RealField(Field):
 
         Parameters:
             other (object): Object to coerce.
-        
+
         Returns:
             RealElement: Coerced element.
         """
@@ -249,7 +242,7 @@ class RealField(Field):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            RealElement: The `x`-th element.
         """

@@ -23,3 +23,6 @@ from samson.protocols.jwt.all import *
 from samson.public_key.all import *
 from samson.stream_ciphers.all import *
 from samson.utilities.all import *
+
+# Overwrite 'math' functions
+from samson.math.general import *

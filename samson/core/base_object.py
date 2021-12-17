@@ -11,58 +11,108 @@ BYTES_COLOR = ConsoleColors.DEEP_RED
 NONE_COLOR  = ConsoleColors.DEEP_GRAY
 BOOL_COLOR  = ConsoleColors.LAVENDER
 
-def int_proc(a):
-    is_long = a.bit_length() > 256
-    if is_long and RUNTIME.minimize_output:
-        a_str = f'...{str(a)[-70:]}'
-    else:
-        a_str = str(a)
+class FieldFormatter(object):
+    TYPE = None
 
-    return color_format(INT_COLOR, a_str) + (f' ({a.bit_length()} bits)' if is_long else "")
+    @staticmethod
+    def parse(field, use_color: bool=True):
+        t = field.__class__.__name__
 
-
-def list_proc(a):
-    is_long = len(a) > 10
-    if is_long and RUNTIME.minimize_output:
-        a_str = f'{str(a[:10])[:-1]}...'
-    else:
-        a_str = str(a)
-
-    return f'{a_str} ({len(a)} items)'
-
-
-def str_color(a):
-    return color_format(STR_COLOR, str(a.__repr__()))
-
-def cls_color(a):
-    return color_format(CLASS_COLOR, str(a))
-
-def color_text(color):
-    return lambda a: color_format(color, str(a))
-
-
-PROC_DICT = {
-    'int': int_proc,
-    'str': str_color,
-    'list': list_proc,
-    'bytes': color_text(STR_COLOR),
-    'Bytes': color_text(BYTES_COLOR),
-    'NoneType': color_text(NONE_COLOR),
-    'bool': color_text(BOOL_COLOR),
-    'type': cls_color
-}
-
-
-def process_field(field):
-    cname = field.__class__.__name__
-    if cname in PROC_DICT:
-        return PROC_DICT[cname](field)
-    else:
+        for subclass in FieldFormatter.__subclasses__():
+            if t == subclass.TYPE:
+                return subclass.parse(field, use_color)
+        
         return str(field)
+
+
+class IntFormatter(FieldFormatter):
+    TYPE = 'int'
+
+    @staticmethod
+    def parse(field, use_color: bool):
+        is_long = field.bit_length() > 256
+        if is_long and RUNTIME.minimize_output:
+            a_str = f'...{str(field)[-70:]}'
+        else:
+            a_str = str(field)
+        
+        if use_color:
+            val = color_format(INT_COLOR, a_str)
+        else:
+            val = a_str
+
+        return val + (f' ({field.bit_length()} bits)' if is_long else "")
+
+
+class ListFormatter(FieldFormatter):
+    TYPE = 'list'
+
+    @staticmethod
+    def parse(field, use_color: bool):
+        is_long = len(field) > 10
+
+        def list_subformat(field):
+            return '[' + ','.join([item_formatter(elem, use_color) for elem in field]) + ']'
+
+        if is_long and RUNTIME.minimize_output:
+            a_str = f'{list_subformat(field[:10])[:-1]}...'
+        else:
+            a_str = list_subformat(field)
+
+        return f'{a_str} ({len(field)} items)'
+
+
+
+class GenericFormatted(FieldFormatter):
+    COLOR = None
+
+    @classmethod
+    def parse(cls, field, use_color: bool):
+        val = str(field)
+
+        if use_color:
+            return color_format(cls.COLOR, val)
+        else:
+            return val
+
+
+class ClassFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = 'type'
+    COLOR = CLASS_COLOR
+
+class StringFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = 'str'
+    COLOR = STR_COLOR
+
+class BytesFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = 'bytes'
+    COLOR = STR_COLOR
+
+class ManagedBytesFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = 'Bytes'
+    COLOR = BYTES_COLOR
+
+class NoneFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = str(type(None))
+    COLOR = NONE_COLOR
+
+class BoolFormatter(GenericFormatted, FieldFormatter):
+    TYPE  = 'bool'
+    COLOR = BOOL_COLOR
+
 
 
 def default_printer(fields):
     return f': {", ".join(fields)}'
+
+
+def item_formatter(val, use_color):
+    if hasattr(val, '__boformat__'):
+        val = val.__boformat__(use_color)
+    else:
+        val = FieldFormatter.parse(val, use_color)
+    
+    return val
 
 
 class BaseObject(object):
@@ -70,7 +120,7 @@ class BaseObject(object):
         return self.__dict__.keys()
 
 
-    def __repr__(self) -> str:
+    def __boformat__(self, use_color: bool, curr_depth: int=0, max_depth: int=100):
         field_str = ""
         if self.__reprdir__():
             fields = []
@@ -80,38 +130,35 @@ class BaseObject(object):
                 val = getattr(self, k)
 
                 if k != '__raw__':
-                    key = color_format(FIELD_COLOR, k) + "="
-                    val = process_field(val)
+                    if use_color:
+                        k = color_format(FIELD_COLOR, k)
+
+                    key = k + "="
+
+                    if hasattr(val, '__boformat__') and curr_depth < max_depth:
+                        val = val.__boformat__(use_color, curr_depth=curr_depth+1, max_depth=max_depth)
+                    else:
+                        val = FieldFormatter.parse(val, use_color)
 
                 fields.append(key + val)
 
             field_str = default_printer(fields)
+        
+        cname = self.__class__.__name__
 
-        return f'<{cls_color(self.__class__.__name__)}{field_str}>'
+        if use_color:
+            cname = color_format(CLASS_COLOR, cname)
+
+        return f'<{cname}{field_str}>'
+
+
+    def __repr__(self) -> str:
+        return self.__boformat__(True)
 
 
     def __str__(self) -> str:
-        field_str = ""
-        if self.__reprdir__():
-            fields = []
+        return self.__boformat__(False)
 
-            for k in self.__reprdir__():
-                key = ""
-                val = getattr(self, k)
-
-                if k != '__raw__':
-                    key = k + "="
-                    val = process_field(val)
-
-                fields.append(key + val)
-
-            field_str = default_printer(fields)
-
-        return f'<{self.__class__.__name__}{field_str}>'
-
-
-    # def __str__(self):
-    #     return self.__repr__()
 
     def __hash__(self):
         dic_items  = []
@@ -121,6 +168,7 @@ class BaseObject(object):
             dic_items.append((k, v))
             
         return hash((self.__class__, tuple(dic_items)))
+
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.__dict__ == other.__dict__

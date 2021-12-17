@@ -1,4 +1,5 @@
-from samson.math.general import random_int_between, crt, mod_inv, bsgs
+from samson.math.general import random_int_between, crt, mod_inv
+from samson.math.discrete_logarithm import bsgs
 from samson.math.factorization.general import trial_division
 from samson.math.algebra.rings.integer_ring import ZZ
 from samson.utilities.runtime import RUNTIME

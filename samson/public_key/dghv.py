@@ -82,7 +82,7 @@ class DGHV(BaseObject):
 
         Parameters:
             c (int): Encrypted int or DGHVBit.
-        
+
         Returns:
             int: Plaintext bit.
         """

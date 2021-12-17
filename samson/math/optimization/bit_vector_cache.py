@@ -1,5 +1,7 @@
 from samson.math.algebra.rings.ring import RingElement
 from samson.core.base_object import BaseObject
+from samson.math.general import product
+from samson.encoding.general import fast_naf
 from types import FunctionType
 
 class BitVectorCache(BaseObject):
@@ -55,3 +57,29 @@ class BitVectorCache(BaseObject):
                 result = op(result, cache[idx])
 
         return result
+
+
+
+class AdditiveBitVectorCache(BitVectorCache):
+    def calculate(self, x: int) -> RingElement:
+        """
+        Calculates the result using the cache vector.
+        """
+        cache = self.cache
+        res   = [self.start]
+        res2  = []
+
+        np, nm = fast_naf(x)
+
+        i = 0
+        while np != 0:
+            if np & 1:
+                res.append(cache[i])
+            elif nm & 1:
+                res2.append(cache[i])
+
+            np >>= 1
+            nm >>= 1
+            i   += 1
+
+        return sum(res, self.element.ring.zero) - sum(res2, self.element.ring.zero)

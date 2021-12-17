@@ -32,7 +32,7 @@ class BLS(SignatureAlg):
         return self.G.ring(h*self.d)
 
 
-    def verify(self, msg: bytes, sig) -> bool:
+    def verify(self, msg: bytes, sig: 'WeierstrassPoint') -> bool:
         h  = self._map_to_curve(msg)
         W1 = sig.weil_pairing(self.G, self.curve.order())
         W2 = self.G.ring(h).weil_pairing(self.pub, self.curve.order())

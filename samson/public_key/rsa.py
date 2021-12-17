@@ -370,7 +370,8 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             https://toadstyle.org/cryptopals/61.txt
         """
         from samson.math.algebra.rings.integer_ring import ZZ
-        from samson.math.general import pohlig_hellman, crt, next_prime, kth_root
+        from samson.math.general import crt, next_prime, kth_root
+        from samson.math.discrete_logarithm import pohlig_hellman
         from samson.math.prime_gen import PrimeEngine
         from samson.math.factorization.general import factor
         from samson.utilities.exceptions import SearchspaceExhaustedException

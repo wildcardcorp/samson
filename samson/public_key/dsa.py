@@ -99,7 +99,7 @@ class DSA(EncodablePKI, SignatureAlg):
         Parameters:
             message (bytes): Message to sign.
             k         (int): (Optional) Ephemeral key.
-        
+
         Returns:
             (int, int): Signature formatted as (r, s).
         """
@@ -118,7 +118,7 @@ class DSA(EncodablePKI, SignatureAlg):
         Parameters:
             message  (bytes): Message.
             sig ((int, int)): Signature of `message`.
-        
+
         Returns:
             bool: Whether the signature is valid or not.
         """

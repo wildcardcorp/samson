@@ -87,7 +87,6 @@ class SIKE(KeyExchangeAlg):
 
     def decapsulate(self, c0, c1):
         m = self.decrypt(c0, c1)
-        #r = G(m + self.pub, self.sidh.prime_power[1])
         return H(m + (c0, c1), self.n)
 
 
@@ -95,3 +94,11 @@ class SIKE(KeyExchangeAlg):
         p, q, r = decode_fp2(self.sidh.curve.ring, public_key_bytes)
         A = (1-p*q-p*r-q*r)**2/(4*p*q*r) - p - q - r
         return MontgomeryCurve(A).to_weierstrass_form()
+
+
+    @staticmethod
+    def from_sike_curve(curve: 'EllipticCurve', use_a: bool=True) -> 'SIKE':
+        E, phi = curve.to_weierstrass_form()
+        P2, Q2, R2 = phi(E.P2), phi(E.Q2), phi(E.R2)
+        P3, Q3, R3 = phi(E.P3), phi(E.Q3), phi(E.R3)
+        return SIKE(curve, P2, Q2, R2, P3, Q3, R3, use_a, curve.p.bit_length())

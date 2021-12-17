@@ -1,5 +1,6 @@
 from samson.math.algebra.rings.ring import Ring, RingElement
-from samson.math.general import totient, index_calculus
+from samson.math.general import totient
+from samson.math.discrete_logarithm import index_calculus, cado_nfs_dlog
 from samson.math.symbols import oo
 from samson.utilities.runtime import RUNTIME
 
@@ -73,10 +74,16 @@ class MultiplicativeGroupElement(RingElement):
         Internal function for 'prime logarithm'. Called by Pohlig-Hellman
         to allow rings to define their own subalgorithms.
         """
-        if order.bit_length() >= RUNTIME.index_calculus_supremacy:
-            from samson.math.algebra.rings.integer_ring import ZZ
+        from samson.math.algebra.rings.integer_ring import ZZ
 
-            if hasattr(self.ring.ring, 'quotient') and self.ring.ring.ring == ZZ:
+        if hasattr(self.ring.ring, 'quotient') and self.ring.ring.ring == ZZ:
+            if order.bit_length() >= RUNTIME.cado_nfs_supremacy:
+                try:
+                    return cado_nfs_dlog(int(base), int(self), order, int(self.ring.ring.quotient))
+                except RuntimeError:
+                    pass
+
+            if order.bit_length() >= RUNTIME.index_calculus_supremacy:
                 return index_calculus(base, self, order=order)
 
         return super()._plog(base, order)

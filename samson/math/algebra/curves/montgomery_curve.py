@@ -53,6 +53,7 @@ class MontgomeryCurve(Ring):
 
         self.zero = self(0)
         self._order = order
+        self.__zero_breaker = None
 
 
 
@@ -91,7 +92,20 @@ class MontgomeryCurve(Ring):
     def G(self) -> 'MontgomeryPoint':
         if not self.U:
             self.U = self.find_gen().x
-        return self(self.U, self.V)
+
+        G = self(self.U, self.V)
+
+        if not self.__zero_breaker:
+            G = self.__zero_breaker
+        return G
+
+
+    @property
+    def _zero_breaker(self) -> 'MontgomeryPoint':
+        if not self.__zero_breaker:
+            self.__zero_breaker = self.random()
+        
+        return self.__zero_breaker
 
 
     def order(self) -> int:
@@ -278,7 +292,7 @@ class MontgomeryPoint(RingElement):
 
     def __eq__(self, other: 'MontgomeryPoint') -> bool:
         return self.x == other.x and self.y == other.y and self.curve == other.curve
-    
+
 
     def __double__(self) -> 'MontgomeryPoint':
         A, B   = self.curve.A, self.curve.B
@@ -309,7 +323,11 @@ class MontgomeryPoint(RingElement):
             return self
 
         elif P2 == self:
-            return self.__double__()
+            if self.y:
+                return self.__double__()
+            else:
+                z = self.ring._zero_breaker
+                return (self-z)+self+z
 
         elif -P2 == self:
             return self.curve.zero
@@ -330,7 +348,9 @@ class MontgomeryPoint(RingElement):
 
 
     # Projective coordinate addition
-    # def add(x1, y1, z1, x2, y2, z2):
+    # def add(M, x1, y1, z1, x2, y2, z2):
+    #     A = M.A
+    #     B = M.B
     #     W = z1*z2
     #     X2 = x2*z1
     #     X1 = x1*z2
@@ -341,28 +361,15 @@ class MontgomeryPoint(RingElement):
     #     V = (Y2 - Y1)
     #     U2 = U*U
     #     U3 = U2*U
-    #     W2 = W*W
-    #     W3 = W2*W
-    #     W5 = W2*W3
-    #     WU3 = W*U3
-    #     W2U3 = WU3*W
-    #     Z = U3*W3
-    #     Z2 = Z*Z
-    #     Z21 = Z2*z1
+    #     X21 = (X2 + X1)
 
-    #     C = (A*X12-B*y1*y2)*W2U3*2
-    #     D = ((X2 + X1)*(W + X12))*WU3
-    #     x3 = (D+C)*(U*W5)*Z21
+    #     DC = ((A*X12-B*y1*y2)*2 + X21)*W + X12*X21
+    #     x3 = DC*(W*U)
 
-    #     F = (2*X1 + X2 + a*W)*W2U3
-    #     G = V*W2U3
-    #     H = U2*WU3
-    #     I = (B*V*V*V)*U3
-    #     J = (y1*U3)*U3
-    #     y3 = ((F*G*H)*z1-(I*z1+J)*Z2)*W5*W
-    #     z3 = Z2*Z21
+    #     F = (X1+X21 + A*W)
+    #     y3 = (F*U2-B*V*V*W)*V-Y1*U3
+    #     z3 = U3*W
     #     return x3, y3, z3
-
 
 
 

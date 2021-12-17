@@ -1,4 +1,5 @@
-from samson.math.general import fast_mul, square_and_mul, is_prime, pohlig_hellman, bsgs, pollards_rho_log, mod_inv, xlcm, gcd
+from samson.math.general import fast_mul, square_and_mul, is_prime, mod_inv, xlcm, gcd
+from samson.math.discrete_logarithm import pohlig_hellman, bsgs, pollards_rho_log
 from samson.math.factorization.general import factor
 from samson.math.factorization.factors import Factors
 from types import FunctionType
@@ -22,6 +23,10 @@ def set_precendence_override(should_override):
 
 
 class Ring(BaseObject):
+
+    def __boformat__(self, use_color: bool, curr_depth: int = 0, max_depth: int = 100):
+        return super().__boformat__(use_color, curr_depth=curr_depth, max_depth=0)
+
 
     def order_factors(self):
         oo = _symb.oo
@@ -287,6 +292,10 @@ class RingElement(BaseObject):
     def __init__(self, ring: Ring):
         self.ring = ring
         self.order_cache = None
+    
+
+    def __boformat__(self, use_color: bool, curr_depth: int = 0, max_depth: int = 100):
+        return super().__boformat__(use_color, curr_depth=curr_depth, max_depth=0)
 
 
     def __reprdir__(self):
@@ -578,7 +587,7 @@ class RingElement(BaseObject):
         Returns:
             BitVectorCache: Cached vector.
         """
-        from samson.math.bit_vector_cache import BitVectorCache
+        from samson.math.optimization.bit_vector_cache import BitVectorCache
         return BitVectorCache(self, start, operation, size)
 
 
@@ -592,7 +601,8 @@ class RingElement(BaseObject):
         Returns:
             BitVectorCache: Cached vector.
         """
-        return self.cache_op(self.ring.zero, self.__class__.__add__, size)
+        from samson.math.optimization.bit_vector_cache import AdditiveBitVectorCache
+        return AdditiveBitVectorCache(self, self.ring.zero, self.__class__.__add__, size+1)
 
 
     def cache_pow(self, size: int) -> 'BitVectorCache':
