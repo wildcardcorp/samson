@@ -1,3 +1,4 @@
+from samson.math.general import mod_inv
 from samson.math.algebra.fields.field import Field, FieldElement
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
@@ -183,7 +184,26 @@ class FractionFieldElement(FieldElement):
         d = self.denominator % other
         d = mod_inv(d, other)
 
+<<<<<<< HEAD
         return self.ring((n*d) % other)
+=======
+    def __elemmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+        if not other:
+            raise ZeroDivisionError
+
+        if not self:
+            return self
+        
+        other = self.ring.ring(other)
+        n = self.numerator % other
+        d = self.denominator % other
+        d = mod_inv(self.denominator, other)
+        return self.ring((n*d) % other)
+
+
+    def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
+        return self.__truediv__(other)
+>>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
 
     def __neg__(self) -> 'FractionFieldElement':

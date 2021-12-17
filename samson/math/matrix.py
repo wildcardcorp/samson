@@ -314,6 +314,11 @@ class Matrix(RingElement):
         return (I*x - self).det()
 
 
+    def trace(self) -> 'RingElement':
+        if not self.is_square():
+            raise ValueError('Cannot calculate trace of a nonsquare matrix')
+        return sum(self[i][i] for i in range(self.num_cols))
+
 
     def row_join(self, other: 'Matrix') -> 'Matrix':
         """

@@ -106,8 +106,28 @@ class BaseObject(object):
         return self.__internal_repr(False)
 
 
-    def __str__(self):
-        return self.__repr__()
+    def __str__(self) -> str:
+        field_str = ""
+        if self.__reprdir__():
+            fields = []
+
+            for k in self.__reprdir__():
+                key = ""
+                val = getattr(self, k)
+
+                if k != '__raw__':
+                    key = k + "="
+                    val = process_field(val)
+
+                fields.append(key + val)
+
+            field_str = default_printer(fields)
+
+        return f'<{self.__class__.__name__}{field_str}>'
+
+
+    # def __str__(self):
+    #     return self.__repr__()
 
     def __hash__(self):
         dic_items  = []

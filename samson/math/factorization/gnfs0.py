@@ -128,6 +128,7 @@ def gen_primes(primes, f, couv_bound):
     print('Finding primes...')
     while sum_bound <= couv_bound:
         p = find_prime(64)
+        print(p)
         if p in primes or not f.change_ring(ZZ/ZZ(p)).is_irreducible():
             continue
 

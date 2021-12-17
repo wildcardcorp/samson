@@ -24,7 +24,7 @@ class PKCS1v15Padding(BaseObject):
 
         Parameters:
             plaintext (bytes): Plaintext to pad.
-        
+
         Returns:
             Bytes: Padded plaintext.
         """
@@ -52,7 +52,7 @@ class PKCS1v15Padding(BaseObject):
         Parameters:
             plaintext           (bytes): Plaintext to unpad.
             allow_padding_oracle (bool): Whether or not to explicitly create a padding oracle.
-        
+
         Returns:
             Bytes: Unpadded plaintext.
         """

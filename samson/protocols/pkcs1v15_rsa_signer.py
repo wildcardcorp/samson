@@ -21,18 +21,9 @@ class PKCS1v15RSASigner(object):
         self.rsa      = rsa
         self.padder   = PKCS1v15Padding(rsa.bits, block_type=1)
         self.hash_obj = hash_obj
+    
 
-
-    def sign(self, plaintext: bytes) -> Bytes:
-        """
-        Signs the `plaintext`.
-
-        Parameters:
-            plaintext (bytes): Plaintext to sign.
-        
-        Returns:
-            Bytes: Signature.
-        """
+    def _build_sigdata(self, plaintext: bytes):
         alg_id = Sequence()
         alg_id.setComponentByPosition(0, HASH_OID_LOOKUP[type(self.hash_obj)])
         alg_id.setComponentByPosition(1, Null())
@@ -41,8 +32,29 @@ class PKCS1v15RSASigner(object):
         top_seq.setComponentByPosition(0, alg_id)
         top_seq.setComponentByPosition(1, OctetString(self.hash_obj.hash(plaintext)))
 
-        der_encoded = encoder.encode(top_seq)
+        return encoder.encode(top_seq)
+
+
+    def sign(self, plaintext: bytes) -> Bytes:
+        """
+        Signs the `plaintext`.
+
+        Parameters:
+            plaintext (bytes): Plaintext to sign.
+
+        Returns:
+            Bytes: Signature.
+        """
+        der_encoded = self._build_sigdata(plaintext)
         return self.rsa.decrypt(self.padder.pad(der_encoded)).zfill((self.rsa.n.bit_length() + 7) // 8)
+
+
+    def parse_signature(self, signature: bytes) -> bytes:
+        padded      = Bytes(self.rsa.encrypt(signature))
+        der_encoded = self.padder.unpad(padded)
+
+        items = bytes_to_der_sequence(der_encoded)
+        return Bytes(items[1])
 
 
     def verify(self, plaintext: bytes, signature: bytes, strict_type_match: bool=True) -> bool:
@@ -53,7 +65,7 @@ class PKCS1v15RSASigner(object):
             plaintext        (bytes): Plaintext to verify.
             signature        (bytes): Signature to verify plaintext against.
             strict_type_match (bool): Whether or not to force use of `hash_obj` vs using the OID provided in the signature.
-        
+
         Returns:
             bool: Whether or not the signature passed verification.
         """
@@ -71,7 +83,7 @@ class PKCS1v15RSASigner(object):
 
             hashed_value = Bytes(items[1])
 
-
             return RUNTIME.compare_bytes(hashed_value, hash_obj.hash(plaintext))
+
         except Exception:
             return False

@@ -163,7 +163,7 @@ class SNOW3G(StreamCipher):
 
         Parameters:
             length (int): Desired length of keystream in bytes.
-        
+
         Returns:
             Bytes: Keystream.
         """

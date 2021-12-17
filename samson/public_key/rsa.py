@@ -165,7 +165,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         Parameters:
             plaintext (bytes): Plaintext.
-        
+
         Returns:
             int: Ciphertext.
         """
@@ -180,7 +180,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         Parameters:
             ciphertext (int): Ciphertext.
-        
+
         Returns:
             Bytes: Decrypted plaintext.
         """
@@ -204,7 +204,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             n1 (int): Modulus of the first instance.
             n2 (int): Modulus of the second instance.
             e  (int): Public exponent.
-        
+
         Returns:
             (RSA, RSA): Both cracked RSA instances.
         """
@@ -229,7 +229,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             faulty_sig (int): Faulty signature of `message`.
             n          (int): Modulus.
             e          (int): Public exponent.
-        
+
         Returns:
             RSA: Cracked RSA instance.
         """
@@ -248,7 +248,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
             d (int): Private key.
             n (int): Modulus.
             e (int): Public exponent.
-        
+
         Returns:
             RSA: Full RSA instance.
         """
@@ -282,7 +282,7 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
 
         Parameters:
             n (int): Modulus to test.
-        
+
         Returns:
             bool: Whether or not `n` is vulnerable.
         """

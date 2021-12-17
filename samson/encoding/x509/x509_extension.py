@@ -1534,3 +1534,19 @@ class X509TLSFeatures(X509Extension):
             features.append(val)
 
         return X509TLSFeatures(features=features, critical=critical)
+
+
+class X509OCSPNoCheck(X509Extension):
+    EXT_TYPE = OID.OCSP_NO_CHECK
+
+    def __init__(self, critical: bool=False) -> None:
+        super().__init__(critical=critical)
+    
+
+    def build(self) -> rfc5280.Extension:
+        return super()._build(Null())
+
+
+    @staticmethod
+    def parse(value_bytes: bytes, critical: bool) -> 'X509OCSPNoCheck':
+        return X509OCSPNoCheck(critical=critical)

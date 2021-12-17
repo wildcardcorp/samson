@@ -60,6 +60,10 @@ class PolynomialRing(Ring):
 
     def __hash__(self) -> int:
         return hash((self.ring, self.__class__))
+    
+
+    def _elem_is_sub_poly(self, elem):
+        return elem.ring == self.ring
 
 
     def coerce(self, other: object) -> Polynomial:
@@ -87,6 +91,9 @@ class PolynomialRing(Ring):
             # This check is in case we're using multivariate polynomials
             elif other.ring == self.ring:
                 return self.coerce([other])
+
+            elif self.ring.is_superstructure_of(other.ring):
+                return self.coerce([self.ring(other)])
 
             elif self.ring.is_superstructure_of(other.coeff_ring):
                 try:

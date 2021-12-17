@@ -17,6 +17,11 @@ class _OID(Enum):
 
     def __eq__(self, other):
         return self.value == other.value
+    
+
+    def __hash__(self):
+        return hash((_OID, self.value))
+
 
     @staticmethod
     def prefix():

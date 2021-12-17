@@ -66,7 +66,6 @@ def poly_to_int(poly: 'Polynomial') -> int:
 
     Parameters:
         poly (Polynomial): Polynomial to encode.
-        modulus     (int): Modulus to reconstruct the integer with.
 
     Returns:
         int: Integer representation.
