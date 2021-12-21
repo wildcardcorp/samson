@@ -430,6 +430,9 @@ class RuntimeConfiguration(object):
                 else:
                     return func(*args, **kwargs)
             
+            _inner_wrap.cache_clear = cache.cache_clear
+            _inner_wrap.cache_info  = cache.cache_info
+            
             return _inner_wrap
 
         return _outer_wrap

@@ -351,13 +351,13 @@ class Polynomial(RingElement):
         if type(R) in [Zp, PAdicNumberField]:
             roots = self.change_ring(ZZ).hensel_lift(R.p, R.prec, use_padic=True, use_number_field=type(R) == PAdicNumberField)
             return [r for r in roots if not self(r)]
+    
 
-
-        elif is_field or R == ZZ:
+        elif (is_field and R.order() != oo) or R == ZZ:
             if is_field and self.degree() == 1:
                 return [-self.monic()[0]]
 
-            x    = self.symbol
+            x = self.symbol
             if R.characteristic():
                 frob = frobenius_map(self.symbol, self)
                 facs = gcd(frob - x, self).factor(**factor_kwargs)
@@ -439,7 +439,7 @@ class Polynomial(RingElement):
             >>> f = x**3 -2*x**2 -5*x + 6
             >>> f.companion_matrix()
             <Matrix: coeff_ring=ZZ, num_rows=3, num_cols=3, 
-               0   1   2
+                0  1  2
             0 [ 0, 1, 0]
             1 [ 0, 0, 1]
             2 [-6, 5, 2]>
@@ -687,7 +687,7 @@ class Polynomial(RingElement):
             >>> _ = ZZ[x]
             >>> poly = -1*x**18 + x**7 + 3*x**3
             >>> poly.square_free_decomposition()
-            <Factors: factors=SortedDict({<Polynomial: x, coeff_ring=ZZ>: 3, <Polynomial: x^15 + (-1)*x^4 + -3, coeff_ring=ZZ>: 1})>
+            <Factors: {<Polynomial: x, coeff_ring=ZZ>: 3, <Polynomial: x^15 + (-1)*x^4 + -3, coeff_ring=ZZ>: 1}>
 
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Square-free_factorization
@@ -737,7 +737,7 @@ class Polynomial(RingElement):
 
         Returns:
             list: Distinct-degree factors of self.
-        
+
         References:
             https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
         """
@@ -748,16 +748,17 @@ class Polynomial(RingElement):
         S = []
         i = 1
 
-        x = self.symbol
+        x      = self.symbol
         x_poly = f.ring(x)
 
-        while f_star.degree() > 2*i:
-            if not f_star.is_monic():
-                f_star = f_star.monic()
+        if not f_star.is_monic():
+            f_star = f_star.monic()
 
+        bases = frobenius_monomial_base(f_star)
+
+        while f_star.degree() > 2*i:
             # Calculate P(x**q**i - x)
-            bases = frobenius_monomial_base(f_star)
-            h     = frobenius_map(bases[1], f_star, bases=bases)
+            h = frobenius_map(x_poly, f_star, bases=bases)
 
             for _ in range(i-1):
                 h = frobenius_map(h, f_star, bases=bases)
@@ -768,7 +769,13 @@ class Polynomial(RingElement):
                 S.append((g, i))
                 f_star //= g
 
+                if not f_star.is_monic():
+                    f_star = f_star.monic()
+
+                bases = frobenius_monomial_base(f_star)
+
             i += 1
+
 
         if f_star != self.ring.one:
             S.append((f_star, f_star.degree()))
@@ -794,6 +801,7 @@ class Polynomial(RingElement):
             list: Equal-degree factors of self.
         """
         from samson.math.symbols import oo
+        from samson.math.general import frobenius_map, frobenius_monomial_base
 
         f = self.monic()
         n = f.degree()
@@ -801,9 +809,9 @@ class Polynomial(RingElement):
         S = [f]
 
         f_quot = f.ring / f
-        if self.coeff_ring.order() != oo:
-            q = self.coeff_ring.order()
+        q = self.coeff_ring.order()
 
+        if self.coeff_ring.order() != oo:
             # Finite fields must be in the form p^k where `p` is prime and `k` >= 1.
             # If `p` is an odd prime, then 2|p^k-1.
             # This follows since an odd number times an odd number (e.g. itself)
@@ -835,6 +843,9 @@ class Polynomial(RingElement):
 
         attempts = 0
         found = False
+
+        bases = frobenius_monomial_base(f)
+
         try:
             while len(S) < r and (not irreducibility_cache or not all([irreducibility_cache[poly] for poly in S])) and not user_stop_func(S):
                 h = f.ring.random(f)
@@ -842,7 +853,15 @@ class Polynomial(RingElement):
 
                 if g == one:
                     h = f_quot(h)
-                    g = (h**exponent).val - one
+                    k = h**(exponent % q)
+                    l = k
+                    k = k.val
+                    for _ in range(d-1):
+                        k  = frobenius_map(k, f, bases=bases)
+                        l *= k
+
+                    g = l.val - one
+
 
                 for u in S:
                     if u.degree() <= d or (u in irreducibility_cache and irreducibility_cache[u]):
@@ -1237,6 +1256,7 @@ class Polynomial(RingElement):
                 fac.symbol = q.symbol
                 factors[fac] = e
 
+
         elif type(self.coeff_ring) in [RealField, ComplexField]:
             # This algorithm is simple:
             # 1) If the polynomial is degree 2 or 3, there is an explicit formula to find the roots
@@ -1266,7 +1286,7 @@ class Polynomial(RingElement):
                 elif p.degree() > 3:
                     x = p.symbol
                     q = p.derivative()
-                    q_facs = fac(q)
+                    q_facs = complex_fac(q)
 
                     for q_root in q_facs:
                         r = p.newton(q_root)
@@ -1307,16 +1327,16 @@ class Polynomial(RingElement):
             # Cantor-Zassenhaus (SFF -> DDF -> EDF)
             distinct_degrees = [factor for poly in p.sff() for factor in poly.ddf()]
 
-            for poly, _ in distinct_degrees:
+            for poly, deg in distinct_degrees:
                 if poly.is_irreducible():
                     while p != p.ring.one and not p % poly:
                         p //= poly
                         add_or_increment(factors, poly, 1)
 
                 else:
-                    for deg in sorted(factor(poly.degree()).divisors()):
+                    try:
                         for fac in poly.edf(deg, subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func):
-                            if not p:
+                            if not p or p == p.ring.one:
                                 return factors
 
                             while p != p.ring.one and not p % fac:
@@ -1329,6 +1349,8 @@ class Polynomial(RingElement):
                                         return factors
                                 else:
                                     break
+                    except NoSolutionException:
+                        pass
 
         return factors
 

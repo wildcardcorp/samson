@@ -128,7 +128,7 @@ class RealElement(FieldElement):
 
 
     def is_effectively_zero(self) -> bool:
-        return abs(self) < self.field(1)/2**self.field.prec
+        return abs(self) <= self.field(1)/2**self.field.prec
     
 
     def gcd(self, other: 'RealElement') -> 'RealElement':

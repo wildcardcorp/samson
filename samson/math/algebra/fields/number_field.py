@@ -1,8 +1,11 @@
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.fields.field import Field, FieldElement
-<<<<<<< HEAD
 from samson.math.algebra.fields.fraction_field import FractionFieldElement
 from samson.math.symbols import  oo
+from samson.math.algebra.rings.integer_ring import ZZ
+from samson.math.symbols import Symbol, oo
+from samson.math.factorization.general import factor
+from samson.math.matrix import Matrix
 
 
 class NumberFieldElement(FractionFieldElement):
@@ -10,29 +13,9 @@ class NumberFieldElement(FractionFieldElement):
         FieldElement.__init__(self, field)
         self.numerator   = numerator
         self.denominator = denominator
-=======
-from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import cyclomotic_polynomial, hilbert_class_polynomial
-from samson.math.symbols import Symbol, oo
-from samson.math.factorization.general import factor
-from samson.math.matrix import Matrix
-
-class NumberFieldElement(FieldElement):
-    def __init__(self, val: 'FieldElement', field: Field):
-        super().__init__(field)
-        self.val = val
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
     def __reprdir__(self):
         return ['numerator', 'denominator', 'field']
-
-
-    # def __invert__(self) -> 'NumberFieldElement':
-    #     return NumberFieldElement(self.denominator, self.numerator, self.field)
-
-
-    # def __neg__(self) -> 'NumberFieldElement':
-    #     return NumberFieldElement(-self.numerator, self.denominator, self.field)
 
 
     def is_integral(self) -> bool:
@@ -160,10 +143,6 @@ class NumberField(Field):
 
 
     def __eq__(self, other: 'NumberField') -> bool:
-<<<<<<< HEAD
-        return type(self) == type(other) and self.ring == other.ring
-
-=======
         return type(self) == type(other) and self.internal_field == other.internal_field
 
 
@@ -179,33 +158,8 @@ class NumberField(Field):
             d *= 4
         
         return d
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
-
-    # def degree(self):
-    #     return self.defining_polynomial.degree()
-
-<<<<<<< HEAD
-=======
-    def hilbert_class_polynomial(self) -> 'Polynomial':
-        disc = self.discriminant()
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
-
-    # def discriminant(self):
-    #     return self.ring.discriminant()
-    #     D = ZZ(self.defining_polynomial.discriminant())
-    #     d = factor(int(D)).square_free().recombine()
-
-    #     if d % 4 != 1:
-    #         d *= 4
-        
-    #     return d
 
 
-<<<<<<< HEAD
-    # def hilbert_class_polynomial(self):
-    #     return self.ring.discriminant()
-    #     disc = self.discriminant()
-=======
     def generator_matrix(self) -> Matrix:
         x = self.symbol
         a = x
@@ -217,19 +171,3 @@ class NumberField(Field):
             v += [list(a)]
         
         return Matrix(v)
-
-
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
-
-    #     if disc > 0:
-    #         raise ValueError('Discriminant cannot be positive')
-
-<<<<<<< HEAD
-    #     return hilbert_class_polynomial(int(disc))
-=======
-    return NumberField(x**2 - D)
-
-
-def CyclotomicField(n: int) -> 'NumberField':
-    return NumberField(cyclomotic_polynomial(n).change_ring(ZZ.fraction_field()))
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32

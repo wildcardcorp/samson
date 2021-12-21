@@ -240,7 +240,7 @@ class PAdicIntegerRing(Ring):
 
         Parameters:
             x (int): Element ordinality.
-        
+
         Returns:
            PAdicIntegerElement: The `x`-th element.
         """
@@ -259,7 +259,7 @@ class PAdicIntegerRing(Ring):
         base_coeffs = []
 
         # Use != to handle negative numbers
-        while element != 0 and element != -1:
+        while element != 0 and len(base_coeffs) < self.prec:
             element, r = divmod(element, self.p)
             base_coeffs.append(r)
 

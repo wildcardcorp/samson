@@ -1,10 +1,10 @@
 from samson.auxiliary.complexity import add_complexity, KnownComplexities
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.math.general import is_prime, _integer_ring, _factor_gen, _mat, sieve_of_eratosthenes, kth_root, crt
-from samson.utilities.general import binary_search_list
 from samson.utilities.runtime import RUNTIME
 from typing import Tuple
-import math
+from types import FunctionType
+
 
 @add_complexity(KnownComplexities.IC)
 def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
@@ -126,7 +126,8 @@ def bsgs(g: 'RingElement', h: 'RingElement', end: int, e: 'RingElement'=None, st
         int: The discrete logarithm of `h` given `g`.
 
     Examples:
-        >>> from samson.math.general import hasse_frobenius_trace_interval, bsgs, mod_inv
+        >>> from samson.math.general import hasse_frobenius_trace_interval, mod_inv
+        >>> from samson.math.discrete_logarithm import bsgs
         >>> from samson.math.algebra.all import *
 
         >>> ring = ZZ/ZZ(53)
@@ -181,7 +182,7 @@ def pohlig_hellman(g: 'RingElement', h: 'RingElement', n: int=None, factors: dic
         int: The discrete logarithm of `h` given `g`.
 
     Examples:
-        >>> from samson.math.general import pohlig_hellman
+        >>> from samson.math.discrete_logarithm import pohlig_hellman
         >>> from samson.math.algebra.all import *
 
         >>> p    = 7
@@ -313,6 +314,93 @@ def pollards_rho_log(g: 'RingElement', y: 'RingElement', order: int=None) -> int
             Z  = ZZ/ZZ(n // r.order())
             g *= r.order()
             y *= r.order()
+
+
+
+def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterations: int=30, f: FunctionType=None, apply_reduction: bool=True) -> int:
+    """
+    Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
+
+    Parameters:
+        g        (RingElement): Generator.
+        y        (RingElement): Number to find the discrete logarithm of.
+        a                (int): Interval start.
+        b                (int): Interval end.
+        iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
+        f               (func): Pseudorandom map function of signature (`y`: RingElement, k: int) -> int.
+        apply_reduction (bool): Whether or not to reduce the answer by the ring's order.
+
+    Returns:
+        int: The discrete logarithm. Possibly None if it couldn't be found.
+
+    Examples:
+        >>> from samson.math.discrete_logarithm import pollards_kangaroo
+        >>> from samson.math.all import *
+        >>> p = find_prime(2048) 
+        >>> g, x = 5, random_int_between(1, p)
+        >>> R = (ZZ/ZZ(p)).mul_group() 
+        >>> g = R(g) 
+        >>> y = g*x 
+        >>> dlog = pollards_kangaroo(g, y, x-1000, x+1000)
+        >>> g * dlog == y
+        True
+
+        >>> p =  53
+        >>> ring = ZZ/ZZ(p)
+        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
+        >>> start, end = hasse_frobenius_trace_interval(curve.p)
+        >>> dlog = pollards_kangaroo(g=curve.G, y=curve.POINT_AT_INFINITY, a=start + curve.p, b=end + curve.p)
+        >>> curve.G * dlog == curve.zero
+        True
+
+    References:
+        https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
+    """
+    k = iterations
+    R = g.ring
+
+    # This pseudorandom map function has the following desirable properties:
+    # 1) Never returns zero. Zero can form an infinite loop
+    # 2) Works across all rings
+    if not f:
+        n = kth_root(b-a, 2)
+        f = lambda y, k: pow(2, hash(y) % k, n)
+
+    while k > 1:
+        N = (f(g, k) + f(g*b, k)) // 2 * 4
+
+        # Tame kangaroo
+        xT = 0
+        yT = g*b
+
+        for _ in range(N):
+            f_yT = f(yT, k)
+            xT  += f_yT
+            yT  += g*f_yT
+
+
+        # Wild kangaroo
+        xW = 0
+        yW = y
+
+        while xW < b - a + xT:
+            f_yW = f(yW, k)
+            xW  += f_yW
+            yW  += g*f_yW
+
+            if yW == yT:
+                result = b + xT - xW
+
+                if apply_reduction:
+                    result %= R.order()
+
+                return result
+
+
+        # Didn't find it. Try another `k`
+        k -= 1
+
+    raise ProbabilisticFailureException("Discrete logarithm not found")
 
 
 

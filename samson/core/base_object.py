@@ -120,19 +120,7 @@ class BaseObject(object):
         return self.__dict__.keys()
     
 
-    def __internal_repr(self,  use_color: bool):
-        if use_color:
-            field_formatter = lambda k: color_format(FIELD_COLOR, k)
-            class_formatter = cls_color
-        else:
-            field_formatter = lambda k: k
-            class_formatter = lambda c: c
-
-
-<<<<<<< HEAD
     def __boformat__(self, use_color: bool, curr_depth: int=0, max_depth: int=100):
-=======
->>>>>>> f2cf20606623dcc5f095e8cac5fea5c2a8019292
         field_str = ""
         if self.__reprdir__():
             fields = []
@@ -142,7 +130,6 @@ class BaseObject(object):
                 val = getattr(self, k)
 
                 if k != '__raw__':
-<<<<<<< HEAD
                     if use_color:
                         k = color_format(FIELD_COLOR, k)
 
@@ -152,10 +139,6 @@ class BaseObject(object):
                         val = val.__boformat__(use_color, curr_depth=curr_depth+1, max_depth=max_depth)
                     else:
                         val = FieldFormatter.parse(val, use_color)
-=======
-                    key = field_formatter(k) + "="
-                    val = process_field(val)
->>>>>>> f2cf20606623dcc5f095e8cac5fea5c2a8019292
 
                 fields.append(key + val)
 
@@ -163,20 +146,8 @@ class BaseObject(object):
         
         cname = self.__class__.__name__
 
-<<<<<<< HEAD
         if use_color:
             cname = color_format(CLASS_COLOR, cname)
-=======
-        return f'<{class_formatter(self.__class__.__name__)}{field_str}>'
-
-
-    def _repr_pretty_(self, p, cycle) -> str:
-        return p.text(self.__internal_repr(True))
-
-
-    def __repr__(self) -> str:
-        return self.__internal_repr(False)
->>>>>>> f2cf20606623dcc5f095e8cac5fea5c2a8019292
 
         return f'<{cname}{field_str}>'
 

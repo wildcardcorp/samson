@@ -76,7 +76,7 @@ class Poly1305(MAC):
         Parameters:
             message (bytes): Message to generate a MAC for.
             nonce   (bytes): Bytes-like nonce.
-        
+
         Returns:
             Bytes: The MAC.
         """
@@ -98,7 +98,7 @@ class Poly1305(MAC):
             sig2 (bytes): Second signature.
 
         Returns:
-            list: List of candidates formatted as (`r` "key", `s` "nonce").
+            list: List of candidates.
 
         Examples:
             >>> from samson.macs.poly1305 import Poly1305
@@ -106,11 +106,11 @@ class Poly1305(MAC):
             >>> s    = Bytes(0x0103808afb0db2fd4abff6af4149f51b).change_byteorder()
             >>> r    = 0x85d6be7857556d337f4452fe42d506a8
             >>> msg1 = b'Cryptographic Forum Research Group'
-            >>> msg2 = b'Hey there friendos! I hope you die'
+            >>> msg2 = b'Hey there friendos! Have a good day'
             >>> p13  = Poly1305(r)
             >>> sig1 = p13.generate(msg1, s).int()
             >>> sig2 = p13.generate(msg2, s).int()
-            >>> (p13.r, s.int()) in Poly1305.nonce_reuse_attack(msg2, sig2, msg1, sig1)
+            >>> p13.r in Poly1305.nonce_reuse_attack(msg2, sig2, msg1, sig1)
             True
 
         """
@@ -134,6 +134,10 @@ class Poly1305(MAC):
         # sa - sb = m1*r^3 + m2*r^2 + m3*r - (n - m)*2^128
 
         pt1_chunks, pt2_chunks = [Poly1305._chunk_message(message) for message in [msg1, msg2]]
+
+        if len(pt1_chunks) != len(pt2_chunks):
+            raise ValueError("The messages must have the same number of 16-byte chunks")
+
         coeffs = [chunk1.int() - chunk2.int() for chunk1, chunk2 in zip(pt1_chunks, pt2_chunks)]
 
         sig1, sig2 = [Bytes.wrap(sig, byteorder='little').int() for sig in [sig1, sig2]]
@@ -173,9 +177,7 @@ class Poly1305(MAC):
                     # If it is, since `s` is a 128-bit number, `s < _MOD_128`
                     # and it should also be fully recoverable
                     if (test_sig1 - test_sig2) % _MOD_128 == sig_diff % _MOD_128:
-                        s_prime = abs(sig1 - test_sig1)
-                        if all([Poly1305(ri, clamp_r=False).generate(msg, s_prime).int() == sig for msg, sig in [(msg1, sig1), (msg2, sig2)]]):
-                            candidates.append((ri, s_prime))
+                        candidates.append(ri)
 
 
             # This is just a simple way of testing 0, -1, 1, -2, 2...

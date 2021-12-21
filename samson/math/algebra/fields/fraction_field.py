@@ -144,33 +144,6 @@ class FractionFieldElement(FieldElement):
         return self.__class__(self.numerator * other.numerator, self.denominator * other.denominator, self.ring)
 
 
-    # def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-    #     return RingElement.__floordiv__(self, other)
-
-    # def __elemdivmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-    #     if not other:
-    #         raise ZeroDivisionError
-        
-    #     if not self:
-    #         return self.ring.zero
-
-    #     other = self.ring.ring(other)
-
-    #     n = self.numerator % other
-    #     d = self.denominator % other
-    #     d = mod_inv(d, other)
-
-    #     return self.ring((n*d) % other)
-
-
-    # def __elemfloordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-    #     if other.is_integral():
-    #         mod = self % other
-    #         return (self - mod) / other
-    #     else:
-    #         return self / other
-
-
     def __elemmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
         if not other:
             raise ZeroDivisionError
@@ -184,26 +157,7 @@ class FractionFieldElement(FieldElement):
         d = self.denominator % other
         d = mod_inv(d, other)
 
-<<<<<<< HEAD
         return self.ring((n*d) % other)
-=======
-    def __elemmod__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        if not other:
-            raise ZeroDivisionError
-
-        if not self:
-            return self
-        
-        other = self.ring.ring(other)
-        n = self.numerator % other
-        d = self.denominator % other
-        d = mod_inv(self.denominator, other)
-        return self.ring((n*d) % other)
-
-
-    def __floordiv__(self, other: 'FractionFieldElement') -> 'FractionFieldElement':
-        return self.__truediv__(other)
->>>>>>> 03db94299fd22694eb08c0f80e47c128edd9ac32
 
 
     def __neg__(self) -> 'FractionFieldElement':

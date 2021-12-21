@@ -435,9 +435,6 @@ def fast_mul(a: 'RingElement', b: int, s: 'RingElement'=None) -> 'RingElement':
 
     Examples:
         >>> from samson.math.general import fast_mul
-        >>> fast_mul(5, 12, 0)
-        60
-
         >>> from samson.math.algebra.all import ZZ
         >>> from samson.math.symbols import Symbol
         >>> x = Symbol('x')
@@ -460,7 +457,7 @@ def fast_mul(a: 'RingElement', b: int, s: 'RingElement'=None) -> 'RingElement':
         if b:
             a = (a + a)
 
-    if c and d.order_cache and not d.order_cache % c:
+    if c and hasattr(d, 'order_cache') and d.order_cache and not d.order_cache % c:
         s.order_cache = d.order_cache // c
     return s
 
@@ -1584,92 +1581,6 @@ def totient(n: int, factors: dict=None) -> int:
     return t
 
 
-def pollards_kangaroo(g: 'RingElement', y: 'RingElement', a: int, b: int, iterations: int=30, f: FunctionType=None, apply_reduction: bool=True) -> int:
-    """
-    Probabilistically finds the discrete logarithm of base `g` in GF(`p`) of `y` in the interval [`a`, `b`].
-
-    Parameters:
-        g        (RingElement): Generator.
-        y        (RingElement): Number to find the discrete logarithm of.
-        a                (int): Interval start.
-        b                (int): Interval end.
-        iterations       (int): Number of times to run the outer loop. If `f` is None, it's used in the pseudorandom map.
-        f               (func): Pseudorandom map function of signature (`y`: RingElement, k: int) -> int.
-        apply_reduction (bool): Whether or not to reduce the answer by the ring's order.
-
-    Returns:
-        int: The discrete logarithm. Possibly None if it couldn't be found.
-
-    Examples:
-        >>> from samson.math.general import pollards_kangaroo
-        >>> from samson.math.algebra.all import *
-        >>> p = find_prime(2048) 
-        >>> g, x = 5, random_int_between(1, p)
-        >>> R = (ZZ/ZZ(p)).mul_group() 
-        >>> g = R(g) 
-        >>> y = g*x 
-        >>> dlog = pollards_kangaroo(g, y, x-1000, x+1000)
-        >>> g * dlog == y
-        True
-
-        >>> p =  53
-        >>> ring = ZZ/ZZ(p)
-        >>> curve = WeierstrassCurve(a=50, b=7, ring=ring, base_tuple=(34, 25))
-        >>> start, end = hasse_frobenius_trace_interval(curve.p)
-        >>> dlog = pollards_kangaroo(g=curve.G, y=curve.POINT_AT_INFINITY, a=start + curve.p, b=end + curve.p)
-        >>> curve.G * dlog == curve.zero
-        True
-
-    References:
-        https://en.wikipedia.org/wiki/Pollard%27s_kangaroo_algorithm
-    """
-    k = iterations
-    R = g.ring
-
-    # This pseudorandom map function has the following desirable properties:
-    # 1) Never returns zero. Zero can form an infinite loop
-    # 2) Works across all rings
-    if not f:
-        n = kth_root(b-a, 2)
-        f = lambda y, k: pow(2, hash(y) % k, n)
-
-    while k > 1:
-        N = (f(g, k) + f(g*b, k)) // 2 * 4
-
-        # Tame kangaroo
-        xT = 0
-        yT = g*b
-
-        for _ in range(N):
-            f_yT = f(yT, k)
-            xT  += f_yT
-            yT  += g*f_yT
-
-
-        # Wild kangaroo
-        xW = 0
-        yW = y
-
-        while xW < b - a + xT:
-            f_yW = f(yW, k)
-            xW  += f_yW
-            yW  += g*f_yW
-
-            if yW == yT:
-                result = b + xT - xW
-
-                if apply_reduction:
-                    result %= R.order()
-
-                return result
-
-
-        # Didn't find it. Try another `k`
-        k -= 1
-
-    raise ProbabilisticFailureException("Discrete logarithm not found")
-
-
 
 def hasse_frobenius_trace_interval(p: int) -> Tuple[int, int]:
     """
@@ -2492,7 +2403,7 @@ def is_prime(n: int, prove: bool=False) -> bool:
     Examples:
         >>> from samson.math.general import is_prime, find_prime
         >>> is_prime(7)
-        <PrimalityCertficate: n=7, is_prime=True, method=ProofMethod.EXHAUSTIVE, proof=None>
+        <PrimalityCertficate: n=7, is_prime=True, method=ProofMethod.LUCAS_LEHMER, proof={'k_proof': <PrimalityCertficate: n=3, is_prime=True, method=ProofMethod.LUCAS_LEHMER, proof={'k_proof': <PrimalityCertficate: n=2, is_prime=True, method=ProofMethod.EXHAUSTIVE, proof=None>}>}>
 
         >>> bool(is_prime(15))
         False
@@ -2926,13 +2837,6 @@ def approxmiate_nth_prime(n: int) -> int:
 def estimate_L_complexity(a, c, n):
     return math.e**(c*math.log(n)**a * (math.log(math.log(n)))**(1-a))
 
-<<<<<<< HEAD
-=======
-@add_complexity(KnownComplexities.IC)
-def index_calculus(g: 'MultiplicativeGroupElement', y: 'MultiplicativeGroupElement', order: int=None) -> int:
-    """
-    Computes the discrete logarithm of `y` to base `g`.
->>>>>>> f2cf20606623dcc5f095e8cac5fea5c2a8019292
 
 def __base_math_func(name, *args):
     y = args[0]

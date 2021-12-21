@@ -90,6 +90,19 @@ class MultiplicativeGroupElement(RingElement):
 
 
 
+    def cache_mul(self, size: int) -> 'BitVectorCache':
+        """
+        Caches scalar multiplication (i.e. repeated addition) in a `BitVectorCache`.
+
+        Parameters:
+            size (int): Size of cache.
+
+        Returns:
+            BitVectorCache: Cached vector.
+        """
+        return self.cache_op(self.ring.zero, self.__class__.__add__, size)
+
+
 class MultiplicativeGroup(Ring):
     """
     The group of a ring under multiplication. This basically just 'promotes' multiplication to the addition operator.
