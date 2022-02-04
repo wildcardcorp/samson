@@ -28,7 +28,7 @@ def color_format(color: ConsoleColors, text: str):
     if type(color) is ConsoleColors:
         color = color.value
 
-    if RUNTIME.use_color:
+    if RUNTIME.get_context().use_color:
         formatted = f"{PREFIX}{color}m{text}{SUFFIX}"
     else:
         formatted = text

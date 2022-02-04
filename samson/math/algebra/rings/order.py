@@ -168,7 +168,7 @@ class OrderElement(RingElement):
             x = Symbol('x')
             _ = ZZ[x]
             return x - list(self)[0]
-        
+
         else:
             return self.matrix().characteristic_polynomial()
 
@@ -332,7 +332,6 @@ class QuadraticFieldElement(OrderElement):
         if facs is None and K.discriminant() % 4 == 1 and int(p[0]) == 2:
             Q = K.fraction_field()
             Q.simplify = False
-            print('Here')
             return Factors({Q(((1 + K.symbol), 2)): 1, Q(((1 + -K.symbol), 2)): 1})
         else:
             return facs
@@ -360,30 +359,25 @@ class QuadraticFieldElement(OrderElement):
         else:
             f = self.ring.defining_polynomial
 
-
-        # base_result = super().is_prime()
-
-        # if base_result or not self.is_rational():
-        #     return base_result
-        
+    
         if self.is_rational():
             p = abs(int(self.val.val[0]))
-            return f.change_ring(ZZ/ZZ(p)).is_irreducible()
+            return is_prime(p) and f.change_ring(ZZ/ZZ(p)).is_irreducible()
         else:
             return super().is_prime()
 
 
-        try:
-            cornacchias_algorithm(-d, 4*p)
-            return False
-        except NoSolutionException:
-            pass
+        # try:
+        #     cornacchias_algorithm(-d, 4*p)
+        #     return False
+        # except NoSolutionException:
+        #     pass
 
-        try:
-            cornacchias_algorithm(-d, p)
-            return False
-        except NoSolutionException:
-            return True
+        # try:
+        #     cornacchias_algorithm(-d, p)
+        #     return False
+        # except NoSolutionException:
+        #     return True
 
 
 class QuadraticField(Order):

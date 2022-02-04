@@ -1,7 +1,7 @@
 from typing import List
-
 from pyasn1.type.char import UTF8String
-from samson.core.base_object import BaseObject
+from samson.core.base_object import BaseObject, STR_COLOR, color_format
+from samson.utilities.runtime import RUNTIME
 from pyasn1_modules import rfc2459, rfc5280
 from pyasn1.codec.der import encoder, decoder
 from pyasn1.type.univ import ObjectIdentifier
@@ -177,7 +177,7 @@ class RDNSequence(BaseObject):
 
     @property
     def __raw__(self):
-        return ','.join([f'{rdn.SHORT_NAME}={rdn.value.decode()}' for rdn in self.rdns])
+        return ','.join([f'{color_format(STR_COLOR, rdn.SHORT_NAME) if RUNTIME.use_color else rdn.SHORT_NAME}={rdn.value.decode()}' for rdn in self.rdns])
 
 
     @staticmethod

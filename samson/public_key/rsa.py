@@ -327,14 +327,17 @@ class RSA(NumberTheoreticalAlg, EncodablePKI):
         c1, c2  = [Bytes.wrap(item).int() for item in [c1, c2]]
 
         Zn = ZZ/ZZ(n)
-        _  = Zn[x]
+        P  = Zn[x]
+
+        # g2 = x**e - c2
+        # Q = P/g2
 
         f = a*x + b
         f = f.monic()
 
+        # g1 = (Q(f)**e).val - c1
         g1 = f**e - c1
         g2 = x**e - c2
-
         g3 = g1.gcd(g2, use_naive=True)
 
         if g3.degree() != 1:

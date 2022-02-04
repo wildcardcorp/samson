@@ -353,7 +353,7 @@ class Polynomial(RingElement):
             return [r for r in roots if not self(r)]
     
 
-        elif (is_field and R.order() != oo) or R == ZZ:
+        elif is_field or R == ZZ:
             if is_field and self.degree() == 1:
                 return [-self.monic()[0]]
 
@@ -453,12 +453,15 @@ class Polynomial(RingElement):
         d = self.degree()-1
         R = self.coeff_ring
 
-        M = Matrix.identity(d, R)
-        c = Matrix.fill(R.zero, d, 1)
-        M = c.row_join(M)
+        if d:
+            c = Matrix.fill(R.zero, d, 1)
+            M = Matrix.identity(d, R)
+            M = c.row_join(M)
 
-        coeffs = list(-self.monic())[:-1]
-        return M.col_join(Matrix([coeffs]))
+            coeffs = list(-self.monic())[:-1]
+            return M.col_join(Matrix([coeffs]))
+        else:
+            return Matrix.fill(R.zero, 1, 1)
 
 
     def valuation(self):
@@ -756,11 +759,11 @@ class Polynomial(RingElement):
 
         bases = frobenius_monomial_base(f_star)
 
-        while f_star.degree() > 2*i:
+        while f_star.degree() >= 2*i:
             # Calculate P(x**q**i - x)
-            h = frobenius_map(x_poly, f_star, bases=bases)
+            h = bases[1]
 
-            for _ in range(i-1):
+            for _ in range(1, i-1):
                 h = frobenius_map(h, f_star, bases=bases)
 
             g = gcd(f_star, h - x_poly).monic()
@@ -1194,6 +1197,8 @@ class Polynomial(RingElement):
             >>> factors.recombine() == p.monic() # Check the factorization is right
             True
 
+        References:
+            https://github.com/afoures/aberth-method/blob/master/aberthMethod.py
         """
         ZZ = _integer_ring.ZZ
         from samson.math.all import QQ, Symbol, factor, RealField, ComplexField
@@ -1284,15 +1289,57 @@ class Polynomial(RingElement):
                         roots.append((R(-1)/3/a)*(b + Ck + d0/Ck))
 
                 elif p.degree() > 3:
-                    x = p.symbol
-                    q = p.derivative()
-                    q_facs = complex_fac(q)
+                    def get_bounds(f):
+                        coeffs = list(f)
+                        upper  = 1 + 1 / abs(coeffs[-1]) * max(abs(c) for c in coeffs[:-1])
+                        lower  = abs(coeffs[0]) / (abs(coeffs[0]) + max(abs(c) for c in coeffs[1:]))
+                        return upper, lower
 
-                    for q_root in q_facs:
-                        r = p.newton(q_root)
-                        if p(r).is_effectively_zero():
-                            roots = [r] + complex_fac(p // (x - r))
-                            break
+
+                    def init_roots(f):
+                        CC = f.coeff_ring
+                        RR = CC(0).real().ring
+                        degree = f.degree()
+                        upper, lower = get_bounds(f)
+
+                        roots = []
+                        for _ in range(degree):
+                            radius = RR.random_between(lower, upper)
+                            angle  = RR.random_between(0, RR.pi*2)
+                            root   = CC((radius * angle.cos(), radius * angle.sin()))
+                            roots.append(root)
+
+                        return roots
+
+
+                    def aberth_roots(f):
+                        roots = init_roots(f)
+                        R     = f.coeff_ring
+                        eps   = R(1)/2**R.prec
+                        df    = f.derivative()
+
+                        while True:
+                            valid = 0
+                            for k, r in enumerate(roots):
+                                ratio  = f(r) / df(r)
+                                offset = ratio / (1 - (ratio * sum(1/(r - x) 
+                                                for j, x in enumerate(roots) if j != k)))
+                                
+
+                                z = f(r+eps) / f(r-eps)
+                                condition = abs((z.real()**2 + z.imag()**2).sqrt() - 1)
+
+                                if condition > 1e-3 or offset.is_effectively_zero():
+                                    valid += 1
+
+                                roots[k] -= offset
+
+                            if valid == len(roots):
+                                break
+
+                        return roots
+                    
+                    roots = aberth_roots(p)
                 
                 return roots
 

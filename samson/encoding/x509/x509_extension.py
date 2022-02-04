@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from pyasn1.error import PyAsn1Error
-from pyasn1.type.char import IA5String, GeneralString
+from pyasn1.type.char import IA5String, GeneralString, BMPString
 from samson.utilities.bytes import Bytes
 from typing import List, Union
 from pyasn1_modules import rfc2459, rfc5280, rfc3280
@@ -886,7 +886,7 @@ class X509PolicyQualifier(BaseObject):
         for subclass in X509PolicyQualifier.__subclasses__():
             if subclass.QUALIFIER_TYPE == oid:
                 return subclass.__parse(qualifier)
-        
+
         raise ValueError("Unable to parse qualifier")
 
 
@@ -1283,7 +1283,7 @@ CertificateTemplateOID.componentType = namedtype.NamedTypes(
     namedtype.OptionalNamedType('templateMinorVersion', Integer())
 )
 
-class X509MicrosoftCertificateTemplate(X509Extension):
+class X509MicrosoftCertificateTemplateV2(X509Extension):
     EXT_TYPE  = OID.MICROSOFT_szOID_CERTIFICATE_TEMPLATE
 
     def __init__(self, template_id: str, major_version: int, minor_version: int, critical: bool=False) -> None:
@@ -1313,7 +1313,25 @@ class X509MicrosoftCertificateTemplate(X509Extension):
         if ext_val['templateMinorVersion'].isValue:
             minor_version = int(ext_val['templateMinorVersion'])
 
-        return X509MicrosoftCertificateTemplate(template_id=template_id, major_version=major_version, minor_version=minor_version, critical=critical)
+        return X509MicrosoftCertificateTemplateV2(template_id=template_id, major_version=major_version, minor_version=minor_version, critical=critical)
+
+
+class X509MicrosoftCertificateTemplateV1(X509Extension):
+    EXT_TYPE  = OID.MICROSOFT_szOID_ENROLL_CERTTYPE_EXTENSION
+
+    def __init__(self, template_name: str, critical: bool=False) -> None:
+        self.template_name = template_name
+        super().__init__(critical=critical)
+    
+
+    def build(self) -> rfc5280.Extension:
+        return super()._build(BMPString(self.template_name))
+
+
+    @staticmethod
+    def parse(value_bytes: bytes, critical: bool) -> 'X509MicrosoftCertificateTemplate':
+        ext_val, _ = decoder.decode(value_bytes)
+        return X509MicrosoftCertificateTemplateV1(template_name=str(ext_val), critical=critical)
 
 
 

@@ -4,6 +4,7 @@ from samson.auxiliary.lazy_loader import LazyLoader
 from samson.math.general import mod_inv
 from samson.math.symbols import oo
 from samson.auxiliary.theme import PADIC_COEFF, PADIC_DEGREE, color_format
+from samson.utilities.runtime import RUNTIME
 
 _integer_ring = LazyLoader('_integer_ring', globals(), 'samson.math.algebra.rings.integer_ring')
 
@@ -128,7 +129,14 @@ class PAdicIntegerElement(RingElement):
         if not self:
             raise ZeroDivisionError
 
-        return self.ring.one / self
+        try:
+            return self.ring.one / self
+
+        except ZeroDivisionError as e:
+            if RUNTIME.auto_promote:
+                return ~self.ring.fraction_field()(self)
+            else:
+                raise e
 
 
     def __lshift__(self, num: int):

@@ -113,9 +113,12 @@ def count_items(items: list) -> dict:
     Returns:
         dict: Dictionary of {item, count}.
     """
-    item_ctr = {curr_item: 0 for curr_item in items}
+    item_ctr = {}
 
     for curr_item in items:
+        if curr_item not in item_ctr:
+            item_ctr[curr_item] = 0
+
         item_ctr[curr_item] += 1
 
     return item_ctr

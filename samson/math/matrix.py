@@ -7,6 +7,13 @@ from shutil import get_terminal_size
 from types import FunctionType
 from copy import deepcopy
 
+import re
+COLOR_RE = re.compile('\x1b\[[0-9;]*m')
+
+def decolor(elem_str):
+    elem_str = elem_str.replace('\x1b[0m', '')
+    return COLOR_RE.sub('', elem_str)
+
 # Python's string interpolation doesn't like newlines...
 NEWLINE = "\n"
 
@@ -50,12 +57,12 @@ class Matrix(RingElement):
 
         col_adjusts = []
         for row in self.T.rows:
-            max_elem_size = max([len(str_meth(elem)) for elem in row])
+            max_elem_size = max([len(decolor(str_meth(elem))) for elem in row])
             col_adjusts.append(min(max_elem_size, term_max_size))
         
         max_row_str = len(str(len(self.rows)))
 
-        row_strs.append(" "*(2+max_row_str) + '  '.join([str(idx).rjust(col_adj) for idx, col_adj in enumerate(col_adjusts)]))
+        row_strs.append(" "*(1+max_row_str) + ' '.join([str(idx).rjust(col_adj+1) for idx, col_adj in enumerate(col_adjusts)]))
 
         for ridx, row in enumerate(self.rows):
             row_strs.append(f"{str(ridx).rjust(max_row_str)} [" + ", ".join([str_meth(elem).rjust(col_adjusts[idx]) for idx, elem in enumerate(row)]) + "]")

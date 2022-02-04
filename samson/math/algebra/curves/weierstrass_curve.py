@@ -716,6 +716,14 @@ class WeierstrassCurve(Ring):
         return x**3 + self.a*x + self.b
 
 
+    def characteristic_polynomial(self) -> 'Polynomial':
+        from samson.math.symbols import Symbol
+        from samson.math.algebra.rings.integer_ring import ZZ
+        x = Symbol('x')
+        _ = ZZ[x]
+        return x**2 - self.trace()*x + self.p
+
+
     @staticmethod
     def random_curve(n: RingElement) -> 'WeierstrassCurve':
         R = n.ring

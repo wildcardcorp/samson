@@ -24,6 +24,11 @@ class Infinity(object):
             raise ValueError("Cannot subtract infinity from infinity.")
 
         return self
+    
+
+    def __radd__(self, other):
+        return self + other
+
 
     def __sub__(self, other):
         if type(other) is Infinity:
@@ -31,17 +36,45 @@ class Infinity(object):
 
         return self
 
+
+    def __rsub__(self, other):
+        return -self + other
+
+
     def __mul__(self, other):
+        if not other:
+            return other
+        elif other == -self:
+            return -oo
+        
+        elif other == self:
+            return oo
+
         return self
+
+
+    def __rmul__(self, other):
+        return self*other
 
     def __pow__(self, other):
         return self
 
     def __truediv__(self, other):
+        if issubclass(type(other), Infinity):
+            raise ValueError("Cannot divide infinity by infinity.")
+
         return self
 
+    def __rtruediv__(self, other):
+        return 0
+
+
     def __floordiv__(self, other):
-        return self
+        return self / other
+
+
+    def __rfloordiv__(self, other):
+        return 0
 
 
 class NegativeInfinity(Infinity):

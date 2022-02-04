@@ -32,26 +32,6 @@ class ContinuedFraction(BaseObject):
         self.cf      = _calc_continued_fraction(self.element)
 
 
-
-    @staticmethod
-    def from_list(cf) -> 'ContinuedFraction':
-        """
-        Derives the fraction form for `cf`.
-
-        Parameters:
-            cf (list): Continued fraction.
-
-        Returns:
-            ContinuedFraction: Corresponding fraction.
-        """
-        w = self.ring(cf[0])
-
-        if len(cf) > 1:
-            w += ~eval_continued_fraction(cf[1:])
-        return ContinuedFraction(w)
-
-
-
     def numerators(self) -> list:
         """
         Generates the numerators of the continued fraction.

@@ -84,6 +84,16 @@ class StringFormatter(GenericFormatted, FieldFormatter):
     TYPE  = 'str'
     COLOR = STR_COLOR
 
+    @staticmethod
+    def parse(field, use_color: bool):
+        val = repr(str(field))
+
+        if use_color:
+            return color_format(StringFormatter.COLOR, val)
+        else:
+            return val
+
+
 class BytesFormatter(GenericFormatted, FieldFormatter):
     TYPE  = 'bytes'
     COLOR = STR_COLOR
@@ -93,7 +103,7 @@ class ManagedBytesFormatter(GenericFormatted, FieldFormatter):
     COLOR = BYTES_COLOR
 
 class NoneFormatter(GenericFormatted, FieldFormatter):
-    TYPE  = str(type(None))
+    TYPE  = 'NoneType'
     COLOR = NONE_COLOR
 
 class BoolFormatter(GenericFormatted, FieldFormatter):

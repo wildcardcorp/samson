@@ -4,6 +4,7 @@ from multiprocessing.pool import Pool as ProcessPool
 from multiprocessing import cpu_count
 from functools import wraps, lru_cache
 from types import FunctionType
+from hmac import compare_digest
 import math
 import logging
 import inspect
@@ -102,7 +103,6 @@ class RuntimeConfiguration(object):
         self.primitives = []
 
         self._contexts = {}
-
 
 
     def __repr__(self):
@@ -251,33 +251,35 @@ class RuntimeConfiguration(object):
 
 
     def compare_bytes(self, a: bytes, b: bytes) -> bool:
-        from hmac import compare_digest
         return compare_digest(a, b)
 
 
-    def set_context(self, **ctx_kwargs) -> FunctionType:
-        #func.__qualname__
+
+    def set_context(self, **ctx_kwargs)-> FunctionType:
         def wrapper_0(func):
-            self._contexts[(func.__module__, func.__name__)] = RuntimeProxyContext(**ctx_kwargs)
-
-            @wraps(func)
-            def wrapper_1(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            return wrapper_1
+            code = func.__code__
+            self._contexts[(code.co_name, code.co_nlocals, code.co_filename)] = RuntimeProxyContext(**ctx_kwargs)
+            return func
 
         return wrapper_0
 
 
     def get_context(self):
-        stack  = inspect.stack()[1]
-        func   = stack.function
-        module = inspect.getmodule(stack[0])
+        fr  = sys._getframe(0).f_back
+        c   = None
+        ctx = self._contexts
 
-        if module:
-             module = module.__name__
+        while fr:
+            c = fr.f_code
 
-        return self._contexts[(module, func)]
+            try:
+                return ctx[(c.co_name, c.co_nlocals, c.co_filename)]
+            except KeyError:
+                pass
+
+            fr = fr.f_back
+
+        return self
 
 
     def install_rich_exceptions(self):

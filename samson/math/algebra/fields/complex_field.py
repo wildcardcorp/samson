@@ -70,6 +70,12 @@ class ComplexField(RealField):
             if type_o in [tuple, list]:
                 other, imag = other
 
+                if type(other) is RealElement:
+                    other = other.val
+
+                if type(imag) is RealElement:
+                    imag = imag.val
+
             elif type_o == RealElement:
                 other = other.val
             
@@ -84,6 +90,7 @@ class ComplexField(RealField):
 
             else:
                 other = RealField(ctx=self.ctx)(other).val
+
 
             try:
                 return ComplexElement(self.ctx.mpc(other, imag), self)

@@ -31,7 +31,7 @@ class KW(BlockCipherMode):
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
             pad        (bool): Whether or not to use RFC5649 padding.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """
@@ -70,7 +70,7 @@ class KW(BlockCipherMode):
             ciphertext (bytes): Bytes-like object to be decrypted.
             unpad       (bool): Whether or not to unpad with RFC5649 padding.
             verify      (bool): Whether or not to check if the IV is correct.
-        
+
         Returns:
             Bytes: Resulting plaintext.
         """

@@ -243,3 +243,47 @@ class X509Certificate(PEMEncodable):
             issuer_unique_id=issuer_unique_id, subject_unique_id=subject_unique_id, not_before=not_before, not_after=not_after,
             signing_key=None, signing_alg=signing_alg, signature_value=signature, extensions=extensions
         )
+
+
+    def get_extension(self, ext_type: type):
+        return [e for e in self.extensions if type(e) is ext_type][0]
+
+
+    @staticmethod
+    def clone(usr_data, iss_data):
+        from samson.encoding.general import PKIAutoParser
+        from samson.public_key.rsa import RSA
+        import logging
+
+        logger = logging.getLogger(__name__)
+    
+        logger.info('Importing keys')
+        iss  = PKIAutoParser.import_key(iss_data)
+        usr  = PKIAutoParser.import_key(usr_data)
+
+        assert type(iss.key) is RSA
+
+        signer    = usr.signing_alg._build_signer(iss.key)
+        sig_hash  = usr.signing_alg.parse_signature(iss.key, usr.signature_value)
+        plaintext = signer._build_sigdata(sig_hash)
+
+        logger.info('Duplicating signature')
+        plaintext = Bytes(iss.key.encrypt(usr.signature_value))
+        dup_key   = RSA.duplicate_ciphertext_key_selection(iss.key.n, usr.signature_value, plaintext)
+
+
+        assert Bytes(dup_key.encrypt(usr.signature_value.int())) == plaintext
+
+        logger.info('Building clone cert')
+        iss_dup = iss.deepcopy()
+        iss_dup.key = dup_key
+        iss_dup.signature_value = None
+        encoded = iss_dup.encode()
+
+        logging.info('Verifying all signatures')
+        iss_signed = PKIAutoParser.import_key(encoded)
+        assert iss_signed.verify(encoded, iss_signed.key)
+
+        assert usr.verify(usr_data, iss_signed.key)
+
+        return iss_signed

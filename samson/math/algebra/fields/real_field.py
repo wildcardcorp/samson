@@ -299,4 +299,21 @@ class RealField(Field):
         return self(self.ctx.rand())
 
 
+    def random_between(self, lower, upper) -> object:
+        """
+        Generate a random element.
+
+        Parameters:
+            lower (FieldElement): The lower bound.
+            upper (FieldElement): The upper bound.
+
+        Returns:
+            FieldElement: Random element of the algebra.
+        """
+        if upper <= lower:
+            raise ValueError("Upper must be greater than lower")
+
+        return self.random()*(upper-lower)+lower
+
+
 RR = RealField()
