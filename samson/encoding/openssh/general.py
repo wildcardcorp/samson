@@ -44,7 +44,7 @@ def generate_openssh_private_key(public_key: object, private_key: object, encode
         encryption     (str): Encryption algorithm to use.
         iv           (bytes): IV for encryption algorithm.
         passphrase   (bytes): Passphrase for KDF.
-    
+
     Returns:
         bytes: OpenSSH encoded PKI object.
     """
@@ -84,7 +84,7 @@ def generate_openssh_public_key_params(encoding: PKIEncoding, ssh_header: bytes,
         encoding (PKIEncoding): Encoding to use. Currently supports 'OpenSSH' and 'SSH2'.
         ssh_header     (bytes): PKI-specific SSH header.
         public_key    (object): OpenSSH public key object.
-    
+
     Returns:
         (bytes, bool, str, bool): PKI public key parameters formatted as (encoded, default_pem, default_marker, use_rfc_4716).
     """
@@ -114,7 +114,7 @@ def parse_openssh_key(buffer: bytes, ssh_header: bytes, public_key_cls: object, 
         public_key_cls  (object): OpenSSH public key class.
         private_key_cls (object): OpenSSH private key class.
         passphrase       (bytes): Passphrase for KDF.
-    
+
     Returns:
         (object, object): Parsed private and public key objects formatted as (private key, public key).
     """

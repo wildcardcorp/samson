@@ -201,3 +201,8 @@ class FiniteField(Field):
 
     def __eq__(self, other: 'FiniteField') -> bool:
         return type(self) == type(other) and self.p == other.p and self.n == other.n
+
+
+    def isomorphism(self, other: 'FiniteField') -> list:
+        from samson.math.algebra.fields.finite_field_isomorphism import FiniteFieldIsomorphism
+        return FiniteFieldIsomorphism(self, other)

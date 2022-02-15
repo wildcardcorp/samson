@@ -20,8 +20,8 @@ class Paillier(EncryptionAlg):
         self.q = q or find_prime(512)
         self.n = self.p * self.q
 
-        self.phi = (self.p - 1) * (self.q - 1)
-        self.g = self.n + 1
+        self.phi  = (self.p - 1) * (self.q - 1)
+        self.g    = self.n + 1
         self.priv = mod_inv(self.phi, self.n)
 
 
@@ -38,7 +38,7 @@ class Paillier(EncryptionAlg):
 
         Parameters:
             plaintext (bytes): Plaintext.
-        
+
         Returns:
             int: Ciphertext.
         """
@@ -60,7 +60,7 @@ class Paillier(EncryptionAlg):
 
         Parameters:
             ciphertext (int): Ciphertext.
-        
+
         Returns:
             Bytes: Decrypted plaintext.
         """

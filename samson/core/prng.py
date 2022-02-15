@@ -7,6 +7,9 @@ from samson.prngs.lcg import LCG
 from samson.prngs.lfg import LFG
 from samson.core.metadata import CrackingDifficulty
 from samson.utilities.exceptions import NoSolutionException
+from samson.utilities.bytes import Bytes
+
+from functools import partial
 
 import logging
 log = logging.getLogger(__name__)
@@ -117,4 +120,20 @@ class PRNG(object):
                 results = results.__next__()
             except StopIteration:
                 raise NoSolutionException('Outputs do not satisfy any registered PRNG')
+        return results
+
+
+    @staticmethod
+    def auto_crack_bytes(outputs: bytes, stop_on_first: bool=True, max_diificulty: CrackingDifficulty=CrackingDifficulty.NORMAL):
+        import itertools
+
+        func    = partial(PRNG.auto_crack, stop_on_first=stop_on_first, max_diificulty=max_diificulty)
+        results = func(outputs=[c.int() for c in Bytes(outputs).chunk(4)])
+
+        if stop_on_first:
+            if not results:
+                results = func(outputs=[c[::-1].int() for c in Bytes(outputs).chunk(4)])
+        else:
+            results = itertools.chain(results, func(outputs=[c[::-1].int() for c in Bytes(outputs).chunk(4)]))
+
         return results
