@@ -1,5 +1,6 @@
 from samson.core.base_object import BaseObject
 from enum import Enum as _Enum, IntFlag as _IntFlag
+import math
 
 SIZE_ENC = 2
 
@@ -11,6 +12,57 @@ def pack_len(val):
 
 def unpack_len(data):
     return data[SIZE_ENC:], int.from_bytes(data[:SIZE_ENC], 'big')
+
+
+class ByteWriter(object):
+    def __init__(self, data=None) -> None:
+        self.data = data or b''
+    
+    def write(self, buffer):
+        self.data += buffer
+
+
+class BitWriter(object):
+    def __init__(self) -> None:
+        self.data = ''
+
+    def write(self, buffer, size):
+        bits = bin(int.from_bytes(buffer, 'big'))[2:].zfill(size)
+        self.data += bits
+
+
+
+class ByteConsumer(object):
+    def __init__(self, data: bytes) -> None:
+        self.data = data
+        self.idx  = 0
+    
+    def next(self, bits):
+        num_bytes = math.ceil(bits / 8)
+        result    = self.data[self.idx:self.idx+num_bytes]
+        self.idx += num_bytes
+        return result, num_bytes
+
+
+class BitConsumer(object):
+    def __init__(self, data: bytes) -> None:
+        self.data = bin(int.from_bytes(data, 'big'))[2:]
+        self.data = self.data.zfill((-len(self.data) % 8)+len(self.data))
+        self.idx  = 0
+
+
+    def is_done(self):
+        return self.idx >= len(self.data)
+    
+    def next(self, bits):
+        if self.idx < len(self.data):
+            result    = self.data[self.idx:self.idx+bits]
+            self.idx += bits
+            if self.idx > len(self.data):
+                bits = len(self.data) % bits
+            return int.to_bytes(int(result, 2), math.ceil(bits / 8), 'big'), bits
+        else:
+            return b'', 0
 
 
 class Subscriptable(object):
@@ -138,11 +190,14 @@ class Serializable(BaseObject):
 
 
 class SubtypableMeta(type):
+    TYPED_CLS = None
+
     def __getitem__(cls, l_type):
-        class Inst(cls):
-            SUBTYPE = l_type
+        class Inst(cls.TYPED_CLS or cls):
+            pass
 
         Inst.__name__ = f'{cls.__name__}[{l_type.__name__}]'
+        Inst.SUBTYPE = l_type
         return Inst
 
 
@@ -257,7 +312,8 @@ class List(Subtypable):
     SUBTYPE = None
     val: list
 
-    def __init__(self, val) -> None:
+    def __init__(self, val=None) -> None:
+        val  = [] if val is None else val
         args = [a if type(a) is self.SUBTYPE else self.SUBTYPE(a) for a in val]
         super().__init__(args)
 
@@ -339,17 +395,49 @@ class Bytes(Primitive, Sizable, Subscriptable):
         return data[val_len:], Bytes(data[:val_len])
 
 
+class HungryBytes(Primitive, Serializable):
+    val: bytes
 
-class Enum(Serializable, _Enum):
-    val: UInt8
+    def serialize(self):
+        return self.val
+
+    @staticmethod
+    def _deserialize(data):
+        return b'', HungryBytes(data)
+
+
+
+class TypedEnum(Serializable, _Enum):
+
+    def __init__(self, val) -> None:
+        pass
+
+    def __repr__(self):
+        return _Enum.__repr__(self)
+
+    def __str__(self):
+        return _Enum.__str__(self)
+
+    def __boformat__(self, *args, **kwargs):
+        return _Enum.__repr__(self)
+
+
+    @property
+    def val(self):
+        return self.SUBTYPE(self.value)
+
 
     def serialize(self):
         return self.val.serialize()
 
     @classmethod
     def _deserialize(cls, data):
-        left_over, i8 = UInt8.deserialize(data)
-        return left_over, cls(int(i8))
+        left_over, i8 = cls.SUBTYPE.deserialize(data)
+        return left_over, cls(i8.native())
+
+
+class Enum(Subtypable):
+    TYPED_CLS = TypedEnum
 
 
 
@@ -364,6 +452,12 @@ class FixedIntFlag(Serializable, _IntFlag):
     def __repr__(self):
         return _IntFlag.__repr__(self)
 
+    def __str__(self):
+        return _IntFlag.__str__(self)
+
+    def __boformat__(self, *args, **kwargs):
+        return _IntFlag.__repr__(self)
+
 
     def serialize(self):
         return self.val.serialize()
@@ -372,7 +466,7 @@ class FixedIntFlag(Serializable, _IntFlag):
     @classmethod
     def _deserialize(cls, data):
         left_over, i8 = UInt[cls.SIZE].deserialize(data)
-        return left_over, cls(int(i8))
+        return left_over, cls(i8.native())
 
 
 class IntFlag(Sizable):
