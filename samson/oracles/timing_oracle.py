@@ -38,7 +38,7 @@ class TimingOracle(object):
         Parameters:
             message  (object): Message to send to oracle function.
             sample_size (int): Number of samples to collect.
-        
+
         Returns:
             (float, float): Timing information formatted as (timing, jitter).
         """

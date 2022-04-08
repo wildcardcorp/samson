@@ -89,7 +89,7 @@ class RC5(BlockCipher):
 
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """
@@ -115,7 +115,7 @@ class RC5(BlockCipher):
 
         Parameters:
             ciphertext (bytes): Bytes-like object to be decrypted.
-        
+
         Returns:
             Bytes: Resulting plaintext.
         """

@@ -1,4 +1,4 @@
-from samson.core.metadata import SizeSpec, SizeType, SymmetryType, EphemeralType, EphemeralSpec, SecurityProofType, UsageType, ConstructionType, PrimitiveType, CipherType, IORelationType, FrequencyType
+from samson.core.metadata import SizeSpec, SizeType, SymmetryType, EphemeralType, EphemeralSpec, SecurityProofType, UsageType, ConstructionType, PrimitiveType, CipherType, IORelationType, FrequencyType, CrackingDifficulty
 from samson.ace.decorators import has_exploit, creates_constraint
 from samson.ace.exploit import KeyPossession, PlaintextPossession
 from samson.ace.constraints import EncryptedConstraint
@@ -78,7 +78,7 @@ class MAC(Primitive):
         Parameters:
             message   (bytes): Message to verify.
             signature (bytes): Alleged signature of `message`.
-        
+
         Returns:
             bool: Whether or not the signature matched.
         """
@@ -221,3 +221,33 @@ class AuthenticatedCipher(EncryptionAlg):
 
         if not RUNTIME.compare_bytes(tag, given_tag):
             raise InvalidMACException('Tag mismatch: authentication failed!')
+
+
+
+_sized_attrs = {'STATE_SIZE', 'REQUIRED_SAMPLES', 'NATIVE_BITS', 'OUTPUT_SIZE'}
+
+class BasePRNG(BaseObject):
+    """
+    Base class for PRNGs.
+    """
+    CRACKING_DIFFICULTY = CrackingDifficulty.NORMAL
+    REQUIRED_SAMPLES = None
+    NATIVE_BITS      = None
+    STATE_SIZE       = 1
+
+    @classproperty
+    def OUTPUT_SIZE(cls):
+        return cls.NATIVE_BITS
+
+
+    def __init__(self):
+        for attr in [attr for attr in dir(self) if attr in _sized_attrs]:
+            value = getattr(self, attr)
+
+            if type(value) is SizeSpec and value.size_type == SizeType.DEPENDENT:
+                setattr(self, attr, deepcopy(getattr(self, attr)))
+                getattr(self, attr).parent = self
+
+
+    def __reprdir__(self):
+        return [attr for attr in super().__reprdir__() if attr not in _sized_attrs.union({'CRACKING_DIFFICULTY'})]

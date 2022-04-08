@@ -16,6 +16,8 @@ DEFAULT_SHFT_R = lambda x, n: x >> n
 class Xorshift32(IterativePRNG):
     NATIVE_BITS = 32
     STATE_SIZE  =  1
+    REQUIRED_SAMPLES = 1
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
 
     @staticmethod
@@ -49,7 +51,9 @@ class Xorshift32(IterativePRNG):
 
 class Xorshift64(IterativePRNG):
     NATIVE_BITS = 64
-    STATE_SIZE  =  1
+    STATE_SIZE  = 1
+    REQUIRED_SAMPLES = 1
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
 
     @staticmethod
@@ -83,7 +87,8 @@ class Xorshift64(IterativePRNG):
 
 class Xorshift128(IterativePRNG):
     NATIVE_BITS = 64
-    STATE_SIZE  =  4
+    STATE_SIZE  = 4
+    REQUIRED_SAMPLES = 4
 
 
     @staticmethod
@@ -127,6 +132,7 @@ class Xorshift128(IterativePRNG):
 class Xorshift116Plus(IterativePRNG):
     NATIVE_BITS = 58
     STATE_SIZE  =  2
+    REQUIRED_SAMPLES = 3
 
 
     @staticmethod
@@ -161,6 +167,7 @@ class Xorshift116Plus(IterativePRNG):
 class Xorshift128Plus(IterativePRNG):
     NATIVE_BITS = 64
     STATE_SIZE  =  2
+    REQUIRED_SAMPLES = 3
 
 
     @staticmethod
@@ -202,8 +209,10 @@ class Xorshift128Plus(IterativePRNG):
 
 class Xorshift1024Star(BaseObject):
     NATIVE_BITS = 64
+    OUTPUT_SIZE = 64
     STATE_SIZE  = 16
     CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+    REQUIRED_SAMPLES = 17
 
 
     def __init__(self, seed: list, p: int=0):

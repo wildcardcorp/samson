@@ -55,7 +55,7 @@ class ChaCha(Salsa):
 
         Parameters:
             block_num (int): Current block number.
-        
+
         Returns:
             Bytes: Keystream block.
         """

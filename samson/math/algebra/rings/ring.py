@@ -281,9 +281,18 @@ class Ring(BaseObject):
     def frobenius_endomorphism(self) -> 'Map':
         from samson.math.map import Map
         p = self.characteristic()
+
         if not is_prime(p):
             raise ValueError(f'Characteristic of {self} not prime')
+
         return Map(domain=self, codomain=self, map_func=lambda r: self(r)**p)
+    
+
+    def __iter__(self):
+        i = 0
+        while i < self.order():
+            yield self.element_at(i)
+            i += 1
 
 
 
@@ -933,3 +942,10 @@ class RingElement(BaseObject):
                 pass
 
         raise NoSolutionException("No solution for linear relation (how did this happen?)")
+
+
+    def quadratic_character(self) -> int:
+        if self == self.ring.zero:
+            return 0
+        else:
+            return self.is_square()*2-1

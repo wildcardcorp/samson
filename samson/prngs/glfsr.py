@@ -93,7 +93,7 @@ class GLFSR(BaseObject):
 
         Parameters:
             outputs (list): A list of outputs from the GLFSR (in order).
-        
+
         Returns:
             GLFSR: GLFSR that generates the same sequence.
         """

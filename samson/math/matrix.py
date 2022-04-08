@@ -1,7 +1,7 @@
 from samson.math.dense_vector import DenseVector
 from samson.math.algebra.rings.ring import Ring, RingElement
 from samson.math.algebra.rings.integer_ring import ZZ
-from samson.math.general import gaussian_elimination, lll, gram_schmidt
+from samson.math.general import gaussian_elimination, is_prime, lll, gram_schmidt, is_power_of_two
 from samson.utilities.runtime import RUNTIME
 from shutil import get_terminal_size
 from types import FunctionType
@@ -566,6 +566,81 @@ class Matrix(RingElement):
             Matrix: Left kernel.
         """
         return self.T.right_kernel()
+
+
+    def direct_product(self, B: 'Matrix') -> 'Matrix':
+        C = None
+        for a_row in self:
+            D = None
+            for a_elem in a_row:
+                if D is not None:
+                    D = D.row_join(B*a_elem)
+                else:
+                    D = B*a_elem
+            
+            if C is not None:
+                C = C.col_join(D)
+            else:
+                C = D
+
+        return C
+
+
+    @staticmethod
+    def hadamard(n: int) -> 'Matrix':
+        from samson.math.factorization.general import factor
+        n21 = n // 2 - 1
+        n_facs = factor(n21)
+
+        if n == 1:
+            return Matrix([[1]], coeff_ring=ZZ)
+
+        elif is_power_of_two(n):
+            M = Matrix([[1, 1], [1, -1]], coeff_ring=ZZ)
+            N = M
+            for _ in range(n.bit_length()-2):
+                N = M.direct_product(N)
+            
+            return N
+
+        elif n_facs.is_prime_power() and n21 % 4 == 1:
+            return Matrix.conference(n21+1).conference_to_hadamard()
+        
+        else:
+            raise NotImplementedError(f"Hadamard matrices of order {n} not implemented")
+
+
+    @staticmethod
+    def conference(n: int):
+        """
+        http://math.ucdenver.edu/~wcherowi/courses/m6406/hadamard.pdf
+        """
+        from samson.math.factorization.general import factor
+        from samson.math.algebra.fields.finite_field import FiniteField as FF
+
+        q = n-1
+        F = FF(*list(factor(q).items())[0])
+
+        M = Matrix.fill(ZZ.zero, q+1, q+1)
+        for i in range(1, q+1):
+            M[0,i] = 1
+            M[i,0] = 1
+
+        for i in range(q):
+            for j in range(q):
+                M[i+1, j+1] = (F.element_at(i) - F.element_at(j)).quadratic_character()
+        
+        return M
+
+
+    def conference_to_hadamard(self):
+        I = Matrix.identity(self.num_rows, self.coeff_ring)
+        assert self*self.T == I*(self.num_rows-1)
+
+        M0 = (self+I).row_join(self-I)
+        M1 = (self-I).row_join(-self-I)
+        return M0.col_join(M1)
+
 
 
     def __getitem__(self, idx: object) -> 'RingElement':

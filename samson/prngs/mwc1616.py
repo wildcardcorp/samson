@@ -11,12 +11,13 @@ class MWC1616(IterativePRNG):
     """
 
     NATIVE_BITS = 32
-    STATE_SIZE  =  2
+    STATE_SIZE  = 2
     MASK        = MASK32
     HALF_SIZE   = 16
     HALF_MASK   = 0xFFFF
 
-    CRACKING_DIFFICULTY = CrackingDifficulty.EXPENSIVE
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+    REQUIRED_SAMPLES    = 2
 
     def __init__(self, seed: (int, int), a: int=18030, b: int=30903):
         """
@@ -73,10 +74,11 @@ class MWC(IterativePRNG):
     """
 
     NATIVE_BITS = 64
-    STATE_SIZE  =  2
+    STATE_SIZE  = 2
     MASK        = MASK64
     HALF_SIZE   = 32
     HALF_MASK   = MASK32
+    OUTPUT_SIZE = 32
 
     CRACKING_DIFFICULTY = CrackingDifficulty.EXPENSIVE
 

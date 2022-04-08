@@ -91,12 +91,14 @@ class PRNG(object):
                 return prng(0)
             except TypeError:
                 return prng([])
-        
+
 
         def true_state_size(prng):
             instance = try_insta(prng)
-            return not hasattr(instance, 'NATIVE_BITS') or instance.NATIVE_BITS*instance.STATE_SIZE
+            return not hasattr(instance, 'NATIVE_BITS') or int(instance.NATIVE_BITS)*int(instance.STATE_SIZE)
 
+
+        max_bit_size = max(o.bit_length() for o in outputs)
 
         for prng in sorted(inv_map, key=lambda prng: true_state_size(prng)):
             instance = try_insta(prng)
@@ -104,9 +106,35 @@ class PRNG(object):
             if instance.CRACKING_DIFFICULTY.value > max_diificulty.value:
                 continue
 
+            # Make sure the values are actually the right size
+            # If the PRNG's output size is bigger than the `max_bit_size`,
+            # we still want to allow some leeway. If there are three outputs
+            # and none of them are within 15 bits of the expected size,
+            # thats a 2^-45 chance it's valid (1 in 35 trillion).
+            if instance.OUTPUT_SIZE < max_bit_size or abs(int(instance.OUTPUT_SIZE) - max_bit_size) > 15:
+                continue
+
+            # Use extra samples for greater accuracy
+            if instance.REQUIRED_SAMPLES:
+                if int(instance.REQUIRED_SAMPLES) > len(outputs):
+                    log.warning(f'Not enough samples for {type(instance).__name__}; skipping')
+                    continue
+
+                num_test_samples = len(outputs)-int(instance.REQUIRED_SAMPLES)
+            else:
+                num_test_samples = 0
+
+
+            # Actually run the crack
             log.info(f'{type(instance).__name__} {inv_map[prng]}')
             try:
-                yield instance.crack(outputs)
+                test_samples  = outputs[-num_test_samples:]
+                input_samples = outputs[:(-num_test_samples) or len(outputs)]
+                cracked       = instance.crack(input_samples)
+
+                if all([cracked.generate() == test for _, test in zip(range(num_test_samples), test_samples)]):
+                    yield cracked
+
             except Exception:
                 pass
 
@@ -127,13 +155,34 @@ class PRNG(object):
     def auto_crack_bytes(outputs: bytes, stop_on_first: bool=True, max_diificulty: CrackingDifficulty=CrackingDifficulty.NORMAL):
         import itertools
 
-        func    = partial(PRNG.auto_crack, stop_on_first=stop_on_first, max_diificulty=max_diificulty)
-        results = func(outputs=[c.int() for c in Bytes(outputs).chunk(4)])
+        all_results = []
+        func        = partial(PRNG.auto_crack, stop_on_first=stop_on_first, max_diificulty=max_diificulty)
 
-        if stop_on_first:
-            if not results:
-                results = func(outputs=[c[::-1].int() for c in Bytes(outputs).chunk(4)])
-        else:
-            results = itertools.chain(results, func(outputs=[c[::-1].int() for c in Bytes(outputs).chunk(4)]))
+        def eat_no_sol(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except NoSolutionException:
+                return []
 
-        return results
+
+        for state_size in (4, 8, 3):
+            if len(outputs) % state_size:
+                continue
+
+            log.info(f'Testing state size {state_size*8}')
+
+            chunks  = Bytes.wrap(outputs).chunk(state_size)
+            results = eat_no_sol(outputs=[c.int() for c in chunks])
+
+            if stop_on_first:
+                if not results:
+                    results = eat_no_sol(outputs=[c[::-1].int() for c in chunks])
+            else:
+                results = list(itertools.chain(results, eat_no_sol(outputs=[c[::-1].int() for c in chunks])))
+
+            if stop_on_first and results:
+                return results
+            
+            all_results.extend(results)
+        
+        return all_results

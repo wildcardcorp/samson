@@ -25,7 +25,7 @@ class MiyaguchiPreneelConstruction(BaseObject):
 
         Parameters:
             message (bytes): Message to be hashed.
-        
+
         Returns:
             Bytes: Intermediate, hashed states.
         """
@@ -47,7 +47,7 @@ class MiyaguchiPreneelConstruction(BaseObject):
 
         Parameters:
             message (bytes): Message to be hashed.
-        
+
         Returns:
             Bytes: Fully-hashed state.
         """

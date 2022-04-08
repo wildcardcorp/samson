@@ -1,6 +1,6 @@
 from samson.utilities.bytes import Bytes
 from samson.core.primitives import MAC, Primitive
-from samson.core.metadata import FrequencyType, ConstructionType, SecurityProofType
+from samson.core.metadata import FrequencyType, ConstructionType, SecurityProofType, EphemeralType, EphemeralSpec, SizeType, SizeSpec
 from samson.ace.decorators import register_primitive
 
 _MOD_128 = 2**128
@@ -19,6 +19,7 @@ class Poly1305(MAC):
     USAGE_FREQUENCY    = FrequencyType.NORMAL
     CONSTRUCTION_TYPES = [ConstructionType.WEGMAN_CARTER]
     SECURITY_PROOF     = SecurityProofType.INFORMATION_THEORETIC
+    EPHEMERAL          = EphemeralSpec(ephemeral_type=EphemeralType.NONCE, size=SizeSpec(size_type=SizeType.SINGLE, sizes=128))
 
     def __init__(self, r: bytes, clamp_r: bool=True):
         """

@@ -43,7 +43,7 @@ class Bcrypt(KDF):
         Parameters:
             salt     (bytes): Salt.
             password (bytes): Password.
-        
+
         Returns:
             Blowfish: Blowfish instance set-up using the expensive key schedule
         """
@@ -75,7 +75,7 @@ class Bcrypt(KDF):
             salt     (bytes): Salt.
             password (bytes): Password.
             key_len    (int): Desired length of key. Will zero pad right.
-        
+
         Returns:
             Blowfish: Blowfish instance undergone a round of key expansion.
         """
@@ -112,7 +112,7 @@ class Bcrypt(KDF):
             password     (bytes): Password.
             salt         (bytes): Salt.
             format_output (bool): Whether or not to use bcrypt formatting or just output the hash.
-        
+
         Returns:
             Bytes: Derived key/hash.
         """

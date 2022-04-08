@@ -50,7 +50,7 @@ class JWE(BaseObject):
 
         Parameters:
             token (bytes): The JWE token to parse.
-        
+
         Returns:
             JWE: JWE representation.
         """

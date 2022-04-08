@@ -39,7 +39,7 @@ class RC4(StreamCipher):
 
         Parameters:
             key (bytes): Key.
-        
+
         Returns:
             list: State parameter `S`.
         """
@@ -62,7 +62,7 @@ class RC4(StreamCipher):
 
         Parameters:
             length (int): Desired length of keystream in bytes.
-        
+
         Returns:
             Bytes: Keystream.
         """

@@ -763,7 +763,7 @@ class Polynomial(RingElement):
             # Calculate P(x**q**i - x)
             h = bases[1]
 
-            for _ in range(1, i-1):
+            for _ in range(i-1):
                 h = frobenius_map(h, f_star, bases=bases)
 
             g = gcd(f_star, h - x_poly).monic()
@@ -1185,7 +1185,6 @@ class Polynomial(RingElement):
         Examples:
             >>> from samson.math.algebra.all import *
             >>> from samson.math.symbols import Symbol
-            >>> from functools import reduce
             >>> x  = Symbol('x')
             >>> Z7 = ZZ/ZZ(7)
             >>> P  = Z7[x]
@@ -1194,7 +1193,7 @@ class Polynomial(RingElement):
             >>> facs    = [fac for fac in [P.random(P(x**3)) for _ in range(4)] if fac]
             >>> p       = product(facs) # Build the Polynomial
             >>> factors = p.factor()
-            >>> factors.recombine() == p.monic() # Check the factorization is right
+            >>> factors.recombine() == p # Check the factorization is right
             True
 
         References:
@@ -1215,7 +1214,8 @@ class Polynomial(RingElement):
 
         if content != self.coeff_ring.one:
             factors[self.ring(content)] = 1
-
+        
+        p //= content
 
         # If there isn't a constant, we can factor out
         # `x` until there is
@@ -1227,7 +1227,7 @@ class Polynomial(RingElement):
 
         # Check for known irreducibles
         if p.degree() == 1:
-            factors[p // content] = 1
+            factors[p] = 1
             return factors
 
         if not p.degree():
@@ -1235,8 +1235,7 @@ class Polynomial(RingElement):
 
 
         if self.coeff_ring == ZZ:
-            f    = p // content
-            facs = [(poly._fac_ZZ(user_stop_func=user_stop_func), num) for poly, num in f.sff().items() if poly.degree()]
+            facs = [(poly._fac_ZZ(user_stop_func=user_stop_func), num) for poly, num in p.sff().items() if poly.degree()]
 
             for partial_factors, num in facs:
                 for fac in partial_factors:
@@ -1248,17 +1247,15 @@ class Polynomial(RingElement):
         elif self.coeff_ring == QQ:
             # Strip off content
             # This will give `p` integer coefficients
-            q = p // content
-
             # Factor `p` over ZZ
-            P    = ZZ[Symbol(q.symbol.repr)]
-            z    = P(q.coeffs.map(lambda idx, val: (idx, val.numerator)))
+            P    = ZZ[Symbol(p.symbol.repr)]
+            z    = P(p.coeffs.map(lambda idx, val: (idx, val.numerator)))
             facs = z.factor(subgroup_divisor=subgroup_divisor, user_stop_func=user_stop_func)
 
             # Coerce the factors back into QQ
             for fac, e in facs.items():
                 fac = fac.change_ring(QQ)
-                fac.symbol = q.symbol
+                fac.symbol = p.symbol
                 factors[fac] = e
 
 
@@ -1371,6 +1368,11 @@ class Polynomial(RingElement):
 
 
         else:
+            lc = p.LC()
+            if lc != p.coeff_ring.one:
+                factors[lc] = 1
+                p = p.monic()
+
             # Cantor-Zassenhaus (SFF -> DDF -> EDF)
             distinct_degrees = [factor for poly in p.sff() for factor in poly.ddf()]
 

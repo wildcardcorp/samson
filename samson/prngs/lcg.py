@@ -3,17 +3,19 @@ from samson.math.factorization.general import factor as factorint
 from samson.math.matrix import Matrix
 from samson.utilities.exceptions import SearchspaceExhaustedException
 from samson.utilities.runtime import RUNTIME
-from samson.core.base_object import BaseObject
-from samson.core.metadata import CrackingDifficulty
+from samson.core.primitives import BasePRNG
+from samson.core.metadata import CrackingDifficulty, SizeSpec, SizeType
 import functools
 
 
-class LCG(BaseObject):
+class LCG(BasePRNG):
     """
     Linear congruential generator of the form `(a*X + c) mod m`.
     """
 
     CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+    NATIVE_BITS         = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda lcg: (lcg.m-1).bit_length())
+    OUTPUT_SIZE         = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda lcg: (lcg.m-1).bit_length() - lcg.trunc)
 
     def __init__(self, X: int, a: int, c: int, m: int, trunc: int=0):
         """
@@ -30,6 +32,7 @@ class LCG(BaseObject):
         self.trunc = trunc
 
         self.X = X
+        BasePRNG.__init__(self)
 
 
 
@@ -66,7 +69,7 @@ class LCG(BaseObject):
 
         Returns:
             bool: Whether or not it will acheive a full period.
-        
+
         References:
             https://en.wikipedia.org/wiki/Linear_congruential_generator#Period_length
         """
@@ -119,10 +122,10 @@ class LCG(BaseObject):
             increment     (int): (Optional) The LCG's increment.
             modulus       (int): (Optional) The LCG's modulus.
             sanity_check (bool): Whether to tests the generated LCG against the provided states.
-        
+
         Returns:
             LCG: Replica LCG that predicts all future outputs of the original.
-        
+
         References:
             https://tailcall.net/blog/cracking-randomness-lcgs/
         """
@@ -190,7 +193,11 @@ class LCG(BaseObject):
             for z in RUNTIME.report_progress(range(2 ** trunc_amount), desc='Seedspace searched', unit='seeds'):
                 x_0 = (outputs[0] << trunc_amount) + z
                 x_1 = (seed_diffs[0] + x_0) % modulus
-                computed_c = (x_1 - multiplier * x_0) % modulus
+
+                if increment is None:
+                    computed_c = (x_1 - multiplier * x_0) % modulus
+                else:
+                    computed_c = increment
 
                 computed_x_2 = (multiplier * x_1 + computed_c) % modulus
                 actual_x_2   = (seed_diffs[1] + x_1) % modulus

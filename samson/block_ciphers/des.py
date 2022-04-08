@@ -221,7 +221,7 @@ class DES(FeistelNetwork, BlockCipher):
 
         Parameters:
             plaintext (bytes): Bytes-like object to be encrypted.
-        
+
         Returns:
             Bytes: Resulting ciphertext.
         """
@@ -236,7 +236,7 @@ class DES(FeistelNetwork, BlockCipher):
 
         Parameters:
             ciphertext (bytes): Bytes-like object to be decrypted.
-        
+
         Returns:
             Bytes: Resulting plaintext.
         """

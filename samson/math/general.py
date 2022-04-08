@@ -1364,8 +1364,9 @@ def random_int(n: int) -> int:
         True
 
     """
-    byte_length = math.ceil(n.bit_length() / 8)
-    max_bit = 2**n.bit_length()
+    n_bits = math.ceil(math.log2(n))
+    byte_length = math.ceil(n_bits / 8)
+    max_bit = 2**n_bits
     q = max_bit // n
     max_num = n * q - 1
 
@@ -3221,3 +3222,25 @@ def cyclomotic_polynomial(n: int) -> 'Polynomial':
         C = cyclomotic_polynomial(square_free.recombine())
         squares = (facs/square_free).recombine()
         return C.map_coeffs(lambda i, c: (i*squares, c))
+
+
+def fwht(vector: list):
+    """
+    https://en.wikipedia.org/wiki/Fast_Walsh%E2%80%93Hadamard_transform
+    """
+    padding_len = 2**math.ceil(math.log2(len(vector)))-len(vector)
+    vec_copy = copy(vector) + [0]*padding_len
+
+    h = 1
+    while h < len(vec_copy):
+        for i in range(0, len(vec_copy), h*2):
+            for j in range(i, i+h):
+                x = vec_copy[j]
+                y = vec_copy[j+h]
+                
+                vec_copy[j]   = x+y
+                vec_copy[j+h] = x-y
+            
+        h *= 2
+    
+    return vec_copy

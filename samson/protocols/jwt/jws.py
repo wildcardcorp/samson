@@ -40,7 +40,7 @@ class JWS(BaseObject):
 
         Parameters:
             token (bytes): The JWS token to parse.
-        
+
         Returns:
             JWS: JWS representation.
         """
@@ -92,7 +92,7 @@ class JWS(BaseObject):
 
         Parameters:
             key (object): Verification key with object type depending on the JWASignatureAlg.
-        
+
         Returns:
             bool: Whether or not it passed verification.
         """
@@ -118,7 +118,7 @@ class JWSSet(BaseObject):
 
         Parameters:
             flatten (bool): Whether or not to flatten the structure if there's only one signature.
-        
+
         Returns:
             bytes: JSON encoding as bytes.
         """
@@ -169,7 +169,7 @@ class JWSSet(BaseObject):
 
         Parameters:
             token (bytes): The JWSSet token to parse.
-        
+
         Returns:
             JWSSet: JWSSet representation.
         """

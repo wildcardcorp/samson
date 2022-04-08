@@ -1,25 +1,26 @@
 from samson.utilities.exceptions import SearchspaceExhaustedException
+from samson.core.primitives import BasePRNG
 from samson.core.base_object import BaseObject
-from samson.core.metadata import CrackingDifficulty
+from samson.core.metadata import CrackingDifficulty, SizeSpec, SizeType
 from types import FunctionType
 from copy import deepcopy
 
-def _gen_mask_op(mask):
-    return lambda n: n & mask
+class MaskOperation(BaseObject):
+    def __init__(self, mask) -> None:
+        self.mask = mask
+        self.size = mask.bit_length()
 
-class LFG(BaseObject):
-    """
-    Lagged Fibonacci generator
-    """
-    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
 
-    ADD_OP = lambda a, b: a + b
-    SUB_OP = lambda a, b: a - b
+    def __call__(self, n):
+        return n & self.mask
 
-    GEN_MASK_OP = _gen_mask_op
 
-    @staticmethod
-    def C_SHARP_MASK_OP(n):
+class C_SHARP_MASK_OP(MaskOperation):
+    def __init__(self) -> None:
+        self.size = 31
+
+
+    def __call__(self, n):
         if n == 2147483647:
             return n-1
         elif n < 0:
@@ -28,7 +29,23 @@ class LFG(BaseObject):
             return n
 
 
-    def __init__(self, state: list, tap: int, feed: int, operation: FunctionType=ADD_OP, increment: bool=False, mask_op: FunctionType=_gen_mask_op(0xFFFFFFFFFFFFFFFF), length: int=None):
+class LFG(BasePRNG):
+    """
+    Lagged Fibonacci generator
+    """
+    CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+    NATIVE_BITS         = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda lfg: lfg.mask_op.size)
+    STATE_SIZE          = SizeSpec(size_type=SizeType.DEPENDENT, selector=lambda lfg: lfg.length)
+    REQUIRED_SAMPLES    = STATE_SIZE
+
+    ADD_OP = lambda a, b: a + b
+    SUB_OP = lambda a, b: a - b
+
+    GEN_MASK_OP     = MaskOperation
+    C_SHARP_MASK_OP = C_SHARP_MASK_OP()
+
+
+    def __init__(self, state: list, tap: int, feed: int, operation: FunctionType=ADD_OP, increment: bool=False, mask_op: MaskOperation=MaskOperation(0xFFFFFFFFFFFFFFFF), length: int=None):
         """
         Parameters:
             state     (list): Initial state.
@@ -47,6 +64,8 @@ class LFG(BaseObject):
         self.shift_mod = -1 + 2 * increment
         self.mask_op   = mask_op
         self.length    = length or len(state)
+
+        BasePRNG.__init__(self)
 
 
     def generate(self) -> int:

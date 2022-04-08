@@ -186,7 +186,7 @@ class Serializable(BaseObject):
         else:
             return self.native() == o
         
-        return (not issubclass(type(s), Serializable) and s == o) or (type(s) == type(o) and s.__dict__ == o.__dict__)
+        return (not issubclass(type(s), Serializable) and s == o) or (type(s) == type(o) and hasattr(s, '__dict__') and s.__dict__ == o.__dict__)
 
 
 class SubtypableMeta(type):
@@ -471,3 +471,41 @@ class FixedIntFlag(Serializable, _IntFlag):
 
 class IntFlag(Sizable):
     SIZABLE_CLS = FixedIntFlag
+
+
+class Router(BaseObject):
+
+    @staticmethod
+    def selector(selector):
+        def _wrapper(func):
+            func.__selector__ = selector
+            return func
+        
+        return _wrapper
+
+    def handle(self, msg):
+        for attr_name in dir(self):
+            attr = getattr(self, attr_name)
+
+            if hasattr(attr, '__selector__'):
+                if getattr(attr, '__selector__')(msg):
+                    attr(msg)
+
+
+    def __call__(self, msg):
+        self.handle(msg)
+
+
+class AttributeRouter(Router):
+    def __init__(self, attribute_selector) -> None:
+        self.attribute_selector = attribute_selector
+
+
+    def handle(self, msg):
+        for attr_name in dir(self):
+            attr = getattr(self, attr_name)
+
+            if hasattr(attr, '__selector__'):
+                selected = getattr(attr, '__selector__')
+                if self.attribute_selector(msg) == selected:
+                    attr(msg)

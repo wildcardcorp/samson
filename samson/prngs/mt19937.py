@@ -1,6 +1,6 @@
-from samson.core.base_object import BaseObject
-from samson.core.metadata import CrackingDifficulty
+from samson.core.metadata import CrackingDifficulty, SizeType, SizeSpec
 from samson.utilities.bytes import Bytes
+from samson.core.primitives import BasePRNG
 
 w, n, m, r = (32, 624, 397, 31)
 MAGIC = 0x9908b0df
@@ -71,7 +71,7 @@ def untemper(y):
 
 
 # Implementation of MT19937
-class MT19937(BaseObject):
+class MT19937(BasePRNG):
     """
     Mersenne Twister 19937
 
@@ -80,6 +80,8 @@ class MT19937(BaseObject):
     """
 
     CRACKING_DIFFICULTY = CrackingDifficulty.TRIVIAL
+    NATIVE_BITS         = 32
+    REQUIRED_SAMPLES    = SizeSpec(size_type=SizeType.SINGLE, sizes=628)
 
     def __init__(self, seed: int=0):
         """

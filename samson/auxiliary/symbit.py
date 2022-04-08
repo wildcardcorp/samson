@@ -1,3 +1,4 @@
+from this import d
 from samson.core.base_object import BaseObject
 from samson.math.polynomial import Polynomial
 from samson.math.algebra.rings.integer_ring import ZZ
@@ -104,7 +105,6 @@ def collapse_poly(poly):
     return poly.ring([c0, c1])
 
 
-
 class SymBit(BaseObject):
     def __init__(self, value) -> None:
         self.value = collapse_poly(value)
@@ -141,7 +141,7 @@ class SymBit(BaseObject):
     def __matmul__(self, other):
         other = self._coerce(other)
         return ~self | other
-    
+
 
     def is_constant(self):
         return not bool(self.value[1]) and self.value[0] in (self.value.ring.zero, self.value.ring.one)
@@ -288,11 +288,21 @@ class IOTable(BaseObject):
 
 
 class SymFunc(SymBit):
-    def __init__(self, func) -> None:
+    def __init__(self, func, sig, symbols, zero, one, symbolic) -> None:
         self.func = func
-        self.sig  = inspect.signature(func)
-        self.symbols, self.zero, self.one  = build_symbols(self.sig.parameters) 
-        self.symbolic = func(*self.symbols)
+        self.sig = sig
+        self.symbols = symbols
+        self.zero = zero
+        self.one = one
+        self.symbolic = symbolic
+
+
+    @staticmethod
+    def from_func(func, symbols):
+        sig  = inspect.signature(func)
+        symbols, zero, one  = build_symbols(sig.parameters) 
+        symbolic = func(*symbols)
+        return SymFunc(func=func, sig=sig, symbols=symbols, zero=zero, one=one, symbolic=symbolic)
 
 
     def __call__(self, *args, **kwargs):
@@ -310,3 +320,145 @@ def check_equiv(func1, func2, num_args):
     for args in itertools.product(*[list(range(2)) for _ in range(num_args)]):
         if (func1(*args) & 1) != (func2(*args) & 1):
             print(args)
+
+
+
+
+class SizableMeta(type):
+    SIZABLE_CLS = None
+
+    def __getitem__(cls, size):
+        class Inst(cls.SIZABLE_CLS):
+            pass
+
+        Inst.__name__ = f'{cls.__name__}[{size}]'
+        Inst.SIZE = size
+        return Inst
+
+
+class FixedBitVector(BaseObject):
+    SIZE = None
+
+    def __init__(self, var_name: str) -> None:
+        self.var_name = var_name
+        self.vars = [Symbol(f'{var_name}{i}') for i in range(self.SIZE)]
+
+
+    def __getitem__(self, idx):
+        return self.symbols[idx]
+    
+
+    @property
+    def zero(self):
+        return SymBit(self.symbols[0].value.coeff_ring.zero)
+
+
+    @property
+    def one(self):
+        return SymBit(self.symbols[0].value.coeff_ring.one)
+
+
+    def __call__(self, val: int):
+        val   %= 2**self.SIZE
+        args   = [int(b) for b in bin(val)[2:].zfill(self.SIZE)]
+        kwargs = {s.repr:v for s,v in zip(self.vars, args[::-1])}
+        binary = [a(**kwargs) for a in self.symbols]
+        return int(''.join(str(b) for b in binary), 2)
+
+
+    def _create_copy(self):
+        bv = self.__class__(self.var_name)
+        bv.vars = self.vars
+        bv.symbols = self.symbols
+        return bv
+    
+    
+    def _coerce(self, other: int):
+        if type(other) is int:
+            bv = self._create_copy()
+            other %= 2**self.SIZE
+            bv.symbols = [self.one if int(b) else self.zero for b in bin(other)[2:].zfill(self.SIZE)]
+            return bv
+
+        elif type(other) is SymBit:
+            bv = self._create_copy()
+            bv.symbols = [self.zero]*(self.SIZE-1) + [other]
+            return bv
+
+        else:
+            return other
+    
+
+    def __lshift__(self, idx):
+        bv = self._create_copy()
+        bv.symbols.extend([bv.zero]*idx)
+        bv.symbols = bv.symbols[-self.SIZE:]
+        return bv
+
+
+
+    def __rshift__(self, idx):
+        bv = self._create_copy()
+        bv.symbols = ([bv.zero]*idx) + bv.symbols
+        bv.symbols = bv.symbols[:self.SIZE]
+        return bv
+
+
+    def __xor__(self, other):
+        bv = self._create_copy()
+        other = self._coerce(other)
+
+        bv.symbols = [a^b for a,b in zip(self.symbols, other.symbols)]
+        return bv
+
+
+    def __and__(self, other):
+        bv = self._create_copy()
+        other = self._coerce(other)
+        bv.symbols = [a&b for a,b in zip(self.symbols, other.symbols)]
+        return bv
+
+
+    def __or__(self, other):
+        bv = self._create_copy()
+        other = self._coerce(other)
+        bv.symbols = [a|b for a,b in zip(self.symbols, other.symbols)]
+        return bv
+
+
+    def __eq__(self, other):
+        bv = self._create_copy()
+        other = self._coerce(other)
+        bv.symbols = [a==b for a,b in zip(self.symbols, other.symbols)]
+        return bv
+
+
+    def __invert__(self):
+        bv = self._create_copy()
+        bv.symbols = [~s for s in bv.symbols]
+        return bv
+
+
+    def __matmul__(self, other):
+        other = self._coerce(other)
+        return ~self | other
+
+
+
+
+class BitVector(BaseObject, metaclass=SizableMeta):
+    SIZABLE_CLS = FixedBitVector
+
+    @staticmethod
+    def from_func(func):
+        sig = inspect.signature(func)
+        b_vecs = [param.annotation(param.name) for param in sig.parameters.values()]
+        symbols = tuple([item for b in b_vecs for item in b.vars])
+
+        R = ZZ/ZZ(2)
+        P = R[symbols]
+
+        for b_vec in b_vecs:
+            b_vec.symbols = [SymBit(P(sym)) for sym in b_vec.vars][::-1]
+
+        return SymFunc(func=func, sig=sig, symbols=b_vecs, zero=SymBit(P.zero), one=SymBit(P.one), symbolic=func(*b_vecs))

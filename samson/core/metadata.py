@@ -176,7 +176,7 @@ class SizeSpec(object):
 
 
     def __eq__(self, other):
-        return (type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes) or self.sizes == other
+        return (type(other) == type(self) and self.size_type == other.size_type and self.sizes == other.sizes) or self.sizes == other or (self.selector and self.selector(self.parent) == other)
 
 
     def __lt__(self, other):
@@ -199,9 +199,24 @@ class SizeSpec(object):
 
             return result
         else:
-            raise NotImplementedError()
+            raise NotImplementedError
+    
+
+    def __gt__(self, other):
+        return not self < other and not self == other
 
 
+    def __int__(self):
+        if self.size_type == SizeType.SINGLE:
+            return self.sizes
+
+        elif self.size_type == SizeType.DEPENDENT:
+            if self.parent is None:
+                return ValueError
+            
+            return self.selector(self.parent)
+        else:
+            raise NotImplementedError
 
 
 class EphemeralSpec(object):
