@@ -291,7 +291,7 @@ def merge_enums(name: str, sub_enums: list):
 
 class X509IntFlag(IntFlag):
     def build(self):
-        binary = bin(int(self))[2:].strip('0').zfill(self.get_size())
+        binary = bin(int(self))[2:].zfill(self.get_size())
         return self.get_asn1_obj()(binary)
     
 
@@ -495,7 +495,7 @@ class X509KeyUsage(X509Extension):
     def __init__(self, key_usage: X509KeyUsageFlag, critical: bool=True) -> None:
         self.key_usage = key_usage
         super().__init__(critical=critical)
-    
+
 
     def build(self) -> rfc5280.Extension:
         return super()._build(self.key_usage.build())
@@ -505,7 +505,7 @@ class X509KeyUsage(X509Extension):
     def parse(value_bytes: bytes, critical: bool) -> 'X509KeyUsage':
         ext_val, _ = decoder.decode(value_bytes, asn1Spec=rfc5280.KeyUsage())
 
-        return X509KeyUsage(key_usage=X509KeyUsageFlag.parse(ext_val), critical=critical)
+        return X509KeyUsage(key_usage=X509KeyUsageFlag(int(ext_val)), critical=critical)
 
 
 
@@ -1366,7 +1366,7 @@ class X509NetscapeCertificateType(X509Extension):
     def parse(value_bytes: bytes, critical: bool) -> 'X509NetscapeCertificateType':
         ext_val, _ = decoder.decode(value_bytes)
 
-        return X509NetscapeCertificateType(cert_type=X509NetscapeCertTypeFlag.parse(ext_val), critical=critical)
+        return X509NetscapeCertificateType(cert_type=X509NetscapeCertTypeFlag(int(ext_val)), critical=critical)
 
 
 # I honestly cannot find the last two bits
@@ -1424,7 +1424,7 @@ class X509EntrustVersionInfo(X509Extension):
 
         eif = None
         if ext_val['entrustInfoFlags'].isValue:
-            eif = X509EntrustInfoFlag.parse(ext_val['entrustInfoFlags'])
+            eif = X509EntrustInfoFlag(int(ext_val['entrustInfoFlags']))
 
         return X509EntrustVersionInfo(entrust_version=ver, entrust_info_flags=eif, critical=critical)
 
